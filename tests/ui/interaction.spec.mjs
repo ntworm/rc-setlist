@@ -348,7 +348,7 @@ test('Reduced motion and keyboard focus remain visible', async ({ page }) => {
     outlineWidth: parseFloat(getComputedStyle(document.activeElement).outlineWidth),
     transitionSeconds: parseFloat(getComputedStyle(document.activeElement).transitionDuration),
   }));
-  expect(state.activeId).toBe('btnLock');
+  expect(state.activeId).toBe('languageSelect');
   expect(state.outlineWidth).toBeGreaterThanOrEqual(2);
   expect(state.transitionSeconds).toBeLessThanOrEqual(0.001);
 });
@@ -390,3 +390,32 @@ test('Setlist closes a modal with Escape and restores focus to its opener', asyn
   await expect(page.locator('#lyricsModal')).not.toHaveClass(/open/);
   await expect(opener).toBeFocused();
 });
+
+for (const surface of [
+  {
+    route: '/performance/?scenario=marketing',
+    translatedLabel: 'Música atual',
+  },
+  {
+    route: '/setlist/?scenario=marketing',
+    translatedLabel: 'Música ativa',
+  },
+]) {
+  test(`${surface.route} switches to Portuguese without translating show data and persists it`, async ({ page }) => {
+    await page.goto(surface.route);
+    await expect(page.getByText('SONG 03', { exact: true }).first()).toBeVisible();
+
+    await page.locator('#languageSelect').selectOption('pt-BR');
+    await expect(page.locator('html')).toHaveAttribute('lang', 'pt-BR');
+    await expect(page.getByText(surface.translatedLabel, { exact: true }).first()).toBeVisible();
+    await expect(page.getByText('SONG 03', { exact: true }).first()).toBeVisible();
+    await expect(page.getByText('CHORUS', { exact: true }).first()).toBeVisible();
+
+    await page.reload();
+    await expect(page.locator('html')).toHaveAttribute('lang', 'pt-BR');
+    await expect(page.getByText(surface.translatedLabel, { exact: true }).first()).toBeVisible();
+
+    await page.locator('#languageSelect').selectOption('en');
+    await expect(page.locator('html')).toHaveAttribute('lang', 'en');
+  });
+}

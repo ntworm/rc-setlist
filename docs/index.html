@@ -34,6 +34,7 @@
     .nav-links { display:flex; flex-wrap:wrap; justify-content:flex-end; gap:.35rem 1rem; font-size:.9rem; }
     .nav-links a { color:var(--muted); text-decoration:none; }
     .nav-links a:hover { color:var(--ink); }
+    .site-language { min-height:40px; border:1px solid var(--line); border-radius:8px; background:var(--panel); color:var(--ink); padding:.45rem .65rem; font-weight:750; cursor:pointer; }
     .hero { display:grid; grid-template-columns:minmax(0,.82fr) minmax(420px,1.18fr); gap:clamp(2rem,5vw,4.5rem); align-items:center; padding-block:clamp(4rem,8vw,7.5rem); }
     .eyebrow { margin:0 0 1rem; color:var(--soft); font:800 .78rem/1.2 ui-monospace,Consolas,monospace; letter-spacing:.13em; text-transform:uppercase; }
     h1,h2,h3,p { overflow-wrap:anywhere; }
@@ -119,73 +120,87 @@
   </style>
 </head>
 <body>
-  <a class="skip" href="#main">Skip to content</a>
+  <a class="skip" href="#main" data-site-i18n="skip">Skip to content</a>
   <header class="topbar">
-    <nav class="shell" aria-label="Primary navigation">
+    <nav class="shell" aria-label="Primary navigation" data-site-i18n-aria-label="navAria">
       <a class="brand" href="./"><span class="mark">RC</span><span>Ableton RC Setlist</span></a>
-      <div class="nav-links"><a href="#product">Product</a><a href="#workflow">Workflow</a><a href="#install">Install</a><a href="./README.md">Docs</a><a id="source" href="https://github.com/ntworm/rc-setlist">Source</a></div>
+      <div class="nav-links">
+        <a href="#product" data-site-i18n="navProduct">Product</a>
+        <a href="#workflow" data-site-i18n="navWorkflow">Workflow</a>
+        <a href="#install" data-site-i18n="navInstall">Install</a>
+        <a id="navDocumentation" href="./README.md" data-site-i18n="navDocs">Docs</a>
+        <a id="source" href="https://github.com/ntworm/rc-setlist" data-site-i18n="navSource">Source</a>
+        <label>
+          <span style="position:absolute;width:1px;height:1px;overflow:hidden" data-site-i18n="language">Language</span>
+          <select id="languageSelect" class="site-language" aria-label="Language" data-site-i18n-aria-label="language">
+            <option value="en">English</option>
+            <option value="pt-BR">Português (Brasil)</option>
+          </select>
+        </label>
+      </div>
     </nav>
   </header>
 
   <main id="main">
     <section class="hero shell">
       <div>
-        <p class="eyebrow">Ableton Live extension · v0.3.0</p>
+        <p class="eyebrow" data-site-i18n="heroEyebrow">Ableton Live extension · v0.4.0</p>
         <h1>Ableton <span>RC Setlist</span></h1>
-        <p class="lede">Turn Arrangement locators into a real operator setlist, synchronized lyric display and guarded stage controls — running locally between Ableton Live and your browser.</p>
-        <div class="actions"><a id="download" class="button primary" href="https://github.com/ntworm/rc-setlist/releases/latest">Download .ablx</a><a id="documentation" class="button" href="./README.md">Read the docs</a></div>
-        <p class="fine">No account · no subscription · no analytics · source-available</p>
+        <p class="lede" data-site-i18n="heroLede">Turn Arrangement locators into a real operator setlist, synchronized lyric display and guarded stage controls — running locally between Ableton Live and your browser.</p>
+        <div class="actions"><a id="download" class="button primary" href="https://github.com/ntworm/rc-setlist/releases/latest" data-site-i18n="download">Download .ablx</a><a id="documentation" class="button" href="./README.md" data-site-i18n="readDocs">Read the docs</a></div>
+        <p class="fine" data-site-i18n="fine">No account · no subscription · no analytics · source-available</p>
       </div>
       <div class="hero-visual">
-        <img src="./media/product-truth-discord.png" width="1200" height="675" alt="Product truth composition of the real Ableton RC Setlist Performance and Stage Control interfaces">
-        <div class="truth-label"><strong>Product truth</strong><span>Real interfaces · neutral demo data</span></div>
+        <img src="./media/en/product-truth-discord.png" data-site-image="product-truth-discord.png" width="1200" height="675" alt="Product truth composition of the real Ableton RC Setlist Performance and Stage Control interfaces" data-site-i18n-alt="heroAlt">
+        <div class="truth-label"><strong data-site-i18n="productTruth">Product truth</strong><span data-site-i18n="realInterfaces">Real interfaces · neutral demo data</span></div>
       </div>
     </section>
 
-    <section class="proof" aria-label="Product principles"><div class="shell proof-grid">
-      <div class="proof-item"><strong>Local first</strong><span>Live ↔ browser on your trusted LAN</span></div>
-      <div class="proof-item"><strong>Two real views</strong><span>Stage control + Performance display</span></div>
-      <div class="proof-item"><strong>One .ablx</strong><span>Install through Ableton Live</span></div>
-      <div class="proof-item"><strong>No telemetry</strong><span>Your show data stays local</span></div>
+    <section class="proof" aria-label="Product principles" data-site-i18n-aria-label="principlesAria"><div class="shell proof-grid">
+      <div class="proof-item"><strong data-site-i18n="localFirst">Local first</strong><span data-site-i18n="localFirstBody">Live ↔ browser on your trusted LAN</span></div>
+      <div class="proof-item"><strong data-site-i18n="twoViews">Two real views</strong><span data-site-i18n="twoViewsBody">Stage Control + Performance display</span></div>
+      <div class="proof-item"><strong data-site-i18n="oneAblx">One .ablx</strong><span data-site-i18n="oneAblxBody">Install through Ableton Live</span></div>
+      <div class="proof-item"><strong data-site-i18n="noTelemetry">No telemetry</strong><span data-site-i18n="noTelemetryBody">Your show data stays local</span></div>
     </div></section>
 
     <section id="product" class="section shell">
-      <div class="section-head"><div><p class="eyebrow">The shipped interface</p><h2>See the show.<br><span>Run the set.</span></h2></div><p>The product stays anchored to Ableton Live. The browser gives the operator and performer the information each one needs without inventing a second timeline.</p></div>
+      <div class="section-head"><div><p class="eyebrow" data-site-i18n="shipped">The shipped interface</p><h2><span style="color:inherit" data-site-i18n="seeShow">See the show.</span><br><span data-site-i18n="runSet">Run the set.</span></h2></div><p data-site-i18n="productIntro">The product stays anchored to Ableton Live. The browser gives the operator and performer the information each one needs without inventing a second timeline.</p></div>
       <div class="gallery">
-        <figure><img src="./media/performance.png" width="1600" height="900" loading="lazy" alt="Performance interface showing current and next song, section, lyrics, timecode, bar, BPM and click"><figcaption><strong>Performance</strong><span>High-contrast show state, current and next cues, synchronized lyrics, timecode, bar, tempo and click.</span></figcaption></figure>
-        <figure><img src="./media/stage-control.png" width="1600" height="900" loading="lazy" alt="Stage Control interface showing the setlist, section controls, show state and transport"><figcaption><strong>Stage control</strong><span>Song and section navigation, guarded transport, quantization, click, refresh, tools, lock and live feedback.</span></figcaption></figure>
+        <figure><img src="./media/en/performance.png" data-site-image="performance.png" width="1600" height="900" loading="lazy" alt="Performance interface showing current and next song, section, lyrics, timecode, bar, BPM and click" data-site-i18n-alt="performanceAlt"><figcaption><strong>Performance</strong><span data-site-i18n="performanceBody">High-contrast show state, current and next cues, synchronized lyrics, timecode, bar, tempo and click.</span></figcaption></figure>
+        <figure><img src="./media/en/stage-control.png" data-site-image="stage-control.png" width="1600" height="900" loading="lazy" alt="Stage Control interface showing the setlist, section controls, show state and transport" data-site-i18n-alt="stageAlt"><figcaption><strong data-site-i18n="stageControl">Stage Control</strong><span data-site-i18n="stageBody">Song and section navigation, guarded transport, quantization, click, refresh, tools, lock and live feedback.</span></figcaption></figure>
       </div>
     </section>
 
     <section id="workflow" class="section workflow-section"><div class="shell workflow-layout">
-      <div class="workflow-copy"><p class="eyebrow">Three-step workflow</p><h2>From locators<br><span>to stage.</span></h2><p>Write the show structure once in Arrangement: <code>[bpm]</code>, <code>[click]</code>, <code>[loop]</code>, <code>[stop]</code>, <code>[next]</code> and <code>[skip]</code>. Ableton RC Setlist turns that structure into operator and performer views.</p></div>
-      <img class="workflow-image" src="./media/workflow.png" width="1200" height="675" loading="lazy" alt="From locators to stage workflow: mark the Arrangement, conduct the set and read the show">
+      <div class="workflow-copy"><p class="eyebrow" data-site-i18n="workflowEyebrow">Three-step workflow</p><h2><span style="color:inherit" data-site-i18n="fromLocators">From locators</span><br><span data-site-i18n="toStage">to stage.</span></h2><p><span data-site-i18n="workflowBody">Write the show structure once in Arrangement with automation tags. Ableton RC Setlist turns that structure into operator and performer views.</span> <code>[bpm]</code> <code>[click]</code> <code>[loop]</code> <code>[stop]</code> <code>[next]</code> <code>[skip]</code></p></div>
+      <img class="workflow-image" src="./media/en/workflow.png" data-site-image="workflow.png" width="1200" height="675" loading="lazy" alt="From locators to stage workflow: mark the Arrangement, conduct the set and read the show" data-site-i18n-alt="workflowAlt">
     </div></section>
 
     <section class="section shell">
-      <div class="section-head"><div><p class="eyebrow">Built for rehearsal and stage</p><h2>A Live Set that reads like a show.</h2></div><p>The interface mirrors the functions that already ship in v0.3.0. No fictional dashboard metrics and no show content bundled with the extension.</p></div>
+      <div class="section-head"><div><p class="eyebrow" data-site-i18n="builtFor">Built for rehearsal and stage</p><h2 data-site-i18n="liveSet">A Live Set that reads like a show.</h2></div><p data-site-i18n="truthful">The interface mirrors the functions that ship in v0.4.0. No fictional dashboard metrics and no show content bundled with the extension.</p></div>
       <div class="features">
-        <article class="card"><span class="card-number">01 · STRUCTURE</span><h3>Locator-driven setlist</h3><p>Turn Arrangement markers into ordered songs and sections with optional automation tags.</p></article>
-        <article class="card"><span class="card-number">02 · SAFETY</span><h3>Guarded transport</h3><p>Previous and Next require a deliberate hold. Jump and quantization feedback wait for confirmation from Live.</p></article>
-        <article class="card"><span class="card-number">03 · LYRICS</span><h3>Synchronized words</h3><p>Create, time, edit and display authorized LRC or plain text inside local show profiles.</p></article>
-        <article class="card"><span class="card-number">04 · FEEDBACK</span><h3>Current and next cues</h3><p>See song, section, loop progress, timecode, bar/beat, BPM and click state at a glance.</p></article>
-        <article class="card"><span class="card-number">05 · SHOW DATA</span><h3>Profiles and export</h3><p>Separate shows by profile, preserve local ordering and lyrics, and export the visible tracklist as CSV.</p></article>
-        <article class="card"><span class="card-number">06 · NETWORK</span><h3>Local browser access</h3><p>Open the controller or read-only Performance view from a trusted laptop, tablet or phone on the LAN.</p></article>
+        <article class="card"><span class="card-number" data-site-i18n="feature1Label">01 · STRUCTURE</span><h3 data-site-i18n="feature1Title">Locator-driven setlist</h3><p data-site-i18n="feature1Body">Turn Arrangement markers into ordered songs and sections with optional automation tags.</p></article>
+        <article class="card"><span class="card-number" data-site-i18n="feature2Label">02 · SAFETY</span><h3 data-site-i18n="feature2Title">Guarded transport</h3><p data-site-i18n="feature2Body">Previous and Next require a deliberate hold. Jump and quantization feedback wait for confirmation from Live.</p></article>
+        <article class="card"><span class="card-number" data-site-i18n="feature3Label">03 · LYRICS</span><h3 data-site-i18n="feature3Title">Synchronized words</h3><p data-site-i18n="feature3Body">Create, time, edit and display authorized LRC or plain text inside local show profiles.</p></article>
+        <article class="card"><span class="card-number" data-site-i18n="feature4Label">04 · FEEDBACK</span><h3 data-site-i18n="feature4Title">Current and next cues</h3><p data-site-i18n="feature4Body">See song, section, loop progress, timecode, bar/beat, BPM and click state at a glance.</p></article>
+        <article class="card"><span class="card-number" data-site-i18n="feature5Label">05 · SHOW DATA</span><h3 data-site-i18n="feature5Title">Profiles and export</h3><p data-site-i18n="feature5Body">Separate shows by profile, preserve local ordering and lyrics, and export the visible tracklist as CSV.</p></article>
+        <article class="card"><span class="card-number" data-site-i18n="feature6Label">06 · NETWORK</span><h3 data-site-i18n="feature6Title">Local browser access</h3><p data-site-i18n="feature6Body">Open Stage Control or the read-only Performance view from a trusted laptop, tablet or phone on the LAN.</p></article>
       </div>
     </section>
 
     <section class="section shell editorial">
-      <img src="./media/stage-editorial.png" width="1200" height="675" loading="lazy" alt="Stage editorial composition using the real Performance and Stage Control interfaces">
-      <div class="editorial-copy"><p class="eyebrow">One session · two views</p><h2>Control the show.<br><span>Not the screen.</span></h2><p>Operate from Stage Control and keep Performance visible for the information that matters in the next second.</p></div>
+      <img src="./media/en/stage-editorial.png" data-site-image="stage-editorial.png" width="1200" height="675" loading="lazy" alt="Stage editorial composition using the real Performance and Stage Control interfaces" data-site-i18n-alt="editorialAlt">
+      <div class="editorial-copy"><p class="eyebrow" data-site-i18n="oneSession">One session · two views</p><h2><span style="color:inherit" data-site-i18n="controlShow">Control the show.</span><br><span data-site-i18n="notScreen">Not the screen.</span></h2><p data-site-i18n="editorialBody">Operate from Stage Control and keep Performance visible for the information that matters in the next second.</p></div>
     </section>
 
     <section id="install" class="section install"><div class="shell install-grid">
-      <div><p class="eyebrow">Release 0.3.0</p><h2>Install, rehearse, verify.</h2><p>Ableton RC Setlist requires Ableton Live 12.4.5+ Suite (Beta) with Extensions support and the external AbletonOSC Control Surface. Windows is validated; macOS remains experimental for this release.</p><div class="actions"><a class="button primary" href="./INSTALL.md">Installation guide</a><a class="button" href="https://github.com/ideoforms/AbletonOSC">AbletonOSC</a></div></div>
-      <ul class="checklist"><li>Install the single Ableton-RC-Setlist-0.3.0.ablx package</li><li>Install AbletonOSC separately from its upstream project</li><li>Start the local server from Extensions in Live</li><li>Open Stage Control or Performance on a trusted LAN</li><li>Rehearse transport, cues, click and lyrics before stage use</li></ul>
+      <div><p class="eyebrow" data-site-i18n="release">Release 0.4.0</p><h2 data-site-i18n="installTitle">Install, rehearse, verify.</h2><p data-site-i18n="installBody">Ableton RC Setlist requires Ableton Live 12.4.5+ Suite (Beta) with Extensions support and the external AbletonOSC Control Surface. Windows is validated; macOS remains experimental for this release.</p><div class="actions"><a id="installGuide" class="button primary" href="./INSTALL.md" data-site-i18n="installGuide">Installation guide</a><a class="button" href="https://github.com/ideoforms/AbletonOSC">AbletonOSC</a></div></div>
+      <ul class="checklist"><li data-site-i18n="check1">Install the single Ableton-RC-Setlist-0.4.0.ablx package</li><li data-site-i18n="check2">Install AbletonOSC separately from its upstream project</li><li data-site-i18n="check3">Start the local server from Extensions in Live</li><li data-site-i18n="check4">Open Stage Control or Performance on a trusted LAN</li><li data-site-i18n="check5">Rehearse transport, cues, click and lyrics before stage use</li></ul>
     </div></section>
 
   </main>
 
-  <footer><div class="shell"><p><strong>License:</strong> Ableton RC Setlist is source-available under the <a href="https://github.com/ntworm/rc-setlist/blob/main/LICENSE">PolyForm Noncommercial 1.0.0</a> license. Commercial use is not permitted.</p><p>Copyright © 2026 Gabriel Worm.</p><p>Ableton and Ableton Live are trademarks of Ableton AG.</p><p>Ableton RC Setlist is an independent project and is not affiliated with or endorsed by Ableton AG.</p></div></footer>
+  <footer><div class="shell"><p><strong data-site-i18n="license">License:</strong> <span data-site-i18n="licenseBody">Ableton RC Setlist is source-available under the PolyForm Noncommercial 1.0.0 license. Commercial use is not permitted.</span> <a href="https://github.com/ntworm/rc-setlist/blob/main/LICENSE">PolyForm Noncommercial 1.0.0</a></p><p data-site-i18n="copyright">Copyright © 2026 Gabriel Worm.</p><p data-site-i18n="trademark">Ableton and Ableton Live are trademarks of Ableton AG.</p><p data-site-i18n="independence">Ableton RC Setlist is an independent project and is not affiliated with or endorsed by Ableton AG.</p></div></footer>
+  <script src="./site-i18n.js"></script>
 </body>
 </html>

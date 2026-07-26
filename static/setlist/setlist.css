@@ -948,6 +948,12 @@ body {
     gap: 0.35rem;
   }
 
+  .language-select {
+    max-width: 6rem;
+    padding-inline: 0.45rem;
+    font-size: 0.66rem;
+  }
+
   .app-bar .ui-button,
   .tools-menu > summary,
   .status-badge {

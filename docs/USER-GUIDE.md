@@ -3,6 +3,13 @@
 Ableton RC Setlist converts Ableton Live Arrangement locators into a setlist and stage
 display. Read [INSTALL.md](INSTALL.md) before this guide.
 
+## Interface language
+
+The interface starts in English. Use the language menu in the Live panel, Stage
+Control or Performance view to select **English** or **Português (Brasil)**. The
+choice is stored locally. Song names, section names and lyric/chord content are
+show data and are never translated.
+
 ## Locator grammar
 
 A song locator has a title. A section uses `Song > Section`.

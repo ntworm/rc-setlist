@@ -1,4 +1,4 @@
-# Ableton RC Setlist 0.3.0 tester guide
+# Ableton RC Setlist 0.4.0 tester guide
 
 Use only the release-candidate directory supplied by the maintainer. Start with
 `START-HERE.html` and record every result in its PT-BR checklist.
@@ -16,7 +16,7 @@ Use only the release-candidate directory supplied by the maintainer. Start with
 
 1. Verify the SHA-256 listed in `SHA256SUMS.txt`.
 2. Install AbletonOSC from upstream.
-3. Install `Ableton-RC-Setlist-0.3.0.ablx`.
+3. Install `Ableton-RC-Setlist-0.4.0.ablx`.
 4. Open **Extensions > Ableton RC Setlist** and start the server.
 5. Confirm no private path, SDK archive or real song content appears in the kit.
 6. With a fresh extension-data directory, confirm the first Start creates the

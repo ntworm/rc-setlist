@@ -18,14 +18,14 @@ test('landing exposes current metadata, calls to action and legal positioning', 
   const text = await page.locator('body').innerText();
   expect(text).toMatch(/Product truth/i);
   expect(text).toContain('Performance');
-  expect(text).toContain('Stage control');
+  expect(text).toMatch(/Stage Control/i);
   expect(text).toMatch(/From locators\s+to stage/i);
   expect(text).not.toContain('Neon Signal');
   expect(text).not.toContain('Drift');
   expect(text).not.toContain('Synchronized demo text');
 
-  await expect(page.locator('img[src="./media/performance.png"]')).toBeVisible();
-  await expect(page.locator('img[src="./media/stage-control.png"]')).toBeVisible();
+  await expect(page.locator('img[src="./media/en/performance.png"]')).toBeVisible();
+  await expect(page.locator('img[src="./media/en/stage-control.png"]')).toBeVisible();
 });
 
 test('real interfaces expose neutral marketing state', async ({ page }) => {
@@ -113,4 +113,25 @@ test('landing keeps keyboard focus visible and loads no external runtime asset',
 
   const external = requests.filter((url) => !url.startsWith('http://127.0.0.1:4173/'));
   expect(external).toEqual([]);
+});
+
+test('landing switches between English and Portuguese at the canonical URL', async ({ page }) => {
+  await page.goto('/landing/');
+  await expect(page.locator('#languageSelect')).toHaveValue('en');
+
+  await page.locator('#languageSelect').selectOption('pt-BR');
+  await expect(page.locator('html')).toHaveAttribute('lang', 'pt-BR');
+  await expect(page.getByText('Dos localizadores', { exact: true })).toBeVisible();
+  await expect(page.getByText('ao palco.', { exact: true })).toBeVisible();
+  await expect(page.locator('.gallery img').first()).toHaveAttribute('src', /media\/pt-BR\//);
+  await expect(page.locator('#documentation')).toHaveAttribute('href', './pt-BR/README.md');
+
+  await page.reload();
+  await expect(page.locator('#languageSelect')).toHaveValue('pt-BR');
+  await expect(page.locator('html')).toHaveAttribute('lang', 'pt-BR');
+
+  await page.locator('#languageSelect').selectOption('en');
+  await expect(page.getByText('From locators', { exact: true })).toBeVisible();
+  await expect(page.getByText('to stage.', { exact: true })).toBeVisible();
+  await expect(page.locator('.gallery img').first()).toHaveAttribute('src', /media\/en\//);
 });

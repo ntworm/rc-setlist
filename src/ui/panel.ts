@@ -3,19 +3,41 @@ import * as path from 'node:path';
 import { initialize } from '@ableton-extensions/sdk';
 import { startServer, stopServer, isServerRunning, getAuthToken } from '../index.js';
 import { getLanAddresses, pickLanIps } from '../util/helpers.js';
-import { getAutoStart, setAutoStart } from '../preferences.js';
+import { getAutoStart, getUiLocale, setAutoStart, setUiLocale, type UiLocale } from '../preferences.js';
 // __dirname is a global in CommonJS, which is our target format
 
 type ModalContext = ReturnType<typeof initialize>;
+
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+}
+
+function panelText(
+  key: 'actionFailed' | 'assetsFailed',
+  params: Record<string, string>,
+  locale: UiLocale = getUiLocale(),
+): string {
+  const templates = {
+    actionFailed: {
+      en: 'Could not run "{action}": {detail}',
+      'pt-BR': 'Não foi possível executar "{action}": {detail}',
+    },
+    assetsFailed: {
+      en: 'Failed to load panel files: {detail}',
+      'pt-BR': 'Falha ao carregar os arquivos do painel: {detail}',
+    },
+  } as const;
+  return templates[key][locale].replace(/\{(\w+)\}/g, (match, name: string) => params[name] ?? match);
+}
 
 export async function showInfoDialog(
   context: ModalContext,
   message: string,
 ): Promise<void> {
-  const safe = message
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;');
+  const safe = escapeHtml(message);
   const html = `<!DOCTYPE html>
 <html><head><style>
 *,*::before,*::after{box-sizing:border-box}*{margin:0}
@@ -48,6 +70,10 @@ export async function showPanelDialog(context: ModalContext): Promise<void> {
       return;
     }
     if (action === 'close' || !action) return;
+    if (action.startsWith('set-language:')) {
+      setUiLocale(action.slice('set-language:'.length));
+      continue;
+    }
     const running = isServerRunning();
     try {
       if (action === 'start' && !running) {
@@ -68,7 +94,7 @@ export async function showPanelDialog(context: ModalContext): Promise<void> {
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       console.error(`[rc-setlist] panel action "${action}" failed: ${msg}`);
-      await showInfoDialog(context, `Could not run "${action}": ${msg}`);
+      await showInfoDialog(context, panelText('actionFailed', { action, detail: msg }));
     }
   }
 }
@@ -84,7 +110,9 @@ async function renderPanelDialog(context: ModalContext): Promise<string> {
   try {
     html = await fs.readFile(path.join(panelDir, 'index.html'), 'utf8');
     const qrJs = await fs.readFile(path.join(panelDir, 'qrcode.js'), 'utf8');
+    const i18nJs = await fs.readFile(path.join(__dirname, 'static/shared/i18n.js'), 'utf8');
 
+    html = html.replace('<script src="../shared/i18n.js"></script>', `<script>${i18nJs}</script>`);
     html = html.replace('<script src="qrcode.js"></script>', `<script>${qrJs}</script>`);
 
     const injection = `
@@ -94,12 +122,14 @@ async function renderPanelDialog(context: ModalContext): Promise<string> {
         window.INITIAL_PRIMARY_IP = "${primaryIp}";
         window.INITIAL_AUTO_START = ${getAutoStart()};
         window.INITIAL_TOKEN = "${getAuthToken()}";
+        window.INITIAL_LOCALE = ${JSON.stringify(getUiLocale())};
       </script>
     `;
     html = html.replace('<body>', `<body>${injection}`);
   } catch (err) {
     console.error('[rc-setlist] Error loading panel assets:', err);
-    html = `<!DOCTYPE html><html><body style="background:#1c1c1e;color:#fff;padding:20px;font-family:sans-serif"><h3>Failed to load panel files: ${err}</h3></body></html>`;
+    const message = escapeHtml(panelText('assetsFailed', { detail: String(err) }));
+    html = `<!DOCTYPE html><html lang="${getUiLocale()}"><body style="background:#1c1c1e;color:#fff;padding:20px;font-family:sans-serif"><h3>${message}</h3></body></html>`;
   }
 
   return await context.ui.showModalDialog(`data:text/html,${encodeURIComponent(html)}`, 760, 600);
@@ -119,6 +149,6 @@ export function registerPanelCommand(context: ReturnType<typeof initialize>): vo
     'Scene',
   ] as const;
   for (const scope of SCOPES) {
-    void context.ui.registerContextMenuAction(scope, 'Ableton RC Setlist: Panel', 'abletonSetlistBridge.panel');
+    void context.ui.registerContextMenuAction(scope, 'Ableton RC Setlist', 'abletonSetlistBridge.panel');
   }
 }

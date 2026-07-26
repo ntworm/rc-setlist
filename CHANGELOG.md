@@ -2,6 +2,33 @@
 
 All notable public changes to Ableton RC Setlist are recorded here.
 
+## [0.4.0] - 2026-07-26
+
+### Added
+
+- English and Brazilian Portuguese interfaces in a single `.ablx`, with English
+  as the default language and a persistent local language selector.
+- Bilingual GitHub Pages landing page at the existing canonical URL.
+- Complete PT-BR installation, user, troubleshooting and FAQ documentation.
+- English and PT-BR release checklists and installation-kit navigation.
+- Matching English/PT-BR product screenshots generated from the real interfaces.
+
+### Changed
+
+- The Live panel, Stage Control and Performance views share one translation
+  contract while leaving song, section, lyric and chord content untouched.
+- Public landing artwork now uses locale-specific 16:9 images without cropping
+  or stretching.
+- The installation kit now contains one installer and separate `en/` and
+  `pt-BR/` documentation folders.
+
+### Security
+
+- Language preferences remain local; no account, telemetry or external service
+  was added.
+- The public snapshot continues to exclude owner-only media, SDK/CLI archives,
+  tokens, certificates, local profiles and real show content.
+
 ## [0.3.0] - 2026-07-26
 
 ### Added

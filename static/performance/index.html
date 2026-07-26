@@ -11,70 +11,77 @@
 <body class="performance-page">
   <div class="stage-shell">
     <header class="stage-topbar">
-      <div class="stage-brand" aria-label="Ableton RC Setlist Performance">
+      <div class="stage-brand" aria-label="Ableton RC Setlist Performance" data-i18n-aria-label="performance.brandAria">
         <span class="stage-brand-mark">SB</span>
-        <span class="stage-brand-copy"><strong>Ableton RC Setlist</strong><small>Performance</small></span>
+        <span class="stage-brand-copy"><strong>Ableton RC Setlist</strong><small data-i18n="performance.name">Performance</small></span>
       </div>
       <div class="stage-tools">
+        <label class="language-control">
+          <span class="sr-only" data-i18n="common.language">Language</span>
+          <select id="languageSelect" class="language-select" aria-label="Language" data-i18n-aria-label="common.language">
+            <option value="en">English</option>
+            <option value="pt-BR">Português (Brasil)</option>
+          </select>
+        </label>
         <div id="statusOverlay" class="stage-status" aria-live="polite">
           <span id="statusDot" class="status-dot"></span>
-          <span id="statusText">OFFLINE</span>
+          <span id="statusText" data-i18n="status.offline">OFFLINE</span>
         </div>
-        <button id="fullscreenButton" class="ui-button fullscreen-button" type="button" aria-pressed="false">Full screen</button>
+        <button id="fullscreenButton" class="ui-button fullscreen-button" type="button" aria-pressed="false" data-i18n="fullscreen.enter">Full screen</button>
       </div>
     </header>
 
     <main class="stage-grid">
-      <section class="left-stage-column" aria-label="Current show state">
+      <section class="left-stage-column" aria-label="Current show state" data-i18n-aria-label="performance.currentStateAria">
         <div class="now-playing">
           <article id="songCard" class="display-card active-song">
             <div class="card-main">
-              <span class="card-label">Current song</span>
+              <span class="card-label" data-i18n="performance.currentSong">Current song</span>
               <span id="songTitle" class="card-value">&mdash;</span>
               <div id="songBadges" class="perf-badges"></div>
             </div>
             <div class="card-footer">
-              <span>Next</span>
+              <span data-i18n="performance.next">Next</span>
               <strong id="nextSong">&mdash;</strong>
             </div>
           </article>
 
           <article id="sectionCard" class="display-card active-section">
             <div class="card-main">
-              <span class="card-label">Active section</span>
+              <span class="card-label" data-i18n="performance.activeSection">Active section</span>
               <span id="sectionName" class="card-value">&mdash;</span>
               <div id="sectionBadges" class="perf-badges"></div>
               <div id="perfLoopIter" class="loop-iteration">↻ LOOP: 1/4</div>
             </div>
             <div class="card-footer">
-              <span>Next</span>
+              <span data-i18n="performance.next">Next</span>
               <strong id="nextSection">&mdash;</strong>
             </div>
           </article>
         </div>
 
-        <div class="performance-footer" aria-label="Show telemetry">
+        <div class="performance-footer" aria-label="Show telemetry" data-i18n-aria-label="performance.telemetryAria">
           <div class="telemetry-card timecode-card">
-            <span class="card-label">Timecode</span>
+            <span class="card-label" data-i18n="performance.timecode">Timecode</span>
             <span id="timecode" class="timecode-display">0:00:00</span>
             <span id="songTimecode" class="song-timecode">Song: 0:00:00</span>
           </div>
           <div class="telemetry-card bar-card">
-            <span class="card-label">Bar / beat</span>
+            <span class="card-label" data-i18n="performance.barBeat">Bar / beat</span>
             <span id="barcode" class="timecode-display">1.1.1</span>
           </div>
           <div class="telemetry-card stats-card" id="clickCard">
-            <span class="card-label">BPM & click</span>
+            <span class="card-label" data-i18n="performance.bpmClick">BPM & click</span>
             <span id="bpm" class="bpm-display">120.0</span>
             <span id="clickState" class="click-state">Click OFF</span>
           </div>
         </div>
       </section>
 
-      <aside id="lyricsCard" class="display-card lyrics-card" aria-label="Synchronized lyrics">
-        <span class="card-label">Lyrics / chords</span>
+      <aside id="lyricsCard" class="display-card lyrics-card" aria-label="Synchronized lyrics" data-i18n-aria-label="performance.lyricsAria">
+        <span class="card-label" data-i18n="performance.lyricsTitle">Lyrics / chords</span>
         <div id="lyricsContainer" class="lyrics-container">
-          <div class="lyrics-empty">No lyrics loaded for this song.</div>
+          <div class="lyrics-empty" data-i18n="performance.noLyrics">No lyrics loaded for this song.</div>
         </div>
       </aside>
     </main>
@@ -83,14 +90,15 @@
   <div id="networkErrorOverlay" class="network-overlay" role="status" aria-live="polite">
     <div class="network-alert-box">
       <span class="network-icon" aria-hidden="true">⌁</span>
-      <h2>Reconnecting</h2>
-      <p>The display lost its connection to the Bridge. The last valid state remains visible while reconnection is attempted.</p>
+      <h2 data-i18n="status.reconnecting">Reconnecting</h2>
+      <p data-i18n="status.performanceLost">The display lost its connection to the Bridge. The last valid state remains visible while reconnection is attempted.</p>
     </div>
   </div>
 
   <div id="stageNotice" class="ui-notice" role="status" aria-live="polite" hidden></div>
 
   <script src="../shared/lyrics-timing.js"></script>
+  <script src="../shared/i18n.js"></script>
   <script src="../shared/stage-runtime.js"></script>
   <script src="./performance.js"></script>
 </body>

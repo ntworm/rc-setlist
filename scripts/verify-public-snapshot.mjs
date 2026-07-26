@@ -36,6 +36,7 @@ const allowedContentRulePaths = new Map([
   ])],
   ['stale-product-name', new Set([
     'docs/TROUBLESHOOTING.md',
+    'docs/pt-BR/TROUBLESHOOTING.md',
     'tests/release-package.test.mjs',
     'tests/release-surface.test.mjs',
   ])],

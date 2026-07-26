@@ -1,34 +1,49 @@
-Ableton RC Setlist 0.3.0 — PUBLIC RELEASE
-====================================
+ABLETON RC SETLIST 0.4.0 — INSTALLATION KIT / KIT DE INSTALAÇÃO
+==============================================================
 
-COMECE AQUI
-------------
-Abra START-HERE.html no navegador. Depois siga INSTALL.md.
+START HERE / COMECE AQUI
+------------------------
+Open START-HERE.html in a browser and choose English or Português (Brasil).
+Abra START-HERE.html no navegador e escolha English ou Português (Brasil).
 
-ARQUIVO PRINCIPAL
------------------
-Ableton-RC-Setlist-0.3.0.ablx
+MAIN FILE / ARQUIVO PRINCIPAL
+-----------------------------
+Ableton-RC-Setlist-0.4.0.ablx
 
-REQUISITOS
-----------
+REQUIREMENTS / REQUISITOS
+-------------------------
+- Ableton Live 12.4.5+ Suite Beta with Extensions support.
 - Ableton Live 12.4.5+ Suite Beta com suporte a Extensions.
-- AbletonOSC instalado separadamente a partir do projeto oficial:
+- AbletonOSC installed separately from the official project:
   https://github.com/ideoforms/AbletonOSC
-- Uma rede local confiável (trusted local network / LAN) para usar outro
-  computador, tablet ou celular.
+- A trusted local network / LAN for another computer, tablet or phone.
+- Uma rede local confiável / LAN para outro computador, tablet ou celular.
 
-SEGURANÇA
----------
-Não exponha a porta 4444 à internet. Não publique o endereço completo do
-controller: ele contém um token local. O aviso de certificado autoassinado é
-esperado; aceite somente o endereço mostrado pelo painel do Ableton RC Setlist.
-
-ESTADO DESTE PACOTE
+LANGUAGES / IDIOMAS
 -------------------
-Este é um candidato de lançamento. Execute TEST-CHECKLIST.md antes de publicar.
-Windows é a plataforma validada. macOS continua experimental nesta versão.
+One .ablx contains English and Brazilian Portuguese. English is the default.
+Um único .ablx contém inglês e português do Brasil. Inglês é o idioma padrão.
 
-LICENÇA
--------
-O Ableton RC Setlist usa a PolyForm Noncommercial License 1.0.0. Uso comercial não é
-permitido. Consulte a pasta LEGAL.
+SECURITY / SEGURANÇA
+--------------------
+Do not expose port 4444 to the public internet or publish the full controller
+URL: it contains a local token. Accept the self-signed certificate only for the
+address shown by the Ableton RC Setlist panel on a trusted LAN.
+
+Não exponha a porta 4444 à internet nem publique a URL completa de controle:
+ela contém um token local. Aceite o certificado autoassinado somente para o
+endereço mostrado pelo painel em uma LAN confiável.
+
+VALIDATION / VALIDAÇÃO
+----------------------
+Run the checklist in en/ or pt-BR/ before stage use. Windows is the validated
+release path; macOS remains experimental.
+
+Execute o checklist em en/ ou pt-BR/ antes do uso no palco. Windows é o caminho
+validado; macOS continua experimental.
+
+LICENSE / LICENÇA
+-----------------
+PolyForm Noncommercial 1.0.0. Commercial use is not permitted.
+PolyForm Noncommercial 1.0.0. Uso comercial não é permitido.
+See / Consulte LEGAL/.

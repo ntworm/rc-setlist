@@ -4,7 +4,9 @@ import * as path from 'node:path';
 import * as fs from 'node:fs';
 import { tmpdir } from 'node:os';
 import { setExtensionContext, clearExtensionContext } from '../src/context.ts';
-import { getAutoStart, setAutoStart } from '../src/preferences.ts';
+import * as preferences from '../src/preferences.ts';
+
+const { getAutoStart, setAutoStart } = preferences;
 
 test('Preferences: auto-start read/write with SDK context', () => {
   const testStorageDir = path.join(tmpdir(), 'setlist-pref-test-' + Math.random().toString(36).substring(7));
@@ -90,6 +92,36 @@ test('Preferences: auto-start resolves fallback dirs without double-append', () 
 
     try {
       fs.rmSync(tempFallbackDir, { recursive: true, force: true });
+    } catch {}
+  }
+});
+
+test('Preferences: UI locale persists only supported languages in SDK storage', () => {
+  assert.strictEqual(typeof preferences.getUiLocale, 'function', 'getUiLocale must be exported');
+  assert.strictEqual(typeof preferences.setUiLocale, 'function', 'setUiLocale must be exported');
+  const { getUiLocale, setUiLocale } = preferences;
+  const testStorageDir = path.join(tmpdir(), 'setlist-locale-test-' + Math.random().toString(36).substring(7));
+  fs.mkdirSync(testStorageDir, { recursive: true });
+  setExtensionContext({
+    environment: {
+      storageDirectory: testStorageDir,
+    },
+  });
+
+  try {
+    assert.strictEqual(getUiLocale(), 'en');
+    assert.strictEqual(setUiLocale('pt-BR'), true);
+    assert.strictEqual(getUiLocale(), 'pt-BR');
+    assert.strictEqual(fs.readFileSync(path.join(testStorageDir, 'ui-locale'), 'utf8').trim(), 'pt-BR');
+
+    assert.strictEqual(setUiLocale('fr'), false);
+    assert.strictEqual(getUiLocale(), 'pt-BR');
+    assert.strictEqual(setUiLocale('en'), true);
+    assert.strictEqual(getUiLocale(), 'en');
+  } finally {
+    clearExtensionContext();
+    try {
+      fs.rmSync(testStorageDir, { recursive: true, force: true });
     } catch {}
   }
 });

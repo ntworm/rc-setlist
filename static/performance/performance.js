@@ -10,6 +10,10 @@ function escapeHtml(unsafe) {
     .replace(/'/g, "&#039;");
 }
 
+const i18n = RcSetlistI18n;
+const t = (key, params) => i18n.t(key, params);
+i18n.bindSelector(document.getElementById('languageSelect'));
+
 let ws;
 const port = window.location.port || '4444';
 const statusDot = document.getElementById('statusDot');
@@ -46,10 +50,10 @@ function showConnectionFailure() {
   const overlay = document.getElementById('networkErrorOverlay');
   document.body.classList.toggle('connection-stale', hasState);
   document.body.classList.toggle('connection-empty', !hasState);
-  overlay.querySelector('h2').textContent = hasState ? 'Reconnecting' : 'Bridge unavailable';
+  overlay.querySelector('h2').textContent = t(hasState ? 'status.reconnecting' : 'status.bridgeUnavailable');
   overlay.querySelector('p').textContent = hasState
-    ? 'The display lost its connection to the Bridge. The last valid state remains visible while reconnection is attempted.'
-    : 'No show state has been received. Confirm that the Bridge is running in Ableton Live and this device is on the same network.';
+    ? t('status.performanceLost')
+    : t('status.noState');
   overlay.classList.add('visible');
 }
 
@@ -62,7 +66,7 @@ function connect() {
   ws.onopen = () => {
     console.log('[WS] connected');
     statusDot.className = 'status-dot connected';
-    statusText.textContent = 'CONNECTED';
+    statusText.textContent = t('status.connectedUpper');
     document.body.classList.remove('connection-stale');
     document.body.classList.remove('connection-empty');
     document.getElementById('networkErrorOverlay').classList.remove('visible');
@@ -77,13 +81,13 @@ function connect() {
   ws.onerror = (event) => {
     console.error('[WS] error:', event);
     statusDot.className = 'status-dot error';
-    statusText.textContent = 'WS ERROR';
+    statusText.textContent = t('status.wsErrorUpper');
   };
 
   ws.onclose = (event) => {
     console.log('[WS] closed:', event.code, event.reason || '(no reason)');
     statusDot.className = 'status-dot';
-    statusText.textContent = lastState ? 'RECONNECTING' : 'OFFLINE';
+    statusText.textContent = t(lastState ? 'status.reconnectingUpper' : 'status.offline');
     showConnectionFailure();
     setTimeout(connect, 3000);
   };
@@ -142,7 +146,7 @@ function displayLyrics(song, lines, format) {
 
   if (!lines || lines.length === 0) {
     lyricsCard.style.display = 'none';
-    lyricsContainer.innerHTML = '<div style="text-align: center; color: var(--text-muted); margin-top: 3rem; font-size: 1.1rem; font-style: italic;">No lyrics loaded for this song.</div>';
+    lyricsContainer.innerHTML = `<div style="text-align: center; color: var(--text-muted); margin-top: 3rem; font-size: 1.1rem; font-style: italic;">${escapeHtml(t('performance.noLyrics'))}</div>`;
     return;
   }
 
@@ -188,8 +192,8 @@ function updateUINonTimeSensitive(state) {
   const currentSong = state.songs[state.activeSongIndex];
   const nextSongObj = state.songs[state.activeSongIndex + 1];
 
-  songTitle.textContent = currentSong ? currentSong.title : 'NONE';
-  nextSong.textContent = nextSongObj ? nextSongObj.title : 'END OF SET';
+  songTitle.textContent = currentSong ? currentSong.title : t('common.none').toUpperCase();
+  nextSong.textContent = nextSongObj ? nextSongObj.title : t('performance.endSet');
 
   // Find current and next section
   const currentSection = currentSong ? currentSong.sections[state.activeSectionIndex] : null;
@@ -213,14 +217,14 @@ function updateUINonTimeSensitive(state) {
     }
   }
 
-  sectionName.textContent = currentSection ? currentSection.name : 'NONE';
+  sectionName.textContent = currentSection ? currentSection.name : t('common.none').toUpperCase();
   
   if (nextIsCurrent && nextSectionObj) {
-    nextSection.textContent = `${nextSectionObj.name} (Repeat)`;
+    nextSection.textContent = t('next.repeat', { name: nextSectionObj.name });
   } else {
     nextSection.textContent = nextSectionObj
       ? `${nextSectionObj.name}${nextSectionObj.loopCount !== null ? ' [L]' : ''}`
-      : 'END';
+      : t('performance.end');
   }
 
   // Render Song Badges
@@ -260,7 +264,9 @@ function tick() {
     const songTimecodeEl = document.getElementById('songTimecode');
     if (songTimecodeEl) {
       if (activeSong) {
-        songTimecodeEl.textContent = `Song: ${formatBeatsAsTime(songElapsedBeats, lastState.tempo)}`;
+        songTimecodeEl.textContent = t('performance.songTime', {
+          time: formatBeatsAsTime(songElapsedBeats, lastState.tempo),
+        });
         songTimecodeEl.style.display = 'inline-block';
       } else {
         songTimecodeEl.style.display = 'none';
@@ -293,10 +299,10 @@ function tick() {
 
     // Update Metronome Click Card state
     if (lastState.metronome) {
-      clickState.textContent = 'Click ON';
+      clickState.textContent = t('performance.clickOn');
       clickState.style.color = 'var(--success)';
     } else {
-      clickState.textContent = 'Click OFF';
+      clickState.textContent = t('performance.clickOff');
       clickState.style.color = 'var(--text-muted)';
     }
 
@@ -334,5 +340,15 @@ function tick() {
 }
 requestAnimationFrame(tick);
 
-globalThis.performanceStageRuntime = StageRuntime.mount();
+i18n.subscribe(() => {
+  if (lastState) updateUINonTimeSensitive(lastState);
+  displayLyrics(currentLyrics.song, currentLyrics.lines, currentLyrics.format);
+  if (document.getElementById('networkErrorOverlay').classList.contains('visible')) {
+    showConnectionFailure();
+  } else if (ws?.readyState === WebSocket.OPEN) {
+    statusText.textContent = t('status.connectedUpper');
+  }
+});
+
+globalThis.performanceStageRuntime = StageRuntime.mount({ i18n });
 connect();
