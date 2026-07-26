@@ -46,6 +46,8 @@
     "docs:check": "node scripts/check-doc-links.mjs",
     "notices": "node scripts/generate-third-party-notices.mjs",
     "notices:check": "node scripts/generate-third-party-notices.mjs --check",
+    "media:render": "node scripts/render-media-kit.mjs",
+    "media:check": "node scripts/render-media-kit.mjs --check",
     "start": "npm run build && npx --no-install extensions-cli run",
     "package:release": "npm run build:prod && npx --no-install extensions-cli package -i dist/static",
     "package:kit": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/package-release-candidate.ps1"

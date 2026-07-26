@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <style>
+    * { box-sizing: border-box; }
+    html, body { margin: 0; background: #050506; color: #f5f1e8; font-family: Inter, Arial, sans-serif; }
+    .artboard { position: relative; overflow: hidden; background: #0b0b0d; isolation: isolate; }
+    .artboard::before { content: ""; position: absolute; inset: 0; z-index: -1; background: radial-gradient(circle at 82% 5%, rgba(255,107,26,.25), transparent 40%); }
+    .landscape { width: 1200px; height: 627px; }
+    .square { width: 1200px; height: 1200px; }
+    .discord { width: 1200px; height: 675px; }
+    .eyebrow { color: #ff9a52; font: 800 16px/1.2 Consolas, monospace; letter-spacing: .14em; text-transform: uppercase; }
+    .mark { display: inline-grid; place-items: center; width: 52px; height: 52px; border-radius: 12px; background: #ff6b1a; color: #160b05; font-weight: 950; }
+    .brand { display: flex; align-items: center; gap: 14px; font-size: 23px; font-weight: 900; }
+    h1 { margin: 24px 0 14px; font-size: 70px; line-height: .91; letter-spacing: -.065em; }
+    h1 span, .accent { color: #ff6b1a; }
+    .sub { max-width: 560px; color: #cbc6be; font-size: 22px; line-height: 1.35; }
+    .meta { color: #ffb07d; font: 800 14px/1.2 Consolas, monospace; letter-spacing: .11em; text-transform: uppercase; }
+    .product-copy { position: absolute; left: 58px; top: 54px; width: 500px; }
+    .capture { position: absolute; overflow: hidden; border: 1px solid #3a3c44; border-radius: 14px; background: #08090b; box-shadow: 0 28px 70px rgba(0,0,0,.55); }
+    .capture img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: top left; }
+    .product-landscape .performance { right: -25px; top: 78px; width: 620px; height: 349px; transform: rotate(1.5deg); }
+    .product-landscape .operator { right: 90px; bottom: 42px; width: 530px; height: 298px; transform: rotate(-1deg); }
+    .product-landscape .meta { position: absolute; left: 58px; bottom: 50px; }
+    .product-square { padding: 62px; }
+    .product-square h1 { max-width: 880px; font-size: 94px; }
+    .product-square .sub { max-width: 860px; font-size: 27px; }
+    .product-square .performance { left: 70px; bottom: 86px; width: 800px; height: 450px; transform: rotate(-1deg); }
+    .product-square .operator { right: 56px; bottom: 54px; width: 650px; height: 366px; transform: rotate(1.4deg); }
+    .product-square .meta { position: absolute; left: 70px; bottom: 30px; }
+    .product-discord .product-copy { width: 470px; top: 48px; }
+    .product-discord h1 { font-size: 66px; }
+    .product-discord .performance { right: -35px; top: 62px; width: 690px; height: 388px; transform: rotate(1.2deg); }
+    .product-discord .operator { right: 70px; bottom: 44px; width: 570px; height: 321px; transform: rotate(-1deg); }
+    .product-discord .meta { position: absolute; left: 58px; bottom: 52px; }
+    .workflow-board { padding: 52px 58px; }
+    .workflow-board h1 { max-width: 850px; font-size: 68px; }
+    .workflow-grid { display: grid; grid-template-columns: 1fr 54px 1fr 54px 1fr; align-items: stretch; margin-top: 35px; }
+    .workflow-card { min-height: 250px; padding: 25px; border: 1px solid #393a42; border-radius: 14px; background: #111217; }
+    .workflow-card strong { display: block; margin: 13px 0 16px; font-size: 28px; }
+    .workflow-card pre, .workflow-card p { margin: 0; color: #c7c3bc; font-family: Consolas, monospace; line-height: 1.55; white-space: pre-wrap; }
+    .workflow-card pre { font-size: 15px; }
+    .workflow-card p { font-size: 18px; }
+    .arrow { display: grid; place-items: center; color: #ff6b1a; font-size: 34px; font-weight: 950; }
+    .workflow-board .meta { position: absolute; right: 58px; top: 60px; }
+    .editorial-board { padding: 52px 58px; background: linear-gradient(155deg, #08090b 20%, #211108 72%, #09090b); }
+    .editorial-board h1 { max-width: 420px; font-size: 58px; }
+    .editorial-board .sub { max-width: 400px; font-size: 20px; }
+    .editorial-board .performance { right: 25px; top: 72px; width: 650px; height: 366px; transform: perspective(900px) rotateY(-8deg) rotateZ(1.8deg); }
+    .editorial-board .operator { right: 35px; bottom: 36px; width: 560px; height: 315px; transform: perspective(900px) rotateY(-6deg) rotateZ(-1.4deg); }
+    .editorial-board .floor { position: absolute; right: -100px; bottom: -150px; width: 900px; height: 300px; background: radial-gradient(ellipse, rgba(255,107,26,.17), transparent 65%); transform: rotate(-8deg); }
+    .editorial-board .meta { position: absolute; left: 58px; bottom: 52px; }
+  </style>
+</head>
+<body>
+  <section id="product-truth-linkedin" class="artboard landscape product-landscape">
+    <div class="product-copy">
+      <div class="brand"><span class="mark">RC</span>Ableton RC Setlist</div>
+      <h1>Seu Live Set.<br><span>Pronto para o palco.</span></h1>
+      <p class="sub">Setlist, transporte protegido e letras sincronizadas — direto dos locators do Arrangement.</p>
+    </div>
+    <div class="capture performance"><img src="{{PERFORMANCE_DATA_URI}}" alt=""></div>
+    <div class="capture operator"><img src="{{STAGE_CONTROL_DATA_URI}}" alt=""></div>
+    <div class="meta">PRODUCT TRUTH · v0.3.0 · LOCAL FIRST</div>
+  </section>
+
+  <section id="product-truth-square" class="artboard square product-square">
+    <div class="brand"><span class="mark">RC</span>Ableton RC Setlist</div>
+    <h1>Seu Live Set.<br><span>Pronto para o palco.</span></h1>
+    <p class="sub">A interface real: músicas e seções, controles seguros, estado do show e letras sincronizadas.</p>
+    <div class="capture performance"><img src="{{PERFORMANCE_DATA_URI}}" alt=""></div>
+    <div class="capture operator"><img src="{{STAGE_CONTROL_DATA_URI}}" alt=""></div>
+    <div class="meta">ONE .ABLX · NO ACCOUNT · NO TELEMETRY · v0.3.0</div>
+  </section>
+
+  <section id="product-truth-discord" class="artboard discord product-discord">
+    <div class="product-copy">
+      <div class="brand"><span class="mark">RC</span>Ableton RC Setlist</div>
+      <h1>Do locator<br><span>ao palco.</span></h1>
+      <p class="sub">Controle o set, acompanhe cada seção e mantenha letras e cifras visíveis no navegador.</p>
+    </div>
+    <div class="capture performance"><img src="{{PERFORMANCE_DATA_URI}}" alt=""></div>
+    <div class="capture operator"><img src="{{STAGE_CONTROL_DATA_URI}}" alt=""></div>
+    <div class="meta">UTILITY · WORKFLOW · ABLETON LIVE EXTENSION</div>
+  </section>
+
+  <section id="workflow" class="artboard discord workflow-board">
+    <div class="eyebrow">Workflow · três passos</div>
+    <h1>Do locator<br><span>à performance.</span></h1>
+    <div class="meta">ABLETON RC SETLIST · v0.3.0</div>
+    <div class="workflow-grid">
+      <article class="workflow-card"><div class="eyebrow">01 · Live</div><strong>Marque o Arrangement</strong><pre>MÚSICA 03 [bpm 124] [click]
+MÚSICA 03 &gt; REFRÃO [loop 2x]</pre></article>
+      <div class="arrow">→</div>
+      <article class="workflow-card"><div class="eyebrow">02 · Operar</div><strong>Conduza o set</strong><p>Músicas, seções, quantização, click, atualização e transporte protegido.</p></article>
+      <div class="arrow">→</div>
+      <article class="workflow-card"><div class="eyebrow">03 · Palco</div><strong>Leia o show</strong><p>Estado atual e próximo, timecode, compasso, BPM/click e letras sincronizadas.</p></article>
+    </div>
+  </section>
+
+  <section id="stage-editorial" class="artboard discord editorial-board">
+    <div class="eyebrow">Stage editorial</div>
+    <h1>Controle o show.<br><span>Não a tela.</span></h1>
+    <p class="sub">A mesma sessão, duas interfaces reais: uma para operar e outra para manter o palco legível.</p>
+    <div class="floor"></div>
+    <div class="capture performance"><img src="{{PERFORMANCE_DATA_URI}}" alt=""></div>
+    <div class="capture operator"><img src="{{STAGE_CONTROL_DATA_URI}}" alt=""></div>
+    <div class="meta">LOCAL FIRST · BROWSER BASED · NO CLOUD</div>
+  </section>
+</body>
+</html>

@@ -32,6 +32,8 @@ docs/apple-touch-icon.png
 docs/favicon-32.png
 docs/favicon.svg
 docs/index.html
+docs/media/
+docs/media-kit.html
 docs/og-image.png
 docs/og-image.svg
 examples/
@@ -48,6 +50,8 @@ scripts/generate-third-party-notices.mjs
 scripts/install-ableton-deps.mjs
 scripts/package-release-candidate.ps1
 scripts/render-site-assets.mjs
+scripts/media-kit-template.html
+scripts/render-media-kit.mjs
 scripts/verify-ableton-deps.mjs
 scripts/verify-production-bundle.mjs
 scripts/verify-public-snapshot.mjs

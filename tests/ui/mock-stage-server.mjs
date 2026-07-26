@@ -83,6 +83,58 @@ const lyricsMessage = {
   ],
 };
 
+const marketingSongNames = ['MÚSICA 01', 'MÚSICA 02', 'MÚSICA 03', 'MÚSICA 04', 'MÚSICA 05'];
+const marketingSongs = marketingSongNames.map((title, songIndex) => ({
+  title,
+  time: songIndex * 128,
+  sections: [
+    { name: 'INTRO', time: songIndex * 128, loopCount: null, autoStop: false, autoNext: false, bpm: null },
+    { name: 'VERSO', time: songIndex * 128 + 24, loopCount: null, autoStop: false, autoNext: false, bpm: null },
+    {
+      name: 'REFRÃO',
+      time: songIndex * 128 + 56,
+      loopCount: songIndex === 2 ? 2 : null,
+      autoStop: false,
+      autoNext: false,
+      bpm: songIndex === 2 ? 124 : null,
+    },
+    { name: 'PONTE', time: songIndex * 128 + 88, loopCount: null, autoStop: false, autoNext: true, bpm: null },
+  ],
+  loopCount: null,
+  autoStop: songIndex === 4,
+  autoNext: songIndex !== 4,
+  bpm: songIndex === 2 ? 124 : 120,
+}));
+
+const marketingStateMessage = {
+  type: 'state',
+  state: {
+    songs: marketingSongs,
+    activeSongIndex: 2,
+    activeSectionIndex: 2,
+    currentSongTime: 318.5,
+    tempo: 124,
+    isPlaying: true,
+    signatureNumerator: 4,
+    metronome: true,
+    clipTriggerQuantization: 4,
+  },
+};
+
+const marketingLyricsMessage = {
+  type: 'lyrics',
+  song: marketingSongNames[2],
+  format: 'lrc',
+  lines: [
+    { time: 0, text: 'Linha anterior da letra ou cifra' },
+    { time: 15, text: 'A próxima frase acompanha o transporte' },
+    { time: 30, text: 'O destaque avança no tempo da música' },
+    { time: 45, text: 'Contexto legível para ensaio e palco' },
+    { time: 60, text: 'Linha atual sincronizada com a música' },
+    { time: 75, text: 'Próxima linha preparada para leitura' },
+  ],
+};
+
 function readJsonBody(request) {
   return new Promise((resolve, reject) => {
     const chunks = [];
@@ -169,10 +221,14 @@ webSockets.on('connection', (socket) => {
 
   const message = scenario === 'no-song'
     ? { ...stateMessage, state: { ...stateMessage.state, songs: [], activeSongIndex: -1, activeSectionIndex: -1 } }
-    : stateMessage;
+    : scenario === 'marketing'
+      ? marketingStateMessage
+      : stateMessage;
   const lyrics = scenario === 'no-lyrics' || scenario === 'no-song'
     ? { ...lyricsMessage, lines: [], format: 'none' }
-    : lyricsMessage;
+    : scenario === 'marketing'
+      ? marketingLyricsMessage
+      : lyricsMessage;
 
   socket.send(JSON.stringify({ type: 'auth_status', isController: scenario !== 'read-only' }));
   socket.send(JSON.stringify(message));

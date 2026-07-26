@@ -71,6 +71,23 @@ test('public docs contain the required user, contributor, privacy and security p
   }
 });
 
+test('public landing media kit contains the approved truthful product assets', () => {
+  const required = [
+    'docs/media-kit.html',
+    'docs/media/product-truth-linkedin.png',
+    'docs/media/product-truth-square.png',
+    'docs/media/product-truth-discord.png',
+    'docs/media/performance.png',
+    'docs/media/stage-control.png',
+    'docs/media/workflow.png',
+    'docs/media/stage-editorial.png',
+  ];
+
+  for (const path of required) {
+    assert.ok(existsSync(new URL(`../${path}`, import.meta.url)), `${path} must exist`);
+  }
+});
+
 test('the public CI gate includes browser and release-surface regressions', () => {
   const packageJson = JSON.parse(read('package.json'));
   const publicGate = packageJson.scripts['ci:public'];

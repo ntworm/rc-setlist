@@ -52,7 +52,11 @@ notice does not mean the old state is newly confirmed.
 ## Performance view
 
 Open `/performance` for a high-contrast, mostly read-only display. It shows the
-active/next song and section, BPM, drift, time, beat/click state and lyric context.
+active/next song and section, timecode, bar/beat, BPM/click state and lyric context.
+
+The Stage Control view can show a conditional tempo-difference warning when a
+locator declares an expected BPM and Live reports another value. The warning is
+hidden during normal operation and is not part of the Performance display.
 
 Press `F` or use the fullscreen button. When supported, Screen Wake Lock is held
 while stage fullscreen is active and released when you leave it.
