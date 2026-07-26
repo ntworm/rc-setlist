@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#08090b">
+  <title>Ableton RC Setlist &mdash; Performance</title>
+  <link rel="stylesheet" href="../shared/ui-system.css">
+  <link rel="stylesheet" href="./performance.css">
+</head>
+<body class="performance-page">
+  <div class="stage-shell">
+    <header class="stage-topbar">
+      <div class="stage-brand" aria-label="Ableton RC Setlist Performance">
+        <span class="stage-brand-mark">SB</span>
+        <span class="stage-brand-copy"><strong>Ableton RC Setlist</strong><small>Performance</small></span>
+      </div>
+      <div class="stage-tools">
+        <div id="statusOverlay" class="stage-status" aria-live="polite">
+          <span id="statusDot" class="status-dot"></span>
+          <span id="statusText">OFFLINE</span>
+        </div>
+        <button id="fullscreenButton" class="ui-button fullscreen-button" type="button" aria-pressed="false">Tela cheia</button>
+      </div>
+    </header>
+
+    <main class="stage-grid">
+      <section class="left-stage-column" aria-label="Estado atual do show">
+        <div class="now-playing">
+          <article id="songCard" class="display-card active-song">
+            <div class="card-main">
+              <span class="card-label">Música atual</span>
+              <span id="songTitle" class="card-value">&mdash;</span>
+              <div id="songBadges" class="perf-badges"></div>
+            </div>
+            <div class="card-footer">
+              <span>Próxima</span>
+              <strong id="nextSong">&mdash;</strong>
+            </div>
+          </article>
+
+          <article id="sectionCard" class="display-card active-section">
+            <div class="card-main">
+              <span class="card-label">Seção ativa</span>
+              <span id="sectionName" class="card-value">&mdash;</span>
+              <div id="sectionBadges" class="perf-badges"></div>
+              <div id="perfLoopIter" class="loop-iteration">↻ VOLTA: 1/4</div>
+            </div>
+            <div class="card-footer">
+              <span>Próxima</span>
+              <strong id="nextSection">&mdash;</strong>
+            </div>
+          </article>
+        </div>
+
+        <div class="performance-footer" aria-label="Telemetria do show">
+          <div class="telemetry-card timecode-card">
+            <span class="card-label">Timecode</span>
+            <span id="timecode" class="timecode-display">0:00:00</span>
+            <span id="songTimecode" class="song-timecode">Música: 0:00:00</span>
+          </div>
+          <div class="telemetry-card bar-card">
+            <span class="card-label">Compasso</span>
+            <span id="barcode" class="timecode-display">1.1.1</span>
+          </div>
+          <div class="telemetry-card stats-card" id="clickCard">
+            <span class="card-label">BPM & click</span>
+            <span id="bpm" class="bpm-display">120.0</span>
+            <span id="clickState" class="click-state">Click OFF</span>
+          </div>
+        </div>
+      </section>
+
+      <aside id="lyricsCard" class="display-card lyrics-card" aria-label="Letra sincronizada">
+        <span class="card-label">Letra / cifras</span>
+        <div id="lyricsContainer" class="lyrics-container">
+          <div class="lyrics-empty">Nenhuma letra carregada para esta música.</div>
+        </div>
+      </aside>
+    </main>
+  </div>
+
+  <div id="networkErrorOverlay" class="network-overlay" role="status" aria-live="polite">
+    <div class="network-alert-box">
+      <span class="network-icon" aria-hidden="true">⌁</span>
+      <h2>Reconectando</h2>
+      <p>O visor perdeu o sinal do Bridge. A última informação válida continuará na tela enquanto tentamos reconectar.</p>
+    </div>
+  </div>
+
+  <div id="stageNotice" class="ui-notice" role="status" aria-live="polite" hidden></div>
+
+  <script src="../shared/lyrics-timing.js"></script>
+  <script src="../shared/stage-runtime.js"></script>
+  <script src="./performance.js"></script>
+</body>
+</html>

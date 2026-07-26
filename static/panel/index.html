@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Ableton RC Setlist &mdash; Painel de Controle</title>
+  <style>
+    :root {
+      --bg: #1c1c1e;
+      --card-bg: rgba(255, 255, 255, 0.03);
+      --border: rgba(255, 255, 255, 0.08);
+      --text: #f4f4f7;
+      --text-muted: #8e8e9f;
+      --accent: hsl(32, 100%, 55%);
+      --success: hsl(145, 100%, 45%);
+      --danger: hsl(355, 100%, 60%);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-size: 13px;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    h2 {
+      font-size: 16px;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 4px;
+    }
+
+    .subtitle {
+      font-size: 11px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    /* QR Codes Grid */
+    .qr-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      flex: 1;
+      min-height: 0;
+    }
+
+    .qr-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      text-align: center;
+    }
+
+    .qr-label {
+      font-weight: 700;
+      font-size: 12px;
+      color: #fff;
+    }
+
+    .qr-frame {
+      background: #fff;
+      padding: 8px;
+      border-radius: 8px;
+      width: 144px;
+      height: 144px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .qr-url {
+      font-family: monospace;
+      font-size: 10px;
+      color: var(--text-muted);
+      word-break: break-all;
+      max-width: 100%;
+      user-select: all;
+    }
+
+    .qr-actions {
+      display: flex;
+      gap: 8px;
+      width: 100%;
+    }
+
+    .btn {
+      background: rgba(255, 255, 255, 0.05);
+      color: #fff;
+      border: 1px solid var(--border);
+      padding: 6px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 11px;
+      font-weight: 600;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex: 1;
+      height: 28px;
+      transition: all 0.2s;
+    }
+
+    .btn:hover {
+      background: rgba(255, 255, 255, 0.1);
+      border-color: rgba(255, 255, 255, 0.2);
+    }
+
+    .btn.primary {
+      background: var(--accent);
+      color: #121214;
+      border-color: transparent;
+    }
+
+    .btn.primary:hover {
+      background: hsl(32, 100%, 60%);
+    }
+
+    .btn.danger {
+      background: var(--danger);
+      border-color: transparent;
+    }
+
+    /* Connection status bar */
+    .status-bar {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .status-indicator {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      background-color: var(--danger);
+      border-radius: 50%;
+    }
+
+    .status-dot.active {
+      background-color: var(--success);
+      box-shadow: 0 0 8px var(--success);
+    }
+
+    .status-text {
+      font-weight: 700;
+      font-size: 11px;
+    }
+
+    .status-text.active {
+      color: var(--success);
+    }
+
+    .status-text.inactive {
+      color: var(--danger);
+    }
+
+    /* Footer Buttons */
+    .footer {
+      display: flex;
+      gap: 8px;
+      border-top: 1px solid var(--border);
+      padding-top: 12px;
+    }
+  </style>
+</head>
+<body>
+  <div>
+    <span class="subtitle">Ableton RC Setlist</span>
+    <h2>Acesso ao Painel Web</h2>
+  </div>
+
+  <!-- Connection Status Bar -->
+  <div class="status-bar">
+    <div class="status-indicator">
+      <div id="statusDot" class="status-dot"></div>
+      <span id="statusText" class="status-text inactive">Servidor Parado</span>
+    </div>
+    <div id="infoPort" style="font-size: 11px; color: var(--text-muted)">Porta: &mdash;</div>
+  </div>
+
+  <!-- QR Codes Grid -->
+  <div class="qr-grid" id="qrGrid">
+    <!-- Setlist Controller -->
+    <div class="qr-card">
+      <span class="qr-label">Painel do Setlist</span>
+      <div class="qr-frame" id="qrSetlist"></div>
+      <span class="qr-url" id="urlSetlist">http://localhost:4444/setlist</span>
+      <div class="qr-actions">
+        <a class="btn" id="openSetlist" href="#" target="_blank">Abrir no PC</a>
+      </div>
+    </div>
+
+    <!-- Stage View -->
+    <div class="qr-card">
+      <span class="qr-label">Tela do Palco</span>
+      <div class="qr-frame" id="qrStage"></div>
+      <span class="qr-url" id="urlStage">http://localhost:4444/performance</span>
+      <div class="qr-actions">
+        <a class="btn" id="openStage" href="#" target="_blank">Abrir no PC</a>
+      </div>
+    </div>
+  </div>
+
+  <div id="placeholderText" style="display: none; text-align: center; color: var(--text-muted); padding: 40px;">
+    Inicie o servidor para gerar os links e QR Codes de acesso.
+  </div>
+
+  <!-- Footer Actions -->
+  <div class="footer">
+    <button class="btn primary" id="btnStart" onclick="sendAction('start')">Iniciar</button>
+    <button class="btn" id="btnStop" onclick="sendAction('stop')">Parar</button>
+    <button class="btn" id="btnRestart" onclick="sendAction('restart')">Reiniciar</button>
+    <button class="btn" style="flex: 0; min-width: 80px;" onclick="sendAction('close')">Fechar</button>
+  </div>
+
+  <!-- Auto-start toggle (persisted in .setlist/auto-start) -->
+  <div style="display: flex; align-items: center; justify-content: space-between; padding: 12px 4px 4px 4px; border-top: 1px solid var(--border); margin-top: 12px;">
+    <div>
+      <div style="font-weight: 600; font-size: 11px;">Iniciar automaticamente ao ligar o Live</div>
+      <div style="font-size: 10px; color: var(--text-muted); margin-top: 2px;" id="autoStartHint">Evita conflito com outras extensões RC. Toggle persiste entre sessões.</div>
+    </div>
+    <button class="btn" id="btnToggleAutoStart" style="flex: 0; min-width: 80px;" onclick="sendAction('toggle-auto-start')">Desligado</button>
+  </div>
+
+  <script src="qrcode.js"></script>
+  <script>
+    // These window variables are injected by panel.ts when rendering the template
+    const isRunning = window.INITIAL_IS_RUNNING || false;
+    const port = window.INITIAL_PORT || 4444;
+    const primaryIp = window.INITIAL_PRIMARY_IP || '127.0.0.1';
+    let autoStart = !!window.INITIAL_AUTO_START;
+
+    const statusDot = document.getElementById('statusDot');
+    const statusText = document.getElementById('statusText');
+    const infoPort = document.getElementById('infoPort');
+    const qrGrid = document.getElementById('qrGrid');
+    const placeholderText = document.getElementById('placeholderText');
+
+    const urlSetlist = document.getElementById('urlSetlist');
+    const urlStage = document.getElementById('urlStage');
+    const openSetlist = document.getElementById('openSetlist');
+    const openStage = document.getElementById('openStage');
+
+    const btnStart = document.getElementById('btnStart');
+    const btnStop = document.getElementById('btnStop');
+    const btnRestart = document.getElementById('btnRestart');
+    const btnToggleAutoStart = document.getElementById('btnToggleAutoStart');
+
+    function renderAutoStart() {
+      if (!btnToggleAutoStart) return;
+      btnToggleAutoStart.textContent = autoStart ? 'Ligado' : 'Desligado';
+      btnToggleAutoStart.style.background = autoStart ? 'var(--accent)' : '';
+      btnToggleAutoStart.style.color = autoStart ? '#121214' : '';
+    }
+    renderAutoStart();
+
+    function sendAction(action) {
+      const msg = { method: 'close_and_send', params: [action] };
+      if (window.webkit?.messageHandlers?.live) {
+        window.webkit.messageHandlers.live.postMessage(msg);
+      } else if (window.chrome?.webview) {
+        window.chrome.webview.postMessage(msg);
+      }
+    }
+
+    // Update UI based on server status
+    if (isRunning) {
+      statusDot.className = 'status-dot active';
+      statusText.className = 'status-text active';
+      statusText.textContent = 'Servidor Ativo';
+      infoPort.textContent = `Porta: ${port} (HTTPS)`;
+      qrGrid.style.display = 'grid';
+      placeholderText.style.display = 'none';
+
+      btnStart.disabled = true;
+      btnStop.disabled = false;
+      btnRestart.disabled = false;
+
+      // URLs
+      const setlistUrl = `https://${primaryIp}:${port}/setlist?token=${window.INITIAL_TOKEN || ''}`;
+      const stageUrl = `https://${primaryIp}:${port}/performance`;
+
+      urlSetlist.textContent = setlistUrl;
+      urlStage.textContent = stageUrl;
+      openSetlist.href = setlistUrl;
+      openStage.href = stageUrl;
+
+      // Draw QR Codes
+      new QRCode(document.getElementById('qrSetlist'), {
+        text: setlistUrl,
+        width: 128,
+        height: 128,
+        colorDark: '#000000',
+        colorLight: '#ffffff',
+        correctLevel: QRCode.CorrectLevel.M
+      });
+
+      new QRCode(document.getElementById('qrStage'), {
+        text: stageUrl,
+        width: 128,
+        height: 128,
+        colorDark: '#000000',
+        colorLight: '#ffffff',
+        correctLevel: QRCode.CorrectLevel.M
+      });
+    } else {
+      statusDot.className = 'status-dot';
+      statusText.className = 'status-text inactive';
+      statusText.textContent = 'Servidor Parado';
+      infoPort.textContent = 'Porta: \u2014';
+      qrGrid.style.display = 'none';
+      placeholderText.style.display = 'block';
+
+      btnStart.disabled = false;
+      btnStop.disabled = true;
+      btnRestart.disabled = true;
+    }
+  </script>
+</body>
+</html>

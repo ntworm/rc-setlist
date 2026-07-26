@@ -1,0 +1,24 @@
+node_modules/
+playwright-report/
+test-results/
+dist/
+.setlist/
+.env
+*.tsbuildinfo
+
+# Ableton developer archives are licensed separately and must stay local.
+vendor/*.tgz
+
+# Generated owner-facing candidates are verified but never committed.
+release-candidates/
+
+# extension packages — committed to releases/ only as references, never at root or in worktrees
+/*.ablx
+/releases/*.ablx
+/releases/*-Kit-Completo.zip
+
+# locally-kept scratch spikes (commit history holds the original)
+scratch/
+scratch_test.ts
+.agent-context/generated/
+.worktrees/

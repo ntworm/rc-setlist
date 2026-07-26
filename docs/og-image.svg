@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630" role="img" aria-label="Ableton RC Setlist — your setlist on stage">
+  <defs>
+    <radialGradient id="glow" cx="82%" cy="5%" r="70%">
+      <stop offset="0" stop-color="#ff6b1a" stop-opacity=".32"/>
+      <stop offset="1" stop-color="#ff6b1a" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="1200" height="630" fill="#0b0b0d"/>
+  <rect width="1200" height="630" fill="url(#glow)"/>
+  <rect x="70" y="62" width="58" height="58" rx="13" fill="#ff6b1a"/>
+  <text x="99" y="101" font-family="ui-sans-serif, system-ui, sans-serif" font-size="22" font-weight="900" fill="#160b05" text-anchor="middle">RC</text>
+  <text x="148" y="101" font-family="ui-sans-serif, system-ui, sans-serif" font-size="25" font-weight="800" fill="#f5f1e8">Ableton RC Setlist</text>
+  <text x="70" y="250" font-family="ui-sans-serif, system-ui, sans-serif" font-size="86" font-weight="900" fill="#f5f1e8" letter-spacing="-4">your setlist</text>
+  <text x="70" y="345" font-family="ui-sans-serif, system-ui, sans-serif" font-size="86" font-weight="900" fill="#ff6b1a" letter-spacing="-4">on stage.</text>
+  <text x="70" y="425" font-family="ui-sans-serif, system-ui, sans-serif" font-size="26" fill="#c8c2ba">Arrangement locators · synchronized lyrics · guarded transport</text>
+  <line x1="70" y1="510" x2="1130" y2="510" stroke="#343238"/>
+  <text x="70" y="555" font-family="ui-monospace, Consolas, monospace" font-size="16" font-weight="700" fill="#ffb07d" letter-spacing="2">LOCAL FIRST · ONE .ABLX · NO TELEMETRY · v0.3.0</text>
+</svg>

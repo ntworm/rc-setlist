@@ -1,0 +1,29 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "rootDir": ".",
+    "paths": {
+      "@ableton-extensions/sdk": ["./src/ableton-sdk-public.d.ts"]
+    }
+  },
+  "include": [
+    "src/automation/**/*.ts",
+    "src/commands/**/*.ts",
+    "src/core/**/*.ts",
+    "src/integration/**/*.ts",
+    "src/osc/**/*.ts",
+    "src/runtime/**/*.ts",
+    "src/types.ts",
+    "src/util/**/*.ts",
+    "tests/mocks/**/*.ts"
+  ],
+  "exclude": [
+    "src/context.ts",
+    "src/extension.ts",
+    "src/preferences.ts",
+    "src/server-lifecycle.ts",
+    "src/server/**/*.ts",
+    "src/sync/sdk-sync.ts",
+    "src/ui/panel.ts"
+  ]
+}

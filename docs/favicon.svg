@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" role="img" aria-label="Ableton RC Setlist">
+  <rect width="64" height="64" rx="14" fill="#0b0b0d"/>
+  <rect x="3" y="3" width="58" height="58" rx="11" fill="#ff6b1a"/>
+  <text x="32" y="39" font-family="ui-sans-serif, system-ui, sans-serif" font-size="20" font-weight="900" fill="#160b05" text-anchor="middle" letter-spacing="-1.5">RC</text>
+</svg>
