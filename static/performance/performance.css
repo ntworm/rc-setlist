@@ -1,0 +1,804 @@
+:root {
+  --accent: var(--ui-accent);
+  --accent-glow: var(--ui-accent-soft);
+  --success: var(--ui-success);
+  --success-glow: var(--ui-success-soft);
+  --danger: var(--ui-danger);
+  --text: var(--ui-text);
+  --text-muted: var(--ui-muted);
+}
+
+html,
+body {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+.performance-page {
+  background:
+    radial-gradient(circle at 82% 12%, rgba(255, 154, 47, 0.08), transparent 32rem),
+    linear-gradient(145deg, #08090b 0%, #0b0c10 62%, #09090c 100%);
+}
+
+.stage-shell {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: clamp(0.55rem, 1.2vw, 1rem);
+  width: 100%;
+  height: 100vh;
+  height: 100dvh;
+  min-width: 0;
+  min-height: 0;
+  padding:
+    max(0.65rem, env(safe-area-inset-top))
+    max(0.65rem, env(safe-area-inset-right))
+    max(0.65rem, env(safe-area-inset-bottom))
+    max(0.65rem, env(safe-area-inset-left));
+}
+
+.stage-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-width: 0;
+  min-height: 44px;
+  gap: 0.75rem;
+}
+
+.stage-brand,
+.stage-tools,
+.stage-status {
+  display: flex;
+  align-items: center;
+}
+
+.stage-brand {
+  min-width: 0;
+  gap: 0.65rem;
+}
+
+.stage-brand-mark {
+  display: grid;
+  width: 2rem;
+  height: 2rem;
+  place-items: center;
+  flex: 0 0 auto;
+  border: 1px solid rgba(255, 154, 47, 0.5);
+  border-radius: 9px;
+  background: var(--ui-accent-soft);
+  color: var(--ui-accent-strong);
+  font-size: 0.72rem;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+}
+
+.stage-brand-copy {
+  display: grid;
+  min-width: 0;
+}
+
+.stage-brand-copy strong {
+  overflow: hidden;
+  color: var(--ui-text);
+  font-size: 0.82rem;
+  line-height: 1.1;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.stage-brand-copy small {
+  color: var(--ui-muted);
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.stage-tools {
+  justify-content: flex-end;
+  flex: 0 0 auto;
+  gap: 0.55rem;
+}
+
+.stage-status {
+  min-height: 34px;
+  gap: 0.45rem;
+  border: 1px solid var(--ui-border);
+  border-radius: 999px;
+  background: rgba(17, 18, 22, 0.88);
+  color: var(--ui-muted);
+  padding: 0.35rem 0.65rem;
+  font-size: 0.68rem;
+  font-weight: 850;
+  letter-spacing: 0.08em;
+}
+
+.status-dot {
+  width: 0.52rem;
+  height: 0.52rem;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  background: var(--ui-danger);
+}
+
+.status-dot.connected {
+  background: var(--ui-success);
+  box-shadow: 0 0 0 4px var(--ui-success-soft);
+}
+
+.status-dot.error {
+  background: var(--ui-danger);
+  box-shadow: 0 0 0 4px var(--ui-danger-soft);
+}
+
+.fullscreen-button {
+  min-height: 44px;
+  padding-block: 0.42rem;
+  font-size: 0.72rem;
+}
+
+.stage-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  min-width: 0;
+  min-height: 0;
+  gap: clamp(0.65rem, 1.25vw, 1.1rem);
+  overflow: hidden;
+}
+
+.connection-stale .stage-grid {
+  opacity: 0.82;
+  filter: saturate(0.72);
+}
+
+.performance-page.has-lyrics .stage-grid {
+  grid-template-columns: minmax(0, 0.92fr) minmax(0, 1.08fr);
+}
+
+.left-stage-column {
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) clamp(7.25rem, 19vh, 9.5rem);
+  min-width: 0;
+  min-height: 0;
+  gap: clamp(0.65rem, 1.25vw, 1.1rem);
+}
+
+.now-playing {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  min-width: 0;
+  min-height: 0;
+  gap: clamp(0.65rem, 1.25vw, 1.1rem);
+}
+
+.display-card,
+.telemetry-card {
+  min-width: 0;
+  min-height: 0;
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius-lg);
+  background: linear-gradient(145deg, rgba(24, 25, 30, 0.96), rgba(14, 15, 18, 0.98));
+  box-shadow: var(--ui-shadow);
+}
+
+.display-card {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding: clamp(0.85rem, 1.8vw, 1.45rem);
+}
+
+.active-song {
+  border-top-color: rgba(66, 216, 137, 0.68);
+}
+
+.active-section,
+.lyrics-card {
+  border-top-color: rgba(255, 154, 47, 0.72);
+}
+
+.card-main {
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.card-label {
+  display: block;
+  color: var(--ui-muted);
+  font-size: clamp(0.62rem, 0.9vw, 0.76rem);
+  font-weight: 850;
+  letter-spacing: 0.13em;
+  line-height: 1.1;
+  text-transform: uppercase;
+}
+
+.card-value {
+  display: -webkit-box;
+  max-width: 100%;
+  margin-top: clamp(0.4rem, 1vh, 0.72rem);
+  overflow: hidden;
+  color: var(--ui-text);
+  font-size: clamp(1.55rem, 3.15vw, 3.45rem);
+  font-weight: 900;
+  letter-spacing: -0.035em;
+  line-height: 0.98;
+  overflow-wrap: anywhere;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+}
+
+.active-section .card-value {
+  color: #ffd4a1;
+}
+
+.card-footer {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 0.65rem;
+  min-width: 0;
+  margin-top: auto;
+  border-top: 1px solid var(--ui-border);
+  padding-top: clamp(0.5rem, 1.2vh, 0.75rem);
+  color: var(--ui-muted);
+  font-size: clamp(0.68rem, 1vw, 0.82rem);
+  font-weight: 750;
+}
+
+.card-footer strong {
+  overflow: hidden;
+  color: var(--ui-text-soft);
+  text-align: right;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.perf-badges {
+  display: flex;
+  min-width: 0;
+  margin-top: clamp(0.45rem, 1vh, 0.72rem);
+  gap: 0.35rem;
+  overflow: hidden;
+}
+
+.perf-badge {
+  display: inline-flex;
+  align-items: center;
+  min-width: 0;
+  border: 1px solid var(--ui-border);
+  border-radius: 7px;
+  padding: 0.24rem 0.42rem;
+  font-size: clamp(0.57rem, 0.85vw, 0.68rem);
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  line-height: 1;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.loop-badge {
+  border-color: rgba(189, 145, 255, 0.35);
+  background: var(--ui-loop-soft);
+  color: var(--ui-loop);
+}
+
+.stop-badge {
+  border-color: rgba(255, 93, 108, 0.35);
+  background: var(--ui-danger-soft);
+  color: #ff929c;
+}
+
+.next-badge {
+  border-color: rgba(115, 169, 255, 0.35);
+  background: var(--ui-info-soft);
+  color: #a7c7ff;
+}
+
+.bpm-badge {
+  border-color: rgba(66, 216, 137, 0.32);
+  background: var(--ui-success-soft);
+  color: #82eab0;
+}
+
+.loop-iteration {
+  display: none;
+  width: fit-content;
+  margin-top: 0.5rem;
+  border: 1px solid rgba(255, 154, 47, 0.5);
+  border-radius: 7px;
+  background: var(--ui-accent-soft);
+  color: var(--ui-accent-strong);
+  padding: 0.3rem 0.5rem;
+  font-size: 0.7rem;
+  font-weight: 900;
+}
+
+.performance-footer {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 0.9fr) minmax(0, 0.8fr);
+  min-width: 0;
+  min-height: 0;
+  gap: clamp(0.55rem, 1vw, 0.85rem);
+}
+
+.telemetry-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  padding: 0.75rem;
+}
+
+.telemetry-card .card-label {
+  position: absolute;
+  top: 0.65rem;
+  left: 0.75rem;
+}
+
+.timecode-display,
+.bpm-display {
+  max-width: 100%;
+  overflow: hidden;
+  font-family: var(--ui-mono);
+  font-variant-numeric: tabular-nums;
+  font-weight: 900;
+  letter-spacing: -0.06em;
+  line-height: 1;
+  text-overflow: clip;
+  white-space: nowrap;
+}
+
+.timecode-display {
+  font-size: clamp(1.85rem, 4vw, 4.4rem);
+}
+
+.bar-card .timecode-display {
+  color: var(--ui-accent-strong);
+  font-size: clamp(1.6rem, 3.4vw, 3.5rem);
+}
+
+.bpm-display {
+  font-size: clamp(1.55rem, 3.2vw, 3.2rem);
+}
+
+.song-timecode {
+  display: none;
+  margin-top: 0.22rem;
+  color: var(--ui-accent-strong);
+  font-family: var(--ui-mono);
+  font-size: clamp(0.58rem, 0.9vw, 0.72rem);
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.click-state {
+  margin-top: 0.22rem;
+  color: var(--ui-muted);
+  font-size: clamp(0.58rem, 0.9vw, 0.7rem);
+  font-weight: 900;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+
+.lyrics-card {
+  display: none;
+  overflow: hidden;
+}
+
+.lyrics-container {
+  flex: 1;
+  min-height: 0;
+  margin-top: 0.45rem;
+  overflow: hidden auto;
+  padding-block: 22%;
+  scrollbar-width: none;
+  scroll-behavior: smooth;
+  mask-image: linear-gradient(to bottom, transparent, black 14%, black 86%, transparent);
+  -webkit-mask-image: linear-gradient(to bottom, transparent, black 14%, black 86%, transparent);
+}
+
+.lyrics-container::-webkit-scrollbar {
+  display: none;
+}
+
+.lyric-line {
+  padding: clamp(0.3rem, 0.75vh, 0.55rem) 0;
+  color: #676971;
+  font-size: clamp(0.96rem, 1.8vw, 1.45rem);
+  font-weight: 650;
+  line-height: 1.25;
+  opacity: 0.62;
+  overflow-wrap: anywhere;
+  transition: color 160ms ease, font-size 160ms ease, opacity 160ms ease;
+}
+
+.lyric-line.active {
+  color: var(--ui-accent-strong);
+  font-size: clamp(1.35rem, 2.7vw, 2.45rem);
+  font-weight: 900;
+  opacity: 1;
+}
+
+.lyrics-empty {
+  display: grid;
+  height: 100%;
+  place-items: center;
+  color: var(--ui-muted);
+  padding: 1rem;
+  text-align: center;
+}
+
+.network-overlay {
+  position: fixed;
+  z-index: 40;
+  inset: auto 1rem 1rem auto;
+  width: min(26rem, calc(100vw - 2rem));
+  pointer-events: none;
+  opacity: 0;
+  transform: translateY(0.5rem);
+  transition: opacity 160ms ease, transform 160ms ease;
+}
+
+.network-overlay.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.network-alert-box {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.15rem 0.75rem;
+  border: 1px solid rgba(255, 154, 47, 0.38);
+  border-radius: var(--ui-radius);
+  background: rgba(29, 23, 16, 0.96);
+  box-shadow: var(--ui-shadow);
+  padding: 0.85rem 1rem;
+}
+
+.network-icon {
+  grid-row: 1 / 3;
+  align-self: center;
+  color: var(--ui-accent);
+  font-size: 1.6rem;
+}
+
+.network-alert-box h2,
+.network-alert-box p {
+  margin: 0;
+}
+
+.network-alert-box h2 {
+  font-size: 0.86rem;
+}
+
+.network-alert-box p {
+  color: var(--ui-text-soft);
+  font-size: 0.7rem;
+  line-height: 1.35;
+}
+
+.beat-flash-accent {
+  animation: flash-accent 180ms ease-out;
+}
+
+.beat-flash-normal {
+  animation: flash-normal 180ms ease-out;
+}
+
+@keyframes flash-accent {
+  0% { border-color: var(--ui-success); background: var(--ui-success-soft); }
+  100% { border-color: var(--ui-border); }
+}
+
+@keyframes flash-normal {
+  0% { border-color: rgba(255, 255, 255, 0.72); background: rgba(255, 255, 255, 0.08); }
+  100% { border-color: var(--ui-border); }
+}
+
+@media (min-width: 901px) and (max-width: 1400px) {
+  .performance-page.has-lyrics .stage-grid {
+    grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
+  }
+
+  .left-stage-column,
+  .now-playing,
+  .performance-footer,
+  .stage-grid {
+    gap: 0.7rem;
+  }
+
+  .display-card {
+    padding: 0.95rem;
+  }
+
+  .card-value {
+    font-size: clamp(1.45rem, 3.1vw, 2.7rem);
+  }
+}
+
+@media (max-width: 600px) and (orientation: portrait) {
+  .stage-shell {
+    gap: 0.45rem;
+    padding:
+      max(0.45rem, env(safe-area-inset-top))
+      max(0.45rem, env(safe-area-inset-right))
+      max(0.45rem, env(safe-area-inset-bottom))
+      max(0.45rem, env(safe-area-inset-left));
+  }
+
+  .stage-brand-copy,
+  .fullscreen-button {
+    font-size: 0;
+  }
+
+  .fullscreen-button::after {
+    content: "Tela cheia";
+    font-size: 0.66rem;
+  }
+
+  .stage-status {
+    min-height: 32px;
+    padding: 0.3rem 0.5rem;
+  }
+
+  .stage-grid,
+  .performance-page.has-lyrics .stage-grid {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: minmax(7.8rem, 22vh) minmax(0, 1fr) 4.65rem;
+    gap: 0.45rem;
+  }
+
+  .performance-page:not(.has-lyrics) .stage-grid {
+    grid-template-rows: minmax(0, 1fr) 4.65rem;
+  }
+
+  .left-stage-column {
+    display: contents;
+  }
+
+  .now-playing {
+    grid-row: 1;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.45rem;
+  }
+
+  .lyrics-card {
+    grid-row: 2;
+  }
+
+  .performance-footer {
+    grid-row: 3;
+    grid-template-columns: minmax(0, 1.25fr) minmax(0, 0.82fr) minmax(0, 0.78fr);
+    gap: 0.4rem;
+  }
+
+  .performance-page:not(.has-lyrics) .performance-footer {
+    grid-row: 2;
+  }
+
+  .display-card {
+    border-radius: 11px;
+    padding: 0.55rem;
+  }
+
+  .card-label {
+    font-size: 0.53rem;
+    letter-spacing: 0.1em;
+  }
+
+  .card-value {
+    margin-top: 0.25rem;
+    font-size: clamp(1rem, 5.3vw, 1.38rem);
+    line-height: 1;
+    -webkit-line-clamp: 2;
+  }
+
+  .card-footer {
+    gap: 0.3rem;
+    padding-top: 0.3rem;
+    font-size: 0.54rem;
+  }
+
+  .perf-badges {
+    margin-top: 0.3rem;
+    gap: 0.2rem;
+  }
+
+  .perf-badge {
+    padding: 0.18rem 0.28rem;
+    font-size: 0.48rem;
+  }
+
+  .loop-iteration {
+    margin-top: 0.25rem;
+    padding: 0.18rem 0.28rem;
+    font-size: 0.5rem;
+  }
+
+  .lyrics-card {
+    padding: 0.65rem 0.75rem;
+  }
+
+  .lyrics-container {
+    padding-block: 18%;
+  }
+
+  .lyric-line {
+    font-size: clamp(0.9rem, 4.2vw, 1.1rem);
+  }
+
+  .lyric-line.active {
+    font-size: clamp(1.2rem, 6vw, 1.55rem);
+  }
+
+  .telemetry-card {
+    border-radius: 10px;
+    padding: 0.35rem;
+  }
+
+  .telemetry-card .card-label {
+    top: 0.35rem;
+    left: 0.42rem;
+  }
+
+  .timecode-display {
+    font-size: clamp(1.18rem, 6.8vw, 1.7rem);
+  }
+
+  .bar-card .timecode-display,
+  .bpm-display {
+    font-size: clamp(1rem, 5.7vw, 1.42rem);
+  }
+
+  .song-timecode,
+  .click-state {
+    font-size: 0.45rem;
+  }
+}
+
+@media (max-height: 500px) and (orientation: landscape) {
+  .stage-shell {
+    gap: 0.35rem;
+    padding:
+      max(0.35rem, env(safe-area-inset-top))
+      max(0.35rem, env(safe-area-inset-right))
+      max(0.35rem, env(safe-area-inset-bottom))
+      max(0.35rem, env(safe-area-inset-left));
+  }
+
+  .stage-topbar {
+    min-height: 34px;
+  }
+
+  .stage-brand-mark {
+    width: 1.7rem;
+    height: 1.7rem;
+  }
+
+  .stage-brand-copy small {
+    display: none;
+  }
+
+  .stage-status {
+    min-height: 30px;
+    padding-block: 0.25rem;
+  }
+
+  .fullscreen-button {
+    min-height: 44px;
+  }
+
+  .stage-grid,
+  .performance-page.has-lyrics .stage-grid {
+    grid-template-columns: minmax(0, 0.88fr) minmax(0, 1.12fr);
+    grid-template-rows: minmax(0, 1fr) 3.8rem;
+    gap: 0.4rem;
+  }
+
+  .left-stage-column {
+    display: contents;
+  }
+
+  .now-playing {
+    grid-column: 1;
+    grid-row: 1;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: repeat(2, minmax(0, 1fr));
+    gap: 0.4rem;
+  }
+
+  .lyrics-card {
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+  .performance-footer {
+    grid-column: 1 / 3;
+    grid-row: 2;
+    grid-template-columns: minmax(0, 1.4fr) repeat(2, minmax(0, 0.8fr));
+    gap: 0.4rem;
+  }
+
+  .performance-page:not(.has-lyrics) .stage-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .performance-page:not(.has-lyrics) .now-playing {
+    grid-column: 1;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-rows: minmax(0, 1fr);
+  }
+
+  .performance-page:not(.has-lyrics) .performance-footer {
+    grid-column: 1;
+  }
+
+  .display-card {
+    border-radius: 10px;
+    padding: 0.45rem 0.55rem;
+  }
+
+  .card-label {
+    font-size: 0.48rem;
+  }
+
+  .card-value {
+    margin-top: 0.18rem;
+    font-size: clamp(0.88rem, 2.8vw, 1.3rem);
+    -webkit-line-clamp: 2;
+  }
+
+  .card-footer {
+    padding-top: 0.22rem;
+    font-size: 0.48rem;
+  }
+
+  .perf-badges {
+    margin-top: 0.2rem;
+  }
+
+  .perf-badge {
+    padding: 0.14rem 0.24rem;
+    font-size: 0.44rem;
+  }
+
+  .lyrics-container {
+    margin-top: 0.2rem;
+    padding-block: 12%;
+  }
+
+  .lyric-line {
+    padding: 0.2rem 0;
+    font-size: clamp(0.76rem, 1.8vw, 1rem);
+  }
+
+  .lyric-line.active {
+    font-size: clamp(1rem, 2.7vw, 1.42rem);
+  }
+
+  .telemetry-card {
+    border-radius: 9px;
+    padding: 0.25rem;
+  }
+
+  .telemetry-card .card-label {
+    top: 0.26rem;
+    left: 0.35rem;
+    font-size: 0.42rem;
+  }
+
+  .timecode-display,
+  .bar-card .timecode-display,
+  .bpm-display {
+    font-size: clamp(1rem, 3.8vw, 1.5rem);
+  }
+
+  .song-timecode,
+  .click-state {
+    font-size: 0.42rem;
+  }
+}

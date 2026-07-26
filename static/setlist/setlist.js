@@ -1,0 +1,1540 @@
+
+
+let ws;
+const port = window.location.port || '4444';
+const statusDot = document.getElementById('statusDot');
+const statusText = document.getElementById('statusText');
+const songListDiv = document.getElementById('songList');
+
+const hudSong = document.getElementById('hudSong');
+const hudSection = document.getElementById('hudSection');
+const hudBpm = document.getElementById('hudBpm');
+const hudDrift = document.getElementById('hudDrift');
+const hudTime = document.getElementById('hudTime');
+const hudBar = document.getElementById('hudBar');
+const btnPrevious = document.getElementById('btnPrevious');
+const btnPlay = document.getElementById('btnPlay');
+const btnStop = document.getElementById('btnStop');
+const btnNext = document.getElementById('btnNext');
+const btnMetronome = document.getElementById('btnMetronome');
+const btnRefresh = document.getElementById('btnRefresh');
+const quantizationSelect = document.getElementById('quantizationSelect');
+const hudLoopIter = document.getElementById('hudLoopIter');
+const hudNextSong = document.getElementById('hudNextSong');
+const hudNextSection = document.getElementById('hudNextSection');
+
+let lastState = null;
+let lastReceivedTime = 0;
+let lastRenderedSongsJson = '';
+let lastJumpTime = 0;
+let lastJumpTarget = { song: -1, section: -1 };
+let draggedSongIdx = null;
+let isLocked = localStorage.getItem('bridge_locked') === 'true';
+let lastFlashBeat = -1;
+let currentLyrics = { song: '', format: 'none', lines: [] };
+let currentLyricsIdx = -1;
+let isController = false;
+let previousHoldController = null;
+let nextHoldController = null;
+
+function showConnectionFailure() {
+  const hasState = Boolean(lastState);
+  const overlay = document.getElementById('networkErrorOverlay');
+  document.body.classList.toggle('connection-stale', hasState);
+  document.body.classList.toggle('connection-empty', !hasState);
+  overlay.querySelector('h2').textContent = hasState ? 'Reconectando' : 'Bridge indisponível';
+  overlay.querySelector('p').textContent = hasState
+    ? 'O painel perdeu o sinal do Bridge. A última informação válida continuará visível enquanto tentamos reconectar.'
+    : 'Nenhum estado do show foi recebido. Confirme que o Bridge está ativo no Ableton e que este dispositivo está na mesma rede.';
+  overlay.classList.add('visible');
+}
+
+// MIDI Mapping State
+let midiAccess = null;
+let midiMappings = Object.assign({
+  'play': null,
+  'stop': null,
+  'next_song': null,
+  'prev_song': null,
+  'next_section': null,
+  'prev_section': null,
+  'toggle_click': null,
+  'toggle_lock': null
+}, JSON.parse(localStorage.getItem('bridge_midi_mappings')) || {});
+let activeMidiMappingKey = null; // Key currently being mapped
+let currentMidiInputId = localStorage.getItem('bridge_midi_input_id') || '';
+
+function updateLockVisuals() {
+  const btn = document.getElementById('btnLock');
+  const icon = document.getElementById('lockIcon');
+  const text = document.getElementById('lockText');
+
+  if (isLocked) {
+    btn.classList.add('btn-locked-active');
+    icon.textContent = '🔒';
+    text.textContent = 'Painel Travado';
+  } else {
+    btn.classList.remove('btn-locked-active');
+    icon.textContent = '🔓';
+    text.textContent = 'Painel Aberto';
+  }
+  updateTransportAvailability();
+}
+
+function toggleLock() {
+  isLocked = !isLocked;
+  localStorage.setItem('bridge_locked', isLocked);
+  updateLockVisuals();
+}
+
+function showLockWarning() {
+  let toast = document.getElementById('lockToast');
+  if (!toast) {
+    toast = document.createElement('div');
+    toast.id = 'lockToast';
+    toast.style.position = 'fixed';
+    toast.style.bottom = '2rem';
+    toast.style.left = '50%';
+    toast.style.transform = 'translateX(-50%)';
+    toast.style.background = 'var(--danger)';
+    toast.style.color = '#fff';
+    toast.style.padding = '0.75rem 1.5rem';
+    toast.style.borderRadius = '8px';
+    toast.style.fontWeight = 'bold';
+    toast.style.fontSize = '0.9rem';
+    toast.style.boxShadow = '0 10px 25px rgba(239, 68, 68, 0.4)';
+    toast.style.zIndex = '99999';
+    toast.style.transition = 'opacity 0.2s ease, transform 0.2s ease';
+    toast.style.opacity = '0';
+    toast.textContent = '🔒 PAINEL TRAVADO. Destrave no topo para realizar esta ação.';
+    document.body.appendChild(toast);
+  }
+
+  toast.style.opacity = '1';
+  toast.style.transform = 'translateX(-50%) translateY(-5px)';
+
+  clearTimeout(toast.timeoutId);
+  toast.timeoutId = setTimeout(() => {
+    toast.style.opacity = '0';
+    toast.style.transform = 'translateX(-50%)';
+  }, 2000);
+}
+
+// Call updates on load
+window.addEventListener('DOMContentLoaded', () => {
+  updateLockVisuals();
+  initMidi();
+  document.querySelectorAll('.modal-overlay').forEach((modal) => {
+    modal.setAttribute('role', 'dialog');
+    modal.setAttribute('aria-modal', 'true');
+    modal.setAttribute('aria-hidden', 'true');
+  });
+});
+
+const modalOpeners = new WeakMap();
+
+function closeManagedModal(modal) {
+  if (!modal || !modal.classList.contains('open')) return;
+  modal.classList.remove('open');
+  modal.setAttribute('aria-hidden', 'true');
+  const opener = modalOpeners.get(modal);
+  modalOpeners.delete(modal);
+  opener?.focus?.();
+}
+
+function toggleManagedModal(modal, onOpen) {
+  if (modal.classList.contains('open')) {
+    closeManagedModal(modal);
+    return;
+  }
+  const opener = document.activeElement;
+  if (opener && opener !== document.body) modalOpeners.set(modal, opener);
+  modal.classList.add('open');
+  modal.setAttribute('aria-hidden', 'false');
+  onOpen?.();
+  const focusTarget = modal.querySelector('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
+  focusTarget?.focus?.();
+}
+
+document.addEventListener('keydown', (event) => {
+  if (event.key !== 'Escape') return;
+  const openModal = document.querySelector('.modal-overlay.open');
+  if (!openModal) return;
+  event.preventDefault();
+  closeManagedModal(openModal);
+});
+
+const midiInputSelect = document.getElementById('midiInputSelect');
+const midiModal = document.getElementById('midiModal');
+
+function toggleMidiModal() {
+  toggleManagedModal(midiModal, () => {
+    renderMidiMappings();
+  });
+}
+
+function closeMidiModal(e) {
+  if (e.target === midiModal) {
+    closeManagedModal(midiModal);
+  }
+}
+
+function initMidi() {
+  if (!navigator.requestMIDIAccess) {
+    midiInputSelect.innerHTML = '<option value="">MIDI não suportado pelo seu navegador</option>';
+    return;
+  }
+
+  navigator.requestMIDIAccess()
+    .then(access => {
+      midiAccess = access;
+      updateMidiDevices();
+      midiAccess.onstatechange = updateMidiDevices;
+    })
+    .catch(err => {
+      console.warn('[MIDI] Acesso MIDI negado:', err);
+      midiInputSelect.innerHTML = '<option value="">Permissão MIDI negada pelo usuário</option>';
+    });
+}
+
+function updateMidiDevices() {
+  if (!midiAccess) return;
+
+  const inputs = Array.from(midiAccess.inputs.values());
+  midiInputSelect.innerHTML = '';
+
+  if (inputs.length === 0) {
+    midiInputSelect.innerHTML = '<option value="">Nenhum dispositivo encontrado</option>';
+    return;
+  }
+
+  inputs.forEach(input => {
+    const option = document.createElement('option');
+    option.value = input.id;
+    option.textContent = input.name;
+    if (input.id === currentMidiInputId) {
+      option.selected = true;
+    }
+    midiInputSelect.appendChild(option);
+  });
+
+  midiInputSelect.onchange = (e) => {
+    currentMidiInputId = e.target.value;
+    localStorage.setItem('bridge_midi_input_id', currentMidiInputId);
+    bindMidiListeners();
+  };
+
+  bindMidiListeners();
+}
+
+function bindMidiListeners() {
+  if (!midiAccess) return;
+
+  // Unbind all inputs first
+  midiAccess.inputs.forEach(input => {
+    input.onmidimessage = null;
+  });
+
+  const selectedInput = midiAccess.inputs.get(currentMidiInputId) || Array.from(midiAccess.inputs.values())[0];
+  if (selectedInput) {
+    currentMidiInputId = selectedInput.id;
+    localStorage.setItem('bridge_midi_input_id', currentMidiInputId);
+    selectedInput.onmidimessage = onMidiMessage;
+  }
+}
+
+function onMidiMessage(event) {
+  const data = event.data;
+  if (!data || data.length < 2) return;
+
+  const status = data[0];
+  const type = status & 0xf0;
+  const channel = (status & 0x0f) + 1;
+  const number = data[1];
+  const value = data.length > 2 ? data[2] : 0;
+
+  // Detect Note On (with velocity > 0) or Control Change (with value > 0)
+  const isNoteOn = (type === 0x90 && value > 0);
+  const isCC = (type === 0xb0 && value > 0);
+
+  if (!isNoteOn && !isCC) return;
+
+  const midiType = isNoteOn ? 'note' : 'cc';
+
+  if (activeMidiMappingKey) {
+    // Map this message
+    midiMappings[activeMidiMappingKey] = {
+      type: midiType,
+      channel: channel,
+      number: number
+    };
+    localStorage.setItem('bridge_midi_mappings', JSON.stringify(midiMappings));
+    activeMidiMappingKey = null;
+    renderMidiMappings();
+    return;
+  }
+
+  // Check if matches any active mapping
+  for (const [actionKey, mapping] of Object.entries(midiMappings)) {
+    if (mapping && mapping.type === midiType && mapping.channel === channel && mapping.number === number) {
+      executeMidiAction(actionKey);
+      break;
+    }
+  }
+}
+
+const actionLabels = {
+  'play': 'Iniciar Reprodução (PLAY)',
+  'stop': 'Parar Reprodução (STOP)',
+  'next_song': 'Ir para Próxima Música',
+  'prev_song': 'Ir para Música Anterior',
+  'next_section': 'Ir para Próxima Seção',
+  'prev_section': 'Voltar para Seção Anterior',
+  'toggle_click': 'Alternar Metrônomo (CLICK)',
+  'toggle_lock': 'Alternar Trava de Segurança'
+};
+
+function renderMidiMappings() {
+  const tbody = document.getElementById('midiMappingTableBody');
+  tbody.innerHTML = '';
+
+  Object.entries(midiMappings).forEach(([key, mapping]) => {
+    const tr = document.createElement('tr');
+    tr.style.borderBottom = '1px dashed rgba(255,255,255,0.05)';
+
+    const tdAction = document.createElement('td');
+    tdAction.style.padding = '0.5rem 0';
+    tdAction.textContent = actionLabels[key] || key;
+
+    const tdMap = document.createElement('td');
+    tdMap.style.padding = '0.5rem 0';
+    if (activeMidiMappingKey === key) {
+      tdMap.innerHTML = '<span style="color: var(--accent); font-weight: bold; animation: pulse 1s infinite;">Aguardando comando...</span>';
+    } else if (mapping) {
+      const typeStr = mapping.type === 'cc' ? 'CC' : 'Nota';
+      tdMap.textContent = `${typeStr} ${mapping.number} (Ch ${mapping.channel})`;
+    } else {
+      tdMap.textContent = 'Não mapeado';
+      tdMap.style.color = 'var(--text-muted)';
+    }
+
+    const tdCtrl = document.createElement('td');
+    tdCtrl.style.padding = '0.5rem 0';
+    tdCtrl.style.textAlign = 'right';
+
+    const btnMap = document.createElement('button');
+    btnMap.textContent = activeMidiMappingKey === key ? 'Cancelar' : 'Mapear';
+    btnMap.style.background = 'rgba(255,255,255,0.05)';
+    btnMap.style.border = '1px solid var(--card-border)';
+    btnMap.style.color = '#fff';
+    btnMap.style.padding = '0.2rem 0.5rem';
+    btnMap.style.borderRadius = '4px';
+    btnMap.style.cursor = 'pointer';
+    btnMap.onclick = () => {
+      if (activeMidiMappingKey === key) {
+        activeMidiMappingKey = null;
+      } else {
+        activeMidiMappingKey = key;
+      }
+      renderMidiMappings();
+    };
+
+    tdCtrl.appendChild(btnMap);
+
+    if (mapping && activeMidiMappingKey !== key) {
+      const btnClear = document.createElement('button');
+      btnClear.textContent = 'Limpar';
+      btnClear.style.background = 'rgba(239, 68, 68, 0.1)';
+      btnClear.style.border = '1px solid rgba(239, 68, 68, 0.3)';
+      btnClear.style.color = 'var(--danger)';
+      btnClear.style.padding = '0.2rem 0.5rem';
+      btnClear.style.borderRadius = '4px';
+      btnClear.style.marginLeft = '0.5rem';
+      btnClear.style.cursor = 'pointer';
+      btnClear.onclick = () => {
+        midiMappings[key] = null;
+        localStorage.setItem('bridge_midi_mappings', JSON.stringify(midiMappings));
+        renderMidiMappings();
+      };
+      tdCtrl.appendChild(btnClear);
+    }
+
+    tr.appendChild(tdAction);
+    tr.appendChild(tdMap);
+    tr.appendChild(tdCtrl);
+    tbody.appendChild(tr);
+  });
+}
+
+function executeMidiAction(action) {
+  if (action === 'play') {
+    sendControl('play');
+  } else if (action === 'stop') {
+    sendControl('stop');
+  } else if (action === 'next_song') {
+    const nextIdx = lastState ? lastState.activeSongIndex + 1 : -1;
+    if (lastState && nextIdx >= 0 && nextIdx < lastState.songs.length) jumpTo(nextIdx, null);
+  } else if (action === 'prev_song') {
+    const prevIdx = lastState ? lastState.activeSongIndex - 1 : -1;
+    if (prevIdx >= 0) jumpTo(prevIdx, null);
+  } else if (action === 'next_section') {
+    navigateAdjacent('next');
+  } else if (action === 'prev_section') {
+    navigateAdjacent('previous');
+  } else if (action === 'toggle_click') {
+    toggleMetronome();
+  } else if (action === 'toggle_lock') {
+    toggleLock();
+  }
+}
+
+function canUseTransport() {
+  return Boolean(isController && ws && ws.readyState === WebSocket.OPEN && lastState && !isLocked);
+}
+
+function navigateAdjacent(direction) {
+  const target = SetlistTransportRuntime.resolveNavigationTarget(lastState, direction);
+  if (target) jumpTo(target.songIndex, target.sectionIndex);
+}
+
+function updateTransportAvailability() {
+  const available = canUseTransport();
+  btnPlay.disabled = !available;
+  btnStop.disabled = !available;
+  btnMetronome.disabled = !available;
+  btnRefresh.disabled = !available;
+  quantizationSelect.disabled = !available;
+  previousHoldController?.update();
+  nextHoldController?.update();
+}
+
+function mountTransportControls() {
+  const shared = {
+    getState: () => lastState,
+    canNavigate: canUseTransport,
+    onNavigate: (target) => jumpTo(target.songIndex, target.sectionIndex),
+  };
+  previousHoldController = SetlistTransportRuntime.mountHoldButton({
+    ...shared,
+    button: btnPrevious,
+    direction: 'previous',
+  });
+  nextHoldController = SetlistTransportRuntime.mountHoldButton({
+    ...shared,
+    button: btnNext,
+    direction: 'next',
+  });
+  btnPlay.addEventListener('click', () => sendControl('play'));
+  btnStop.addEventListener('click', () => sendControl('stop'));
+  updateTransportAvailability();
+}
+
+function connect() {
+  const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+  const urlParams = new URLSearchParams(window.location.search);
+  let token = urlParams.get('token');
+  if (token && token !== 'null' && token !== 'undefined') {
+    localStorage.setItem('setlist_token', token);
+  } else {
+    token = localStorage.getItem('setlist_token') || '';
+  }
+  const url = `${protocol}//${window.location.hostname}:${port}/ws?token=${encodeURIComponent(token)}`;
+  const loggedUrl = url.replace(/token=[^&]+/g, 'token=***');
+  console.log('[WS] connecting to', loggedUrl);
+  ws = new WebSocket(url);
+
+  ws.onopen = () => {
+    console.log('[WS] connected');
+    statusDot.className = 'status-dot connected';
+    statusText.textContent = 'Conectado';
+    document.body.classList.remove('connection-stale');
+    document.body.classList.remove('connection-empty');
+    document.getElementById('networkErrorOverlay').classList.remove('visible');
+
+    // Send handshake
+    ws.send(JSON.stringify({
+      type: 'handshake',
+      clientId: 'browser-setlist-' + Math.random().toString(36).substring(7)
+    }));
+  };
+
+  ws.onerror = (event) => {
+    // WebSocket errors don't carry useful detail in most browsers, but the
+    // event itself being fired tells us the handshake or transport failed.
+    // Surface that in the status text + console so the user can diagnose
+    // without opening DevTools.
+    console.error('[WS] error:', event);
+    statusDot.className = 'status-dot error';
+    statusText.textContent = 'WS erro (F12 console)';
+    appendLog('⚠ WebSocket handshake falhou. Check cert HTTPS / firewall.', 'error');
+  };
+
+  ws.onclose = (event) => {
+    console.log('[WS] closed:', event.code, event.reason || '(no reason)');
+    statusDot.className = 'status-dot';
+    statusText.textContent = lastState ? 'Reconectando' : 'Desconectado';
+    isController = false;
+    previousHoldController?.reset();
+    nextHoldController?.reset();
+    jumpConfirmation.clear();
+    quantizationConfirmation.reset();
+    updateTransportAvailability();
+    showConnectionFailure();
+    if (event.code !== 1000 && event.code !== 1001) {
+      appendLog(`⚠ WS fechado code=${event.code} reason=${event.reason || '(none)'}`, 'warn');
+    }
+    setTimeout(connect, 3000); // Reconnect
+  };
+
+  let lastActiveSongIdx = -2;  // sentinel != any real index → forces fetch on first state
+  let lyricsFetchInFlight = false;
+
+  ws.onmessage = (e) => {
+    try {
+      const payload = JSON.parse(e.data);
+      if (payload.type === 'handshake_ack') {
+        // Send sync_confirm
+        ws.send(JSON.stringify({ type: 'sync_confirm', stateVersion: payload.stateVersion }));
+        if (payload.state) {
+          lastState = payload.state;
+          quantizationConfirmation.observe(lastState.clipTriggerQuantization);
+          jumpConfirmation.observeState(lastState);
+          renderSongList(lastState);
+          renderJumpFeedback(jumpConfirmation.snapshot());
+          updateTransportAvailability();
+        }
+        return;
+      }
+      if (payload.type === 'state') {
+        const prevActiveIdx = lastState ? lastState.activeSongIndex : -1;
+        lastState = payload.state;
+        quantizationConfirmation.observe(lastState.clipTriggerQuantization);
+        lastReceivedTime = performance.now();
+        document.body.classList.remove('connection-stale');
+        document.body.classList.remove('connection-empty');
+        document.getElementById('networkErrorOverlay').classList.remove('visible');
+        jumpConfirmation.observeState(lastState);
+        renderSongList(lastState);
+        renderJumpFeedback(jumpConfirmation.snapshot());
+        updateTransportAvailability();
+        // Ask backend for lyrics whenever the active song changes (or on
+        // first state after connect). Backend saves .lrc to disk and
+        // re-broadcasts when active changes; this guarantees the HUD gets
+        // lyrics even if the user connects mid-set or after a reload.
+        const newActiveIdx = lastState.activeSongIndex;
+        if (newActiveIdx !== -1 && newActiveIdx !== lastActiveSongIdx && ws.readyState === 1) {
+          lastActiveSongIdx = newActiveIdx;
+          if (!lyricsFetchInFlight) {
+            lyricsFetchInFlight = true;
+            ws.send(JSON.stringify({ type: 'get_lyrics' }));
+            setTimeout(() => { lyricsFetchInFlight = false; }, 250);
+          }
+        }
+      } else if (payload.type === 'log') {
+        appendLog(payload.message, payload.level, payload.timestamp);
+      } else if (payload.type === 'lyrics') {
+        // Backend broadcasts {type:'lyrics', song, format, lines} whenever
+        // the active song changes (or via get_lyrics request). Store it
+        // locally so the HUD can show the active line during playback.
+        currentLyrics = {
+          song: payload.song || '',
+          format: payload.format || 'none',
+          lines: Array.isArray(payload.lines) ? payload.lines : []
+        };
+        currentLyricsIdx = -1; // force re-evaluation against the new lines
+        renderActiveLyric();
+        // Also pump into the visual editor (if open and matching song).
+        applyLyricsLoadToEditor(payload);
+      } else if (payload.type === 'csv_ready') {
+        handleCsvReady(payload.url, payload.count, payload.fileName);
+      } else if (payload.type === 'jump_pending') {
+        jumpConfirmation.pending(payload);
+      } else if (payload.type === 'jump_executed') {
+        jumpConfirmation.executed(payload);
+      } else if (payload.type === 'auth_status') {
+        isController = Boolean(payload.isController);
+        if (!payload.isController) {
+          appendLog('⚠ Conectado em modo de APENAS LEITURA (sem token de controle)', 'warn');
+          const statusTextEl = document.getElementById('statusText');
+          if (statusTextEl) statusTextEl.textContent = 'Conectado (Leitura)';
+        } else {
+          appendLog('✔ Conectado como CONTROLADOR com sucesso', 'info');
+        }
+        updateTransportAvailability();
+      } else if (payload.type === 'command_status') {
+        quantizationConfirmation.settle(payload);
+      } else if (payload.type === 'error') {
+        appendLog(`⚠ Erro do Servidor: ${payload.message}`, 'error');
+        alert(`Erro do Servidor: ${payload.message}`);
+      }
+    } catch (err) {
+      console.error('Erro ao processar mensagem do servidor:', err);
+    }
+  };
+}
+
+function formatBeatsAsTime(beats, bpmSource) {
+  if (typeof beats !== 'number' || isNaN(beats)) return '0:00:00';
+  let bpm = 120;
+  if (typeof bpmSource === 'number') {
+    bpm = bpmSource;
+  } else if (bpmSource && typeof bpmSource.bpm === 'number') {
+    bpm = bpmSource.bpm;
+  } else if (lastState && lastState.tempo) {
+    bpm = lastState.tempo;
+  }
+  const seconds = beats * 60 / bpm;
+  const m = Math.floor(seconds / 60);
+  const s = Math.floor(seconds % 60);
+  const ms = Math.floor((seconds % 1) * 100);
+  return `${m}:${s.toString().padStart(2, '0')}:${ms.toString().padStart(2, '0')}`;
+}
+
+
+
+function renderActiveLyric() {
+  const el = document.getElementById('hudLyric');
+  if (!el) return;
+  if (!currentLyrics.lines || currentLyrics.lines.length === 0) {
+    el.textContent = currentLyrics.song ? '— sem letra salva —' : '—';
+    return;
+  }
+  const idx = currentLyricsIdx;
+  if (idx < 0 || idx >= currentLyrics.lines.length) {
+    el.textContent = '—';
+    return;
+  }
+  el.textContent = currentLyrics.lines[idx].text || '—';
+}
+
+/**
+ * Drift badge — compares live tempo (state.tempo) with the BPM expected
+ * by the active song (song.bpm). Shows a colored Δ badge when they don't
+ * match: cyan for tiny deviation (informational), amber for noticeable,
+ * red for severe. Hides when within rounding tolerance or no expectation
+ * is defined (cue without an explicit [bpm X] tag).
+ */
+function updateDriftBadge(state, activeSong) {
+  if (!hudDrift) return;
+  const live = typeof state?.tempo === 'number' ? state.tempo : null;
+  const expected = activeSong && typeof activeSong.bpm === 'number' ? activeSong.bpm : null;
+  if (live == null || expected == null) {
+    hudDrift.style.display = 'none';
+    return;
+  }
+  const delta = live - expected;
+  const abs = Math.abs(delta);
+  // Within rounding tolerance — hide.
+  if (abs < 0.05) {
+    hudDrift.style.display = 'none';
+    return;
+  }
+  const sign = delta > 0 ? '+' : '−';
+  hudDrift.textContent = `⚠ Δ${sign}${Math.abs(delta).toFixed(1)}`;
+  hudDrift.title = `Esperado ${expected.toFixed(1)} BPM (definido pelo marcador). Live ${live.toFixed(1)}.`;
+  // Severity tiers:
+  //   < 0.5: cyan (informational rounding)
+  //   0.5 - 2.0: amber (noticeable, likely intentional)
+  //   > 2.0: red (severe, click will go out of sync)
+  let bg, fg, border;
+  if (abs < 0.5) {
+    bg = 'rgba(34, 211, 238, 0.15)';
+    fg = '#67e8f9';
+    border = 'rgba(34, 211, 238, 0.4)';
+  } else if (abs < 2.0) {
+    bg = 'rgba(251, 191, 36, 0.15)';
+    fg = '#fbbf24';
+    border = 'rgba(251, 191, 36, 0.4)';
+  } else {
+    bg = 'rgba(239, 68, 68, 0.2)';
+    fg = '#fca5a5';
+    border = 'rgba(239, 68, 68, 0.5)';
+  }
+  hudDrift.style.display = 'inline-block';
+  hudDrift.style.background = bg;
+  hudDrift.style.color = fg;
+  hudDrift.style.border = `1px solid ${border}`;
+}
+
+const latencyCompensationMs = 90; // compensate for polling intervals + socket transit
+
+function getEstimatedBeats() {
+  if (!lastState) return 0;
+  if (!lastState.isPlaying) return lastState.currentSongTime;
+  const elapsedMs = (performance.now() - lastReceivedTime) + latencyCompensationMs;
+  const elapsedBeats = (elapsedMs / 1000) * (lastState.tempo / 60);
+  return lastState.currentSongTime + elapsedBeats;
+}
+
+function tick() {
+  if (lastState) {
+    // 1. Update HUD values
+    const activeSong = lastState.songs[lastState.activeSongIndex];
+    const activeSection = activeSong ? activeSong.sections[lastState.activeSectionIndex] : null;
+
+    hudSong.textContent = activeSong ? activeSong.title : 'Nenhuma';
+    hudSection.textContent = activeSection ? activeSection.name : 'Nenhuma';
+    hudBpm.textContent = lastState.tempo ? lastState.tempo.toFixed(1) : '120.0';
+
+    // Drift: compare live tempo with the cue-derived BPM expectation.
+    updateDriftBadge(lastState, activeSong);
+
+    // Update Next Song / Section
+    const nextSongObj = lastState.songs[lastState.activeSongIndex + 1];
+    hudNextSong.textContent = nextSongObj ? `Próxima: ${nextSongObj.title}` : 'Próxima: Fim do Set';
+
+    let nextSectionObj = null;
+    let nextIsCurrent = false;
+
+    if (activeSong) {
+      if (lastState.loopActive) {
+        if (lastState.loopCount === -1 || lastState.currentLoopIteration < lastState.loopCount) {
+          nextIsCurrent = true;
+        }
+      }
+
+      if (nextIsCurrent) {
+        nextSectionObj = activeSection;
+      } else {
+        nextSectionObj = activeSong.sections[lastState.activeSectionIndex + 1];
+        if (!nextSectionObj && nextSongObj) {
+          nextSectionObj = nextSongObj.sections[0];
+        }
+      }
+    }
+
+    if (nextIsCurrent && nextSectionObj) {
+      hudNextSection.textContent = `Próxima: ${nextSectionObj.name} (Repetir)`;
+    } else {
+      hudNextSection.textContent = nextSectionObj ? `Próxima: ${nextSectionObj.name}` : 'Próxima: Fim';
+    }
+
+    const estimatedBeats = getEstimatedBeats();
+    const songElapsedBeats = calculateSongElapsedBeats(estimatedBeats, activeSong);
+    hudTime.textContent = formatBeatsAsTime(estimatedBeats, lastState.tempo);
+
+    const hudSongTimeEl = document.getElementById('hudSongTime');
+    if (hudSongTimeEl) {
+      if (activeSong) {
+        hudSongTimeEl.textContent = `Música: ${formatBeatsAsTime(songElapsedBeats, lastState.tempo)}`;
+        hudSongTimeEl.style.display = 'inline-block';
+      } else {
+        hudSongTimeEl.style.display = 'none';
+      }
+    }
+
+    // Lyrics: pick the active line for the current playback time and update
+    // the HUD card. Only updates the DOM when the index actually changes, so
+    // we're not reflowing on every rAF tick.
+    {
+      const bpm = lastState.tempo || 120;
+      const currentSec = convertBeatsToSeconds(songElapsedBeats, bpm);
+      const newIdx = findActiveLyricLine(currentLyrics, currentSec);
+      if (newIdx !== currentLyricsIdx) {
+        currentLyricsIdx = newIdx;
+        renderActiveLyric();
+      }
+    }
+
+    // Compasso calculation (Bars.Beats.Sixteenths)
+    const num = lastState.signatureNumerator || 4;
+    const bar = Math.floor(estimatedBeats / num) + 1;
+    const remainingBeats = estimatedBeats % num;
+    const beat = Math.floor(remainingBeats) + 1;
+    const sixteenths = Math.floor((remainingBeats % 1) * 4) + 1;
+    hudBar.textContent = `${bar}.${beat}.${sixteenths}`;
+
+    // Update Lyrics Sync Timer display
+    if (typeof isLyricsSyncing !== 'undefined' && isLyricsSyncing) {
+      const syncTimecodeEl = document.getElementById('lyricsSyncTimecode');
+      if (syncTimecodeEl) {
+        syncTimecodeEl.textContent = hudTime.textContent;
+      }
+    }
+
+    // Metronome Visual Beat Flash
+    const currentIntBeat = Math.floor(estimatedBeats);
+    if (Math.abs(currentIntBeat - lastFlashBeat) > 4) {
+      lastFlashBeat = currentIntBeat;
+    } else if (currentIntBeat > lastFlashBeat && lastState.isPlaying) {
+      lastFlashBeat = currentIntBeat;
+      const bpmCard = document.getElementById('bpmCard');
+      if (bpmCard) {
+        const isDownbeat = currentIntBeat % num === 0;
+        bpmCard.classList.remove('beat-flash-accent', 'beat-flash-normal');
+        void bpmCard.offsetWidth; // force reflow
+        if (isDownbeat) {
+          bpmCard.classList.add('beat-flash-accent');
+        } else {
+          bpmCard.classList.add('beat-flash-normal');
+        }
+      }
+    }
+
+    // Update Metronome Button active state class
+    if (lastState.metronome) {
+      btnMetronome.classList.add('btn-click-active');
+    } else {
+      btnMetronome.classList.remove('btn-click-active');
+    }
+
+    // Update Loop Iteration display
+    if (lastState.loopIteration) {
+      hudLoopIter.textContent = `VOLTA: ${lastState.loopIteration.current}/${lastState.loopIteration.total}`;
+      hudLoopIter.style.display = 'inline-block';
+    } else {
+      hudLoopIter.style.display = 'none';
+    }
+  }
+  requestAnimationFrame(tick);
+}
+requestAnimationFrame(tick);
+
+function handleDragStart(e, idx) {
+  if (isLocked) {
+    e.preventDefault();
+    showLockWarning();
+    return;
+  }
+  draggedSongIdx = idx;
+  e.dataTransfer.effectAllowed = 'move';
+  e.currentTarget.style.opacity = '0.5';
+}
+
+function handleDragEnd(e) {
+  e.currentTarget.style.opacity = '1';
+  draggedSongIdx = null;
+}
+
+function handleDragOver(e) {
+  e.preventDefault();
+  e.dataTransfer.dropEffect = 'move';
+}
+
+function handleDrop(e, targetIdx) {
+  e.preventDefault();
+  if (isLocked) {
+    showLockWarning();
+    return;
+  }
+  if (draggedSongIdx === null || draggedSongIdx === targetIdx) return;
+  if (lastState && lastState.songs) {
+    const order = [...lastState.songs];
+    const [moved] = order.splice(draggedSongIdx, 1);
+    order.splice(targetIdx, 0, moved);
+    const titles = order.map(s => s.title);
+    sendReorder(titles);
+  }
+}
+
+function sendReorder(songTitles) {
+  if (ws && ws.readyState === WebSocket.OPEN) {
+    ws.send(JSON.stringify({
+      type: 'reorder',
+      songTitles
+    }));
+  }
+}
+
+function renderSongList(state) {
+  if (!state.songs || state.songs.length === 0) {
+    songListDiv.innerHTML = '<div style="text-align: center; color: var(--text-muted); padding: 2rem;">Nenhuma música com locators encontrada no projeto.</div>';
+    lastRenderedSongsJson = '';
+    return;
+  }
+
+  const currentJson = JSON.stringify({
+    songs: state.songs,
+    hidden: state.hidden
+  });
+
+  if (currentJson === lastRenderedSongsJson) {
+    updateActiveClasses(state.activeSongIndex, state.activeSectionIndex);
+    return;
+  }
+
+  lastRenderedSongsJson = currentJson;
+
+  let html = '';
+  state.songs.forEach((song, songIdx) => {
+    const isActiveSong = songIdx === state.activeSongIndex;
+    html += `
+      <div class="song-item ${isActiveSong ? 'active' : ''}" draggable="true" ondragstart="handleDragStart(event, ${songIdx})" ondragover="handleDragOver(event)" ondrop="handleDrop(event, ${songIdx})" ondragend="handleDragEnd(event)">
+        <div class="song-header" data-song="${songIdx}" onclick="jumpTo(${songIdx}, null)">
+          <div class="song-info">
+            <span class="song-index">${songIdx + 1}</span>
+            <span class="song-title">${escapeLyricsEditorText(song.title)}</span>
+            ${song.loopCount !== null ? `<span class="loop-badge">${song.loopCount === -1 ? '↻ LOOP' : `↻ LOOP ${song.loopCount}x`}</span>` : ''}
+            ${song.autoStop ? `<span class="stop-badge">■ STOP</span>` : ''}
+            ${song.autoNext ? `<span class="next-badge">⏭ NEXT</span>` : ''}
+            ${typeof song.bpm === 'number' ? `<span class="bpm-badge">♩ ${song.bpm} BPM</span>` : ''}
+          </div>
+          <span class="song-time">${formatBeatsAsTime(song.time, song)}</span>
+        </div>
+
+        ${song.sections && song.sections.length > 0 ? `
+          <div class="song-sections">
+            ${song.sections.map((sec, secIdx) => {
+              const isActiveSection = isActiveSong && secIdx === state.activeSectionIndex;
+              return `
+                <button class="section-btn ${isActiveSection ? 'active' : ''}" data-song="${songIdx}" data-section="${secIdx}" onclick="jumpTo(${songIdx}, ${secIdx})">
+                  <span class="section-name">${escapeLyricsEditorText(sec.name)}</span>
+                  ${sec.loopCount !== null ? `<span class="loop-badge">${sec.loopCount === -1 ? '↻ LOOP' : `↻ LOOP ${sec.loopCount}x`}</span>` : ''}
+                  ${sec.autoStop ? `<span class="stop-badge">■ STOP</span>` : ''}
+                  ${sec.autoNext ? `<span class="next-badge">⏭ NEXT</span>` : ''}
+                  ${typeof sec.bpm === 'number' ? `<span class="bpm-badge">♩ ${sec.bpm} BPM</span>` : ''}
+                </button>
+              `;
+            }).join('')}
+          </div>
+        ` : ''}
+      </div>
+    `;
+  });
+  songListDiv.innerHTML = html;
+}
+
+function updateActiveClasses(activeSongIdx, activeSectionIdx) {
+  const songItems = songListDiv.querySelectorAll('.song-item');
+  songItems.forEach((item, songIdx) => {
+    const shouldBeActiveSong = (songIdx === activeSongIdx);
+    if (shouldBeActiveSong) {
+      if (!item.classList.contains('active')) {
+        item.classList.add('active');
+      }
+    } else {
+      if (item.classList.contains('active')) {
+        item.classList.remove('active');
+      }
+    }
+
+    const sectionBtns = item.querySelectorAll('.section-btn');
+    sectionBtns.forEach((btn) => {
+      const sectionIdx = parseInt(btn.getAttribute('data-section'), 10);
+      const shouldBeActiveSec = shouldBeActiveSong && (sectionIdx === activeSectionIdx);
+      if (shouldBeActiveSec) {
+        if (!btn.classList.contains('active')) {
+          btn.classList.add('active');
+        }
+      } else {
+        if (btn.classList.contains('active')) {
+          btn.classList.remove('active');
+        }
+      }
+    });
+  });
+}
+
+function jumpTargetElement(target) {
+  if (!target) return null;
+  if (target.sectionIndex === null) {
+    return document.querySelector(`.song-header[data-song="${target.songIndex}"]`);
+  }
+  return document.querySelector(`.section-btn[data-song="${target.songIndex}"][data-section="${target.sectionIndex}"]`);
+}
+
+function renderJumpFeedback(snapshot) {
+  document.querySelectorAll('.jumping, .jump-confirming').forEach((element) => {
+    element.classList.remove('jumping', 'jump-confirming');
+  });
+  const target = jumpTargetElement(snapshot.target);
+  if (!target) return;
+  target.classList.add(snapshot.phase === 'confirming' ? 'jump-confirming' : 'jumping');
+}
+
+const jumpConfirmation = SetlistTransportRuntime.createJumpConfirmation({
+  onChange: renderJumpFeedback,
+  onTimeout: () => appendLog('⚠ O Ableton não confirmou o salto em até 3 segundos.', 'warn'),
+});
+
+function renderQuantization(snapshot) {
+  if (snapshot.displayValue !== null) {
+    quantizationSelect.value = String(snapshot.displayValue);
+  }
+  const busy = Boolean(snapshot.pending);
+  quantizationSelect.classList.toggle('is-pending', busy);
+  quantizationSelect.setAttribute('aria-busy', String(busy));
+}
+
+const quantizationConfirmation = SetlistTransportRuntime.createQuantizationConfirmation({
+  onChange: renderQuantization,
+  onFailure: () => appendLog('⚠ O Ableton não confirmou a nova quantização.', 'warn'),
+});
+
+function jumpTo(songIndex, sectionIndex) {
+  if (isLocked) {
+    showLockWarning();
+    return;
+  }
+  if (!canUseTransport()) return;
+
+  const now = Date.now();
+  if (now - lastJumpTime < 300 && lastJumpTarget.song === songIndex && lastJumpTarget.section === sectionIndex) {
+    console.log('[Jump] Throttled rapid duplicate click');
+    return;
+  }
+  lastJumpTime = now;
+  lastJumpTarget = { song: songIndex, section: sectionIndex };
+
+  if (ws && ws.readyState === WebSocket.OPEN) {
+    ws.send(JSON.stringify({
+      type: 'jump',
+      songIndex,
+      sectionIndex
+    }));
+  }
+}
+
+function sendControl(controlType) {
+  if (isLocked) {
+    showLockWarning();
+    return;
+  }
+  if (!canUseTransport()) return;
+  ws.send(JSON.stringify({ type: controlType }));
+}
+
+function exportCsv() {
+  if (isLocked) {
+    showLockWarning();
+    return;
+  }
+  if (!ws || ws.readyState !== WebSocket.OPEN) {
+    showToast('Não conectado ao servidor.', 'error');
+    return;
+  }
+  const btn = document.getElementById('btnExportCsv');
+  if (btn) {
+    btn.disabled = true;
+    btn.style.opacity = '0.5';
+  }
+  ws.send(JSON.stringify({ type: 'export_csv' }));
+}
+
+// One-shot listener for csv_ready: opens the export URL (Content-Disposition
+// header on the server side triggers a browser download).
+function handleCsvReady(url, count, fileName) {
+  if (!url) return;
+  const a = document.createElement('a');
+  a.href = url;
+  if (fileName) a.download = fileName;
+  a.rel = 'noopener';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  showToast(`Tracklist exportado (${count} músicas). Baixando ${fileName}…`, 'success');
+  const btn = document.getElementById('btnExportCsv');
+  if (btn) {
+    btn.disabled = false;
+    btn.style.opacity = '1';
+  }
+}
+
+function toggleMetronome() {
+  if (isLocked) {
+    showLockWarning();
+    return;
+  }
+  if (!canUseTransport()) return;
+  ws.send(JSON.stringify({
+    type: 'metronome',
+    value: !lastState.metronome
+  }));
+}
+
+const logPanel = document.getElementById('logPanel');
+
+function changeQuantization(val) {
+  if (isLocked || !canUseTransport()) {
+    if (isLocked) showLockWarning();
+    renderQuantization(quantizationConfirmation.snapshot());
+    return;
+  }
+  const value = Number.parseInt(val, 10);
+  const commandId = `quantization-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+  if (!quantizationConfirmation.begin({ value, commandId })) return;
+  ws.send(JSON.stringify({
+    type: 'set_quantization',
+    value,
+    commandId,
+  }));
+}
+function appendLog(message, level = 'info', timestamp = Date.now()) {
+  const timeStr = new Date(timestamp).toLocaleTimeString('pt-BR', { hour12: false });
+  const line = document.createElement('div');
+  line.className = 'log-line';
+
+  const timeSpan = document.createElement('span');
+  timeSpan.className = 'log-time';
+  timeSpan.textContent = `[${timeStr}]`;
+
+  const msgSpan = document.createElement('span');
+  msgSpan.className = `log-msg-${level}`;
+  msgSpan.textContent = message;
+
+  line.appendChild(timeSpan);
+  line.appendChild(msgSpan);
+
+  logPanel.appendChild(line);
+  logPanel.scrollTop = logPanel.scrollHeight;
+
+  // Limit to last 50 lines
+  while (logPanel.childNodes.length > 50) {
+    logPanel.removeChild(logPanel.firstChild);
+  }
+}
+
+function toggleHelp() {
+  const modal = document.getElementById('helpModal');
+  toggleManagedModal(modal);
+}
+function closeHelp(e) {
+  const modal = document.getElementById('helpModal');
+  if (e.target === modal) {
+    closeManagedModal(modal);
+  }
+}
+
+// Lyrics Sync Workflow State
+const lyricsModal = document.getElementById('lyricsModal');
+const lyricsSongSelect = document.getElementById('lyricsSongSelect');
+const lyricsRawText = document.getElementById('lyricsRawText');
+const lyricsStepInput = document.getElementById('lyricsStepInput');
+const lyricsStepSync = document.getElementById('lyricsStepSync');
+const lyricsStepEdit = document.getElementById('lyricsStepEdit');
+
+const lyricsSyncSongTitle = document.getElementById('lyricsSyncSongTitle');
+const lyricsSyncTimecode = document.getElementById('lyricsSyncTimecode');
+const lyricsSyncActiveLine = document.getElementById('lyricsSyncActiveLine');
+const lyricsSyncUpcomingLines = document.getElementById('lyricsSyncUpcomingLines');
+const btnSaveSyncLyrics = document.getElementById('btnSaveSyncLyrics');
+const btnLyricsTap = document.getElementById('btnLyricsTap');
+
+const lyricsEditSongTitle = document.getElementById('lyricsEditSongTitle');
+const lyricsEditList = document.getElementById('lyricsEditList');
+const lyricsEditEmpty = document.getElementById('lyricsEditEmpty');
+const btnSaveEditedLyrics = document.getElementById('btnSaveEditedLyrics');
+const lyricsDirtyBadge = document.getElementById('lyricsDirtyBadge');
+
+let isLyricsSyncing = false;
+let lyricsLinesToSync = [];
+let lyricsSyncedLines = [];
+let lyricsSyncActiveIndex = 0;
+
+// Visual editor state
+let lyricsEditLines = []; // [{timestamp, text}]
+let lyricsEditDirty = false;
+let lyricsEditLastLoadedSong = '';
+let lyricsEditActiveTab = 'create';
+const TAB_BUTTONS = {
+  create: document.getElementById('lyricsTabCreate'),
+  sync: document.getElementById('lyricsTabSync'),
+  edit: document.getElementById('lyricsTabEdit'),
+};
+const NO_TIMESTAMP = '[--:--.--]';
+
+function switchLyricsTab(tab) {
+  if (!['create', 'sync', 'edit'].includes(tab)) return;
+  // Warn if leaving Edit with unsaved changes
+  if (lyricsEditActiveTab === 'edit' && tab !== 'edit' && lyricsEditDirty) {
+    if (!confirm('Há mudanças não salvas na aba Editar. Descartar?')) return;
+  }
+  lyricsEditActiveTab = tab;
+  lyricsStepInput.style.display = tab === 'create' ? 'block' : 'none';
+  lyricsStepSync.style.display = tab === 'sync' ? 'block' : 'none';
+  lyricsStepEdit.style.display = tab === 'edit' ? 'block' : 'none';
+  for (const [key, btn] of Object.entries(TAB_BUTTONS)) {
+    if (!btn) continue;
+    const isActive = key === tab;
+    btn.style.borderBottomColor = isActive ? 'var(--accent)' : 'transparent';
+    btn.style.color = isActive ? 'var(--accent)' : 'var(--text-muted)';
+  }
+  if (tab === 'edit') {
+    refreshLyricsEditor();
+  } else if (tab === 'sync') {
+    // Make sure Step1 inputs reflect current song before sync starts.
+    // (No state change needed; user starts sync explicitly.)
+  }
+}
+
+function markLyricsDirty(dirty) {
+  lyricsEditDirty = !!dirty;
+  if (lyricsDirtyBadge) {
+    lyricsDirtyBadge.style.display = dirty ? 'inline-block' : 'none';
+  }
+  if (btnSaveEditedLyrics) {
+    btnSaveEditedLyrics.disabled = !dirty;
+  }
+}
+
+function refreshLyricsEditor() {
+  if (!lyricsSongSelect) return;
+  const song = lyricsSongSelect.value;
+  if (lyricsEditLastLoadedSong !== song || lyricsEditLines.length === 0) {
+    // Pull from cache: if currentLyrics is for this song, use its raw text
+    // by re-fetching via ws (so we get the saved-on-disk version).
+    loadLyricsEditFromServer(song);
+    return;
+  }
+  renderLyricsEditList();
+}
+
+function loadLyricsEditFromServer(song) {
+  if (!ws || ws.readyState !== WebSocket.OPEN) {
+    showToast('Não conectado ao servidor.', 'error');
+    return;
+  }
+  lyricsEditLastLoadedSong = song;
+  lyricsEditSongTitle.textContent = song;
+  lyricsEditLines = [];
+  markLyricsDirty(false);
+  renderLyricsEditList();
+  ws.send(JSON.stringify({ type: 'get_lyrics', song }));
+}
+
+function applyLyricsLoadToEditor(payload) {
+  // Called from ws.onmessage when lyrics event matches current edit song
+  if (!payload || payload.type !== 'lyrics') return;
+  const song = lyricsSongSelect.value;
+  if (payload.song !== song || lyricsEditLastLoadedSong !== song) return;
+  if (lyricsEditDirty) return; // do not clobber edits
+  lyricsEditLines = (Array.isArray(payload.lines) ? payload.lines : [])
+    .map((line) => ({
+      timestamp: typeof line.time === 'number' && line.time > 0 ? formatSecondsToLrcTime(line.time) : NO_TIMESTAMP,
+      text: line.text || '',
+    }));
+  markLyricsDirty(false);
+  renderLyricsEditList();
+}
+
+function renderLyricsEditList() {
+  if (!lyricsEditList) return;
+  lyricsEditList.innerHTML = '';
+  if (!lyricsEditLines.length) {
+    lyricsEditEmpty.style.display = 'block';
+    lyricsEditList.style.display = 'none';
+    return;
+  }
+  lyricsEditEmpty.style.display = 'none';
+  lyricsEditList.style.display = 'flex';
+  lyricsEditLines.forEach((line, idx) => {
+    const card = document.createElement('div');
+    card.style.cssText = 'display: flex; align-items: center; gap: 0.5rem; background: rgba(255,255,255,0.02); border: 1px solid var(--card-border); border-radius: 8px; padding: 0.4rem 0.6rem;';
+    const hasTs = line.timestamp !== NO_TIMESTAMP;
+    const dimStyle = hasTs ? '' : 'color: var(--text-muted); opacity: 0.7;';
+    card.innerHTML = `
+      <span class="lyric-edit-ts" data-idx="${idx}" style="font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: ${hasTs ? 'var(--accent)' : '#fbbf24'}; background: rgba(0,0,0,0.3); padding: 0.2rem 0.4rem; border-radius: 4px; min-width: 78px; text-align: center; cursor: text; ${dimStyle}">${escapeLyricsEditorText(line.timestamp)}</span>
+      <span class="lyric-edit-text" data-idx="${idx}" style="flex: 1; font-size: 0.9rem; line-height: 1.3; cursor: text; user-select: text;">${escapeLyricsEditorText(line.text) || '<em style="color: var(--text-muted);">(vazio)</em>'}</span>
+      <button class="lyric-edit-del" data-idx="${idx}" title="Remover linha" style="background: transparent; border: none; color: var(--danger); cursor: pointer; font-size: 1rem; padding: 0.2rem 0.4rem; opacity: 0.6; transition: opacity 0.15s;">&times;</button>
+    `;
+    lyricsEditList.appendChild(card);
+  });
+  // Wire double-click to edit, click X to delete
+  lyricsEditList.querySelectorAll('.lyric-edit-text').forEach((el) => {
+    el.addEventListener('dblclick', (e) => {
+      const idx = parseInt(el.getAttribute('data-idx'), 10);
+      beginInlineLyricEdit(idx, el);
+    });
+  });
+  lyricsEditList.querySelectorAll('.lyric-edit-ts').forEach((el) => {
+    el.addEventListener('dblclick', (e) => {
+      const idx = parseInt(el.getAttribute('data-idx'), 10);
+      beginInlineLyricTsEdit(idx, el);
+    });
+  });
+  lyricsEditList.querySelectorAll('.lyric-edit-del').forEach((el) => {
+    el.addEventListener('click', (e) => {
+      const idx = parseInt(el.getAttribute('data-idx'), 10);
+      removeLyricLine(idx);
+    });
+  });
+}
+
+function escapeLyricsEditorText(s) {
+  return String(s)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+function beginInlineLyricEdit(idx, el) {
+  const original = lyricsEditLines[idx];
+  if (!original) return;
+  const input = document.createElement('input');
+  input.type = 'text';
+  input.value = original.text;
+  input.style.cssText = 'flex: 1; background: rgba(0,0,0,0.4); border: 1px solid var(--accent); border-radius: 6px; color: var(--text); font-family: inherit; font-size: 0.9rem; padding: 0.3rem 0.5rem; outline: none;';
+  el.replaceWith(input);
+  input.focus();
+  input.select();
+  const commit = () => {
+    const newText = input.value;
+    lyricsEditLines[idx] = { ...original, text: newText };
+    markLyricsDirty(true);
+    renderLyricsEditList();
+  };
+  const cancel = () => {
+    renderLyricsEditList();
+  };
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') { e.preventDefault(); commit(); }
+    else if (e.key === 'Escape') { e.preventDefault(); cancel(); }
+  });
+  input.addEventListener('blur', commit);
+}
+
+function beginInlineLyricTsEdit(idx, el) {
+  const original = lyricsEditLines[idx];
+  if (!original) return;
+  const input = document.createElement('input');
+  input.type = 'text';
+  input.value = original.timestamp === NO_TIMESTAMP ? '' : original.timestamp;
+  input.placeholder = '[mm:ss.xx]';
+  input.style.cssText = 'width: 78px; font-family: \'JetBrains Mono\', monospace; font-size: 0.7rem; background: rgba(0,0,0,0.4); border: 1px solid var(--accent); border-radius: 4px; color: var(--text); padding: 0.2rem 0.3rem; text-align: center; outline: none; box-sizing: border-box;';
+  el.replaceWith(input);
+  input.focus();
+  input.select();
+  const commit = () => {
+    let val = input.value.trim();
+    if (val === '') {
+      val = NO_TIMESTAMP;
+    } else {
+      if (!val.startsWith('[')) val = '[' + val;
+      if (!val.endsWith(']')) val = val + ']';
+      const regex = /^\[\d{2,3}:\d{2}(\.\d{1,3})?\]$/;
+      if (!regex.test(val) && val !== NO_TIMESTAMP) {
+        showToast('Formato de timecode inválido! Use [mm:ss.xx] ou deixe vazio.', 'error');
+        renderLyricsEditList();
+        return;
+      }
+    }
+    lyricsEditLines[idx] = { ...original, timestamp: val };
+    markLyricsDirty(true);
+    renderLyricsEditList();
+  };
+  const cancel = () => {
+    renderLyricsEditList();
+  };
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') { e.preventDefault(); commit(); }
+    else if (e.key === 'Escape') { e.preventDefault(); cancel(); }
+  });
+  input.addEventListener('blur', commit);
+}
+
+function addLyricLine() {
+  lyricsEditLines.push({ timestamp: NO_TIMESTAMP, text: '' });
+  markLyricsDirty(true);
+  renderLyricsEditList();
+  // Scroll to bottom and start editing the new line
+  setTimeout(() => {
+    if (lyricsEditList) lyricsEditList.scrollTop = lyricsEditList.scrollHeight;
+    const items = lyricsEditList.querySelectorAll('.lyric-edit-text');
+    const last = items[items.length - 1];
+    if (last) beginInlineLyricEdit(items.length - 1, last);
+  }, 0);
+}
+
+function removeLyricLine(idx) {
+  if (idx < 0 || idx >= lyricsEditLines.length) return;
+  lyricsEditLines.splice(idx, 1);
+  markLyricsDirty(true);
+  renderLyricsEditList();
+}
+
+function saveLyricsEdit() {
+  if (!lyricsEditDirty) return;
+  const song = lyricsSongSelect.value;
+  // Build LRC body: only timestamped lines; editor allows no-ts lines but
+  // we still emit them with [00:00.00] (silent lines) so the LRC remains
+  // complete. Actually NO — we skip no-ts lines, since the lyrics-parser
+  // expects well-formed timestamps. The HUD already filters them out.
+  const lrcBody = lyricsEditLines
+    .filter((l) => l.timestamp && l.timestamp !== NO_TIMESTAMP)
+    .map((l) => `${l.timestamp} ${l.text}`)
+    .join('\n');
+  if (ws && ws.readyState === WebSocket.OPEN) {
+    ws.send(JSON.stringify({
+      type: 'save_lyrics',
+      song,
+      text: lrcBody,
+    }));
+    appendLog(`Letra de "${song}" salva (${lyricsEditLines.filter(l => l.timestamp !== NO_TIMESTAMP).length} linhas com timestamp).`, 'info');
+    markLyricsDirty(false);
+  } else {
+    showToast('Não conectado ao servidor.', 'error');
+  }
+}
+
+function onLyricsSongChange() {
+  // When user switches song, reset editor cache so it re-fetches.
+  if (lyricsEditDirty) {
+    if (!confirm('Há mudanças não salvas. Trocar de música descartará as edições. Continuar?')) {
+      // Revert select to previous value
+      if (lyricsEditLastLoadedSong) lyricsSongSelect.value = lyricsEditLastLoadedSong;
+      return;
+    }
+  }
+  lyricsEditLastLoadedSong = '';
+  lyricsEditLines = [];
+  markLyricsDirty(false);
+  if (lyricsEditActiveTab === 'edit') {
+    refreshLyricsEditor();
+  }
+}
+
+function toggleLyricsModal() {
+  toggleManagedModal(lyricsModal, () => {
+    populateLyricsSongs();
+    switchLyricsTab('create');
+    resetLyricsSyncWorkflow();
+  });
+}
+
+function closeLyricsModal(e) {
+  if (e.target === lyricsModal) {
+    closeManagedModal(lyricsModal);
+  }
+}
+
+function populateLyricsSongs() {
+  lyricsSongSelect.innerHTML = '';
+  if (lastState && lastState.songs) {
+    lastState.songs.forEach(song => {
+      const option = document.createElement('option');
+      option.value = song.title;
+      option.textContent = song.title;
+      lyricsSongSelect.appendChild(option);
+    });
+  }
+}
+
+function startLyricsSyncWorkflow() {
+  const rawText = lyricsRawText.value.trim();
+  if (!rawText) {
+    alert('Por favor, digite ou cole a letra da música antes de iniciar.');
+    return;
+  }
+
+  lyricsLinesToSync = rawText.split(/\n/).map(line => line.trim()).filter(line => line.length > 0);
+  if (lyricsLinesToSync.length === 0) {
+    alert('Nenhuma frase de letra válida encontrada.');
+    return;
+  }
+
+  lyricsSyncedLines = [];
+  lyricsSyncActiveIndex = 0;
+  isLyricsSyncing = true;
+
+  lyricsSyncSongTitle.textContent = lyricsSongSelect.value;
+
+  updateLyricsSyncUI();
+
+  lyricsStepInput.style.display = 'none';
+  lyricsStepSync.style.display = 'block';
+}
+
+function resetLyricsSyncWorkflow() {
+  isLyricsSyncing = false;
+  lyricsLinesToSync = [];
+  lyricsSyncedLines = [];
+  lyricsSyncActiveIndex = 0;
+
+  btnLyricsTap.disabled = false;
+  btnLyricsTap.textContent = 'MARCAR AGORA (Pressione Barra de Espaço)';
+  btnSaveSyncLyrics.disabled = true;
+
+  lyricsStepInput.style.display = 'block';
+  lyricsStepSync.style.display = 'none';
+}
+
+function getEstimatedSeconds() {
+  if (!lastState) return 0;
+  if (!lastState.isPlaying) return lastState.currentSongTime * 60 / lastState.tempo;
+  const elapsedMs = (performance.now() - lastReceivedTime) + latencyCompensationMs;
+  const elapsedBeats = (elapsedMs / 1000) * (lastState.tempo / 60);
+  return (lastState.currentSongTime + elapsedBeats) * 60 / lastState.tempo;
+}
+
+function tapLyricTime() {
+  if (!isLyricsSyncing || lyricsSyncActiveIndex >= lyricsLinesToSync.length) return;
+
+  const absoluteSeconds = getEstimatedSeconds();
+  let relativeSeconds = absoluteSeconds;
+  if (lastState && lastState.songs) {
+    const selectedTitle = lyricsSongSelect.value;
+    const song = lastState.songs.find(s => s.title === selectedTitle);
+    if (song) {
+      const bpm = lastState.tempo || 120;
+      const songStartSeconds = song.time * 60 / bpm;
+      relativeSeconds = Math.max(0, absoluteSeconds - songStartSeconds);
+    }
+  }
+  const timestamp = formatSecondsToLrcTime(relativeSeconds);
+  const lineText = lyricsLinesToSync[lyricsSyncActiveIndex];
+
+  lyricsSyncedLines.push({ timestamp, text: lineText });
+  lyricsSyncActiveIndex++;
+
+  updateLyricsSyncUI();
+
+  if (lyricsSyncActiveIndex >= lyricsLinesToSync.length) {
+    btnLyricsTap.disabled = true;
+    btnLyricsTap.textContent = 'Todas as frases marcadas!';
+    btnSaveSyncLyrics.disabled = false;
+    btnSaveSyncLyrics.classList.add('glow');
+  }
+}
+
+function updateLyricsSyncUI() {
+  if (lyricsSyncActiveIndex < lyricsLinesToSync.length) {
+    lyricsSyncActiveLine.textContent = lyricsLinesToSync[lyricsSyncActiveIndex];
+
+    const upcoming = lyricsLinesToSync.slice(lyricsSyncActiveIndex + 1);
+    lyricsSyncUpcomingLines.innerHTML = upcoming.map((line, idx) => `<div>${idx + 1}. ${escapeLyricsEditorText(line)}</div>`).join('');
+  } else {
+    lyricsSyncActiveLine.textContent = 'Fim da Letra!';
+    lyricsSyncUpcomingLines.innerHTML = '<div style="font-style: italic; color: var(--success);">Pronto para salvar!</div>';
+  }
+}
+
+function saveSyncLyrics() {
+  const selectedSong = lyricsSongSelect.value;
+  const fileContent = lyricsSyncedLines.map(l => `${l.timestamp} ${l.text}`).join('\n');
+
+  if (ws && ws.readyState === WebSocket.OPEN) {
+    ws.send(JSON.stringify({
+      type: 'save_lyrics',
+      song: selectedSong,
+      text: fileContent
+    }));
+  }
+
+  appendLog(`Letra sincronizada de "${selectedSong}" salva!`, 'info');
+  toggleLyricsModal();
+}
+
+// Bind spacebar key for tapping
+window.addEventListener('keydown', (e) => {
+  if (isLyricsSyncing && e.key === ' ' && document.activeElement !== lyricsRawText) {
+    e.preventDefault();
+    tapLyricTime();
+  }
+});
+
+function promptForToken() {
+  const currentToken = localStorage.getItem('setlist_token') || '';
+  const input = prompt('Digite o token de segurança para controle (encontrado no painel do Ableton Live):', currentToken);
+  if (input !== null) {
+    localStorage.setItem('setlist_token', input.trim());
+    appendLog('Token atualizado localmente. Reconectando...', 'info');
+    if (ws) {
+      ws.close();
+    }
+  }
+}
+
+globalThis.setlistStageRuntime = StageRuntime.mount();
+mountTransportControls();
+connect();

@@ -1,0 +1,282 @@
+import * as http from 'node:http';
+import { WebSocketServer, WebSocket } from 'ws';
+import { EventEmitter } from 'node:events';
+import { URL as NodeURL } from 'node:url';
+import { SetlistState, AugmentedWebSocket } from '../types.js';
+
+export function isValidOrigin(origin: string, reqHost: string): boolean {
+  const expected = reqHost.toLowerCase();
+  // 1) Tenta via node:url import (sobrevive a URL global mascarado/indefinido)
+  try {
+    const parsed = new NodeURL(origin);
+    if (parsed.host.toLowerCase() === expected) return true;
+  } catch {}
+  // 2) Fallback: extrai authority (host:port) com regex, sem dependência de URL
+  const m = origin.match(/^[a-z][a-z0-9+.\-]*:\/\/([^/?#]+)/i);
+  if (m && m[1]!.toLowerCase() === expected) return true;
+  return false;
+}
+
+export class SetlistWSServer extends EventEmitter {
+  private wss: WebSocketServer | null = null;
+  private clients: Set<AugmentedWebSocket> = new Set();
+  private lastState: SetlistState | null = null;
+
+  private lastStateJson: string = '';
+  private lastLogJsonByKey = new Map<string, string>();
+
+  private authToken: string;
+  private authFailures = new Map<string, { count: number; windowStart: number }>();
+
+  constructor(authToken: string = '') {
+    super();
+    this.authToken = authToken;
+  }
+
+  private cleanExpiredFailures(): void {
+    const now = Date.now();
+    const limitWindow = 60000; // 1 minute
+    for (const [ip, tracker] of this.authFailures.entries()) {
+      if (now - tracker.windowStart > limitWindow) {
+        this.authFailures.delete(ip);
+      }
+    }
+  }
+
+  private isAuthRateLimited(ip: string): boolean {
+    this.cleanExpiredFailures();
+    const now = Date.now();
+    const limitWindow = 60000;
+    const tracker = this.authFailures.get(ip);
+    if (tracker && (now - tracker.windowStart <= limitWindow) && tracker.count >= 5) {
+      return true;
+    }
+    return false;
+  }
+
+  private recordAuthFailure(ip: string): void {
+    this.cleanExpiredFailures();
+    const now = Date.now();
+    const limitWindow = 60000;
+    const tracker = this.authFailures.get(ip);
+    if (!tracker || (now - tracker.windowStart > limitWindow)) {
+      this.authFailures.set(ip, { count: 1, windowStart: now });
+    } else {
+      tracker.count++;
+    }
+  }
+
+  public init(): WebSocketServer {
+    this.wss = new WebSocketServer({
+      noServer: true,
+      perMessageDeflate: false,
+      maxPayload: 102400 // 100KB limit
+    });
+    
+    this.wss.on('connection', (ws: AugmentedWebSocket, req) => {
+      this.clients.add(ws);
+      const remote = req.socket.remoteAddress ?? 'unknown';
+      ws.remoteAddress = remote;
+      // Parse token from connection URL query parameter
+      let isController = false;
+      let tokenParsed: string | null = null;
+      try {
+        const host = req.headers.host ?? 'localhost';
+        // node:url import — o global `URL` é mascarado/indefinido no Node embedded da SDK do Ableton
+        const url = new NodeURL(req.url ?? '', `http://${host}`);
+        tokenParsed = url.searchParams.get('token');
+        isController = tokenParsed === this.authToken && this.authToken !== '';
+      } catch (err) {
+        console.warn('[WS] Erro ao extrair token da URL:', err);
+      }
+
+      ws.isController = isController;
+      console.log(`[WS] Cliente conectado de ${remote}, hasToken=${!!tokenParsed}, controller=${isController}`);
+
+      // Send immediate authentication status to client
+      ws.send(JSON.stringify({ type: 'auth_status', isController }));
+
+      // Send WS Debug log message to client for on-screen diagnostics
+      ws.send(JSON.stringify({
+        type: 'log',
+        level: isController ? 'info' : 'warn',
+        message: `[WS Debug] Conectado de ${remote}. Controller: ${isController}`,
+        timestamp: Date.now()
+      }));
+
+      if (this.lastState) {
+        ws.send(JSON.stringify({ type: 'state', state: this.lastState }));
+      }
+
+      ws.on('message', (data) => {
+        try {
+          const msg = JSON.parse(data.toString());
+          if (msg && msg.type === 'auth') {
+            const hasToken = typeof msg.token === 'string' && msg.token !== '';
+            if (hasToken) {
+              const success = msg.token === this.authToken && this.authToken !== '';
+              if (success) {
+                this.authFailures.delete(remote);
+                ws.isController = true;
+                ws.send(JSON.stringify({ type: 'auth_result', success: true }));
+                ws.send(JSON.stringify({ type: 'auth_status', isController: true }));
+                console.log(`[WS] Autenticação manual solicitada de ${remote}: SUCESSO`);
+              } else {
+                if (this.isAuthRateLimited(remote)) {
+                  ws.send(JSON.stringify({ type: 'auth_result', success: false, error: 'Too many authentication attempts' }));
+                  console.warn(`[WS] Tentativa de autenticação manual bloqueada por rate limit de ${remote}`);
+                  return;
+                }
+                this.recordAuthFailure(remote);
+                ws.send(JSON.stringify({ type: 'auth_result', success: false }));
+                console.log(`[WS] Autenticação manual solicitada de ${remote}: FALHA`);
+              }
+            } else {
+              // Empty token manual auth fails normally without incrementing rate limits
+              ws.send(JSON.stringify({ type: 'auth_result', success: false }));
+              console.log(`[WS] Autenticação manual solicitada de ${remote}: Vazio/Negado`);
+            }
+            return;
+          }
+          this.emit('client_message', msg, ws);
+        } catch (err) {
+          console.warn('[WS] Erro ao decodificar mensagem JSON:', err);
+        }
+      });
+
+      ws.on('close', () => {
+        this.clients.delete(ws);
+        console.log('[WS] Cliente desconectado');
+      });
+
+      ws.on('error', (err) => {
+        console.error('[WS] Erro no socket do cliente:', err);
+      });
+    });
+
+    return this.wss;
+  }
+
+  public handleUpgrade(req: http.IncomingMessage, socket: any, head: Buffer): void {
+    const urlPath = req.url ? req.url.split('?')[0] : '';
+    if (urlPath === '/ws' && this.wss) {
+      const remote = socket.remoteAddress ?? 'unknown';
+
+      // 1. Origin validation
+      const origin = req.headers['origin'];
+      const reqHost = req.headers['host'];
+      if (origin) {
+        if (!reqHost || !isValidOrigin(origin, reqHost)) {
+          console.warn(`[WS] Rejeitando upgrade de origem inválida ou Host ausente: ${origin} (Host: ${reqHost})`);
+          socket.write('HTTP/1.1 403 Forbidden\r\n\r\n');
+          socket.destroy();
+          return;
+        }
+      }
+
+      // 2. Auth attempts rate limit (per connection upgrade request)
+      let tokenParsed: string | null = null;
+      try {
+        const host = req.headers.host ?? 'localhost';
+        const url = new NodeURL(req.url ?? '', `http://${host}`);
+        tokenParsed = url.searchParams.get('token');
+      } catch {}
+
+      if (tokenParsed !== null && tokenParsed !== '') {
+        const isValid = tokenParsed === this.authToken && this.authToken !== '';
+        if (isValid) {
+          this.authFailures.delete(remote);
+        } else {
+          if (this.isAuthRateLimited(remote)) {
+            console.warn(`[WS] Rejeitando upgrade devido a limite de tentativas de autenticação excedido de ${remote}`);
+            socket.write('HTTP/1.1 429 Too Many Requests\r\n\r\n');
+            socket.destroy();
+            return;
+          }
+          this.recordAuthFailure(remote);
+        }
+      }
+
+      this.wss.handleUpgrade(req, socket, head, (ws) => {
+        this.wss!.emit('connection', ws, req);
+      });
+    } else {
+      socket.destroy();
+    }
+  }
+
+  public broadcastState(state: SetlistState): void {
+    this.lastState = state;
+    const json = JSON.stringify({ type: 'state', state });
+    if (json === this.lastStateJson) {
+      return;
+    }
+    this.lastStateJson = json;
+    
+    for (const ws of this.clients) {
+      if (ws.readyState === WebSocket.OPEN) {
+        try {
+          ws.send(json);
+        } catch (err) {
+          // ignore
+        }
+      }
+    }
+  }
+
+  public broadcast(payload: any): void {
+    const json = JSON.stringify(payload);
+    for (const ws of this.clients) {
+      if (ws.readyState === WebSocket.OPEN) {
+        try {
+          ws.send(json);
+        } catch (err) {
+          // ignore
+        }
+      }
+    }
+  }
+
+  public broadcastLog(message: string, level: 'info' | 'warn' | 'error' | 'automation' = 'info'): void {
+    const json = JSON.stringify({ type: 'log', message, level, timestamp: Date.now() });
+    const key = `${level}:${message}`;
+    if (this.lastLogJsonByKey.get(key) === json) return;
+    this.lastLogJsonByKey.set(key, json);
+    if (this.lastLogJsonByKey.size > 100) {
+      const firstKey = this.lastLogJsonByKey.keys().next().value;
+      if (firstKey !== undefined) {
+        this.lastLogJsonByKey.delete(firstKey);
+      }
+    }
+    for (const ws of this.clients) {
+      if (ws.readyState === WebSocket.OPEN) {
+        try {
+          ws.send(json);
+        } catch (err) {
+          // ignore
+        }
+      }
+    }
+  }
+
+  public stop(): void {
+    for (const ws of this.clients) {
+      try {
+        ws.removeAllListeners();
+        ws.close(1001, 'server shutting down');
+      } catch {
+        // ignore
+      }
+    }
+    this.clients.clear();
+    this.lastLogJsonByKey.clear();
+    this.authFailures.clear();
+    this.lastState = null;
+    this.lastStateJson = '';
+    if (this.wss) {
+      try { this.wss.removeAllListeners(); } catch {}
+      try { this.wss.close(); } catch {}
+      this.wss = null;
+    }
+  }
+}
