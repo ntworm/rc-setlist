@@ -58,6 +58,22 @@ for (const viewport of [
   });
 }
 
+test('landing preserves the product-truth hero artwork aspect ratio', async ({ page }) => {
+  await page.setViewportSize({ width: 777, height: 819 });
+  await page.goto('/landing/');
+
+  const geometry = await page.locator('.hero-visual img').evaluate((image) => {
+    const rect = image.getBoundingClientRect();
+    return {
+      naturalRatio: image.naturalWidth / image.naturalHeight,
+      renderedRatio: rect.width / rect.height,
+    };
+  });
+
+  expect(geometry.naturalRatio).toBeCloseTo(16 / 9, 4);
+  expect(geometry.renderedRatio).toBeCloseTo(geometry.naturalRatio, 4);
+});
+
 test('landing keeps keyboard focus visible and loads no external runtime asset', async ({ page }) => {
   const requests = [];
   page.on('request', (request) => requests.push(request.url()));

@@ -47,7 +47,7 @@
     .fine { margin:1rem 0 0; color:var(--muted); font-size:.84rem; }
     .hero-visual { position:relative; min-width:0; }
     .hero-visual::after { content:""; position:absolute; inset:12% 8% -8%; z-index:-1; background:rgba(255,107,26,.16); filter:blur(65px); }
-    .hero-visual img { width:100%; border:1px solid var(--line); border-radius:18px; box-shadow:0 34px 90px rgba(0,0,0,.5); }
+    .hero-visual img { width:100%; height:auto; aspect-ratio:16/9; object-fit:contain; border:1px solid var(--line); border-radius:18px; box-shadow:0 34px 90px rgba(0,0,0,.5); }
     .truth-label { display:flex; align-items:center; justify-content:space-between; gap:1rem; margin:.85rem .35rem 0; color:var(--muted); font-size:.78rem; }
     .truth-label strong { color:var(--soft); font-family:ui-monospace,Consolas,monospace; letter-spacing:.08em; text-transform:uppercase; }
     .proof { border-block:1px solid var(--line); background:#0e0f12; }
