@@ -209,10 +209,10 @@ async function executeReorderCommand(msg: any): Promise<void> {
         'utf-8'
       );
       console.log(`[Persistence] Custom song order saved to ${orderFilePath}`);
-      bridgeState.wsServer?.broadcastLog('Ordem das músicas salva com sucesso!', 'info');
+      bridgeState.wsServer?.broadcastLog('Custom song order saved.', 'info');
     } catch (err) {
       console.error(`[Persistence] Failed to save custom order: ${err}`);
-      bridgeState.wsServer?.broadcastLog(`Erro ao salvar ordem das músicas: ${err}`, 'error');
+      bridgeState.wsServer?.broadcastLog(`Could not save the custom song order: ${err}`, 'error');
       throw err;
     }
     broadcastState();
@@ -235,7 +235,7 @@ function executeSaveLyricsCommand(msg: any): void {
     const lrcPath = path.join(targetLyricsDir, `${cleanTitle}.lrc`);
     fs.writeFileSync(lrcPath, msg.text, 'utf-8');
     console.log(`[Lyrics] Saved synchronized lyrics for "${msg.song}" to ${lrcPath}`);
-    bridgeState.wsServer?.broadcastLog(`Letra sincronizada para "${msg.song}" salva com sucesso!`, 'info');
+    bridgeState.wsServer?.broadcastLog(`Synchronized lyrics for "${msg.song}" saved.`, 'info');
 
     const lyrics = loadLyricsForSong(msg.song);
     bridgeState.wsServer?.broadcast({
@@ -246,7 +246,7 @@ function executeSaveLyricsCommand(msg: any): void {
     });
   } catch (err) {
     console.error('[Lyrics] Error saving lyrics:', err);
-    bridgeState.wsServer?.broadcastLog(`Erro ao salvar a letra: ${err instanceof Error ? err.message : String(err)}`, 'error');
+    bridgeState.wsServer?.broadcastLog(`Could not save lyrics: ${err instanceof Error ? err.message : String(err)}`, 'error');
     throw err;
   }
 }
@@ -280,7 +280,7 @@ function executeClickPreviewCommand(msg: any, ws?: AugmentedWebSocket): void {
     }
   } catch (err) {
     console.error('[Click] Error generating preview:', err);
-    bridgeState.wsServer?.broadcastLog(`Erro ao gerar click preview: ${err instanceof Error ? err.message : String(err)}`, 'error');
+    bridgeState.wsServer?.broadcastLog(`Could not generate the click preview: ${err instanceof Error ? err.message : String(err)}`, 'error');
     throw err;
   }
 }
@@ -289,7 +289,7 @@ function executeExportCsvCommand(msg: any, ws?: AugmentedWebSocket): void {
   try {
     const state = bridgeState.manager?.getState();
     if (!state || !state.songs.length) {
-      bridgeState.wsServer?.broadcastLog('Nenhuma música no setlist para exportar.', 'warn');
+      bridgeState.wsServer?.broadcastLog('There are no songs in the setlist to export.', 'warn');
     } else {
       const customOrder = bridgeState.manager!.getCustomOrder();
       const rows: CsvTracklistRow[] = state.songs.map((song, idx) => {
@@ -329,7 +329,7 @@ function executeExportCsvCommand(msg: any, ws?: AugmentedWebSocket): void {
       const fullPath = path.join(exportsDir, fileName);
       fs.writeFileSync(fullPath, csv, 'utf-8');
       console.log(`[CSV] Wrote tracklist export to ${fullPath} (${rows.length} rows)`);
-      bridgeState.wsServer?.broadcastLog(`Tracklist exportado: ${fileName} (${rows.length} músicas)`, 'info');
+      bridgeState.wsServer?.broadcastLog(`Tracklist exported: ${fileName} (${rows.length} songs)`, 'info');
 
       if (ws && ws.readyState === WebSocket.OPEN) {
         ws.send(JSON.stringify({
@@ -342,7 +342,7 @@ function executeExportCsvCommand(msg: any, ws?: AugmentedWebSocket): void {
     }
   } catch (err) {
     console.error('[CSV] Error exporting tracklist:', err);
-    bridgeState.wsServer?.broadcastLog(`Erro ao exportar CSV: ${err instanceof Error ? err.message : String(err)}`, 'error');
+    bridgeState.wsServer?.broadcastLog(`Could not export CSV: ${err instanceof Error ? err.message : String(err)}`, 'error');
     throw err;
   }
 }
@@ -350,42 +350,42 @@ function executeExportCsvCommand(msg: any, ws?: AugmentedWebSocket): void {
 async function executeCreateTestSessionCommand(msg: any): Promise<void> {
   const markers: Array<{ name: string; beats: number }> = [
     { name: 'TEST ALPHA [bpm 90] [click]', beats: 0 },
-    { name: 'TEST ALPHA > Intro [loop 2x]', beats: 8 },
-    { name: 'TEST ALPHA > Verso 1', beats: 24 },
-    { name: 'TEST ALPHA > Refrão [next]', beats: 48 },
-    { name: 'TEST ALPHA > Bridge', beats: 64 },
-    { name: 'TEST ALPHA > _BridgeOculta [hidden]', beats: 80 },
-    { name: 'TEST ALPHA > Outro [stop]', beats: 96 },
+    { name: 'TEST ALPHA > INTRO [loop 2x]', beats: 8 },
+    { name: 'TEST ALPHA > VERSE 1', beats: 24 },
+    { name: 'TEST ALPHA > CHORUS [next]', beats: 48 },
+    { name: 'TEST ALPHA > BRIDGE', beats: 64 },
+    { name: 'TEST ALPHA > _HIDDEN BRIDGE [hidden]', beats: 80 },
+    { name: 'TEST ALPHA > OUTRO [stop]', beats: 96 },
     { name: 'TEST BRAVO [bpm 110]', beats: 112 },
-    { name: 'TEST BRAVO > Intro [loop]', beats: 120 },
-    { name: 'TEST BRAVO > Verso 1 [click-off]', beats: 136 },
-    { name: 'TEST BRAVO > _BridgeOculta [hidden]', beats: 152 },
-    { name: 'TEST BRAVO > Refrão', beats: 168 },
+    { name: 'TEST BRAVO > INTRO [loop]', beats: 120 },
+    { name: 'TEST BRAVO > VERSE 1 [click-off]', beats: 136 },
+    { name: 'TEST BRAVO > _HIDDEN BRIDGE [hidden]', beats: 152 },
+    { name: 'TEST BRAVO > CHORUS', beats: 168 },
     { name: 'TEST CHARLIE [bpm 132] [click]', beats: 184 },
-    { name: 'TEST CHARLIE > Intro', beats: 192 },
-    { name: 'TEST CHARLIE > Verso 1 [stop]', beats: 208 },
+    { name: 'TEST CHARLIE > INTRO', beats: 192 },
+    { name: 'TEST CHARLIE > VERSE 1 [stop]', beats: 208 },
     { name: 'TEST DELTA [bpm 84]', beats: 224 },
-    { name: 'TEST DELTA > Intro [loop 2x]', beats: 232 },
-    { name: 'TEST DELTA > Verso 1 [next]', beats: 248 },
+    { name: 'TEST DELTA > INTRO [loop 2x]', beats: 232 },
+    { name: 'TEST DELTA > VERSE 1 [next]', beats: 248 },
     { name: 'TEST ECHO [bpm 95] [click]', beats: 264 },
-    { name: 'TEST ECHO > Intro', beats: 272 },
-    { name: 'TEST ECHO > Verso 1 [stop]', beats: 288 },
+    { name: 'TEST ECHO > INTRO', beats: 272 },
+    { name: 'TEST ECHO > VERSE 1 [stop]', beats: 288 },
     { name: 'TEST FOXTROT [bpm 100]', beats: 304 },
-    { name: 'TEST FOXTROT > Intro', beats: 312 },
-    { name: 'TEST FOXTROT > Verso 1 [stop]', beats: 328 },
+    { name: 'TEST FOXTROT > INTRO', beats: 312 },
+    { name: 'TEST FOXTROT > VERSE 1 [stop]', beats: 328 },
     { name: 'TEST GOLF [bpm 105] [click]', beats: 344 },
-    { name: 'TEST GOLF > Intro', beats: 352 },
-    { name: 'TEST GOLF > Verso 1 [stop]', beats: 368 },
+    { name: 'TEST GOLF > INTRO', beats: 352 },
+    { name: 'TEST GOLF > VERSE 1 [stop]', beats: 368 },
   ];
 
   const lyricsBySong: Record<string, string> = {
-    'TEST ALPHA': `[00:00.00]TEST ALPHA — TAGS TEST\n[00:05.33]Verso 1: loop 2x, click e bpm 90\n[00:16.00]Refrão: auto next e depois stop\n[00:26.67]Bridge: secreta e oculta\n[00:32.00]Outro: para o Ableton automaticamente\n`,
-    'TEST BRAVO': `[00:00.00]TEST BRAVO — INFINITE LOOP\n[00:04.36]Loop infinito ativado aqui\n[00:13.09]Desliga o metrônomo automaticamente\n[00:21.82]Refrão e finalização manual\n`,
-    'TEST CHARLIE': `[00:00.00]TEST CHARLIE — SIMPLE STOP\n[00:03.63]Intro e andamento acelerado\n[00:10.90]Para imediatamente no verso\n`,
-    'TEST DELTA': `[00:00.00]TEST DELTA — NEXT AUTOMATION\n[00:05.71]Intro com repetição 2x\n[00:17.14]Pula para a próxima música no verso\n`,
-    'TEST ECHO': `[00:00.00]TEST ECHO — SONG 5\n[00:05.05]Metrônomo ativo e bpm 95\n[00:15.15]Para automaticamente no verso\n`,
-    'TEST FOXTROT': `[00:00.00]TEST FOXTROT — SONG 6\n[00:04.80]Sem metrônomo e bpm 100\n[00:14.40]Para automaticamente no verso\n`,
-    'TEST GOLF': `[00:00.00]TEST GOLF — SONG 7\n[00:04.57]Com metrônomo e bpm 105\n[00:13.71]Para no verso\n`,
+    'TEST ALPHA': `[00:00.00]TEST ALPHA — TAGS TEST\n[00:05.33]Verse 1: loop 2x, click and bpm 90\n[00:16.00]Chorus: automatic next, then stop\n[00:26.67]Bridge: hidden section test\n[00:32.00]Outro: stops Ableton Live automatically\n`,
+    'TEST BRAVO': `[00:00.00]TEST BRAVO — INFINITE LOOP\n[00:04.36]Infinite loop starts here\n[00:13.09]The metronome turns off automatically\n[00:21.82]Chorus and manual ending\n`,
+    'TEST CHARLIE': `[00:00.00]TEST CHARLIE — SIMPLE STOP\n[00:03.63]Intro at a faster tempo\n[00:10.90]Playback stops at the verse\n`,
+    'TEST DELTA': `[00:00.00]TEST DELTA — NEXT AUTOMATION\n[00:05.71]Intro repeats twice\n[00:17.14]Jumps to the next song at the verse\n`,
+    'TEST ECHO': `[00:00.00]TEST ECHO — SONG 5\n[00:05.05]Metronome on at 95 bpm\n[00:15.15]Stops automatically at the verse\n`,
+    'TEST FOXTROT': `[00:00.00]TEST FOXTROT — SONG 6\n[00:04.80]Metronome off at 100 bpm\n[00:14.40]Stops automatically at the verse\n`,
+    'TEST GOLF': `[00:00.00]TEST GOLF — SONG 7\n[00:04.57]Metronome on at 105 bpm\n[00:13.71]Stops at the verse\n`,
   };
 
   if (!bridgeState.oscClient) return;
@@ -410,14 +410,14 @@ async function executeCreateTestSessionCommand(msg: any): Promise<void> {
       if (res && res.status === 'ok') {
         createdCount++;
         bridgeState.wsServer?.broadcastLog(
-          `Criado: ${marker.name} na batida ${targetBeat} (${createdCount}/${markers.length})`,
+          `Created: ${marker.name} at beat ${targetBeat} (${createdCount}/${markers.length})`,
           'info'
         );
       } else {
-        const errMsg = res && (res as any).message ? (res as any).message : 'OSC/MCP timeout ou erro';
+        const errMsg = res && (res as any).message ? (res as any).message : 'OSC/MCP timeout or error';
         console.warn(`[Automation] Marker ${marker.name} failed: ${errMsg}`);
         bridgeState.wsServer?.broadcastLog(
-          `Marcador ${i + 1}/${markers.length} (${marker.name}) falhou: ${errMsg}`,
+          `Locator ${i + 1}/${markers.length} (${marker.name}) failed: ${errMsg}`,
           'warn'
         );
       }
@@ -428,7 +428,7 @@ async function executeCreateTestSessionCommand(msg: any): Promise<void> {
       `[Automation] Automated creation of test locators complete (${createdCount}/${markers.length})`
     );
     bridgeState.wsServer?.broadcastLog(
-      `Criação automática finalizada: ${createdCount}/${markers.length} marcadores. Clique em "Recarregar Setlist".`,
+      `Automatic setup complete: ${createdCount}/${markers.length} locators. Select "Refresh" in Stage Control.`,
       'info'
     );
 
@@ -454,18 +454,18 @@ async function executeCreateTestSessionCommand(msg: any): Promise<void> {
       }
     }
     bridgeState.wsServer?.broadcastLog(
-      `Letras sincronizadas salvas: ${lyricsSaved}/${Object.keys(lyricsBySong).length}.`,
+      `Synchronized lyrics saved: ${lyricsSaved}/${Object.keys(lyricsBySong).length}.`,
       'info'
     );
     if (lyricsSkipped > 0) {
       bridgeState.wsServer?.broadcastLog(
-        `⚠ ${lyricsSkipped} letra(s) não puderam ser salvas.`,
+        `⚠ ${lyricsSkipped} lyric file(s) could not be saved.`,
         'warn'
       );
     }
   } catch (err) {
     console.error('[Automation] Error creating test locators:', err);
-    bridgeState.wsServer?.broadcastLog(`Erro ao criar marcadores: ${err}`, 'error');
+    bridgeState.wsServer?.broadcastLog(`Could not create test locators: ${err}`, 'error');
   } finally {
     bridgeState.isCreatingTestSession = false;
   }

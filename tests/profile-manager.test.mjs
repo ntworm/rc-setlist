@@ -27,13 +27,13 @@ test('profile names normalize with NFKC and enforce the contract', () => {
   assert.throws(() => normalizeProfileName('Show\u0000'), (err) => err instanceof ProfileError && err.code === 'invalid_profile');
 });
 
-test('empty storage creates and remembers Setlist Principal with profile-local paths', async (t) => {
+test('empty storage creates and remembers Main Setlist with profile-local paths', async (t) => {
   const root = makeRoot(t);
   const manager = new ProfileManager(root, deterministicOptions());
   await manager.initialize();
 
   assert.equal(manager.list().length, 1);
-  assert.equal(manager.getActive().name, 'Setlist Principal');
+  assert.equal(manager.getActive().name, 'Main Setlist');
   assert.equal(typeof manager.delete, 'undefined');
   const paths = manager.getActivePaths();
   assert.equal(paths.root, path.join(root, 'profiles', manager.getActive().id));
@@ -47,6 +47,20 @@ test('empty storage creates and remembers Setlist Principal with profile-local p
   assert.equal(restarted.getActive().id, manager.getActive().id);
 });
 
+test('legacy Setlist Principal remains the migration default without creating a duplicate', async (t) => {
+  const root = makeRoot(t);
+  const manager = new ProfileManager(root, deterministicOptions());
+  await manager.initialize();
+  const initialId = manager.getActive().id;
+  await manager.rename(initialId, 'Setlist Principal');
+
+  const migrationTarget = await manager.ensureDefaultProfile();
+
+  assert.equal(migrationTarget.id, initialId);
+  assert.equal(migrationTarget.name, 'Setlist Principal');
+  assert.equal(manager.list().length, 1);
+});
+
 test('first initialization persists the registry without global structuredClone', async (t) => {
   const originalStructuredClone = globalThis.structuredClone;
   const root = makeRoot(t);
@@ -58,7 +72,7 @@ test('first initialization persists the registry without global structuredClone'
 
     const registry = JSON.parse(fs.readFileSync(path.join(root, 'profiles', 'index.json'), 'utf8'));
     assert.equal(registry.migrationVersion, 1);
-    assert.equal(manager.getActive().name, 'Setlist Principal');
+    assert.equal(manager.getActive().name, 'Main Setlist');
   } finally {
     globalThis.structuredClone = originalStructuredClone;
   }
@@ -124,9 +138,9 @@ test('absent index and bak rebuilds index from directory profile.json scanning',
 
   const restarted = new ProfileManager(root, deterministicOptions());
   await restarted.initialize();
-  // It should find "Fest" and "Setlist Principal" profiles by scanning subdirs
+  // It should find "Fest" and "Main Setlist" profiles by scanning subdirs
   assert.equal(restarted.list().length, 2);
-  assert.equal(restarted.getActive().name, 'Setlist Principal'); // Setlist Principal is the oldest profile
+  assert.equal(restarted.getActive().name, 'Main Setlist'); // Main Setlist is the oldest profile
 });
 
 test('schemaVersion 2 throws future_schema without rewriting index.json or index.json.bak', async (t) => {
@@ -207,8 +221,8 @@ test('missing or invalid activeProfileId chooses oldest profile and repairs inde
   const restarted = new ProfileManager(root, deterministicOptions());
   await restarted.initialize();
 
-  // Setlist Principal is older than Fest, so it should be chosen as active
-  assert.equal(restarted.getActive().name, 'Setlist Principal');
+  // Main Setlist is older than Fest, so it should be chosen as active
+  assert.equal(restarted.getActive().name, 'Main Setlist');
 
   // Verify index.json was repaired on disk
   const repairedRegistry = JSON.parse(fs.readFileSync(indexPath, 'utf8'));
@@ -229,13 +243,13 @@ test('select(id) validates metadata and ID mismatch, and reverts active profile 
 
   // Trying to select should fail and preserve previous active profile
   await assert.rejects(manager.select(fest.id), (err) => err instanceof ProfileError && err.code === 'profile_io_error');
-  assert.equal(manager.getActive().name, 'Setlist Principal');
+  assert.equal(manager.getActive().name, 'Main Setlist');
 });
 
 test('transactional metadata cleanup on create failure', async (t) => {
   const root = makeRoot(t);
   // Inject mock writeJsonAtomic that fails for profile.json on the SECOND call
-  // (the first call is during initialize() for Setlist Principal)
+  // (the first call is during initialize() for Main Setlist)
   let profileJsonWriteCount = 0;
   const manager = new ProfileManager(root, {
     ...deterministicOptions(),
@@ -259,7 +273,7 @@ test('transactional metadata cleanup on create failure', async (t) => {
   // Verify no orphaned directory remains in profiles/
   const profilesDir = path.join(root, 'profiles');
   const files = fs.readdirSync(profilesDir);
-  // Only index.json and the Setlist Principal folder should exist
+  // Only index.json and the Main Setlist folder should exist
   assert.equal(files.filter(f => f !== 'index.json').length, 1);
 });
 
@@ -415,7 +429,7 @@ test('recordLegacySource returns ProfileError on metadata write failure and pres
 });
 
 // Issue 6: Scan recovery must not swallow persistence failure
-test('scan recovery rejects when index write fails, does not create spurious Setlist Principal', async (t) => {
+test('scan recovery rejects when index write fails, does not create spurious Main Setlist', async (t) => {
   const root = makeRoot(t);
   const options = deterministicOptions();
   const manager = new ProfileManager(root, options);
@@ -442,13 +456,13 @@ test('scan recovery rejects when index write fails, does not create spurious Set
     return err instanceof ProfileError && err.code === 'profile_io_error';
   });
 
-  // No extra Setlist Principal should have been created
+  // No extra Main Setlist should have been created
   const profilesDir = path.join(root, 'profiles');
   const dirs = fs.readdirSync(profilesDir).filter(f => {
     const stat = fs.statSync(path.join(profilesDir, f));
     return stat.isDirectory();
   });
-  // Only the existing Setlist Principal and Fest should exist
+  // Only the existing Main Setlist and Fest should exist
   assert.equal(dirs.length, 2);
 });
 

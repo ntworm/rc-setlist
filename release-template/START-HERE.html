@@ -1,49 +1,56 @@
 <!doctype html>
-<html lang="pt-BR">
+<html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Ableton RC Setlist 0.3.0 — Comece aqui</title>
+  <title>Ableton RC Setlist 0.4.0 — Start here</title>
   <style>
-    :root { color-scheme: dark; --bg:#0b0b0d; --panel:#15151a; --ink:#f5f1e8; --muted:#aaa5a0; --line:#313036; --accent:#ff6b1a; }
-    * { box-sizing: border-box; }
+    :root { color-scheme:dark; --bg:#0b0b0d; --panel:#15151a; --ink:#f5f1e8; --muted:#aaa5a0; --line:#313036; --accent:#ff6b1a; }
+    * { box-sizing:border-box; }
     body { margin:0; background:var(--bg); color:var(--ink); font:16px/1.55 system-ui,-apple-system,"Segoe UI",sans-serif; }
-    main { width:min(760px,calc(100% - 2rem)); margin:0 auto; padding:4rem 0; }
+    main { width:min(880px,calc(100% - 2rem)); margin:0 auto; padding:4rem 0; }
     .mark { display:inline-grid; place-items:center; width:48px; height:48px; border-radius:12px; background:var(--accent); color:#160b05; font-weight:900; }
     h1 { margin:1.3rem 0 .5rem; font-size:clamp(2.5rem,8vw,5rem); line-height:.95; letter-spacing:-.055em; }
     h1 span { color:var(--accent); }
-    .lead { max-width:58ch; color:#d2cdc6; font-size:1.1rem; }
+    .lead { max-width:62ch; color:#d2cdc6; font-size:1.1rem; }
     .grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:1rem; margin:2rem 0; }
-    .card { padding:1.2rem; border:1px solid var(--line); border-radius:12px; background:var(--panel); }
-    .card strong { display:block; margin-bottom:.35rem; }
-    .card p { margin:0; color:var(--muted); }
+    .card { padding:1.4rem; border:1px solid var(--line); border-radius:12px; background:var(--panel); }
+    .card strong { display:block; margin-bottom:.35rem; font-size:1.15rem; }
+    .card p { margin:.35rem 0 1rem; color:var(--muted); }
     a { color:var(--ink); }
-    .button { display:inline-block; margin:.5rem .5rem .5rem 0; padding:.75rem 1rem; border-radius:8px; background:var(--accent); color:#160b05; font-weight:800; text-decoration:none; }
-    .button.alt { border:1px solid var(--line); background:var(--panel); color:var(--ink); }
+    .button { display:inline-block; margin:.35rem .35rem .35rem 0; padding:.75rem 1rem; border-radius:8px; background:var(--accent); color:#160b05; font-weight:800; text-decoration:none; }
+    .button.alt { border:1px solid var(--line); background:#202027; color:var(--ink); }
     .warning { margin-top:2rem; padding:1rem; border-left:4px solid var(--accent); background:#1b110d; }
     footer { margin-top:3rem; padding-top:1.25rem; border-top:1px solid var(--line); color:var(--muted); font-size:.85rem; }
-    @media (max-width:560px) { .grid { grid-template-columns:1fr; } .button { display:block; text-align:center; } }
+    @media (max-width:680px) { .grid { grid-template-columns:1fr; } .button { display:block; text-align:center; } }
     a:focus-visible { outline:3px solid #ffb07d; outline-offset:4px; }
   </style>
 </head>
 <body>
   <main>
     <span class="mark" aria-hidden="true">RC</span>
-    <h1>RC <span>SETLIST</span></h1>
-    <p class="lead">Pacote completo do candidato 0.3.0. Instale o AbletonOSC, abra o arquivo <code>Ableton-RC-Setlist-0.3.0.ablx</code> e valide o fluxo no Ableton Live antes da publicação.</p>
-    <a class="button" href="./Ableton-RC-Setlist-0.3.0.ablx">Abrir o .ablx</a>
-    <a class="button alt" href="./INSTALL.md">Ler instalação</a>
-    <a class="button alt" href="./TEST-CHECKLIST.md">Abrir checklist</a>
+    <h1>Ableton RC <span>Setlist</span></h1>
+    <p class="lead">One installer, two interface languages. Install the external AbletonOSC dependency, open <code>Ableton-RC-Setlist-0.4.0.ablx</code>, choose English or Brazilian Portuguese and rehearse before stage use.</p>
 
     <div class="grid">
-      <section class="card"><strong>1. Dependência externa</strong><p>Instale o <a href="https://github.com/ideoforms/AbletonOSC">AbletonOSC oficial</a> como Control Surface.</p></section>
-      <section class="card"><strong>2. Extensão</strong><p>Abra o <code>Ableton-RC-Setlist-0.3.0.ablx</code> e aprove a instalação no Live.</p></section>
-      <section class="card"><strong>3. Rede local</strong><p>Use somente uma trusted local network / LAN e o endereço mostrado no painel.</p></section>
-      <section class="card"><strong>4. Teste de palco</strong><p>Use o set fictício de <code>examples/</code> e conclua o checklist antes do release.</p></section>
+      <section class="card" lang="en">
+        <strong>English</strong>
+        <p>Install, learn the workflow and complete the release checklist.</p>
+        <a class="button" href="./Ableton-RC-Setlist-0.4.0.ablx">Open .ablx</a>
+        <a class="button alt" href="./en/INSTALL.md">Installation</a>
+        <a class="button alt" href="./en/TEST-CHECKLIST.md">Checklist</a>
+      </section>
+      <section class="card" lang="pt-BR">
+        <strong>Português (Brasil)</strong>
+        <p>Instale, conheça o fluxo e conclua o checklist de lançamento.</p>
+        <a class="button" href="./Ableton-RC-Setlist-0.4.0.ablx">Abrir .ablx</a>
+        <a class="button alt" href="./pt-BR/INSTALL.md">Instalação</a>
+        <a class="button alt" href="./pt-BR/TEST-CHECKLIST.md">Checklist</a>
+      </section>
     </div>
 
-    <div class="warning"><strong>Requisito:</strong> Ableton Live 12.4.5+ Suite Beta com suporte a Extensions. Windows está validado; macOS é experimental nesta versão.</div>
-    <footer>Ableton RC Setlist é independente e não é afiliado nem endossado pela Ableton AG. Licença PolyForm Noncommercial 1.0.0; uso comercial não permitido.</footer>
+    <div class="warning"><strong>Requirement / Requisito:</strong> Ableton Live 12.4.5+ Suite Beta with Extensions support and AbletonOSC installed separately. Windows is the validated release path; macOS is experimental.</div>
+    <footer>Ableton RC Setlist is independent and is not affiliated with or endorsed by Ableton AG. PolyForm Noncommercial 1.0.0; commercial use is not permitted.</footer>
   </main>
 </body>
 </html>

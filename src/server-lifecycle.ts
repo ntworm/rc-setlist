@@ -199,7 +199,7 @@ export async function startServer(options: StartServerOptions = {}): Promise<voi
 
       bridgeState.oscClient.on('connect', () => {
         console.log('[OSC] Connection established. Registering listeners and fetching cue points...');
-        bridgeState.wsServer?.broadcastLog('Conexão com Ableton Live estabelecida!', 'info');
+        bridgeState.wsServer?.broadcastLog('Connected to Ableton Live.', 'info');
 
         bridgeState.oscClient?.startPropertyListeners();
         bridgeState.oscClient?.startPolling();
@@ -213,7 +213,7 @@ export async function startServer(options: StartServerOptions = {}): Promise<voi
       bridgeState.oscClient.on('disconnect', () => {
         console.warn('[OSC] Connection to Ableton Live lost.');
         bridgeState.lastCuesFingerprint = '__init__';
-        bridgeState.wsServer?.broadcastLog('⚠ Conexão com Ableton Live perdida! Tentando reconectar...', 'warn');
+        bridgeState.wsServer?.broadcastLog('⚠ Lost connection to Ableton Live. Reconnecting...', 'warn');
 
         bridgeState.manager?.setConnectionStatus('osc', 'disconnected');
         bridgeState.eventLogger?.log({ type: 'osc_disconnected', message: 'OSC connection to Ableton Live lost' });
@@ -255,7 +255,7 @@ export async function startServer(options: StartServerOptions = {}): Promise<voi
 
       onListening = () => {
         srv.off('error', onError);
-        console.log(`[HTTP] Servidor rodando em ${useHttps && httpsOptions && !options.skipCerts ? 'HTTPS' : 'HTTP'} na porta ${listenPort}`);
+        console.log(`[HTTP] Server running over ${useHttps && httpsOptions && !options.skipCerts ? 'HTTPS' : 'HTTP'} on port ${listenPort}`);
         resolve();
       };
 
@@ -305,7 +305,7 @@ export async function startServer(options: StartServerOptions = {}): Promise<voi
       const readOnlyTypes = new Set(['get_lyrics', 'profiles_get', 'preflight_check']);
       if (!readOnlyTypes.has(msg.type) && !isController) {
         console.warn(`[Security] WS client tried to execute command '${msg.type}' without controller permissions.`);
-        ws.send(JSON.stringify({ type: 'error', code: 'unauthorized', message: 'Não autorizado: Permissão de controle necessária.' }));
+        ws.send(JSON.stringify({ type: 'error', code: 'unauthorized', message: 'Unauthorized: controller permission is required.' }));
         return;
       }
 

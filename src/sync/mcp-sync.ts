@@ -26,7 +26,7 @@ export function syncFromMcpInfo(info: SessionInfo): void {
     // Log active changes
     if (newState && (prevActiveSongIdx !== newState.activeSongIndex || prevActiveSectionIdx !== newState.activeSectionIndex)) {
       const song = newState.songs[newState.activeSongIndex];
-      const msg = `Ativo alterado → Música: "${song?.title}" (idx ${newState.activeSongIndex}), Seção idx: ${newState.activeSectionIndex}, tempo: ${info.current_song_time.toFixed(1)}s`;
+      const msg = `Active cue changed → Song: "${song?.title}" (idx ${newState.activeSongIndex}), Section idx: ${newState.activeSectionIndex}, time: ${info.current_song_time.toFixed(1)}s`;
       console.log(`[Transport-MCP] ${msg}`);
       bridgeState.wsServer?.broadcastLog(msg, 'info');
     }

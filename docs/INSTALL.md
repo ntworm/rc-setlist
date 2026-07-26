@@ -4,7 +4,7 @@
 
 - Ableton Live 12.4.5+ Suite (Beta) with Extensions support.
 - [AbletonOSC](https://github.com/ideoforms/AbletonOSC) installed as a Control Surface.
-- Windows for the validated 0.3.0 release path. macOS is experimental.
+- Windows for the validated release path. macOS is experimental.
 
 Node.js 24.16.0 is required only for source development, not for installing the
 release package.
@@ -30,11 +30,15 @@ consult its upstream documentation.
 
 ## 2. Install Ableton RC Setlist
 
-1. Download `Ableton-RC-Setlist-0.3.0.ablx` from the
+1. Download `Ableton-RC-Setlist-0.4.0.ablx` from the
    [latest GitHub release](https://github.com/ntworm/rc-setlist/releases/latest).
 2. Open the `.ablx` and follow the Ableton Live installation prompt.
 3. Restart Live if the extension does not appear immediately.
 4. Open **Extensions > Ableton RC Setlist**.
+
+The same `.ablx` contains both interface languages. English is selected by
+default; choose **Português (Brasil)** from the language menu in the panel,
+Stage Control or Performance view. The choice is remembered locally.
 
 Do not install SDK or CLI archives as an end user.
 

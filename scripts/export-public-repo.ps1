@@ -10,6 +10,7 @@ $ErrorActionPreference = "Stop"
 
 $repoRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
 $allowlistPath = Join-Path $repoRoot "public-files.txt"
+$excludedEntries = @("tests/scratch")
 $destinationFull = [IO.Path]::GetFullPath($Destination)
 $destinationLeaf = [IO.Path]::GetFileName($destinationFull.TrimEnd([IO.Path]::DirectorySeparatorChar))
 
@@ -63,6 +64,17 @@ foreach ($entry in $entries) {
     $targetParent = Split-Path -Parent $targetPath
     New-Item -ItemType Directory -Force -Path $targetParent | Out-Null
     Copy-Item -LiteralPath $sourcePath -Destination $targetPath -Recurse -Force
+}
+
+foreach ($entry in $excludedEntries) {
+    $normalized = $entry.Replace("/", [IO.Path]::DirectorySeparatorChar)
+    $targetPath = [IO.Path]::GetFullPath((Join-Path $destinationFull $normalized))
+    if (-not $targetPath.StartsWith($destinationFull + [IO.Path]::DirectorySeparatorChar, [StringComparison]::OrdinalIgnoreCase)) {
+        throw "Excluded public path escaped the destination: $entry"
+    }
+    if (Test-Path -LiteralPath $targetPath) {
+        Remove-Item -LiteralPath $targetPath -Recurse -Force
+    }
 }
 
 & node (Join-Path $destinationFull "scripts/verify-public-snapshot.mjs") $destinationFull

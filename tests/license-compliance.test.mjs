@@ -40,7 +40,7 @@ test('PolyForm license keeps its canonical sections and Ableton RC Setlist notic
 
 test('project notice states copyright, source-available license and trademark independence', () => {
   const notice = readRequired('NOTICE');
-  assert.match(notice, /Ableton RC Setlist 0\.3\.0/);
+  assert.match(notice, /Ableton RC Setlist 0\.4\.0/);
   assert.match(notice, /Copyright © 2026 Gabriel Worm/);
   assert.match(notice, /PolyForm Noncommercial 1\.0\.0/);
   assert.match(notice, /Ableton and Ableton Live are trademarks of Ableton AG/);
@@ -61,6 +61,7 @@ test('third-party notices cover direct runtime dependencies and bundled QR code'
 test('third-party notice generation normalizes dependency license line endings', () => {
   const generator = readRequired('scripts/generate-third-party-notices.mjs');
   assert.ok(generator.includes(".replace(/\\r\\n?/g, '\\n')"));
+  assert.ok(generator.includes("'--package-lock-only'"));
 });
 
 test('checked-in third-party notices match the generator output', () => {

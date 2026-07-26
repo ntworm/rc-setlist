@@ -15,11 +15,23 @@ test('public export uses an explicit allowlist and reproducible verifier', () =>
   }
 
   const allowlist = read('public-files.txt');
+  const exporter = read('scripts/export-public-repo.ps1');
   for (const required of [
     'src/',
     'static/',
     'tests/',
     'docs/index.html',
+    'docs/site-i18n.js',
+    'docs/media/en/performance.png',
+    'docs/media/en/product-truth-discord.png',
+    'docs/media/en/stage-control.png',
+    'docs/media/en/stage-editorial.png',
+    'docs/media/en/workflow.png',
+    'docs/media/pt-BR/performance.png',
+    'docs/media/pt-BR/product-truth-discord.png',
+    'docs/media/pt-BR/stage-control.png',
+    'docs/media/pt-BR/stage-editorial.png',
+    'docs/media/pt-BR/workflow.png',
     'CODE_OF_CONDUCT.md',
     'LICENSE',
     'THIRD_PARTY_NOTICES.md',
@@ -28,12 +40,22 @@ test('public export uses an explicit allowlist and reproducible verifier', () =>
     assert.match(allowlist, new RegExp(`^${required.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'm'));
   }
 
+  for (const privatePath of [
+    'docs/media/',
+    'docs/media-kit.html',
+    'docs/media/product-truth-linkedin.png',
+    'docs/media/product-truth-square.png',
+  ]) {
+    assert.doesNotMatch(allowlist, new RegExp(`^${privatePath.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'm'));
+  }
+
   assert.doesNotMatch(allowlist, /AGENTS\.md|AGENT_GUIDE|\.agent-context|\.tgz|docs\/superpowers|docs\/agent|docs\/release\/BASELINE|release-kit|competitive_analysis|investigation_report/i);
+  assert.match(exporter, /tests\/scratch/, 'internal scratch probes must be excluded from the public snapshot');
 });
 
 test('snapshot verifier rejects private archives, internal context and stale branding', () => {
   const verifier = read('scripts/verify-public-snapshot.mjs');
-  for (const rule of ['tgz', '.agent-context', 'stale-product-name', 'commercial-song']) {
+  for (const rule of ['tgz', '.agent-context', 'internal-scratch', 'stale-product-name', 'commercial-song']) {
     assert.ok(verifier.includes(rule), `verifier must cover ${rule}`);
   }
   assert.match(verifier, /src\/core\/profile-migration\.ts/);
@@ -45,6 +67,7 @@ test('snapshot verifier scopes scanner self-references to exact files', () => {
   for (const exactPath of [
     'tests/content-sanitization.test.mjs',
     'docs/TROUBLESHOOTING.md',
+    'docs/pt-BR/TROUBLESHOOTING.md',
     'tests/profile-migration.test.mjs',
     'tests/release-package.test.mjs',
     'tests/release-surface.test.mjs',

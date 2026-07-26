@@ -6,12 +6,12 @@ import { SetlistState, AugmentedWebSocket } from '../types.js';
 
 export function isValidOrigin(origin: string, reqHost: string): boolean {
   const expected = reqHost.toLowerCase();
-  // 1) Tenta via node:url import (sobrevive a URL global mascarado/indefinido)
+  // 1) Try the node:url import (works even when the global URL is masked or undefined)
   try {
     const parsed = new NodeURL(origin);
     if (parsed.host.toLowerCase() === expected) return true;
   } catch {}
-  // 2) Fallback: extrai authority (host:port) com regex, sem dependência de URL
+  // 2) Fallback: extract authority (host:port) with a regex and no URL dependency
   const m = origin.match(/^[a-z][a-z0-9+.\-]*:\/\/([^/?#]+)/i);
   if (m && m[1]!.toLowerCase() === expected) return true;
   return false;
@@ -82,16 +82,16 @@ export class SetlistWSServer extends EventEmitter {
       let tokenParsed: string | null = null;
       try {
         const host = req.headers.host ?? 'localhost';
-        // node:url import — o global `URL` é mascarado/indefinido no Node embedded da SDK do Ableton
+        // node:url import: the global URL is masked or undefined in Ableton's embedded Node runtime
         const url = new NodeURL(req.url ?? '', `http://${host}`);
         tokenParsed = url.searchParams.get('token');
         isController = tokenParsed === this.authToken && this.authToken !== '';
       } catch (err) {
-        console.warn('[WS] Erro ao extrair token da URL:', err);
+        console.warn('[WS] Could not extract the token from the URL:', err);
       }
 
       ws.isController = isController;
-      console.log(`[WS] Cliente conectado de ${remote}, hasToken=${!!tokenParsed}, controller=${isController}`);
+      console.log(`[WS] Client connected from ${remote}, hasToken=${!!tokenParsed}, controller=${isController}`);
 
       // Send immediate authentication status to client
       ws.send(JSON.stringify({ type: 'auth_status', isController }));
@@ -100,7 +100,7 @@ export class SetlistWSServer extends EventEmitter {
       ws.send(JSON.stringify({
         type: 'log',
         level: isController ? 'info' : 'warn',
-        message: `[WS Debug] Conectado de ${remote}. Controller: ${isController}`,
+        message: `[WS Debug] Connected from ${remote}. Controller: ${isController}`,
         timestamp: Date.now()
       }));
 
@@ -120,37 +120,37 @@ export class SetlistWSServer extends EventEmitter {
                 ws.isController = true;
                 ws.send(JSON.stringify({ type: 'auth_result', success: true }));
                 ws.send(JSON.stringify({ type: 'auth_status', isController: true }));
-                console.log(`[WS] Autenticação manual solicitada de ${remote}: SUCESSO`);
+                console.log(`[WS] Manual authentication requested from ${remote}: SUCCESS`);
               } else {
                 if (this.isAuthRateLimited(remote)) {
                   ws.send(JSON.stringify({ type: 'auth_result', success: false, error: 'Too many authentication attempts' }));
-                  console.warn(`[WS] Tentativa de autenticação manual bloqueada por rate limit de ${remote}`);
+                  console.warn(`[WS] Manual authentication attempt blocked by rate limit for ${remote}`);
                   return;
                 }
                 this.recordAuthFailure(remote);
                 ws.send(JSON.stringify({ type: 'auth_result', success: false }));
-                console.log(`[WS] Autenticação manual solicitada de ${remote}: FALHA`);
+                console.log(`[WS] Manual authentication requested from ${remote}: FAILURE`);
               }
             } else {
               // Empty token manual auth fails normally without incrementing rate limits
               ws.send(JSON.stringify({ type: 'auth_result', success: false }));
-              console.log(`[WS] Autenticação manual solicitada de ${remote}: Vazio/Negado`);
+              console.log(`[WS] Manual authentication requested from ${remote}: EMPTY/DENIED`);
             }
             return;
           }
           this.emit('client_message', msg, ws);
         } catch (err) {
-          console.warn('[WS] Erro ao decodificar mensagem JSON:', err);
+          console.warn('[WS] Could not decode the JSON message:', err);
         }
       });
 
       ws.on('close', () => {
         this.clients.delete(ws);
-        console.log('[WS] Cliente desconectado');
+        console.log('[WS] Client disconnected');
       });
 
       ws.on('error', (err) => {
-        console.error('[WS] Erro no socket do cliente:', err);
+        console.error('[WS] Client socket error:', err);
       });
     });
 
@@ -167,7 +167,7 @@ export class SetlistWSServer extends EventEmitter {
       const reqHost = req.headers['host'];
       if (origin) {
         if (!reqHost || !isValidOrigin(origin, reqHost)) {
-          console.warn(`[WS] Rejeitando upgrade de origem inválida ou Host ausente: ${origin} (Host: ${reqHost})`);
+          console.warn(`[WS] Rejecting upgrade with an invalid origin or missing Host: ${origin} (Host: ${reqHost})`);
           socket.write('HTTP/1.1 403 Forbidden\r\n\r\n');
           socket.destroy();
           return;
@@ -188,7 +188,7 @@ export class SetlistWSServer extends EventEmitter {
           this.authFailures.delete(remote);
         } else {
           if (this.isAuthRateLimited(remote)) {
-            console.warn(`[WS] Rejeitando upgrade devido a limite de tentativas de autenticação excedido de ${remote}`);
+            console.warn(`[WS] Rejecting upgrade because ${remote} exceeded the authentication-attempt limit`);
             socket.write('HTTP/1.1 429 Too Many Requests\r\n\r\n');
             socket.destroy();
             return;

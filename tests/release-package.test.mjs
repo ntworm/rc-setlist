@@ -10,7 +10,8 @@ test('release installation kit has a deterministic packager and owner-facing tem
     'scripts/package-release-candidate.ps1',
     'release-template/START-HERE.html',
     'release-template/README.txt',
-    'release-template/TEST-CHECKLIST.md',
+    'release-template/en/TEST-CHECKLIST.md',
+    'release-template/pt-BR/TEST-CHECKLIST.md',
   ]) {
     assert.ok(existsSync(new URL(file, rootUrl)), `${file} must exist`);
   }
@@ -21,7 +22,10 @@ test('release installation kit has a deterministic packager and owner-facing tem
     'Ableton-RC-Setlist-$Version-Installation-Kit',
     'SHA256SUMS.txt',
     'THIRD_PARTY_NOTICES.md',
-    'TEST-CHECKLIST.md',
+    'en/TEST-CHECKLIST.md',
+    'pt-BR/TEST-CHECKLIST.md',
+    'en/INSTALL.md',
+    'pt-BR/INSTALL.md',
     'START-HERE.html',
     'Get-ChildItem -LiteralPath $exampleSource',
   ]) {
@@ -29,19 +33,20 @@ test('release installation kit has a deterministic packager and owner-facing tem
   }
 
   assert.doesNotMatch(packager, /Copy-Item[^\n]+AbletonOSC/i, 'AbletonOSC must remain an external upstream install');
-  assert.match(packager, /Manual Ableton Live validation: PASSED ON WINDOWS/);
+  assert.match(packager, /Release verification: automated gates passed; rehearse in Ableton Live before stage use/);
 });
 
 test('release templates describe the real prerequisites and safe local-network setup', () => {
   const combined = [
     read('release-template/START-HERE.html'),
     read('release-template/README.txt'),
-    read('release-template/TEST-CHECKLIST.md'),
+    read('release-template/en/TEST-CHECKLIST.md'),
+    read('release-template/pt-BR/TEST-CHECKLIST.md'),
   ].join('\n');
 
   assert.match(combined, /Ableton Live 12\.4\.5\+/);
   assert.match(combined, /AbletonOSC/);
   assert.match(combined, /trusted (?:local network|LAN)/i);
-  assert.match(combined, /Ableton-RC-Setlist-0\.3\.0\.ablx/);
+  assert.match(combined, /Ableton-RC-Setlist-0\.4\.0\.ablx/);
   assert.doesNotMatch(combined, /Ableton Setlist Bridge|commercial-song|real setlist/i);
 });

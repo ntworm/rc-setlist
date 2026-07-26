@@ -16,7 +16,30 @@ test('landing exposes current metadata, calls to action and legal positioning', 
   await expect(page.locator('#source')).toHaveAttribute('href', 'https://github.com/ntworm/rc-setlist');
 
   const text = await page.locator('body').innerText();
-  expect(text).toContain('Neon Signal');
+  expect(text).toMatch(/Product truth/i);
+  expect(text).toContain('Performance');
+  expect(text).toMatch(/Stage Control/i);
+  expect(text).toMatch(/From locators\s+to stage/i);
+  expect(text).not.toContain('Neon Signal');
+  expect(text).not.toContain('Drift');
+  expect(text).not.toContain('Synchronized demo text');
+
+  await expect(page.locator('img[src="./media/en/performance.png"]')).toBeVisible();
+  await expect(page.locator('img[src="./media/en/stage-control.png"]')).toBeVisible();
+});
+
+test('real interfaces expose neutral marketing state', async ({ page }) => {
+  await page.goto('/performance/?scenario=marketing');
+  await expect(page.getByText('SONG 03', { exact: true })).toBeVisible();
+  await expect(page.getByText('CHORUS', { exact: true })).toBeVisible();
+  await expect(page.getByText('SONG 04', { exact: true })).toBeVisible();
+  await expect(page.getByText('Neon Signal')).toHaveCount(0);
+
+  await page.goto('/setlist/?scenario=marketing');
+  await expect(page.getByText('SONG 03', { exact: true }).first()).toBeVisible();
+  await expect(page.getByText('CHORUS', { exact: true }).first()).toBeVisible();
+  await expect(page.getByText('SONG 04', { exact: true }).first()).toBeVisible();
+  await expect(page.getByText('Neon Signal')).toHaveCount(0);
 });
 
 for (const viewport of [
@@ -35,6 +58,50 @@ for (const viewport of [
   });
 }
 
+test('landing preserves the product-truth hero artwork aspect ratio', async ({ page }) => {
+  await page.setViewportSize({ width: 777, height: 819 });
+  await page.goto('/landing/');
+
+  const geometry = await page.locator('.hero-visual img').evaluate((image) => {
+    const rect = image.getBoundingClientRect();
+    return {
+      naturalRatio: image.naturalWidth / image.naturalHeight,
+      renderedRatio: rect.width / rect.height,
+    };
+  });
+
+  expect(geometry.naturalRatio).toBeCloseTo(16 / 9, 4);
+  expect(geometry.renderedRatio).toBeCloseTo(geometry.naturalRatio, 4);
+});
+
+test('landing preserves every public product screenshot aspect ratio', async ({ page }) => {
+  await page.setViewportSize({ width: 1413, height: 1024 });
+  await page.goto('/landing/');
+
+  const images = page.locator('.gallery img, .workflow-image');
+  await expect(images).toHaveCount(3);
+  for (let index = 0; index < 3; index += 1) {
+    const image = images.nth(index);
+    await image.scrollIntoViewIfNeeded();
+    await image.evaluate((element) => element.decode());
+    const geometry = await image.evaluate((element) => {
+      const rect = element.getBoundingClientRect();
+      return {
+        naturalRatio: element.naturalWidth / element.naturalHeight,
+        renderedRatio: rect.width / rect.height,
+      };
+    });
+    expect(geometry.renderedRatio).toBeCloseTo(geometry.naturalRatio, 4);
+  }
+});
+
+test('landing does not expose an owner media kit', async ({ page }) => {
+  await page.goto('/landing/');
+
+  await expect(page.locator('a[href="./media-kit.html"]')).toHaveCount(0);
+  await expect(page.getByText('Need artwork for a post or community listing?', { exact: true })).toHaveCount(0);
+});
+
 test('landing keeps keyboard focus visible and loads no external runtime asset', async ({ page }) => {
   const requests = [];
   page.on('request', (request) => requests.push(request.url()));
@@ -46,4 +113,25 @@ test('landing keeps keyboard focus visible and loads no external runtime asset',
 
   const external = requests.filter((url) => !url.startsWith('http://127.0.0.1:4173/'));
   expect(external).toEqual([]);
+});
+
+test('landing switches between English and Portuguese at the canonical URL', async ({ page }) => {
+  await page.goto('/landing/');
+  await expect(page.locator('#languageSelect')).toHaveValue('en');
+
+  await page.locator('#languageSelect').selectOption('pt-BR');
+  await expect(page.locator('html')).toHaveAttribute('lang', 'pt-BR');
+  await expect(page.getByText('Dos localizadores', { exact: true })).toBeVisible();
+  await expect(page.getByText('ao palco.', { exact: true })).toBeVisible();
+  await expect(page.locator('.gallery img').first()).toHaveAttribute('src', /media\/pt-BR\//);
+  await expect(page.locator('#documentation')).toHaveAttribute('href', './pt-BR/README.md');
+
+  await page.reload();
+  await expect(page.locator('#languageSelect')).toHaveValue('pt-BR');
+  await expect(page.locator('html')).toHaveAttribute('lang', 'pt-BR');
+
+  await page.locator('#languageSelect').selectOption('en');
+  await expect(page.getByText('From locators', { exact: true })).toBeVisible();
+  await expect(page.getByText('to stage.', { exact: true })).toBeVisible();
+  await expect(page.locator('.gallery img').first()).toHaveAttribute('src', /media\/en\//);
 });

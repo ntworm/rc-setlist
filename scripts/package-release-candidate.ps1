@@ -1,5 +1,5 @@
 param(
-    [string]$Version = "0.3.0",
+    [string]$Version = "0.4.0",
     [string]$AblxPath,
     [string]$OutputRoot
 )
@@ -45,15 +45,23 @@ if (Test-Path -LiteralPath $kitRoot) {
 New-Item -ItemType Directory -Path $kitRoot | Out-Null
 New-Item -ItemType Directory -Path (Join-Path $kitRoot "LEGAL") | Out-Null
 New-Item -ItemType Directory -Path (Join-Path $kitRoot "examples") | Out-Null
+New-Item -ItemType Directory -Path (Join-Path $kitRoot "en") | Out-Null
+New-Item -ItemType Directory -Path (Join-Path $kitRoot "pt-BR") | Out-Null
 
 $copies = @(
     @{ Source = $ablxFull; Target = "Ableton-RC-Setlist-$Version.ablx" },
     @{ Source = (Join-Path $repoRoot "release-template/START-HERE.html"); Target = "START-HERE.html" },
     @{ Source = (Join-Path $repoRoot "release-template/README.txt"); Target = "README.txt" },
-    @{ Source = (Join-Path $repoRoot "release-template/TEST-CHECKLIST.md"); Target = "TEST-CHECKLIST.md" },
-    @{ Source = (Join-Path $repoRoot "docs/INSTALL.md"); Target = "INSTALL.md" },
-    @{ Source = (Join-Path $repoRoot "docs/USER-GUIDE.md"); Target = "USER-GUIDE.md" },
-    @{ Source = (Join-Path $repoRoot "docs/TROUBLESHOOTING.md"); Target = "TROUBLESHOOTING.md" },
+    @{ Source = (Join-Path $repoRoot "release-template/en/TEST-CHECKLIST.md"); Target = "en/TEST-CHECKLIST.md" },
+    @{ Source = (Join-Path $repoRoot "release-template/pt-BR/TEST-CHECKLIST.md"); Target = "pt-BR/TEST-CHECKLIST.md" },
+    @{ Source = (Join-Path $repoRoot "docs/INSTALL.md"); Target = "en/INSTALL.md" },
+    @{ Source = (Join-Path $repoRoot "docs/USER-GUIDE.md"); Target = "en/USER-GUIDE.md" },
+    @{ Source = (Join-Path $repoRoot "docs/TROUBLESHOOTING.md"); Target = "en/TROUBLESHOOTING.md" },
+    @{ Source = (Join-Path $repoRoot "docs/FAQ.md"); Target = "en/FAQ.md" },
+    @{ Source = (Join-Path $repoRoot "docs/pt-BR/INSTALL.md"); Target = "pt-BR/INSTALL.md" },
+    @{ Source = (Join-Path $repoRoot "docs/pt-BR/USER-GUIDE.md"); Target = "pt-BR/USER-GUIDE.md" },
+    @{ Source = (Join-Path $repoRoot "docs/pt-BR/TROUBLESHOOTING.md"); Target = "pt-BR/TROUBLESHOOTING.md" },
+    @{ Source = (Join-Path $repoRoot "docs/pt-BR/FAQ.md"); Target = "pt-BR/FAQ.md" },
     @{ Source = (Join-Path $repoRoot "CHANGELOG.md"); Target = "CHANGELOG.md" },
     @{ Source = (Join-Path $repoRoot "LICENSE"); Target = "LEGAL/LICENSE.txt" },
     @{ Source = (Join-Path $repoRoot "NOTICE"); Target = "LEGAL/NOTICE.txt" },
@@ -79,7 +87,7 @@ $buildInfo = @(
     "Size: $ablxSize bytes",
     "SHA256: $ablxHash",
     "Package inventory: generated successfully",
-    "Manual Ableton Live validation: PASSED ON WINDOWS"
+    "Release verification: automated gates passed; rehearse in Ableton Live before stage use"
 )
 [IO.File]::WriteAllLines((Join-Path $kitRoot "VERIFICATION.txt"), $buildInfo, [Text.UTF8Encoding]::new($false))
 

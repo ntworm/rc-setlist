@@ -1,4 +1,6 @@
-
+const i18n = RcSetlistI18n;
+const t = (key, params) => i18n.t(key, params);
+i18n.bindSelector(document.getElementById('languageSelect'));
 
 let ws;
 const port = window.location.port || '4444';
@@ -42,10 +44,10 @@ function showConnectionFailure() {
   const overlay = document.getElementById('networkErrorOverlay');
   document.body.classList.toggle('connection-stale', hasState);
   document.body.classList.toggle('connection-empty', !hasState);
-  overlay.querySelector('h2').textContent = hasState ? 'Reconectando' : 'Bridge indisponível';
+  overlay.querySelector('h2').textContent = t(hasState ? 'status.reconnecting' : 'status.bridgeUnavailable');
   overlay.querySelector('p').textContent = hasState
-    ? 'O painel perdeu o sinal do Bridge. A última informação válida continuará visível enquanto tentamos reconectar.'
-    : 'Nenhum estado do show foi recebido. Confirme que o Bridge está ativo no Ableton e que este dispositivo está na mesma rede.';
+    ? t('status.panelLost')
+    : t('status.noState');
   overlay.classList.add('visible');
 }
 
@@ -72,11 +74,11 @@ function updateLockVisuals() {
   if (isLocked) {
     btn.classList.add('btn-locked-active');
     icon.textContent = '🔒';
-    text.textContent = 'Painel Travado';
+    text.textContent = t('setlist.locked');
   } else {
     btn.classList.remove('btn-locked-active');
     icon.textContent = '🔓';
-    text.textContent = 'Painel Aberto';
+    text.textContent = t('setlist.unlocked');
   }
   updateTransportAvailability();
 }
@@ -106,7 +108,7 @@ function showLockWarning() {
     toast.style.zIndex = '99999';
     toast.style.transition = 'opacity 0.2s ease, transform 0.2s ease';
     toast.style.opacity = '0';
-    toast.textContent = '🔒 PAINEL TRAVADO. Destrave no topo para realizar esta ação.';
+    toast.textContent = t('setlist.lockWarning');
     document.body.appendChild(toast);
   }
 
@@ -181,7 +183,7 @@ function closeMidiModal(e) {
 
 function initMidi() {
   if (!navigator.requestMIDIAccess) {
-    midiInputSelect.innerHTML = '<option value="">MIDI não suportado pelo seu navegador</option>';
+    midiInputSelect.innerHTML = `<option value="">${escapeLyricsEditorText(t('midi.unsupported'))}</option>`;
     return;
   }
 
@@ -192,8 +194,8 @@ function initMidi() {
       midiAccess.onstatechange = updateMidiDevices;
     })
     .catch(err => {
-      console.warn('[MIDI] Acesso MIDI negado:', err);
-      midiInputSelect.innerHTML = '<option value="">Permissão MIDI negada pelo usuário</option>';
+      console.warn('[MIDI] MIDI access denied:', err);
+      midiInputSelect.innerHTML = `<option value="">${escapeLyricsEditorText(t('midi.permissionDenied'))}</option>`;
     });
 }
 
@@ -204,7 +206,7 @@ function updateMidiDevices() {
   midiInputSelect.innerHTML = '';
 
   if (inputs.length === 0) {
-    midiInputSelect.innerHTML = '<option value="">Nenhum dispositivo encontrado</option>';
+    midiInputSelect.innerHTML = `<option value="">${escapeLyricsEditorText(t('midi.noDevices'))}</option>`;
     return;
   }
 
@@ -283,15 +285,15 @@ function onMidiMessage(event) {
   }
 }
 
-const actionLabels = {
-  'play': 'Iniciar Reprodução (PLAY)',
-  'stop': 'Parar Reprodução (STOP)',
-  'next_song': 'Ir para Próxima Música',
-  'prev_song': 'Ir para Música Anterior',
-  'next_section': 'Ir para Próxima Seção',
-  'prev_section': 'Voltar para Seção Anterior',
-  'toggle_click': 'Alternar Metrônomo (CLICK)',
-  'toggle_lock': 'Alternar Trava de Segurança'
+const actionLabelKeys = {
+  'play': 'midi.play',
+  'stop': 'midi.stop',
+  'next_song': 'midi.nextSong',
+  'prev_song': 'midi.previousSong',
+  'next_section': 'midi.nextSection',
+  'prev_section': 'midi.previousSection',
+  'toggle_click': 'midi.toggleClick',
+  'toggle_lock': 'midi.toggleLock'
 };
 
 function renderMidiMappings() {
@@ -304,17 +306,17 @@ function renderMidiMappings() {
 
     const tdAction = document.createElement('td');
     tdAction.style.padding = '0.5rem 0';
-    tdAction.textContent = actionLabels[key] || key;
+    tdAction.textContent = actionLabelKeys[key] ? t(actionLabelKeys[key]) : key;
 
     const tdMap = document.createElement('td');
     tdMap.style.padding = '0.5rem 0';
     if (activeMidiMappingKey === key) {
-      tdMap.innerHTML = '<span style="color: var(--accent); font-weight: bold; animation: pulse 1s infinite;">Aguardando comando...</span>';
+      tdMap.innerHTML = `<span style="color: var(--accent); font-weight: bold; animation: pulse 1s infinite;">${escapeLyricsEditorText(t('midi.waiting'))}</span>`;
     } else if (mapping) {
       const typeStr = mapping.type === 'cc' ? 'CC' : 'Nota';
       tdMap.textContent = `${typeStr} ${mapping.number} (Ch ${mapping.channel})`;
     } else {
-      tdMap.textContent = 'Não mapeado';
+      tdMap.textContent = t('midi.notMapped');
       tdMap.style.color = 'var(--text-muted)';
     }
 
@@ -323,7 +325,7 @@ function renderMidiMappings() {
     tdCtrl.style.textAlign = 'right';
 
     const btnMap = document.createElement('button');
-    btnMap.textContent = activeMidiMappingKey === key ? 'Cancelar' : 'Mapear';
+    btnMap.textContent = t(activeMidiMappingKey === key ? 'common.cancel' : 'common.map');
     btnMap.style.background = 'rgba(255,255,255,0.05)';
     btnMap.style.border = '1px solid var(--card-border)';
     btnMap.style.color = '#fff';
@@ -343,7 +345,7 @@ function renderMidiMappings() {
 
     if (mapping && activeMidiMappingKey !== key) {
       const btnClear = document.createElement('button');
-      btnClear.textContent = 'Limpar';
+      btnClear.textContent = t('common.clear');
       btnClear.style.background = 'rgba(239, 68, 68, 0.1)';
       btnClear.style.border = '1px solid rgba(239, 68, 68, 0.3)';
       btnClear.style.color = 'var(--danger)';
@@ -446,7 +448,7 @@ function connect() {
   ws.onopen = () => {
     console.log('[WS] connected');
     statusDot.className = 'status-dot connected';
-    statusText.textContent = 'Conectado';
+    statusText.textContent = t('status.connected');
     document.body.classList.remove('connection-stale');
     document.body.classList.remove('connection-empty');
     document.getElementById('networkErrorOverlay').classList.remove('visible');
@@ -465,14 +467,14 @@ function connect() {
     // without opening DevTools.
     console.error('[WS] error:', event);
     statusDot.className = 'status-dot error';
-    statusText.textContent = 'WS erro (F12 console)';
-    appendLog('⚠ WebSocket handshake falhou. Check cert HTTPS / firewall.', 'error');
+    statusText.textContent = t('status.wsError');
+    appendLog(t('feedback.wsHandshake'), 'error');
   };
 
   ws.onclose = (event) => {
     console.log('[WS] closed:', event.code, event.reason || '(no reason)');
     statusDot.className = 'status-dot';
-    statusText.textContent = lastState ? 'Reconectando' : 'Desconectado';
+    statusText.textContent = t(lastState ? 'status.reconnecting' : 'status.disconnected');
     isController = false;
     previousHoldController?.reset();
     nextHoldController?.reset();
@@ -481,7 +483,7 @@ function connect() {
     updateTransportAvailability();
     showConnectionFailure();
     if (event.code !== 1000 && event.code !== 1001) {
-      appendLog(`⚠ WS fechado code=${event.code} reason=${event.reason || '(none)'}`, 'warn');
+      appendLog(t('feedback.wsClosed', { code: event.code, reason: event.reason || '(none)' }), 'warn');
     }
     setTimeout(connect, 3000); // Reconnect
   };
@@ -554,21 +556,22 @@ function connect() {
       } else if (payload.type === 'auth_status') {
         isController = Boolean(payload.isController);
         if (!payload.isController) {
-          appendLog('⚠ Conectado em modo de APENAS LEITURA (sem token de controle)', 'warn');
+          appendLog(t('feedback.readOnly'), 'warn');
           const statusTextEl = document.getElementById('statusText');
-          if (statusTextEl) statusTextEl.textContent = 'Conectado (Leitura)';
+          if (statusTextEl) statusTextEl.textContent = t('status.readOnly');
         } else {
-          appendLog('✔ Conectado como CONTROLADOR com sucesso', 'info');
+          appendLog(t('feedback.controller'), 'info');
         }
         updateTransportAvailability();
       } else if (payload.type === 'command_status') {
         quantizationConfirmation.settle(payload);
       } else if (payload.type === 'error') {
-        appendLog(`⚠ Erro do Servidor: ${payload.message}`, 'error');
-        alert(`Erro do Servidor: ${payload.message}`);
+        const message = t('feedback.serverError', { detail: payload.message });
+        appendLog(`⚠ ${message}`, 'error');
+        alert(message);
       }
     } catch (err) {
-      console.error('Erro ao processar mensagem do servidor:', err);
+      console.error('Could not process server message:', err);
     }
   };
 }
@@ -596,7 +599,7 @@ function renderActiveLyric() {
   const el = document.getElementById('hudLyric');
   if (!el) return;
   if (!currentLyrics.lines || currentLyrics.lines.length === 0) {
-    el.textContent = currentLyrics.song ? '— sem letra salva —' : '—';
+    el.textContent = currentLyrics.song ? t('setlist.noSavedLyrics') : '—';
     return;
   }
   const idx = currentLyricsIdx;
@@ -631,7 +634,10 @@ function updateDriftBadge(state, activeSong) {
   }
   const sign = delta > 0 ? '+' : '−';
   hudDrift.textContent = `⚠ Δ${sign}${Math.abs(delta).toFixed(1)}`;
-  hudDrift.title = `Esperado ${expected.toFixed(1)} BPM (definido pelo marcador). Live ${live.toFixed(1)}.`;
+  hudDrift.title = t('setlist.driftTitle', {
+    expected: expected.toFixed(1),
+    live: live.toFixed(1),
+  });
   // Severity tiers:
   //   < 0.5: cyan (informational rounding)
   //   0.5 - 2.0: amber (noticeable, likely intentional)
@@ -672,8 +678,8 @@ function tick() {
     const activeSong = lastState.songs[lastState.activeSongIndex];
     const activeSection = activeSong ? activeSong.sections[lastState.activeSectionIndex] : null;
 
-    hudSong.textContent = activeSong ? activeSong.title : 'Nenhuma';
-    hudSection.textContent = activeSection ? activeSection.name : 'Nenhuma';
+    hudSong.textContent = activeSong ? activeSong.title : t('common.none');
+    hudSection.textContent = activeSection ? activeSection.name : t('common.none');
     hudBpm.textContent = lastState.tempo ? lastState.tempo.toFixed(1) : '120.0';
 
     // Drift: compare live tempo with the cue-derived BPM expectation.
@@ -681,7 +687,9 @@ function tick() {
 
     // Update Next Song / Section
     const nextSongObj = lastState.songs[lastState.activeSongIndex + 1];
-    hudNextSong.textContent = nextSongObj ? `Próxima: ${nextSongObj.title}` : 'Próxima: Fim do Set';
+    hudNextSong.textContent = nextSongObj
+      ? t('setlist.nextValue', { name: nextSongObj.title })
+      : t('setlist.nextEndSet');
 
     let nextSectionObj = null;
     let nextIsCurrent = false;
@@ -704,9 +712,11 @@ function tick() {
     }
 
     if (nextIsCurrent && nextSectionObj) {
-      hudNextSection.textContent = `Próxima: ${nextSectionObj.name} (Repetir)`;
+      hudNextSection.textContent = t('setlist.nextRepeat', { name: nextSectionObj.name });
     } else {
-      hudNextSection.textContent = nextSectionObj ? `Próxima: ${nextSectionObj.name}` : 'Próxima: Fim';
+      hudNextSection.textContent = nextSectionObj
+        ? t('setlist.nextValue', { name: nextSectionObj.name })
+        : t('setlist.nextEnd');
     }
 
     const estimatedBeats = getEstimatedBeats();
@@ -716,7 +726,9 @@ function tick() {
     const hudSongTimeEl = document.getElementById('hudSongTime');
     if (hudSongTimeEl) {
       if (activeSong) {
-        hudSongTimeEl.textContent = `Música: ${formatBeatsAsTime(songElapsedBeats, lastState.tempo)}`;
+        hudSongTimeEl.textContent = t('setlist.songTime', {
+          time: formatBeatsAsTime(songElapsedBeats, lastState.tempo),
+        });
         hudSongTimeEl.style.display = 'inline-block';
       } else {
         hudSongTimeEl.style.display = 'none';
@@ -736,7 +748,7 @@ function tick() {
       }
     }
 
-    // Compasso calculation (Bars.Beats.Sixteenths)
+    // Bar calculation (Bars.Beats.Sixteenths)
     const num = lastState.signatureNumerator || 4;
     const bar = Math.floor(estimatedBeats / num) + 1;
     const remainingBeats = estimatedBeats % num;
@@ -780,7 +792,7 @@ function tick() {
 
     // Update Loop Iteration display
     if (lastState.loopIteration) {
-      hudLoopIter.textContent = `VOLTA: ${lastState.loopIteration.current}/${lastState.loopIteration.total}`;
+      hudLoopIter.textContent = `LOOP: ${lastState.loopIteration.current}/${lastState.loopIteration.total}`;
       hudLoopIter.style.display = 'inline-block';
     } else {
       hudLoopIter.style.display = 'none';
@@ -838,7 +850,7 @@ function sendReorder(songTitles) {
 
 function renderSongList(state) {
   if (!state.songs || state.songs.length === 0) {
-    songListDiv.innerHTML = '<div style="text-align: center; color: var(--text-muted); padding: 2rem;">Nenhuma música com locators encontrada no projeto.</div>';
+    songListDiv.innerHTML = `<div style="text-align: center; color: var(--text-muted); padding: 2rem;">${escapeLyricsEditorText(t('setlist.noSongs'))}</div>`;
     lastRenderedSongsJson = '';
     return;
   }
@@ -944,7 +956,7 @@ function renderJumpFeedback(snapshot) {
 
 const jumpConfirmation = SetlistTransportRuntime.createJumpConfirmation({
   onChange: renderJumpFeedback,
-  onTimeout: () => appendLog('⚠ O Ableton não confirmou o salto em até 3 segundos.', 'warn'),
+  onTimeout: () => appendLog(t('feedback.jumpTimeout'), 'warn'),
 });
 
 function renderQuantization(snapshot) {
@@ -958,7 +970,7 @@ function renderQuantization(snapshot) {
 
 const quantizationConfirmation = SetlistTransportRuntime.createQuantizationConfirmation({
   onChange: renderQuantization,
-  onFailure: () => appendLog('⚠ O Ableton não confirmou a nova quantização.', 'warn'),
+  onFailure: () => appendLog(t('feedback.quantizationFailed'), 'warn'),
 });
 
 function jumpTo(songIndex, sectionIndex) {
@@ -1000,7 +1012,7 @@ function exportCsv() {
     return;
   }
   if (!ws || ws.readyState !== WebSocket.OPEN) {
-    showToast('Não conectado ao servidor.', 'error');
+    showToast(t('lyrics.notConnected'), 'error');
     return;
   }
   const btn = document.getElementById('btnExportCsv');
@@ -1022,7 +1034,7 @@ function handleCsvReady(url, count, fileName) {
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
-  showToast(`Tracklist exportado (${count} músicas). Baixando ${fileName}…`, 'success');
+  showToast(t('feedback.csv', { count, fileName }), 'success');
   const btn = document.getElementById('btnExportCsv');
   if (btn) {
     btn.disabled = false;
@@ -1060,7 +1072,7 @@ function changeQuantization(val) {
   }));
 }
 function appendLog(message, level = 'info', timestamp = Date.now()) {
-  const timeStr = new Date(timestamp).toLocaleTimeString('pt-BR', { hour12: false });
+  const timeStr = new Date(timestamp).toLocaleTimeString(i18n.getLocale(), { hour12: false });
   const line = document.createElement('div');
   line.className = 'log-line';
 
@@ -1137,7 +1149,7 @@ function switchLyricsTab(tab) {
   if (!['create', 'sync', 'edit'].includes(tab)) return;
   // Warn if leaving Edit with unsaved changes
   if (lyricsEditActiveTab === 'edit' && tab !== 'edit' && lyricsEditDirty) {
-    if (!confirm('Há mudanças não salvas na aba Editar. Descartar?')) return;
+    if (!confirm(t('lyrics.discardTab'))) return;
   }
   lyricsEditActiveTab = tab;
   lyricsStepInput.style.display = tab === 'create' ? 'block' : 'none';
@@ -1181,7 +1193,7 @@ function refreshLyricsEditor() {
 
 function loadLyricsEditFromServer(song) {
   if (!ws || ws.readyState !== WebSocket.OPEN) {
-    showToast('Não conectado ao servidor.', 'error');
+    showToast(t('lyrics.notConnected'), 'error');
     return;
   }
   lyricsEditLastLoadedSong = song;
@@ -1224,8 +1236,8 @@ function renderLyricsEditList() {
     const dimStyle = hasTs ? '' : 'color: var(--text-muted); opacity: 0.7;';
     card.innerHTML = `
       <span class="lyric-edit-ts" data-idx="${idx}" style="font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: ${hasTs ? 'var(--accent)' : '#fbbf24'}; background: rgba(0,0,0,0.3); padding: 0.2rem 0.4rem; border-radius: 4px; min-width: 78px; text-align: center; cursor: text; ${dimStyle}">${escapeLyricsEditorText(line.timestamp)}</span>
-      <span class="lyric-edit-text" data-idx="${idx}" style="flex: 1; font-size: 0.9rem; line-height: 1.3; cursor: text; user-select: text;">${escapeLyricsEditorText(line.text) || '<em style="color: var(--text-muted);">(vazio)</em>'}</span>
-      <button class="lyric-edit-del" data-idx="${idx}" title="Remover linha" style="background: transparent; border: none; color: var(--danger); cursor: pointer; font-size: 1rem; padding: 0.2rem 0.4rem; opacity: 0.6; transition: opacity 0.15s;">&times;</button>
+      <span class="lyric-edit-text" data-idx="${idx}" style="flex: 1; font-size: 0.9rem; line-height: 1.3; cursor: text; user-select: text;">${escapeLyricsEditorText(line.text) || `<em style="color: var(--text-muted);">${escapeLyricsEditorText(t('common.empty'))}</em>`}</span>
+      <button class="lyric-edit-del" data-idx="${idx}" title="${escapeLyricsEditorText(t('common.removeLine'))}" style="background: transparent; border: none; color: var(--danger); cursor: pointer; font-size: 1rem; padding: 0.2rem 0.4rem; opacity: 0.6; transition: opacity 0.15s;">&times;</button>
     `;
     lyricsEditList.appendChild(card);
   });
@@ -1304,7 +1316,7 @@ function beginInlineLyricTsEdit(idx, el) {
       if (!val.endsWith(']')) val = val + ']';
       const regex = /^\[\d{2,3}:\d{2}(\.\d{1,3})?\]$/;
       if (!regex.test(val) && val !== NO_TIMESTAMP) {
-        showToast('Formato de timecode inválido! Use [mm:ss.xx] ou deixe vazio.', 'error');
+        showToast(t('lyrics.invalidTimecode'), 'error');
         renderLyricsEditList();
         return;
       }
@@ -1360,17 +1372,20 @@ function saveLyricsEdit() {
       song,
       text: lrcBody,
     }));
-    appendLog(`Letra de "${song}" salva (${lyricsEditLines.filter(l => l.timestamp !== NO_TIMESTAMP).length} linhas com timestamp).`, 'info');
+    appendLog(t('lyrics.saved', {
+      song,
+      count: lyricsEditLines.filter(l => l.timestamp !== NO_TIMESTAMP).length,
+    }), 'info');
     markLyricsDirty(false);
   } else {
-    showToast('Não conectado ao servidor.', 'error');
+    showToast(t('lyrics.notConnected'), 'error');
   }
 }
 
 function onLyricsSongChange() {
   // When user switches song, reset editor cache so it re-fetches.
   if (lyricsEditDirty) {
-    if (!confirm('Há mudanças não salvas. Trocar de música descartará as edições. Continuar?')) {
+    if (!confirm(t('lyrics.discardSong'))) {
       // Revert select to previous value
       if (lyricsEditLastLoadedSong) lyricsSongSelect.value = lyricsEditLastLoadedSong;
       return;
@@ -1413,13 +1428,13 @@ function populateLyricsSongs() {
 function startLyricsSyncWorkflow() {
   const rawText = lyricsRawText.value.trim();
   if (!rawText) {
-    alert('Por favor, digite ou cole a letra da música antes de iniciar.');
+    alert(t('lyrics.enterBeforeStart'));
     return;
   }
 
   lyricsLinesToSync = rawText.split(/\n/).map(line => line.trim()).filter(line => line.length > 0);
   if (lyricsLinesToSync.length === 0) {
-    alert('Nenhuma frase de letra válida encontrada.');
+    alert(t('lyrics.noValidLines'));
     return;
   }
 
@@ -1442,7 +1457,7 @@ function resetLyricsSyncWorkflow() {
   lyricsSyncActiveIndex = 0;
 
   btnLyricsTap.disabled = false;
-  btnLyricsTap.textContent = 'MARCAR AGORA (Pressione Barra de Espaço)';
+  btnLyricsTap.textContent = t('lyrics.markNow');
   btnSaveSyncLyrics.disabled = true;
 
   lyricsStepInput.style.display = 'block';
@@ -1481,7 +1496,7 @@ function tapLyricTime() {
 
   if (lyricsSyncActiveIndex >= lyricsLinesToSync.length) {
     btnLyricsTap.disabled = true;
-    btnLyricsTap.textContent = 'Todas as frases marcadas!';
+    btnLyricsTap.textContent = t('lyrics.allMarked');
     btnSaveSyncLyrics.disabled = false;
     btnSaveSyncLyrics.classList.add('glow');
   }
@@ -1494,8 +1509,8 @@ function updateLyricsSyncUI() {
     const upcoming = lyricsLinesToSync.slice(lyricsSyncActiveIndex + 1);
     lyricsSyncUpcomingLines.innerHTML = upcoming.map((line, idx) => `<div>${idx + 1}. ${escapeLyricsEditorText(line)}</div>`).join('');
   } else {
-    lyricsSyncActiveLine.textContent = 'Fim da Letra!';
-    lyricsSyncUpcomingLines.innerHTML = '<div style="font-style: italic; color: var(--success);">Pronto para salvar!</div>';
+    lyricsSyncActiveLine.textContent = t('lyrics.end');
+    lyricsSyncUpcomingLines.innerHTML = `<div style="font-style: italic; color: var(--success);">${escapeLyricsEditorText(t('lyrics.readySave'))}</div>`;
   }
 }
 
@@ -1511,7 +1526,7 @@ function saveSyncLyrics() {
     }));
   }
 
-  appendLog(`Letra sincronizada de "${selectedSong}" salva!`, 'info');
+  appendLog(t('lyrics.syncSaved', { song: selectedSong }), 'info');
   toggleLyricsModal();
 }
 
@@ -1525,16 +1540,30 @@ window.addEventListener('keydown', (e) => {
 
 function promptForToken() {
   const currentToken = localStorage.getItem('setlist_token') || '';
-  const input = prompt('Digite o token de segurança para controle (encontrado no painel do Ableton Live):', currentToken);
+  const input = prompt(t('feedback.tokenPrompt'), currentToken);
   if (input !== null) {
     localStorage.setItem('setlist_token', input.trim());
-    appendLog('Token atualizado localmente. Reconectando...', 'info');
+    appendLog(t('feedback.tokenUpdated'), 'info');
     if (ws) {
       ws.close();
     }
   }
 }
 
-globalThis.setlistStageRuntime = StageRuntime.mount();
+i18n.subscribe(() => {
+  updateLockVisuals();
+  renderMidiMappings();
+  lastRenderedSongsJson = '';
+  if (lastState) renderSongList(lastState);
+  renderActiveLyric();
+  if (isLyricsSyncing) updateLyricsSyncUI();
+  if (document.getElementById('networkErrorOverlay').classList.contains('visible')) {
+    showConnectionFailure();
+  } else if (ws?.readyState === WebSocket.OPEN) {
+    statusText.textContent = t(isController ? 'status.connected' : 'status.readOnly');
+  }
+});
+
+globalThis.setlistStageRuntime = StageRuntime.mount({ i18n });
 mountTransportControls();
 connect();

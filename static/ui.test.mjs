@@ -152,12 +152,21 @@ test('Static UI Setlist: omits handlers for controls removed from the operator s
   assert.doesNotMatch(setlistJs, /payload\.type\s*===\s*['"]click_preview_ready['"]/);
 });
 
-test('Static UI Setlist: keeps customer-visible Portuguese text intact', () => {
-  const setlistHtmlPath = path.join(__dirname, 'setlist', 'index.html');
-  const setlistHtml = fs.readFileSync(setlistHtmlPath, 'utf8');
+test('Static UI: product surfaces expose English and Brazilian Portuguese', () => {
+  const panelHtml = fs.readFileSync(path.join(__dirname, 'panel', 'index.html'), 'utf8');
+  const setlistHtml = fs.readFileSync(path.join(__dirname, 'setlist', 'index.html'), 'utf8');
+  const performanceHtml = fs.readFileSync(path.join(__dirname, 'performance', 'index.html'), 'utf8');
+  const i18nSource = fs.readFileSync(path.join(__dirname, 'shared', 'i18n.js'), 'utf8');
 
-  assert.doesNotMatch(setlistHtml, /\?/);
-  assert.match(setlistHtml, /Quantização/);
-  assert.match(setlistHtml, /aria-label="Músicas e seções"/);
-  assert.match(setlistHtml, /A última informação válida continuará visível/);
+  assert.match(i18nSource, /SUPPORTED_LOCALES/);
+  assert.match(i18nSource, /['"]pt-BR['"]/);
+  assert.match(i18nSource, /Current song/);
+  assert.match(i18nSource, /Música atual/);
+  assert.match(i18nSource, /Stage Control/);
+  assert.match(i18nSource, /Controle de palco/);
+
+  for (const html of [panelHtml, performanceHtml, setlistHtml]) {
+    assert.match(html, /id="languageSelect"/);
+    assert.match(html, /src="\.\.\/shared\/i18n\.js"/);
+  }
 });

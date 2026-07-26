@@ -1,5 +1,6 @@
 # Ableton RC Setlist documentation
 
+- [Português (Brasil)](pt-BR/README.md)
 - [Install](INSTALL.md)
 - [Use Ableton RC Setlist](USER-GUIDE.md)
 - [Troubleshoot](TROUBLESHOOTING.md)
@@ -13,5 +14,5 @@
 - [License](../LICENSE)
 - [Third-party notices](../THIRD_PARTY_NOTICES.md)
 
-The public documentation is canonical in English. The owner-facing release
-candidate also includes a concise PT-BR installation and test checklist.
+The public documentation and release kit are available in English and Brazilian
+Portuguese. English is the default product language.

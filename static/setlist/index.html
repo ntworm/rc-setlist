@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Ableton RC Setlist &mdash; Painel do Setlist</title>
+  <title>Ableton RC Setlist &mdash; Stage Control</title>
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎵</text></svg>">
 
   <link rel="stylesheet" href="../shared/ui-system.css">
@@ -13,23 +13,30 @@
   <header class="app-bar">
     <div class="app-brand" aria-label="Ableton RC Setlist">
       <span class="app-brand-mark">SB</span>
-      <span class="app-brand-copy"><strong>Ableton RC Setlist</strong><small>Stage control</small></span>
+      <span class="app-brand-copy"><strong>Ableton RC Setlist</strong><small data-i18n="setlist.title">Stage control</small></span>
     </div>
     <div class="app-bar-actions">
+      <label class="language-control">
+        <span class="sr-only" data-i18n="common.language">Language</span>
+        <select id="languageSelect" class="language-select" aria-label="Language" data-i18n-aria-label="common.language">
+          <option value="en">English</option>
+          <option value="pt-BR">Português (Brasil)</option>
+        </select>
+      </label>
       <button id="btnLock" class="ui-button" type="button" onclick="toggleLock()">
-        <span id="lockIcon" aria-hidden="true">🔓</span> <span id="lockText">Painel aberto</span>
+        <span id="lockIcon" aria-hidden="true">🔓</span> <span id="lockText">Panel unlocked</span>
       </button>
       <details class="tools-menu">
-        <summary class="ui-button">Ferramentas</summary>
+        <summary class="ui-button" data-i18n="setlist.tools">Tools</summary>
         <div class="tools-popover">
           <button class="ui-button" type="button" onclick="toggleMidiModal()">MIDI</button>
-          <button class="ui-button" type="button" onclick="toggleLyricsModal()">Letras</button>
-          <button id="btnExportCsv" class="ui-button" type="button" onclick="exportCsv()" title="Exportar tracklist como CSV">Exportar CSV</button>
-          <button class="ui-button" type="button" onclick="toggleHelp()">Ajuda</button>
+          <button class="ui-button" type="button" onclick="toggleLyricsModal()" data-i18n="setlist.lyrics">Lyrics</button>
+          <button id="btnExportCsv" class="ui-button" type="button" onclick="exportCsv()" title="Export tracklist as CSV" data-i18n="setlist.exportCsv" data-i18n-title="setlist.exportCsvTitle">Export CSV</button>
+          <button class="ui-button" type="button" onclick="toggleHelp()" data-i18n="setlist.help">Help</button>
         </div>
       </details>
-      <button id="fullscreenButton" class="ui-button" type="button" aria-pressed="false">Tela cheia</button>
-      <button class="status-badge" type="button" onclick="promptForToken()" title="Autenticar ou alterar o token de segurança">
+      <button id="fullscreenButton" class="ui-button" type="button" aria-pressed="false">Full screen</button>
+      <button class="status-badge" type="button" onclick="promptForToken()" title="Authenticate or change the security token" data-i18n-title="setlist.authenticateTitle">
         <span id="statusDot" class="status-dot"></span>
         <span id="statusText">Offline</span>
       </button>
@@ -40,92 +47,92 @@
   <div id="helpModal" class="modal-overlay" onclick="closeHelp(event)">
     <div class="modal-content" onclick="event.stopPropagation()">
       <div class="modal-header">
-        <h2>Guia de Sintaxe & Tags</h2>
+        <h2 data-i18n="help.title">Syntax &amp; Tag Guide</h2>
         <button class="btn-close" onclick="toggleHelp()">&times;</button>
       </div>
       <div class="modal-body" style="max-height: 70vh; overflow-y: auto;">
-        <p style="margin-bottom: 1rem; color: var(--text-muted);">Configure tags entre colchetes nos marcadores (locators) do Ableton para programar automações:</p>
+        <p style="margin-bottom: 1rem; color: var(--text-muted);" data-i18n="help.intro">Add bracketed tags to Ableton Live locators to program automations:</p>
         
         <div style="display: flex; flex-direction: column; gap: 1.25rem;">
           <div>
-            <div style="font-weight: 700; margin-bottom: 0.35rem; color: var(--accent);">Tags de Transição & Fluxo:</div>
+            <div style="font-weight: 700; margin-bottom: 0.35rem; color: var(--accent);" data-i18n="help.flow">Transition &amp; Flow Tags:</div>
             <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.8rem; line-height: 1.4;">
               <thead>
                 <tr style="border-bottom: 1px solid var(--card-border); color: var(--text-muted);">
-                  <th style="padding: 0.4rem 0; width: 35%;">Tag</th>
-                  <th style="padding: 0.4rem 0;">Comportamento Esperado</th>
+                  <th style="padding: 0.4rem 0; width: 35%;" data-i18n="help.tag">Tag</th>
+                  <th style="padding: 0.4rem 0;" data-i18n="help.behavior">Expected behavior</th>
                 </tr>
               </thead>
               <tbody>
                 <tr style="border-bottom: 1px dashed rgba(255,255,255,0.05);">
                   <td style="padding: 0.5rem 0;"><code>[loop]</code></td>
-                  <td>Mantém a seção/música tocando em **loop infinito**.</td>
+                  <td data-i18n="help.loop">Keeps the section or song playing in an infinite loop.</td>
                 </tr>
                 <tr style="border-bottom: 1px dashed rgba(255,255,255,0.05);">
-                  <td style="padding: 0.5rem 0;"><code>[loop 4]</code> ou <code>[loop 4x]</code></td>
-                  <td>Repete a seção exatamente **4 vezes** e depois sai do loop.</td>
+                  <td style="padding: 0.5rem 0;"><code>[loop 4]</code> or <code>[loop 4x]</code></td>
+                  <td data-i18n="help.loopCount">Repeats the section exactly four times, then exits the loop.</td>
                 </tr>
                 <tr style="border-bottom: 1px dashed rgba(255,255,255,0.05);">
                   <td style="padding: 0.5rem 0;"><code>[stop]</code></td>
-                  <td>**Para a reprodução** (STOP) do Ableton ao entrar no marcador.</td>
+                  <td data-i18n="help.stop">Stops Ableton Live playback when the locator is reached.</td>
                 </tr>
                 <tr style="border-bottom: 1px dashed rgba(255,255,255,0.05);">
                   <td style="padding: 0.5rem 0;"><code>[next]</code></td>
-                  <td>**Salta** instantaneamente para a próxima música e continua tocando.</td>
+                  <td data-i18n="help.next">Jumps immediately to the next song and keeps playing.</td>
                 </tr>
                 <tr style="border-bottom: 1px dashed rgba(255,255,255,0.05);">
                   <td style="padding: 0.5rem 0;"><code>[skip]</code></td>
-                  <td>**Pula por cima** do trecho, avançando direto para a próxima seção.</td>
+                  <td data-i18n="help.skip">Skips the segment and advances directly to the next section.</td>
                 </tr>
               </tbody>
             </table>
           </div>
 
           <div>
-            <div style="font-weight: 700; margin-bottom: 0.35rem; color: var(--accent);">Tags de Metrônomo & Tempo:</div>
+            <div style="font-weight: 700; margin-bottom: 0.35rem; color: var(--accent);" data-i18n="help.tempo">Metronome &amp; Tempo Tags:</div>
             <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.8rem; line-height: 1.4;">
               <thead>
                 <tr style="border-bottom: 1px solid var(--card-border); color: var(--text-muted);">
-                  <th style="padding: 0.4rem 0; width: 35%;">Tag</th>
-                  <th style="padding: 0.4rem 0;">Comportamento Esperado</th>
+                  <th style="padding: 0.4rem 0; width: 35%;" data-i18n="help.tag">Tag</th>
+                  <th style="padding: 0.4rem 0;" data-i18n="help.behavior">Expected behavior</th>
                 </tr>
               </thead>
               <tbody>
                 <tr style="border-bottom: 1px dashed rgba(255,255,255,0.05);">
-                  <td style="padding: 0.5rem 0;"><code>[bpm 140]</code> ou <code>[bpm 111.11]</code></td>
-                  <td>Altera o tempo global do Ableton ao cruzar (suporta números decimais).</td>
+                  <td style="padding: 0.5rem 0;"><code>[bpm 140]</code> or <code>[bpm 111.11]</code></td>
+                  <td data-i18n="help.bpm">Changes the global Ableton Live tempo when crossed; decimal values are supported.</td>
                 </tr>
                 <tr style="border-bottom: 1px dashed rgba(255,255,255,0.05);">
                   <td style="padding: 0.5rem 0;"><code>[click]</code></td>
-                  <td>**Liga** o metrônomo nativo do Ableton Live.</td>
+                  <td data-i18n="help.clickOn">Enables Ableton Live's native metronome.</td>
                 </tr>
                 <tr style="border-bottom: 1px dashed rgba(255,255,255,0.05);">
                   <td style="padding: 0.5rem 0;"><code>[click off]</code></td>
-                  <td>**Desliga** o metrônomo nativo do Ableton Live.</td>
+                  <td data-i18n="help.clickOff">Disables Ableton Live's native metronome.</td>
                 </tr>
               </tbody>
             </table>
           </div>
 
           <div>
-            <div style="font-weight: 700; margin-bottom: 0.35rem; color: var(--accent);">Recursos Extras & Filtros:</div>
+            <div style="font-weight: 700; margin-bottom: 0.35rem; color: var(--accent);" data-i18n="help.extra">Extra Features &amp; Filters:</div>
             <ul style="font-size: 0.8rem; margin: 0; padding-left: 1.2rem; line-height: 1.5; color: var(--text-muted);">
-              <li><code>[hidden]</code> ou prefixo <code>_</code>: Oculta o marcador do setlist no painel visual da WebApp.</li>
-              <li>**🔒 Modo de Trava**: Bloqueia cliques e arrastes no celular/tablet para evitar acidentes de toque capacitivo no palco.</li>
-              <li>**⚡ Metrônomo Visual**: Card de BPM & Compasso pisca no tempo do clique (latência compensada de rede de +90ms).</li>
-              <li>**↻ Loops Dinâmicos**: A indicação de próxima seção diz `Próxima: [Nome] (Repetir)` automaticamente enquanto houver voltas pendentes no loop.</li>
-              <li>**🔌 Queda de Rede**: Exibe tela de alerta se o Wi-Fi ou a conexão WebSocket com o Ableton cair.</li>
+              <li data-i18n="help.hidden">[hidden] or the _ prefix: hides the locator from the visual setlist.</li>
+              <li data-i18n="help.lock">🔒 Lock Mode: blocks taps and drags on phones or tablets to prevent accidental stage input.</li>
+              <li data-i18n="help.metronome">⚡ Visual Metronome: the BPM and bar card flashes with the click using +90 ms network compensation.</li>
+              <li data-i18n="help.loops">↻ Dynamic Loops: the next-section cue shows Next: [Name] (Repeat) while loop iterations remain.</li>
+              <li data-i18n="help.network">🔌 Network Loss: shows an alert if Wi-Fi or the WebSocket connection to Ableton Live drops.</li>
             </ul>
           </div>
 
           <div>
-            <div style="font-weight: 700; margin-bottom: 0.35rem; color: var(--accent);">Hierarquia de Escrita no Ableton:</div>
+            <div style="font-weight: 700; margin-bottom: 0.35rem; color: var(--accent);" data-i18n="help.hierarchy">Locator Hierarchy in Ableton Live:</div>
             <div style="font-size: 0.8rem; background: rgba(255,255,255,0.02); padding: 0.65rem; border-radius: 8px; border: 1px solid var(--card-border); font-family: monospace; line-height: 1.45;">
-              Abertura [bpm 125] [click]<br>
-              Abertura > Verso 1 [click off]<br>
-              Abertura > Solo Guitarra [skip]<br>
-              Abertura > Refrão [loop 2]<br>
-              Musica 2 [stop]
+              Opening [bpm 125] [click]<br>
+              Opening &gt; Verse 1 [click off]<br>
+              Opening &gt; Guitar Solo [skip]<br>
+              Opening &gt; Chorus [loop 2]<br>
+              Song 2 [stop]
             </div>
           </div>
         </div>
@@ -137,29 +144,29 @@
   <div id="midiModal" class="modal-overlay" onclick="closeMidiModal(event)">
     <div class="modal-content" onclick="event.stopPropagation()">
       <div class="modal-header">
-        <h2>Mapeamento MIDI</h2>
+        <h2 data-i18n="midi.title">MIDI Mapping</h2>
         <button class="btn-close" onclick="toggleMidiModal()">&times;</button>
       </div>
       <div class="modal-body" style="max-height: 70vh; overflow-y: auto;">
-        <p style="margin-bottom: 1rem; color: var(--text-muted); font-size: 0.85rem; line-height: 1.4;">
-          Conecte um controlador MIDI USB ao seu dispositivo. Clique em "Mapear" ao lado de uma ação e pressione o pedal ou botão no seu controlador para registrar o comando.
+        <p style="margin-bottom: 1rem; color: var(--text-muted); font-size: 0.85rem; line-height: 1.4;" data-i18n="midi.intro">
+          Connect a USB MIDI controller to this device. Select Map beside an action, then press the pedal or button you want to assign.
         </p>
 
         <div style="margin-bottom: 1.25rem;">
-          <div style="font-weight: 700; margin-bottom: 0.5rem; color: var(--accent); font-size: 0.9rem;">Dispositivo MIDI:</div>
+          <div style="font-weight: 700; margin-bottom: 0.5rem; color: var(--accent); font-size: 0.9rem;" data-i18n="midi.device">MIDI device:</div>
           <select id="midiInputSelect" style="width: 100%; padding: 0.5rem; border-radius: 8px; border: 1px solid var(--card-border); background: rgba(0,0,0,0.2); color: var(--text); font-family: inherit; font-size: 0.85rem;">
-            <option value="">Aguardando conexão MIDI...</option>
+            <option value="" data-i18n="midi.waitingConnection">Waiting for a MIDI connection...</option>
           </select>
         </div>
 
         <div>
-          <div style="font-weight: 700; margin-bottom: 0.5rem; color: var(--accent); font-size: 0.9rem;">Mapeamentos:</div>
+          <div style="font-weight: 700; margin-bottom: 0.5rem; color: var(--accent); font-size: 0.9rem;" data-i18n="midi.mappings">Mappings:</div>
           <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.8rem; line-height: 1.4;">
             <thead>
               <tr style="border-bottom: 1px solid var(--card-border); color: var(--text-muted);">
-                <th style="padding: 0.4rem 0; width: 40%;">Ação</th>
-                <th style="padding: 0.4rem 0; width: 40%;">Mapeado para</th>
-                <th style="padding: 0.4rem 0; text-align: right;">Controle</th>
+                <th style="padding: 0.4rem 0; width: 40%;" data-i18n="midi.action">Action</th>
+                <th style="padding: 0.4rem 0; width: 40%;" data-i18n="midi.mappedTo">Mapped to</th>
+                <th style="padding: 0.4rem 0; text-align: right;" data-i18n="midi.control">Control</th>
               </tr>
             </thead>
             <tbody id="midiMappingTableBody">
@@ -175,69 +182,69 @@
   <div id="lyricsModal" class="modal-overlay" onclick="closeLyricsModal(event)">
     <div class="modal-content" onclick="event.stopPropagation()" style="max-width: 650px;">
       <div class="modal-header">
-        <h2>Letras (Gerador LRC)</h2>
+        <h2 data-i18n="lyrics.generator">Lyrics (LRC Generator)</h2>
         <button class="btn-close" onclick="toggleLyricsModal()">&times;</button>
       </div>
       <div style="display: flex; gap: 0.25rem; padding: 0.5rem 1rem 0; border-bottom: 1px solid var(--card-border); background: rgba(255,255,255,0.01);">
-        <button id="lyricsTabCreate" class="lyrics-tab active" onclick="switchLyricsTab('create')" style="background: transparent; border: none; border-bottom: 2px solid var(--accent); color: var(--accent); padding: 0.5rem 1rem; font-family: inherit; font-weight: 700; font-size: 0.85rem; cursor: pointer; transition: all 0.15s;">✏️ Criar</button>
-        <button id="lyricsTabSync" class="lyrics-tab" onclick="switchLyricsTab('sync')" style="background: transparent; border: none; border-bottom: 2px solid transparent; color: var(--text-muted); padding: 0.5rem 1rem; font-family: inherit; font-weight: 700; font-size: 0.85rem; cursor: pointer; transition: all 0.15s;">⏱️ Sincronizar</button>
-        <button id="lyricsTabEdit" class="lyrics-tab" onclick="switchLyricsTab('edit')" style="background: transparent; border: none; border-bottom: 2px solid transparent; color: var(--text-muted); padding: 0.5rem 1rem; font-family: inherit; font-weight: 700; font-size: 0.85rem; cursor: pointer; transition: all 0.15s;">📝 Editar</button>
-        <span id="lyricsDirtyBadge" style="display:none; margin-left:auto; align-self:center; font-size: 0.7rem; font-weight: 700; color: #fbbf24; padding: 0.15rem 0.5rem; background: rgba(251, 191, 36, 0.1); border: 1px solid rgba(251, 191, 36, 0.3); border-radius: 6px;">● não salvo</span>
+        <button id="lyricsTabCreate" class="lyrics-tab active" onclick="switchLyricsTab('create')" style="background: transparent; border: none; border-bottom: 2px solid var(--accent); color: var(--accent); padding: 0.5rem 1rem; font-family: inherit; font-weight: 700; font-size: 0.85rem; cursor: pointer; transition: all 0.15s;"><span aria-hidden="true">✏️</span> <span data-i18n="lyrics.create">Create</span></button>
+        <button id="lyricsTabSync" class="lyrics-tab" onclick="switchLyricsTab('sync')" style="background: transparent; border: none; border-bottom: 2px solid transparent; color: var(--text-muted); padding: 0.5rem 1rem; font-family: inherit; font-weight: 700; font-size: 0.85rem; cursor: pointer; transition: all 0.15s;"><span aria-hidden="true">⏱️</span> <span data-i18n="lyrics.sync">Sync</span></button>
+        <button id="lyricsTabEdit" class="lyrics-tab" onclick="switchLyricsTab('edit')" style="background: transparent; border: none; border-bottom: 2px solid transparent; color: var(--text-muted); padding: 0.5rem 1rem; font-family: inherit; font-weight: 700; font-size: 0.85rem; cursor: pointer; transition: all 0.15s;"><span aria-hidden="true">📝</span> <span data-i18n="lyrics.edit">Edit</span></button>
+        <span id="lyricsDirtyBadge" style="display:none; margin-left:auto; align-self:center; font-size: 0.7rem; font-weight: 700; color: #fbbf24; padding: 0.15rem 0.5rem; background: rgba(251, 191, 36, 0.1); border: 1px solid rgba(251, 191, 36, 0.3); border-radius: 6px;" data-i18n="lyrics.unsaved">● unsaved</span>
       </div>
       <div class="modal-body" style="max-height: 75vh; overflow-y: auto;">
 
         <!-- Step 1: Input text -->
         <div id="lyricsStepInput">
-          <p style="margin-bottom: 1rem; color: var(--text-muted); font-size: 0.85rem; line-height: 1.4;">
-            Cole a letra pura da música abaixo (uma frase por linha). Depois, daremos play no Ableton para marcar o tempo exato em que cada linha começa.
+          <p style="margin-bottom: 1rem; color: var(--text-muted); font-size: 0.85rem; line-height: 1.4;" data-i18n="lyrics.inputIntro">
+            Paste the song lyrics below, one phrase per line. Then play the song in Ableton Live and mark the exact time each line begins.
           </p>
           <div style="margin-bottom: 1rem;">
-            <label style="font-weight: 700; color: var(--accent); font-size: 0.85rem; display: block; margin-bottom: 0.25rem;">Selecione a Música:</label>
+            <label style="font-weight: 700; color: var(--accent); font-size: 0.85rem; display: block; margin-bottom: 0.25rem;" data-i18n="lyrics.selectSong">Select a song:</label>
             <select id="lyricsSongSelect" onchange="onLyricsSongChange()" style="width: 100%; padding: 0.5rem; border-radius: 8px; border: 1px solid var(--card-border); background: rgba(0,0,0,0.2); color: var(--text); font-family: inherit; font-size: 0.85rem;">
               <!-- Dynamically populated with setlist songs -->
             </select>
           </div>
           <div style="margin-bottom: 1rem;">
-            <label style="font-weight: 700; color: var(--accent); font-size: 0.85rem; display: block; margin-bottom: 0.25rem;">Letra da Música:</label>
-            <textarea id="lyricsRawText" placeholder="Exemplo:
+            <label style="font-weight: 700; color: var(--accent); font-size: 0.85rem; display: block; margin-bottom: 0.25rem;" data-i18n="lyrics.songLyrics">Song lyrics:</label>
+            <textarea id="lyricsRawText" data-i18n-placeholder="lyrics.rawPlaceholder" placeholder="Example:
 Intro (G | D | Am | C)
 The room wakes under amber light
 A quiet pulse becomes our guide..." style="width: 100%; height: 180px; padding: 0.75rem; border-radius: 8px; border: 1px solid var(--card-border); background: rgba(0,0,0,0.2); color: var(--text); font-family: inherit; font-size: 0.85rem; resize: vertical; line-height: 1.4;"></textarea>
           </div>
-          <button class="btn btn-primary" onclick="startLyricsSyncWorkflow()" style="width: 100%;">Iniciar Sincronização ➔</button>
+          <button class="btn btn-primary" onclick="startLyricsSyncWorkflow()" style="width: 100%;" data-i18n="lyrics.startSync">Start synchronization ➔</button>
         </div>
 
         <!-- Step 2: Live Sync tapping -->
         <div id="lyricsStepSync" style="display: none;">
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; background: rgba(255,255,255,0.02); padding: 0.75rem; border-radius: 8px; border: 1px solid var(--card-border);">
             <div>
-              <span style="font-size: 0.75rem; color: var(--text-muted); display: block;">Música Sincronizando:</span>
+              <span style="font-size: 0.75rem; color: var(--text-muted); display: block;" data-i18n="lyrics.syncingSong">Synchronizing song:</span>
               <strong id="lyricsSyncSongTitle" style="color: #fff;">&mdash;</strong>
             </div>
             <div style="text-align: right;">
-              <span style="font-size: 0.75rem; color: var(--text-muted); display: block;">Tempo Atual:</span>
+              <span style="font-size: 0.75rem; color: var(--text-muted); display: block;" data-i18n="lyrics.currentTime">Current time:</span>
               <strong id="lyricsSyncTimecode" style="color: var(--accent); font-size: 1.2rem; font-variant-numeric: tabular-nums;">0:00:00</strong>
             </div>
           </div>
 
           <div style="text-align: center; margin: 1.5rem 0; padding: 1.5rem; background: rgba(0,0,0,0.2); border-radius: 12px; border: 1.5px dashed var(--card-border);">
-            <span style="font-size: 0.75rem; color: var(--text-muted); display: block; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem;">Próxima linha a ser marcada:</span>
+            <span style="font-size: 0.75rem; color: var(--text-muted); display: block; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem;" data-i18n="lyrics.nextLine">Next line to mark:</span>
             <div id="lyricsSyncActiveLine" style="font-size: 1.35rem; font-weight: 800; color: var(--accent); margin-bottom: 1rem; min-height: 2rem; line-height: 1.4;">&mdash;</div>
             <button id="btnLyricsTap" class="btn btn-primary" onclick="tapLyricTime()" style="padding: 1rem 2rem; font-size: 1.1rem; width: 100%; box-shadow: 0 0 20px var(--accent-glow);">
-              MARCAR AGORA (Pressione Barra de Espaço)
+              <span data-i18n="lyrics.markNow">MARK NOW (Press Space)</span>
             </button>
           </div>
 
           <div style="margin-bottom: 1rem;">
-            <span style="font-size: 0.75rem; color: var(--text-muted); display: block; margin-bottom: 0.25rem;">Próximas frases:</span>
+            <span style="font-size: 0.75rem; color: var(--text-muted); display: block; margin-bottom: 0.25rem;" data-i18n="lyrics.upcoming">Upcoming lines:</span>
             <div id="lyricsSyncUpcomingLines" style="font-size: 0.8rem; line-height: 1.5; color: var(--text-muted); max-height: 80px; overflow-y: auto; background: rgba(0,0,0,0.1); padding: 0.5rem; border-radius: 6px;">
               <!-- Upcoming lines preview -->
             </div>
           </div>
 
           <div style="display: flex; gap: 0.5rem;">
-            <button class="btn" onclick="resetLyricsSyncWorkflow()" style="flex: 1; background: rgba(239, 68, 68, 0.1); color: var(--danger); border: 1px solid rgba(239, 68, 68, 0.2);">Reiniciar</button>
-            <button id="btnSaveSyncLyrics" class="btn btn-success" onclick="saveSyncLyrics()" style="flex: 1.5;" disabled>Salvar Letra Sincronizada (LRC)</button>
+            <button class="btn" onclick="resetLyricsSyncWorkflow()" style="flex: 1; background: rgba(239, 68, 68, 0.1); color: var(--danger); border: 1px solid rgba(239, 68, 68, 0.2);" data-i18n="lyrics.reset">Reset</button>
+            <button id="btnSaveSyncLyrics" class="btn btn-success" onclick="saveSyncLyrics()" style="flex: 1.5;" disabled data-i18n="lyrics.saveSynchronized">Save synchronized lyrics (LRC)</button>
           </div>
         </div>
 
@@ -245,22 +252,20 @@ A quiet pulse becomes our guide..." style="width: 100%; height: 180px; padding: 
         <div id="lyricsStepEdit" style="display: none;">
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
             <div>
-              <span style="font-size: 0.75rem; color: var(--text-muted); display: block;">Editando:</span>
+              <span style="font-size: 0.75rem; color: var(--text-muted); display: block;" data-i18n="lyrics.editing">Editing:</span>
               <strong id="lyricsEditSongTitle" style="color: #fff;">&mdash;</strong>
             </div>
             <div style="display: flex; gap: 0.5rem;">
-              <button class="btn" onclick="addLyricLine()" style="background: rgba(168, 85, 247, 0.1); color: #c084fc; border: 1px solid rgba(168, 85, 247, 0.3); padding: 0.35rem 0.75rem; font-size: 0.8rem;">+ Linha</button>
-              <button id="btnSaveEditedLyrics" class="btn btn-success" onclick="saveLyricsEdit()" disabled style="padding: 0.35rem 0.75rem; font-size: 0.8rem;">Salvar LRC</button>
+              <button class="btn" onclick="addLyricLine()" style="background: rgba(168, 85, 247, 0.1); color: #c084fc; border: 1px solid rgba(168, 85, 247, 0.3); padding: 0.35rem 0.75rem; font-size: 0.8rem;" data-i18n="lyrics.addLine">+ Line</button>
+              <button id="btnSaveEditedLyrics" class="btn btn-success" onclick="saveLyricsEdit()" disabled style="padding: 0.35rem 0.75rem; font-size: 0.8rem;" data-i18n="lyrics.saveLrc">Save LRC</button>
             </div>
           </div>
-          <p style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 0.75rem;">
-            Dê duplo-clique em qualquer linha para editar. Linhas sem timestamp usam <code style="background: rgba(255,255,255,0.05); padding: 0.1rem 0.3rem; border-radius: 4px;">[--:--.--]</code> e serão ignoradas no HUD até serem marcadas na aba Sincronizar.
-          </p>
+          <p style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 0.75rem;" data-i18n="lyrics.editHelp">Double-click any line to edit it. Lines without timestamps use [--:--.--] and are ignored by the HUD until marked in the Sync tab.</p>
           <div id="lyricsEditList" style="display: flex; flex-direction: column; gap: 0.4rem; min-height: 80px;">
             <!-- Populated dynamically -->
           </div>
           <div id="lyricsEditEmpty" style="display: none; padding: 2rem; text-align: center; color: var(--text-muted); font-style: italic; font-size: 0.85rem; border: 1.5px dashed var(--card-border); border-radius: 8px;">
-            Nenhuma linha ainda. Clique em "+ Linha" para começar, ou vá em "Criar" para gerar o texto base.
+            <span data-i18n="lyrics.emptyEditor">No lines yet. Select "+ Line" to begin, or use Create to generate the base text.</span>
           </div>
         </div>
 
@@ -269,60 +274,60 @@ A quiet pulse becomes our guide..." style="width: 100%; height: 180px; padding: 
   </div>
 
   <main class="setlist-workspace">
-    <section class="setlist-pane" aria-label="Músicas e seções">
+    <section class="setlist-pane" aria-label="Songs and sections" data-i18n-aria-label="setlist.songsAria">
       <!-- Setlist View -->
         <div class="setlist-container">
-          <h2 class="section-title">Músicas no Projeto</h2>
+          <h2 class="section-title" data-i18n="setlist.songsProject">Songs in Project</h2>
           <div id="songList" class="song-list">
             <!-- Dynamic list -->
             <div style="text-align: center; color: var(--text-muted); padding: 2rem;">
-              Aguardando conexão com o servidor WebSocket...
+              <span data-i18n="setlist.waitingServer">Waiting for the WebSocket server...</span>
             </div>
           </div>
         </div>
     </section>
 
     <div class="control-column">
-      <aside class="control-pane" aria-label="Controle e estado do show">
+      <aside class="control-pane" aria-label="Show controls and status" data-i18n-aria-label="setlist.controlsAria">
       <!-- Transport HUD -->
         <div class="hud">
           <div class="hud-card">
-            <span class="hud-label">Música Ativa</span>
+            <span class="hud-label" data-i18n="setlist.currentSong">Active Song</span>
             <span id="hudSong" class="hud-value">&mdash;</span>
-            <span id="hudNextSong" style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted); margin-top: 0.25rem;">Próxima: &mdash;</span>
+            <span id="hudNextSong" style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted); margin-top: 0.25rem;">Next: &mdash;</span>
           </div>
           <div class="hud-card">
-            <span class="hud-label">Seção Ativa</span>
+            <span class="hud-label" data-i18n="setlist.activeSection">Active Section</span>
             <span id="hudSection" class="hud-value active">&mdash;</span>
-            <span id="hudNextSection" style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted); margin-top: 0.25rem;">Próxima: &mdash;</span>
-            <span id="hudLoopIter" style="font-size: 0.8rem; font-weight: 700; color: var(--accent); display: none; margin-top: 0.25rem;">VOLTA: 1/4</span>
+            <span id="hudNextSection" style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted); margin-top: 0.25rem;">Next: &mdash;</span>
+            <span id="hudLoopIter" style="font-size: 0.8rem; font-weight: 700; color: var(--accent); display: none; margin-top: 0.25rem;">LOOP: 1/4</span>
           </div>
           <div class="hud-card" id="bpmCard">
-            <span class="hud-label">BPM / COMPASSO</span>
+            <span class="hud-label" data-i18n="setlist.bpmBar">BPM / BAR</span>
             <span id="hudBpm" class="hud-value">120.0</span>
             <span id="hudBar" style="font-size: 0.95rem; font-weight: 700; color: var(--ui-accent-strong); font-variant-numeric: tabular-nums; margin-top: 0.25rem;">1.1.1</span>
             <span id="hudDrift" style="display: none; font-size: 0.7rem; font-weight: 700; margin-top: 0.3rem; padding: 0.15rem 0.4rem; border-radius: 6px; transition: all 0.2s;">⚠ Δ0.0</span>
           </div>
           <div class="hud-card" style="display: flex; flex-direction: column; justify-content: center; align-items: center; position: relative;">
-            <span class="hud-label">Timecode Geral (Ableton)</span>
+            <span class="hud-label" data-i18n="setlist.timecode">Ableton Timecode</span>
             <span id="hudTime" class="hud-value" style="font-variant-numeric: tabular-nums; margin-bottom: 0.1rem;">0:00:00</span>
-            <span id="hudSongTime" style="font-size: 0.75rem; color: var(--accent); font-weight: 700; font-variant-numeric: tabular-nums; display: none;">Música: 0:00:00</span>
+            <span id="hudSongTime" style="font-size: 0.75rem; color: var(--accent); font-weight: 700; font-variant-numeric: tabular-nums; display: none;">Song: 0:00:00</span>
           </div>
           <div class="hud-card hud-lyric-card">
-            <span class="hud-label">Letra Atual</span>
+            <span class="hud-label" data-i18n="setlist.lyricLine">Current Lyric</span>
             <span id="hudLyric" class="hud-value hud-lyric-text">&mdash;</span>
           </div>
         </div>
 
-        <div class="secondary-controls" aria-label="Controles secundários">
+        <div class="secondary-controls" aria-label="Secondary controls" data-i18n-aria-label="setlist.secondaryAria">
           <label class="quantization-control" for="quantizationSelect">
-            <span>Quantização</span>
+            <span data-i18n="setlist.quantization">Quantization</span>
             <select id="quantizationSelect" onchange="changeQuantization(this.value)">
-              <option value="0">Nenhuma</option>
-              <option value="1">8 compassos</option>
-              <option value="2">4 compassos</option>
-              <option value="3">2 compassos</option>
-              <option value="4">1 compasso</option>
+              <option value="0" data-i18n="setlist.none">None</option>
+              <option value="1" data-i18n="setlist.bars8">8 bars</option>
+              <option value="2" data-i18n="setlist.bars4">4 bars</option>
+              <option value="3" data-i18n="setlist.bars2">2 bars</option>
+              <option value="4" data-i18n="setlist.bar1">1 bar</option>
               <option value="5">1/2</option>
               <option value="7">1/4</option>
               <option value="9">1/8</option>
@@ -330,33 +335,33 @@ A quiet pulse becomes our guide..." style="width: 100%; height: 180px; padding: 
             </select>
           </label>
           <button id="btnMetronome" class="btn" type="button" onclick="toggleMetronome()">CLICK</button>
-          <button id="btnRefresh" class="btn" type="button" onclick="sendControl('refresh')" title="Recarregar o setlist do Ableton">Atualizar</button>
+          <button id="btnRefresh" class="btn" type="button" onclick="sendControl('refresh')" title="Reload the setlist from Ableton Live" data-i18n="setlist.refresh" data-i18n-title="setlist.refreshTitle">Refresh</button>
         </div>
 
       <details class="log-drawer">
-        <summary>Logs do show</summary>
+        <summary data-i18n="setlist.showLogs">Show logs</summary>
         <!-- Live Automation Log Panel -->
           <div class="log-container" id="logPanel">
             <div class="log-line">
               <span class="log-time">[System]</span>
-              <span class="log-msg-info">Console de logs do palco carregado. Aguardando automações...</span>
+              <span class="log-msg-info" data-i18n="setlist.logReady">Stage log ready. Waiting for automations...</span>
             </div>
           </div>
       </details>
       </aside>
 
-      <nav class="transport-dock" aria-label="Transporte principal">
-        <button id="btnPrevious" class="btn hold-button" type="button" aria-label="Anterior — mantenha pressionado">
+      <nav class="transport-dock" aria-label="Main transport" data-i18n-aria-label="setlist.transportAria">
+        <button id="btnPrevious" class="btn hold-button" type="button" aria-label="Previous — press and hold" data-i18n-aria-label="setlist.previousHold">
           <span class="hold-progress" aria-hidden="true"></span>
           <svg class="transport-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false" draggable="false"><path d="M6 5v14M18 5 9 12l9 7V5Z"/></svg>
         </button>
-        <button id="btnPlay" class="btn btn-primary" type="button" aria-label="Play">
+        <button id="btnPlay" class="btn btn-primary" type="button" aria-label="Play" data-i18n-aria-label="setlist.play">
           <svg class="transport-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false" draggable="false"><path d="M8 5v14l11-7L8 5Z"/></svg>
         </button>
-        <button id="btnStop" class="btn btn-danger" type="button" aria-label="Stop">
+        <button id="btnStop" class="btn btn-danger" type="button" aria-label="Stop" data-i18n-aria-label="setlist.stop">
           <svg class="transport-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false" draggable="false"><rect x="6" y="6" width="12" height="12" rx="1"/></svg>
         </button>
-        <button id="btnNext" class="btn hold-button" type="button" aria-label="Próximo — mantenha pressionado">
+        <button id="btnNext" class="btn hold-button" type="button" aria-label="Next — press and hold" data-i18n-aria-label="setlist.nextHold">
           <span class="hold-progress" aria-hidden="true"></span>
           <svg class="transport-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false" draggable="false"><path d="M18 5v14M6 5l9 7-9 7V5Z"/></svg>
         </button>
@@ -367,14 +372,15 @@ A quiet pulse becomes our guide..." style="width: 100%; height: 180px; padding: 
   <div id="networkErrorOverlay" class="network-overlay" role="status" aria-live="polite">
     <div class="network-alert-box">
       <span class="network-icon" aria-hidden="true">⌁</span>
-      <h2>Reconectando</h2>
-      <p>O painel perdeu o sinal do Bridge. A última informação válida continuará visível enquanto tentamos reconectar.</p>
+      <h2 data-i18n="status.reconnecting">Reconnecting</h2>
+      <p data-i18n="status.panelLost">The panel lost its connection to the Bridge. The last valid state remains visible while reconnection is attempted.</p>
     </div>
   </div>
 
   <div id="stageNotice" class="ui-notice" role="status" aria-live="polite" hidden></div>
 
   <script src="../shared/lyrics-timing.js"></script>
+  <script src="../shared/i18n.js"></script>
   <script src="../shared/stage-runtime.js"></script>
   <script src="./transport-runtime.js"></script>
   <script src="./setlist.js"></script>

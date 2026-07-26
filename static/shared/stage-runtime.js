@@ -12,6 +12,8 @@
     const navigatorRef = options.navigatorRef || globalScope.navigator || {};
     const button = options.button || documentRef?.getElementById?.('fullscreenButton');
     const notice = options.notice || documentRef?.getElementById?.('stageNotice');
+    const i18n = options.i18n || globalScope.RcSetlistI18n;
+    const t = (key, fallback) => i18n?.t?.(key) || fallback;
     let wakeLock = null;
     let wakeLockRequest = null;
     let noticeTimer = null;
@@ -31,9 +33,15 @@
       if (!button) return;
       const fullscreen = Boolean(documentRef.fullscreenElement);
       button.setAttribute('aria-pressed', fullscreen ? 'true' : 'false');
-      button.setAttribute('aria-label', fullscreen ? 'Sair da tela cheia' : 'Entrar em tela cheia');
-      button.setAttribute('title', fullscreen ? 'Sair da tela cheia (F)' : 'Entrar em tela cheia (F)');
-      button.textContent = fullscreen ? 'Sair da tela cheia' : 'Tela cheia';
+      button.setAttribute('aria-label', fullscreen
+        ? t('fullscreen.exit', 'Exit full screen')
+        : t('fullscreen.enterAria', 'Enter full screen'));
+      button.setAttribute('title', fullscreen
+        ? t('fullscreen.exitTitle', 'Exit full screen (F)')
+        : t('fullscreen.enterTitle', 'Enter full screen (F)'));
+      button.textContent = fullscreen
+        ? t('fullscreen.exit', 'Exit full screen')
+        : t('fullscreen.enter', 'Full screen');
     }
 
     async function acquireWakeLock() {
@@ -41,7 +49,7 @@
         return wakeLock;
       }
       if (!navigatorRef.wakeLock?.request) {
-        showNotice('Tela cheia ativa; este navegador não oferece bloqueio de tela.');
+        showNotice(t('fullscreen.wakeUnsupported', 'Full screen is active, but this browser does not support Screen Wake Lock.'));
         return null;
       }
 
@@ -54,7 +62,7 @@
           return lock;
         })
         .catch(() => {
-          showNotice('Tela cheia ativa, mas o navegador não permitiu manter a tela acordada.');
+          showNotice(t('fullscreen.wakeDenied', 'Full screen is active, but the browser did not allow the screen to stay awake.'));
           return null;
         })
         .finally(() => {
@@ -93,10 +101,10 @@
         } else if (typeof documentRef.documentElement?.requestFullscreen === 'function') {
           await documentRef.documentElement.requestFullscreen();
         } else {
-          showNotice('Fullscreen não está disponível neste navegador.');
+          showNotice(t('fullscreen.unavailable', 'Full screen is not available in this browser.'));
         }
       } catch {
-        showNotice('Não foi possível ativar o fullscreen. A página continua disponível no modo normal.');
+        showNotice(t('fullscreen.failed', 'Could not enter full screen. The page remains available in normal mode.'));
       }
       await sync();
     }
@@ -127,6 +135,7 @@
     documentRef.addEventListener?.('visibilitychange', handleVisibilityChange);
     documentRef.addEventListener?.('keydown', handleKeydown);
     button?.addEventListener?.('click', handleButtonClick);
+    const unsubscribeLocale = i18n?.subscribe?.(updateButton) || (() => {});
     updateButton();
 
     async function destroy() {
@@ -135,6 +144,7 @@
       documentRef.removeEventListener?.('visibilitychange', handleVisibilityChange);
       documentRef.removeEventListener?.('keydown', handleKeydown);
       button?.removeEventListener?.('click', handleButtonClick);
+      unsubscribeLocale();
       if (noticeTimer) clearTimeout(noticeTimer);
       await releaseWakeLock();
     }

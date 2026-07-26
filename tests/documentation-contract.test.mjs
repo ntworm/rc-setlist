@@ -21,7 +21,8 @@ test('public landing presents Ableton RC Setlist as source-available and noncomm
   assert.match(landing, /PolyForm Noncommercial 1\.0\.0/i);
   assert.match(landing, /independent project.+not affiliated with or endorsed by Ableton AG/is);
   assert.match(landing, /https:\/\/ntworm\.github\.io\/rc-setlist\//i);
-  assert.match(landing, /Release 0\.3\.0/);
+  assert.match(landing, /Release 0\.4\.0/);
+  assert.match(landing, /id=["']languageSelect["']/);
   assert.doesNotMatch(landing, /Release candidate/i);
   assert.doesNotMatch(landing, /commercial distribution is in preparation|private beta|sales open/i);
   assert.doesNotMatch(landing, /fonts\.googleapis\.com|fonts\.gstatic\.com|google-analytics|googletagmanager/i);
@@ -64,6 +65,11 @@ test('public docs contain the required user, contributor, privacy and security p
     'LICENSE',
     'NOTICE',
     'THIRD_PARTY_NOTICES.md',
+    'docs/pt-BR/README.md',
+    'docs/pt-BR/INSTALL.md',
+    'docs/pt-BR/USER-GUIDE.md',
+    'docs/pt-BR/TROUBLESHOOTING.md',
+    'docs/pt-BR/FAQ.md',
   ];
 
   for (const path of required) {
@@ -71,12 +77,80 @@ test('public docs contain the required user, contributor, privacy and security p
   }
 });
 
+test('public landing contains truthful site media and keeps the owner media kit private', () => {
+  const required = [
+    'docs/media/en/product-truth-discord.png',
+    'docs/media/en/performance.png',
+    'docs/media/en/stage-control.png',
+    'docs/media/en/workflow.png',
+    'docs/media/en/stage-editorial.png',
+    'docs/media/pt-BR/product-truth-discord.png',
+    'docs/media/pt-BR/performance.png',
+    'docs/media/pt-BR/stage-control.png',
+    'docs/media/pt-BR/workflow.png',
+    'docs/media/pt-BR/stage-editorial.png',
+  ];
+
+  for (const path of required) {
+    assert.ok(existsSync(new URL(`../${path}`, import.meta.url)), `${path} must exist`);
+  }
+
+  const landing = read('docs/index.html');
+  const allowlist = read('public-files.txt');
+  assert.doesNotMatch(landing, /href=["']\.\/media-kit\.html["']/i);
+  assert.doesNotMatch(landing, /Need artwork for a post or community listing\?/i);
+  for (const privatePath of [
+    'docs/media/',
+    'docs/media-kit.html',
+    'docs/media/product-truth-linkedin.png',
+    'docs/media/product-truth-square.png',
+  ]) {
+    assert.doesNotMatch(allowlist, new RegExp(`^${privatePath.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'm'));
+  }
+});
+
+test('Dependabot keeps TypeScript and Node types on the supported major release line', () => {
+  const dependabot = read('.github/dependabot.yml');
+  for (const dependency of ['typescript', '@types/node']) {
+    const escaped = dependency.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    assert.match(
+      dependabot,
+      new RegExp(`dependency-name:\\s*["']?${escaped}["']?[\\s\\S]*?update-types:[\\s\\S]*?version-update:semver-major`),
+      `${dependency} must ignore semver-major Dependabot updates`,
+    );
+  }
+});
+
+test('public media verification excludes owner-only social cards', () => {
+  const packageJson = JSON.parse(read('package.json'));
+  const publicCheck = packageJson.scripts['media:check'];
+  const ownerCheck = packageJson.scripts['media:check:owner'];
+  const publicGate = packageJson.scripts['ci:public'];
+  const renderer = read('scripts/render-media-kit.mjs');
+
+  assert.match(publicCheck, /--check\s+--public/);
+  assert.match(ownerCheck, /--check/);
+  assert.doesNotMatch(ownerCheck, /--public/);
+  assert.match(publicGate, /media:check/);
+  assert.match(renderer, /publicOutputIds/);
+  assert.match(renderer, /process\.argv\.includes\(['"]--public['"]\)/);
+});
+
+test('media captures stabilize the browser clock and motion', () => {
+  const renderer = read('scripts/render-media-kit.mjs');
+  assert.match(renderer, /Object\.defineProperty\(performance,\s*['"]now['"]/);
+  assert.match(renderer, /emulateMedia\(\{\s*reducedMotion:\s*['"]reduce['"]/);
+});
+
 test('the public CI gate includes browser and release-surface regressions', () => {
   const packageJson = JSON.parse(read('package.json'));
   const publicGate = packageJson.scripts['ci:public'];
+  const workflow = read('.github/workflows/ci.yml');
   assert.equal(typeof publicGate, 'string', 'package.json must define ci:public');
   assert.match(publicGate, /test:ui/);
   assert.match(publicGate, /test:release-surface/);
+  assert.match(workflow, /actions\/checkout@v7/);
+  assert.match(workflow, /actions\/setup-node@v7/);
 });
 
 test('production build cleans generated output and enables minification', () => {

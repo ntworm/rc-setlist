@@ -1,7 +1,7 @@
 # Ableton RC Setlist
 
 [![PolyForm Noncommercial](https://img.shields.io/badge/license-PolyForm%20Noncommercial-orange)](LICENSE)
-[![Version](https://img.shields.io/badge/version-0.3.0-f97316)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-0.4.0-f97316)](CHANGELOG.md)
 [![CI](https://github.com/ntworm/rc-setlist/actions/workflows/ci.yml/badge.svg)](https://github.com/ntworm/rc-setlist/actions/workflows/ci.yml)
 
 Ableton RC Setlist is a source-available setlist extension for Ableton Live. It turns
@@ -11,6 +11,7 @@ click feedback, and guarded transport controls for rehearsals and live shows.
 [Landing page](https://ntworm.github.io/rc-setlist/) ·
 [Installation](docs/INSTALL.md) ·
 [User guide](docs/USER-GUIDE.md) ·
+[Português (Brasil)](docs/pt-BR/README.md) ·
 [Latest release](https://github.com/ntworm/rc-setlist/releases/latest)
 
 > **Network safety:** Ableton RC Setlist serves browser controls on your local network.
@@ -26,6 +27,7 @@ click feedback, and guarded transport controls for rehearsals and live shows.
 - Guarded transport, quantization feedback and counted-loop handling.
 - Per-profile ordering, lyrics and CSV export stored locally.
 - Fullscreen stage mode with Screen Wake Lock when the browser supports it.
+- English and Brazilian Portuguese interfaces in the same `.ablx`.
 - No account, cloud sync, analytics or telemetry.
 
 ## Requirements
@@ -37,15 +39,16 @@ click feedback, and guarded transport controls for rehearsals and live shows.
   source. End users install the `.ablx` and do not need Node.js.
 
 Windows is the validated release platform. macOS support remains experimental
-until version 0.3.0 is exercised on real macOS hardware.
+until this release is exercised on real macOS hardware.
 
 ## Quick start
 
 1. Install AbletonOSC from its [upstream repository](https://github.com/ideoforms/AbletonOSC).
-2. Download `Ableton-RC-Setlist-0.3.0.ablx` from the latest release.
+2. Download `Ableton-RC-Setlist-0.4.0.ablx` from the latest release.
 3. Open the `.ablx` and approve installation in Live.
 4. In Live, open **Extensions > Ableton RC Setlist** and start the server.
 5. Use the panel URL or QR code to open `/setlist` or `/performance`.
+6. Choose English or **Português (Brasil)** from the language menu.
 
 The browser may show a warning for the per-install self-signed certificate.
 Accept it only when the address matches the host shown by Ableton RC Setlist on your
@@ -95,6 +98,7 @@ Authorized developers can configure a complete build using
 - [Documentation index](docs/README.md)
 - [Installation](docs/INSTALL.md)
 - [User guide](docs/USER-GUIDE.md)
+- [Português (Brasil)](docs/pt-BR/README.md)
 - [Troubleshooting](docs/TROUBLESHOOTING.md)
 - [Tester guide](docs/TESTER-GUIDE.md)
 - [Development](docs/DEVELOPMENT.md)

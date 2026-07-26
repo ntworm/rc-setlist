@@ -71,3 +71,22 @@ test('public-facing prose contains no commercial-song or personal-path fixture',
   ].filter((entry) => existsSync(path.join(root, entry)));
   assertClean(files);
 });
+
+test('marketing surfaces do not promote fictional fixtures or hidden diagnostics', () => {
+  const files = [
+    'docs/index.html',
+    'docs/media-kit.html',
+    'scripts/media-kit-template.html',
+  ].filter((entry) => existsSync(path.join(root, entry)));
+  const blockedMarketing = [/Neon Signal/i, /Synchronized demo text/i, />\s*Drift\s*</i];
+  const findings = [];
+
+  for (const relative of files) {
+    const content = readFileSync(path.join(root, relative), 'utf8');
+    for (const pattern of blockedMarketing) {
+      if (pattern.test(content)) findings.push(`${relative}: ${pattern}`);
+    }
+  }
+
+  assert.deepEqual(findings, []);
+});

@@ -12,6 +12,10 @@ const PREVIOUS_STORAGE_NAMES = [
   'ntworm.rc-setlist',
   'worm.ableton-setlist-bridge',
 ] as const;
+const DEFAULT_PROFILE_NAMES = new Set([
+  'main setlist',
+  'setlist principal',
+]);
 
 async function copyIfMissing(source: string, destination: string): Promise<void> {
   try {
@@ -107,7 +111,7 @@ async function migratePreviousInstallations(storageRoot: string, manager: Profil
 
       try {
         const profileName = normalizeProfileName(candidate.name);
-        if (profileName.toLocaleLowerCase('und') === 'setlist principal') {
+        if (DEFAULT_PROFILE_NAMES.has(profileName.toLocaleLowerCase('und'))) {
           const primary = await manager.ensureDefaultProfile();
           await populateLegacy(previousProfileRoot, manager.getPaths(primary.id));
           await manager.recordLegacySource(source, primary.id);

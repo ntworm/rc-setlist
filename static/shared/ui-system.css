@@ -130,6 +130,49 @@ button,
   display: none;
 }
 
+.language-control {
+  display: inline-flex;
+  min-width: 0;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.language-control > span {
+  color: var(--ui-muted);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.language-select {
+  min-height: 44px;
+  max-width: 10.5rem;
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius-sm);
+  background: var(--ui-surface-raised);
+  color: var(--ui-text-soft);
+  padding: 0.55rem 1.8rem 0.55rem 0.65rem;
+  cursor: pointer;
+}
+
+.language-select:hover {
+  border-color: var(--ui-border-strong);
+  color: var(--ui-text);
+}
+
+.sr-only {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
+}
+
 .connection-empty .network-overlay {
   inset: 0;
   display: grid;

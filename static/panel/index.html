@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Ableton RC Setlist &mdash; Painel de Controle</title>
+  <title>Ableton RC Setlist &mdash; Control Panel</title>
   <style>
     :root {
       --bg: #1c1c1e;
@@ -47,6 +47,23 @@
       color: var(--text-muted);
       text-transform: uppercase;
       letter-spacing: 0.05em;
+    }
+
+    .panel-heading {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .language-select {
+      min-height: 32px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: #252529;
+      color: var(--text);
+      padding: 4px 8px;
+      font-size: 11px;
     }
 
     /* QR Codes Grid */
@@ -193,64 +210,74 @@
   </style>
 </head>
 <body>
-  <div>
-    <span class="subtitle">Ableton RC Setlist</span>
-    <h2>Acesso ao Painel Web</h2>
+  <div class="panel-heading">
+    <div>
+      <span class="subtitle">Ableton RC Setlist</span>
+      <h2 data-i18n="panel.title">Web Panel Access</h2>
+    </div>
+    <label>
+      <span data-i18n="common.language" style="display:block;color:var(--text-muted);font-size:10px;margin-bottom:3px;">Language</span>
+      <select id="languageSelect" class="language-select" aria-label="Language" data-i18n-aria-label="common.language">
+        <option value="en">English</option>
+        <option value="pt-BR">Português (Brasil)</option>
+      </select>
+    </label>
   </div>
 
   <!-- Connection Status Bar -->
   <div class="status-bar">
     <div class="status-indicator">
       <div id="statusDot" class="status-dot"></div>
-      <span id="statusText" class="status-text inactive">Servidor Parado</span>
+      <span id="statusText" class="status-text inactive" data-i18n="panel.serverStopped">Server stopped</span>
     </div>
-    <div id="infoPort" style="font-size: 11px; color: var(--text-muted)">Porta: &mdash;</div>
+    <div id="infoPort" style="font-size: 11px; color: var(--text-muted)">Port: &mdash;</div>
   </div>
 
   <!-- QR Codes Grid -->
   <div class="qr-grid" id="qrGrid">
     <!-- Setlist Controller -->
     <div class="qr-card">
-      <span class="qr-label">Painel do Setlist</span>
+      <span class="qr-label" data-i18n="panel.stageControl">Stage Control</span>
       <div class="qr-frame" id="qrSetlist"></div>
       <span class="qr-url" id="urlSetlist">http://localhost:4444/setlist</span>
       <div class="qr-actions">
-        <a class="btn" id="openSetlist" href="#" target="_blank">Abrir no PC</a>
+        <a class="btn" id="openSetlist" href="#" target="_blank" data-i18n="panel.openComputer">Open on this computer</a>
       </div>
     </div>
 
     <!-- Stage View -->
     <div class="qr-card">
-      <span class="qr-label">Tela do Palco</span>
+      <span class="qr-label" data-i18n="panel.performanceDisplay">Performance Display</span>
       <div class="qr-frame" id="qrStage"></div>
       <span class="qr-url" id="urlStage">http://localhost:4444/performance</span>
       <div class="qr-actions">
-        <a class="btn" id="openStage" href="#" target="_blank">Abrir no PC</a>
+        <a class="btn" id="openStage" href="#" target="_blank" data-i18n="panel.openComputer">Open on this computer</a>
       </div>
     </div>
   </div>
 
   <div id="placeholderText" style="display: none; text-align: center; color: var(--text-muted); padding: 40px;">
-    Inicie o servidor para gerar os links e QR Codes de acesso.
+    <span data-i18n="panel.startPrompt">Start the server to generate access links and QR codes.</span>
   </div>
 
   <!-- Footer Actions -->
   <div class="footer">
-    <button class="btn primary" id="btnStart" onclick="sendAction('start')">Iniciar</button>
-    <button class="btn" id="btnStop" onclick="sendAction('stop')">Parar</button>
-    <button class="btn" id="btnRestart" onclick="sendAction('restart')">Reiniciar</button>
-    <button class="btn" style="flex: 0; min-width: 80px;" onclick="sendAction('close')">Fechar</button>
+    <button class="btn primary" id="btnStart" onclick="sendAction('start')" data-i18n="panel.start">Start</button>
+    <button class="btn" id="btnStop" onclick="sendAction('stop')" data-i18n="panel.stop">Stop</button>
+    <button class="btn" id="btnRestart" onclick="sendAction('restart')" data-i18n="panel.restart">Restart</button>
+    <button class="btn" style="flex: 0; min-width: 80px;" onclick="sendAction('close')" data-i18n="common.close">Close</button>
   </div>
 
   <!-- Auto-start toggle (persisted in .setlist/auto-start) -->
   <div style="display: flex; align-items: center; justify-content: space-between; padding: 12px 4px 4px 4px; border-top: 1px solid var(--border); margin-top: 12px;">
     <div>
-      <div style="font-weight: 600; font-size: 11px;">Iniciar automaticamente ao ligar o Live</div>
-      <div style="font-size: 10px; color: var(--text-muted); margin-top: 2px;" id="autoStartHint">Evita conflito com outras extensões RC. Toggle persiste entre sessões.</div>
+      <div style="font-weight: 600; font-size: 11px;" data-i18n="panel.autoStart">Start automatically with Live</div>
+      <div style="font-size: 10px; color: var(--text-muted); margin-top: 2px;" id="autoStartHint" data-i18n="panel.autoStartHint">Prevents conflicts with other RC extensions. This setting persists between sessions.</div>
     </div>
-    <button class="btn" id="btnToggleAutoStart" style="flex: 0; min-width: 80px;" onclick="sendAction('toggle-auto-start')">Desligado</button>
+    <button class="btn" id="btnToggleAutoStart" style="flex: 0; min-width: 80px;" onclick="sendAction('toggle-auto-start')">Off</button>
   </div>
 
+  <script src="../shared/i18n.js"></script>
   <script src="qrcode.js"></script>
   <script>
     // These window variables are injected by panel.ts when rendering the template
@@ -258,6 +285,10 @@
     const port = window.INITIAL_PORT || 4444;
     const primaryIp = window.INITIAL_PRIMARY_IP || '127.0.0.1';
     let autoStart = !!window.INITIAL_AUTO_START;
+    const i18n = RcSetlistI18n;
+    const languageSelect = document.getElementById('languageSelect');
+    i18n.setLocale(window.INITIAL_LOCALE || 'en');
+    i18n.bindSelector(languageSelect);
 
     const statusDot = document.getElementById('statusDot');
     const statusText = document.getElementById('statusText');
@@ -277,11 +308,24 @@
 
     function renderAutoStart() {
       if (!btnToggleAutoStart) return;
-      btnToggleAutoStart.textContent = autoStart ? 'Ligado' : 'Desligado';
+      btnToggleAutoStart.textContent = i18n.t(autoStart ? 'panel.on' : 'panel.off');
       btnToggleAutoStart.style.background = autoStart ? 'var(--accent)' : '';
       btnToggleAutoStart.style.color = autoStart ? '#121214' : '';
     }
     renderAutoStart();
+
+    function renderStatus() {
+      statusText.textContent = i18n.t(isRunning ? 'panel.serverRunning' : 'panel.serverStopped');
+      infoPort.textContent = isRunning
+        ? i18n.t('panel.port', { port: `${port} (HTTPS)` })
+        : i18n.t('panel.port', { port: '\u2014' });
+    }
+
+    i18n.subscribe((locale) => {
+      renderAutoStart();
+      renderStatus();
+      sendAction(`set-language:${locale}`);
+    });
 
     function sendAction(action) {
       const msg = { method: 'close_and_send', params: [action] };
@@ -296,8 +340,7 @@
     if (isRunning) {
       statusDot.className = 'status-dot active';
       statusText.className = 'status-text active';
-      statusText.textContent = 'Servidor Ativo';
-      infoPort.textContent = `Porta: ${port} (HTTPS)`;
+      renderStatus();
       qrGrid.style.display = 'grid';
       placeholderText.style.display = 'none';
 
@@ -335,8 +378,7 @@
     } else {
       statusDot.className = 'status-dot';
       statusText.className = 'status-text inactive';
-      statusText.textContent = 'Servidor Parado';
-      infoPort.textContent = 'Porta: \u2014';
+      renderStatus();
       qrGrid.style.display = 'none';
       placeholderText.style.display = 'block';
 
