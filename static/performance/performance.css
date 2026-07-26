@@ -536,7 +536,7 @@ body {
   }
 
   .fullscreen-button::after {
-    content: "Tela cheia";
+    content: "Full screen";
     font-size: 0.66rem;
   }
 

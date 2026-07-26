@@ -46,10 +46,10 @@ function showConnectionFailure() {
   const overlay = document.getElementById('networkErrorOverlay');
   document.body.classList.toggle('connection-stale', hasState);
   document.body.classList.toggle('connection-empty', !hasState);
-  overlay.querySelector('h2').textContent = hasState ? 'Reconectando' : 'Bridge indisponível';
+  overlay.querySelector('h2').textContent = hasState ? 'Reconnecting' : 'Bridge unavailable';
   overlay.querySelector('p').textContent = hasState
-    ? 'O visor perdeu o sinal do Bridge. A última informação válida continuará na tela enquanto tentamos reconectar.'
-    : 'Nenhum estado do show foi recebido. Confirme que o Bridge está ativo no Ableton e que este dispositivo está na mesma rede.';
+    ? 'The display lost its connection to the Bridge. The last valid state remains visible while reconnection is attempted.'
+    : 'No show state has been received. Confirm that the Bridge is running in Ableton Live and this device is on the same network.';
   overlay.classList.add('visible');
 }
 
@@ -77,7 +77,7 @@ function connect() {
   ws.onerror = (event) => {
     console.error('[WS] error:', event);
     statusDot.className = 'status-dot error';
-    statusText.textContent = 'WS ERRO';
+    statusText.textContent = 'WS ERROR';
   };
 
   ws.onclose = (event) => {
@@ -142,7 +142,7 @@ function displayLyrics(song, lines, format) {
 
   if (!lines || lines.length === 0) {
     lyricsCard.style.display = 'none';
-    lyricsContainer.innerHTML = '<div style="text-align: center; color: var(--text-muted); margin-top: 3rem; font-size: 1.1rem; font-style: italic;">Nenhuma letra carregada para esta música.</div>';
+    lyricsContainer.innerHTML = '<div style="text-align: center; color: var(--text-muted); margin-top: 3rem; font-size: 1.1rem; font-style: italic;">No lyrics loaded for this song.</div>';
     return;
   }
 
@@ -188,8 +188,8 @@ function updateUINonTimeSensitive(state) {
   const currentSong = state.songs[state.activeSongIndex];
   const nextSongObj = state.songs[state.activeSongIndex + 1];
 
-  songTitle.textContent = currentSong ? currentSong.title : 'NENHUMA';
-  nextSong.textContent = nextSongObj ? nextSongObj.title : 'FIM DO SET';
+  songTitle.textContent = currentSong ? currentSong.title : 'NONE';
+  nextSong.textContent = nextSongObj ? nextSongObj.title : 'END OF SET';
 
   // Find current and next section
   const currentSection = currentSong ? currentSong.sections[state.activeSectionIndex] : null;
@@ -213,14 +213,14 @@ function updateUINonTimeSensitive(state) {
     }
   }
 
-  sectionName.textContent = currentSection ? currentSection.name : 'NENHUMA';
+  sectionName.textContent = currentSection ? currentSection.name : 'NONE';
   
   if (nextIsCurrent && nextSectionObj) {
-    nextSection.textContent = `${nextSectionObj.name} (Repetir)`;
+    nextSection.textContent = `${nextSectionObj.name} (Repeat)`;
   } else {
     nextSection.textContent = nextSectionObj
       ? `${nextSectionObj.name}${nextSectionObj.loopCount !== null ? ' [L]' : ''}`
-      : 'FIM';
+      : 'END';
   }
 
   // Render Song Badges
@@ -260,14 +260,14 @@ function tick() {
     const songTimecodeEl = document.getElementById('songTimecode');
     if (songTimecodeEl) {
       if (activeSong) {
-        songTimecodeEl.textContent = `Música: ${formatBeatsAsTime(songElapsedBeats, lastState.tempo)}`;
+        songTimecodeEl.textContent = `Song: ${formatBeatsAsTime(songElapsedBeats, lastState.tempo)}`;
         songTimecodeEl.style.display = 'inline-block';
       } else {
         songTimecodeEl.style.display = 'none';
       }
     }
 
-    // Compasso calculation (Bars.Beats.Sixteenths)
+    // Bar calculation (Bars.Beats.Sixteenths)
     const num = lastState.signatureNumerator || 4;
     const bar = Math.floor(estimatedBeats / num) + 1;
     const remainingBeats = estimatedBeats % num;
@@ -302,7 +302,7 @@ function tick() {
 
     // Update Loop Iteration display
     if (lastState.loopIteration) {
-      perfLoopIter.textContent = `↻ VOLTA: ${lastState.loopIteration.current}/${lastState.loopIteration.total}`;
+      perfLoopIter.textContent = `↻ LOOP: ${lastState.loopIteration.current}/${lastState.loopIteration.total}`;
       perfLoopIter.style.display = 'block';
     } else {
       perfLoopIter.style.display = 'none';

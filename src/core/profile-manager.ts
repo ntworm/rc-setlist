@@ -1,6 +1,9 @@
 import * as path from 'node:path';
 import * as fs from 'node:fs/promises';
 
+const DEFAULT_PROFILE_NAME = 'Main Setlist';
+const LEGACY_DEFAULT_PROFILE_NAME = 'Setlist Principal';
+
 export type ProfileErrorCode =
   | 'invalid_profile'
   | 'duplicate_profile_name'
@@ -554,13 +557,13 @@ export class ProfileManager {
       }
     }
 
-    // 4. Default Setlist Principal creation
+    // 4. Default Main Setlist creation
     if (!loaded) {
       const defaultId = this.randomUUID();
       const timestamp = this.now();
       const defaultProfile: ProfileSummary = {
         id: defaultId,
-        name: 'Setlist Principal',
+        name: DEFAULT_PROFILE_NAME,
         createdAt: timestamp,
         updatedAt: timestamp
       };
@@ -661,11 +664,15 @@ export class ProfileManager {
 
   public async ensureDefaultProfile(): Promise<ProfileSummary> {
     const registry = this.requireRegistry();
-    const existing = registry.profiles.find((p) => profileNameKey(p.name) === profileNameKey('Setlist Principal'));
+    const defaultKeys = new Set([
+      profileNameKey(DEFAULT_PROFILE_NAME),
+      profileNameKey(LEGACY_DEFAULT_PROFILE_NAME),
+    ]);
+    const existing = registry.profiles.find((profile) => defaultKeys.has(profileNameKey(profile.name)));
     if (existing) {
       return existing;
     }
-    return this.create('Setlist Principal');
+    return this.create(DEFAULT_PROFILE_NAME);
   }
 
   public async setMigrationVersion(version: number): Promise<void> {

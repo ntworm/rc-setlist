@@ -109,7 +109,7 @@ test('Stage runtime keeps the page usable when fullscreen is denied', async () =
   assert.equal(harness.documentRef.fullscreenElement, null);
   assert.equal(harness.button.attributes.get('aria-pressed'), 'false');
   assert.equal(harness.notice.hidden, false);
-  assert.match(harness.notice.textContent, /fullscreen/i);
+  assert.match(harness.notice.textContent, /full screen/i);
 
   await controller.destroy();
 });
@@ -123,7 +123,7 @@ test('Stage runtime reports when Wake Lock is unavailable', async () => {
   await controller.toggleFullscreen();
   assert.equal(harness.documentRef.fullscreenElement, harness.documentRef.documentElement);
   assert.equal(harness.notice.hidden, false);
-  assert.match(harness.notice.textContent, /não oferece bloqueio de tela/i);
+  assert.match(harness.notice.textContent, /does not support Screen Wake Lock/i);
 
   await controller.destroy();
 });

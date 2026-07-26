@@ -31,9 +31,9 @@
       if (!button) return;
       const fullscreen = Boolean(documentRef.fullscreenElement);
       button.setAttribute('aria-pressed', fullscreen ? 'true' : 'false');
-      button.setAttribute('aria-label', fullscreen ? 'Sair da tela cheia' : 'Entrar em tela cheia');
-      button.setAttribute('title', fullscreen ? 'Sair da tela cheia (F)' : 'Entrar em tela cheia (F)');
-      button.textContent = fullscreen ? 'Sair da tela cheia' : 'Tela cheia';
+      button.setAttribute('aria-label', fullscreen ? 'Exit full screen' : 'Enter full screen');
+      button.setAttribute('title', fullscreen ? 'Exit full screen (F)' : 'Enter full screen (F)');
+      button.textContent = fullscreen ? 'Exit full screen' : 'Full screen';
     }
 
     async function acquireWakeLock() {
@@ -41,7 +41,7 @@
         return wakeLock;
       }
       if (!navigatorRef.wakeLock?.request) {
-        showNotice('Tela cheia ativa; este navegador não oferece bloqueio de tela.');
+        showNotice('Full screen is active, but this browser does not support Screen Wake Lock.');
         return null;
       }
 
@@ -54,7 +54,7 @@
           return lock;
         })
         .catch(() => {
-          showNotice('Tela cheia ativa, mas o navegador não permitiu manter a tela acordada.');
+          showNotice('Full screen is active, but the browser did not allow the screen to stay awake.');
           return null;
         })
         .finally(() => {
@@ -93,10 +93,10 @@
         } else if (typeof documentRef.documentElement?.requestFullscreen === 'function') {
           await documentRef.documentElement.requestFullscreen();
         } else {
-          showNotice('Fullscreen não está disponível neste navegador.');
+          showNotice('Full screen is not available in this browser.');
         }
       } catch {
-        showNotice('Não foi possível ativar o fullscreen. A página continua disponível no modo normal.');
+        showNotice('Could not enter full screen. The page remains available in normal mode.');
       }
       await sync();
     }

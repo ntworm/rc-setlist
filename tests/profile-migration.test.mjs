@@ -21,7 +21,7 @@ function deterministicOptions() {
   };
 }
 
-test('global lyrics and custom order migrate to Setlist Principal without deleting source', async (t) => {
+test('global lyrics and custom order migrate to Main Setlist without deleting source', async (t) => {
   const root = makeRoot(t);
   // Create global legacy files
   fs.mkdirSync(path.join(root, 'lyrics'), { recursive: true });
@@ -32,7 +32,7 @@ test('global lyrics and custom order migrate to Setlist Principal without deleti
   await manager.initialize(); // Calls migrateLegacyData internally
 
   const primary = manager.getActive();
-  assert.equal(primary.name, 'Setlist Principal');
+  assert.equal(primary.name, 'Main Setlist');
 
   const paths = manager.getActivePaths();
   assert.equal(fs.existsSync(path.join(paths.lyrics, 'Song A.lrc')), true);
@@ -103,7 +103,7 @@ test('project-info directories migrate into explicit profiles in sorted hash ord
   await manager.initialize();
 
   const list = manager.list();
-  // Setlist Principal, Show A, Show A (2)
+  // Main Setlist, Show A, Show A (2)
   assert.equal(list.length, 3);
   assert.equal(list[1].name, 'Show A');
   assert.equal(list[2].name, 'Show A (2)');

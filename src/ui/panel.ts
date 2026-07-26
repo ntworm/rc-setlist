@@ -68,7 +68,7 @@ export async function showPanelDialog(context: ModalContext): Promise<void> {
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       console.error(`[rc-setlist] panel action "${action}" failed: ${msg}`);
-      await showInfoDialog(context, `Erro ao executar "${action}": ${msg}`);
+      await showInfoDialog(context, `Could not run "${action}": ${msg}`);
     }
   }
 }
@@ -119,6 +119,6 @@ export function registerPanelCommand(context: ReturnType<typeof initialize>): vo
     'Scene',
   ] as const;
   for (const scope of SCOPES) {
-    void context.ui.registerContextMenuAction(scope, 'Ableton RC Setlist: Painel', 'abletonSetlistBridge.panel');
+    void context.ui.registerContextMenuAction(scope, 'Ableton RC Setlist: Panel', 'abletonSetlistBridge.panel');
   }
 }

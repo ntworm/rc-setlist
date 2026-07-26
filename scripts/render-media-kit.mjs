@@ -54,7 +54,7 @@ async function waitForServer(url, timeoutMs = 10_000) {
 async function captureInterface(browser, route, outputPath) {
   const page = await browser.newPage({ viewport: { width: 1600, height: 900 }, deviceScaleFactor: 1 });
   await page.goto(`http://127.0.0.1:4173/${route}/?scenario=marketing`, { waitUntil: 'domcontentloaded' });
-  await page.getByText('MÚSICA 03', { exact: true }).first().waitFor();
+  await page.getByText('SONG 03', { exact: true }).first().waitFor();
   await page.screenshot({ path: outputPath });
   await page.close();
 }

@@ -10,8 +10,8 @@ function npmProductionTree() {
   const npmExecPath = process.env.npm_execpath;
   const command = npmExecPath ? process.execPath : 'npm';
   const args = npmExecPath
-    ? [npmExecPath, 'ls', '--omit=dev', '--all', '--json', '--long']
-    : ['ls', '--omit=dev', '--all', '--json', '--long'];
+    ? [npmExecPath, 'ls', '--omit=dev', '--all', '--json', '--long', '--package-lock-only']
+    : ['ls', '--omit=dev', '--all', '--json', '--long', '--package-lock-only'];
   const result = spawnSync(command, args, {
     cwd: root,
     encoding: 'utf8',

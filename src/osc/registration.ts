@@ -42,7 +42,7 @@ export function registerOscListeners(options: StartServerOptions = {}) {
     // Log when active song/section changes
     if (prevState && newState && (prevState.activeSongIndex !== newState.activeSongIndex || prevState.activeSectionIndex !== newState.activeSectionIndex)) {
       const song = newState.songs[newState.activeSongIndex];
-      const msg = `Ativo alterado → Música: "${song?.title}" (idx ${newState.activeSongIndex}), Seção idx: ${newState.activeSectionIndex}, tempo: ${time.toFixed(1)}s`;
+      const msg = `Active cue changed → Song: "${song?.title}" (idx ${newState.activeSongIndex}), Section idx: ${newState.activeSectionIndex}, time: ${time.toFixed(1)}s`;
       console.log(`[Transport] ${msg}`);
       bridgeState.wsServer?.broadcastLog(msg, 'info');
     }

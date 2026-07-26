@@ -19,6 +19,7 @@ const forbiddenPathRules = [
   { label: 'private-archive', pattern: /\.(?:tgz|ablx|zip)$/i },
   { label: 'internal-context', pattern: /(?:^|[\\/])(?:\.agent-context|\.worktrees|releases?|release-kit)(?:[\\/]|$)/i },
   { label: 'internal-docs', pattern: /(?:^|[\\/])docs[\\/](?:agent|superpowers)(?:[\\/]|$)/i },
+  { label: 'internal-scratch', pattern: /^tests[\\/]scratch(?:[\\/]|$)/i },
   { label: 'vendored-remote-script', pattern: /(?:^|[\\/])vendor[\\/]AbletonOSC(?:[\\/]|$)/i },
 ];
 const textExtensions = new Set(['', '.css', '.html', '.js', '.json', '.md', '.mjs', '.ps1', '.svg', '.ts', '.txt', '.yml', '.yaml']);

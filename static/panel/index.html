@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Ableton RC Setlist &mdash; Painel de Controle</title>
+  <title>Ableton RC Setlist &mdash; Control Panel</title>
   <style>
     :root {
       --bg: #1c1c1e;
@@ -195,60 +195,60 @@
 <body>
   <div>
     <span class="subtitle">Ableton RC Setlist</span>
-    <h2>Acesso ao Painel Web</h2>
+    <h2>Web Panel Access</h2>
   </div>
 
   <!-- Connection Status Bar -->
   <div class="status-bar">
     <div class="status-indicator">
       <div id="statusDot" class="status-dot"></div>
-      <span id="statusText" class="status-text inactive">Servidor Parado</span>
+      <span id="statusText" class="status-text inactive">Server stopped</span>
     </div>
-    <div id="infoPort" style="font-size: 11px; color: var(--text-muted)">Porta: &mdash;</div>
+    <div id="infoPort" style="font-size: 11px; color: var(--text-muted)">Port: &mdash;</div>
   </div>
 
   <!-- QR Codes Grid -->
   <div class="qr-grid" id="qrGrid">
     <!-- Setlist Controller -->
     <div class="qr-card">
-      <span class="qr-label">Painel do Setlist</span>
+      <span class="qr-label">Stage Control</span>
       <div class="qr-frame" id="qrSetlist"></div>
       <span class="qr-url" id="urlSetlist">http://localhost:4444/setlist</span>
       <div class="qr-actions">
-        <a class="btn" id="openSetlist" href="#" target="_blank">Abrir no PC</a>
+        <a class="btn" id="openSetlist" href="#" target="_blank">Open on this computer</a>
       </div>
     </div>
 
     <!-- Stage View -->
     <div class="qr-card">
-      <span class="qr-label">Tela do Palco</span>
+      <span class="qr-label">Performance Display</span>
       <div class="qr-frame" id="qrStage"></div>
       <span class="qr-url" id="urlStage">http://localhost:4444/performance</span>
       <div class="qr-actions">
-        <a class="btn" id="openStage" href="#" target="_blank">Abrir no PC</a>
+        <a class="btn" id="openStage" href="#" target="_blank">Open on this computer</a>
       </div>
     </div>
   </div>
 
   <div id="placeholderText" style="display: none; text-align: center; color: var(--text-muted); padding: 40px;">
-    Inicie o servidor para gerar os links e QR Codes de acesso.
+    Start the server to generate access links and QR codes.
   </div>
 
   <!-- Footer Actions -->
   <div class="footer">
-    <button class="btn primary" id="btnStart" onclick="sendAction('start')">Iniciar</button>
-    <button class="btn" id="btnStop" onclick="sendAction('stop')">Parar</button>
-    <button class="btn" id="btnRestart" onclick="sendAction('restart')">Reiniciar</button>
-    <button class="btn" style="flex: 0; min-width: 80px;" onclick="sendAction('close')">Fechar</button>
+    <button class="btn primary" id="btnStart" onclick="sendAction('start')">Start</button>
+    <button class="btn" id="btnStop" onclick="sendAction('stop')">Stop</button>
+    <button class="btn" id="btnRestart" onclick="sendAction('restart')">Restart</button>
+    <button class="btn" style="flex: 0; min-width: 80px;" onclick="sendAction('close')">Close</button>
   </div>
 
   <!-- Auto-start toggle (persisted in .setlist/auto-start) -->
   <div style="display: flex; align-items: center; justify-content: space-between; padding: 12px 4px 4px 4px; border-top: 1px solid var(--border); margin-top: 12px;">
     <div>
-      <div style="font-weight: 600; font-size: 11px;">Iniciar automaticamente ao ligar o Live</div>
-      <div style="font-size: 10px; color: var(--text-muted); margin-top: 2px;" id="autoStartHint">Evita conflito com outras extensões RC. Toggle persiste entre sessões.</div>
+      <div style="font-weight: 600; font-size: 11px;">Start automatically with Live</div>
+      <div style="font-size: 10px; color: var(--text-muted); margin-top: 2px;" id="autoStartHint">Prevents conflicts with other RC extensions. This setting persists between sessions.</div>
     </div>
-    <button class="btn" id="btnToggleAutoStart" style="flex: 0; min-width: 80px;" onclick="sendAction('toggle-auto-start')">Desligado</button>
+    <button class="btn" id="btnToggleAutoStart" style="flex: 0; min-width: 80px;" onclick="sendAction('toggle-auto-start')">Off</button>
   </div>
 
   <script src="qrcode.js"></script>
@@ -277,7 +277,7 @@
 
     function renderAutoStart() {
       if (!btnToggleAutoStart) return;
-      btnToggleAutoStart.textContent = autoStart ? 'Ligado' : 'Desligado';
+      btnToggleAutoStart.textContent = autoStart ? 'On' : 'Off';
       btnToggleAutoStart.style.background = autoStart ? 'var(--accent)' : '';
       btnToggleAutoStart.style.color = autoStart ? '#121214' : '';
     }
@@ -296,8 +296,8 @@
     if (isRunning) {
       statusDot.className = 'status-dot active';
       statusText.className = 'status-text active';
-      statusText.textContent = 'Servidor Ativo';
-      infoPort.textContent = `Porta: ${port} (HTTPS)`;
+      statusText.textContent = 'Server running';
+      infoPort.textContent = `Port: ${port} (HTTPS)`;
       qrGrid.style.display = 'grid';
       placeholderText.style.display = 'none';
 
@@ -335,8 +335,8 @@
     } else {
       statusDot.className = 'status-dot';
       statusText.className = 'status-text inactive';
-      statusText.textContent = 'Servidor Parado';
-      infoPort.textContent = 'Porta: \u2014';
+      statusText.textContent = 'Server stopped';
+      infoPort.textContent = 'Port: \u2014';
       qrGrid.style.display = 'none';
       placeholderText.style.display = 'block';
 

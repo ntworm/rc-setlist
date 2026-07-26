@@ -61,6 +61,7 @@ test('third-party notices cover direct runtime dependencies and bundled QR code'
 test('third-party notice generation normalizes dependency license line endings', () => {
   const generator = readRequired('scripts/generate-third-party-notices.mjs');
   assert.ok(generator.includes(".replace(/\\r\\n?/g, '\\n')"));
+  assert.ok(generator.includes("'--package-lock-only'"));
 });
 
 test('checked-in third-party notices match the generator output', () => {

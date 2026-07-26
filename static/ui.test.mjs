@@ -152,12 +152,61 @@ test('Static UI Setlist: omits handlers for controls removed from the operator s
   assert.doesNotMatch(setlistJs, /payload\.type\s*===\s*['"]click_preview_ready['"]/);
 });
 
-test('Static UI Setlist: keeps customer-visible Portuguese text intact', () => {
-  const setlistHtmlPath = path.join(__dirname, 'setlist', 'index.html');
-  const setlistHtml = fs.readFileSync(setlistHtmlPath, 'utf8');
+test('Static UI: fixed customer-visible product copy is English', () => {
+  const customerFiles = [
+    'panel/index.html',
+    'performance/index.html',
+    'performance/performance.js',
+    'performance/performance.css',
+    'setlist/index.html',
+    'setlist/setlist.js',
+    'shared/stage-runtime.js',
+    '../src/ui/panel.ts',
+    '../src/commands/handlers.ts',
+    '../src/server-lifecycle.ts',
+    '../src/server/ws.ts',
+    '../src/automation/executor.ts',
+    '../src/osc/registration.ts',
+    '../src/sync/mcp-sync.ts',
+  ];
+  const blockedPortugueseUi = [
+    /\bPainel\b/i,
+    /\bMúsica(?:s)?\b/i,
+    /\bSeção\b/i,
+    /\bPróxim[ao]s?\b/i,
+    /\bLetras?\b/i,
+    /\bIniciar\b/i,
+    /\bParar\b/i,
+    /\bConectado\b/i,
+    /\bDesconectado\b/i,
+    /\bErro\b/i,
+    /\bNão\b/i,
+    /\bNenhum[ao]?\b/i,
+    /\bSalvar\b/i,
+    /\bSincronização\b/i,
+    /\bQuantização\b/i,
+    /\bCompasso\b/i,
+    /\bAtualizar\b/i,
+    /\bAguardando\b/i,
+    /\bAcesso\b/i,
+    /\bEsperado\b/i,
+    /\bdefinido\b/i,
+    /\bvazio\b/i,
+  ];
+  const findings = [];
 
-  assert.doesNotMatch(setlistHtml, /\?/);
-  assert.match(setlistHtml, /Quantização/);
-  assert.match(setlistHtml, /aria-label="Músicas e seções"/);
-  assert.match(setlistHtml, /A última informação válida continuará visível/);
+  for (const relative of customerFiles) {
+    const content = fs.readFileSync(path.join(__dirname, relative), 'utf8');
+    for (const pattern of blockedPortugueseUi) {
+      if (pattern.test(content)) findings.push(`${relative}: ${pattern}`);
+    }
+  }
+
+  assert.deepEqual(findings, []);
+
+  const setlistHtml = fs.readFileSync(path.join(__dirname, 'setlist', 'index.html'), 'utf8');
+  const performanceHtml = fs.readFileSync(path.join(__dirname, 'performance', 'index.html'), 'utf8');
+  assert.match(setlistHtml, /Stage Control/);
+  assert.match(setlistHtml, /aria-label="Songs and sections"/);
+  assert.match(performanceHtml, /Full screen/);
 });

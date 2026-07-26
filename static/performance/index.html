@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
@@ -20,47 +20,47 @@
           <span id="statusDot" class="status-dot"></span>
           <span id="statusText">OFFLINE</span>
         </div>
-        <button id="fullscreenButton" class="ui-button fullscreen-button" type="button" aria-pressed="false">Tela cheia</button>
+        <button id="fullscreenButton" class="ui-button fullscreen-button" type="button" aria-pressed="false">Full screen</button>
       </div>
     </header>
 
     <main class="stage-grid">
-      <section class="left-stage-column" aria-label="Estado atual do show">
+      <section class="left-stage-column" aria-label="Current show state">
         <div class="now-playing">
           <article id="songCard" class="display-card active-song">
             <div class="card-main">
-              <span class="card-label">Música atual</span>
+              <span class="card-label">Current song</span>
               <span id="songTitle" class="card-value">&mdash;</span>
               <div id="songBadges" class="perf-badges"></div>
             </div>
             <div class="card-footer">
-              <span>Próxima</span>
+              <span>Next</span>
               <strong id="nextSong">&mdash;</strong>
             </div>
           </article>
 
           <article id="sectionCard" class="display-card active-section">
             <div class="card-main">
-              <span class="card-label">Seção ativa</span>
+              <span class="card-label">Active section</span>
               <span id="sectionName" class="card-value">&mdash;</span>
               <div id="sectionBadges" class="perf-badges"></div>
-              <div id="perfLoopIter" class="loop-iteration">↻ VOLTA: 1/4</div>
+              <div id="perfLoopIter" class="loop-iteration">↻ LOOP: 1/4</div>
             </div>
             <div class="card-footer">
-              <span>Próxima</span>
+              <span>Next</span>
               <strong id="nextSection">&mdash;</strong>
             </div>
           </article>
         </div>
 
-        <div class="performance-footer" aria-label="Telemetria do show">
+        <div class="performance-footer" aria-label="Show telemetry">
           <div class="telemetry-card timecode-card">
             <span class="card-label">Timecode</span>
             <span id="timecode" class="timecode-display">0:00:00</span>
-            <span id="songTimecode" class="song-timecode">Música: 0:00:00</span>
+            <span id="songTimecode" class="song-timecode">Song: 0:00:00</span>
           </div>
           <div class="telemetry-card bar-card">
-            <span class="card-label">Compasso</span>
+            <span class="card-label">Bar / beat</span>
             <span id="barcode" class="timecode-display">1.1.1</span>
           </div>
           <div class="telemetry-card stats-card" id="clickCard">
@@ -71,10 +71,10 @@
         </div>
       </section>
 
-      <aside id="lyricsCard" class="display-card lyrics-card" aria-label="Letra sincronizada">
-        <span class="card-label">Letra / cifras</span>
+      <aside id="lyricsCard" class="display-card lyrics-card" aria-label="Synchronized lyrics">
+        <span class="card-label">Lyrics / chords</span>
         <div id="lyricsContainer" class="lyrics-container">
-          <div class="lyrics-empty">Nenhuma letra carregada para esta música.</div>
+          <div class="lyrics-empty">No lyrics loaded for this song.</div>
         </div>
       </aside>
     </main>
@@ -83,8 +83,8 @@
   <div id="networkErrorOverlay" class="network-overlay" role="status" aria-live="polite">
     <div class="network-alert-box">
       <span class="network-icon" aria-hidden="true">⌁</span>
-      <h2>Reconectando</h2>
-      <p>O visor perdeu o sinal do Bridge. A última informação válida continuará na tela enquanto tentamos reconectar.</p>
+      <h2>Reconnecting</h2>
+      <p>The display lost its connection to the Bridge. The last valid state remains visible while reconnection is attempted.</p>
     </div>
   </div>
 

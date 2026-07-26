@@ -30,15 +30,15 @@ test('landing exposes current metadata, calls to action and legal positioning', 
 
 test('real interfaces expose neutral marketing state', async ({ page }) => {
   await page.goto('/performance/?scenario=marketing');
-  await expect(page.getByText('MÚSICA 03', { exact: true })).toBeVisible();
-  await expect(page.getByText('REFRÃO', { exact: true })).toBeVisible();
-  await expect(page.getByText('MÚSICA 04', { exact: true })).toBeVisible();
+  await expect(page.getByText('SONG 03', { exact: true })).toBeVisible();
+  await expect(page.getByText('CHORUS', { exact: true })).toBeVisible();
+  await expect(page.getByText('SONG 04', { exact: true })).toBeVisible();
   await expect(page.getByText('Neon Signal')).toHaveCount(0);
 
   await page.goto('/setlist/?scenario=marketing');
-  await expect(page.getByText('MÚSICA 03', { exact: true }).first()).toBeVisible();
-  await expect(page.getByText('REFRÃO', { exact: true }).first()).toBeVisible();
-  await expect(page.getByText('MÚSICA 04', { exact: true }).first()).toBeVisible();
+  await expect(page.getByText('SONG 03', { exact: true }).first()).toBeVisible();
+  await expect(page.getByText('CHORUS', { exact: true }).first()).toBeVisible();
+  await expect(page.getByText('SONG 04', { exact: true }).first()).toBeVisible();
   await expect(page.getByText('Neon Signal')).toHaveCount(0);
 });
 

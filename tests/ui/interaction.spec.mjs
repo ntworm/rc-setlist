@@ -254,9 +254,9 @@ for (const route of ['/performance/', '/setlist/']) {
     await page.goto(`${route}?scenario=never-connected`);
     await expect(page.locator('#networkErrorOverlay')).toHaveClass(/visible/);
     await expect(page.locator('body')).toHaveClass(/connection-empty/);
-    await expect(page.locator('#statusText')).toContainText(route === '/performance/' ? 'OFFLINE' : 'Desconectado');
-    await expect(page.locator('#networkErrorOverlay h2')).toHaveText('Bridge indisponível');
-    await expect(page.locator('#networkErrorOverlay p')).toContainText('Nenhum estado do show foi recebido');
+    await expect(page.locator('#statusText')).toContainText(route === '/performance/' ? 'OFFLINE' : 'Disconnected');
+    await expect(page.locator('#networkErrorOverlay h2')).toHaveText('Bridge unavailable');
+    await expect(page.locator('#networkErrorOverlay p')).toContainText('No show state has been received');
     const overlay = await page.locator('#networkErrorOverlay').evaluate((element) => {
       const rect = element.getBoundingClientRect();
       return { width: rect.width, height: rect.height, pointerEvents: getComputedStyle(element).pointerEvents };
@@ -272,8 +272,8 @@ for (const route of ['/performance/', '/setlist/']) {
     await page.goto(`${route}?scenario=stale`);
     await expect(page.locator('body')).toHaveClass(/connection-stale/);
     await expect(page.locator('body')).not.toHaveClass(/connection-empty/);
-    await expect(page.locator('#networkErrorOverlay h2')).toHaveText('Reconectando');
-    await expect(page.locator('#networkErrorOverlay p')).toContainText('última informação válida');
+    await expect(page.locator('#networkErrorOverlay h2')).toHaveText('Reconnecting');
+    await expect(page.locator('#networkErrorOverlay p')).toContainText('last valid state');
     await expect(page.locator('#networkErrorOverlay')).toHaveCSS('pointer-events', 'none');
   });
 }
@@ -301,7 +301,7 @@ test('Fullscreen failures stay usable with an accessible notice', async ({ page 
   await page.goto('/performance/');
   await page.locator('#fullscreenButton').click();
   await expect(page.locator('#fullscreenButton')).toHaveAttribute('aria-pressed', 'false');
-  await expect(page.locator('#stageNotice')).toContainText('Não foi possível ativar o fullscreen');
+  await expect(page.locator('#stageNotice')).toContainText('Could not enter full screen');
   await expect(page.locator('#stageNotice')).toBeVisible();
 });
 
@@ -309,7 +309,7 @@ test('Unavailable fullscreen exposes a fallback', async ({ page }) => {
   await installFullscreenStubs(page, { fullscreenMode: 'unavailable' });
   await page.goto('/performance/');
   await page.locator('#fullscreenButton').click();
-  await expect(page.locator('#stageNotice')).toContainText('Fullscreen não está disponível');
+  await expect(page.locator('#stageNotice')).toContainText('Full screen is not available');
 });
 
 test('Unavailable Wake Lock exposes a fallback', async ({ page }) => {
@@ -317,14 +317,14 @@ test('Unavailable Wake Lock exposes a fallback', async ({ page }) => {
   await page.goto('/performance/');
   await page.locator('#fullscreenButton').click();
   await expect(page.locator('#fullscreenButton')).toHaveAttribute('aria-pressed', 'true');
-  await expect(page.locator('#stageNotice')).toContainText('não oferece bloqueio de tela');
+  await expect(page.locator('#stageNotice')).toContainText('does not support Screen Wake Lock');
 });
 
 test('Wake Lock rejection and reacquisition are handled in the browser', async ({ page }) => {
   await installFullscreenStubs(page, { wakeLockMode: 'reject' });
   await page.goto('/performance/');
   await page.locator('#fullscreenButton').click();
-  await expect(page.locator('#stageNotice')).toContainText('não permitiu manter a tela acordada');
+  await expect(page.locator('#stageNotice')).toContainText('did not allow the screen to stay awake');
 
   const secondPage = await page.context().newPage();
   await installFullscreenStubs(secondPage);
@@ -356,7 +356,7 @@ test('Reduced motion and keyboard focus remain visible', async ({ page }) => {
 test('Performance handles an empty project without overflow', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/performance/?scenario=no-song');
-  await expect(page.locator('#songTitle')).toHaveText('NENHUMA');
+  await expect(page.locator('#songTitle')).toHaveText('NONE');
   await expect(page.locator('#lyricsCard')).toBeHidden();
   const geometry = await page.evaluate(() => ({
     clientHeight: document.documentElement.clientHeight,
@@ -371,7 +371,7 @@ test('Performance handles an empty project without overflow', async ({ page }) =
 test('Setlist explains an empty project and keeps its workspace contained', async ({ page }) => {
   await page.setViewportSize({ width: 1024, height: 768 });
   await page.goto('/setlist/?scenario=no-song');
-  await expect(page.locator('#songList')).toContainText('Nenhuma música com locators encontrada no projeto.');
+  await expect(page.locator('#songList')).toContainText('No songs with locators were found in the project.');
   const geometry = await page.evaluate(() => ({
     scrollWidth: document.documentElement.scrollWidth,
     clientWidth: document.documentElement.clientWidth,
@@ -382,7 +382,7 @@ test('Setlist explains an empty project and keeps its workspace contained', asyn
 test('Setlist closes a modal with Escape and restores focus to its opener', async ({ page }) => {
   await page.goto('/setlist/');
   await page.locator('.tools-menu > summary').click();
-  const opener = page.getByRole('button', { name: 'Letras' });
+  const opener = page.getByRole('button', { name: 'Lyrics' });
   await opener.click();
   await expect(page.locator('#lyricsModal')).toHaveClass(/open/);
 

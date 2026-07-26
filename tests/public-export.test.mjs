@@ -15,6 +15,7 @@ test('public export uses an explicit allowlist and reproducible verifier', () =>
   }
 
   const allowlist = read('public-files.txt');
+  const exporter = read('scripts/export-public-repo.ps1');
   for (const required of [
     'src/',
     'static/',
@@ -29,11 +30,12 @@ test('public export uses an explicit allowlist and reproducible verifier', () =>
   }
 
   assert.doesNotMatch(allowlist, /AGENTS\.md|AGENT_GUIDE|\.agent-context|\.tgz|docs\/superpowers|docs\/agent|docs\/release\/BASELINE|release-kit|competitive_analysis|investigation_report/i);
+  assert.match(exporter, /tests\/scratch/, 'internal scratch probes must be excluded from the public snapshot');
 });
 
 test('snapshot verifier rejects private archives, internal context and stale branding', () => {
   const verifier = read('scripts/verify-public-snapshot.mjs');
-  for (const rule of ['tgz', '.agent-context', 'stale-product-name', 'commercial-song']) {
+  for (const rule of ['tgz', '.agent-context', 'internal-scratch', 'stale-product-name', 'commercial-song']) {
     assert.ok(verifier.includes(rule), `verifier must cover ${rule}`);
   }
   assert.match(verifier, /src\/core\/profile-migration\.ts/);
