@@ -91,9 +91,12 @@ test('public landing media kit contains the approved truthful product assets', (
 test('the public CI gate includes browser and release-surface regressions', () => {
   const packageJson = JSON.parse(read('package.json'));
   const publicGate = packageJson.scripts['ci:public'];
+  const workflow = read('.github/workflows/ci.yml');
   assert.equal(typeof publicGate, 'string', 'package.json must define ci:public');
   assert.match(publicGate, /test:ui/);
   assert.match(publicGate, /test:release-surface/);
+  assert.match(workflow, /actions\/checkout@v7/);
+  assert.match(workflow, /actions\/setup-node@v7/);
 });
 
 test('production build cleans generated output and enables minification', () => {
