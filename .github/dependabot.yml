@@ -7,3 +7,10 @@ updates:
     open-pull-requests-limit: 5
     labels:
       - dependencies
+    ignore:
+      - dependency-name: typescript
+        update-types:
+          - version-update:semver-major
+      - dependency-name: "@types/node"
+        update-types:
+          - version-update:semver-major

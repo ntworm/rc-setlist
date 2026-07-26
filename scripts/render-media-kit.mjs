@@ -11,6 +11,7 @@ const templatePath = path.join(root, 'scripts', 'media-kit-template.html');
 const outputArgIndex = process.argv.indexOf('--output-dir');
 const externalOutputDir = outputArgIndex >= 0 ? path.resolve(process.argv[outputArgIndex + 1]) : null;
 const checkOnly = process.argv.includes('--check');
+const publicOnly = process.argv.includes('--public');
 
 const outputs = [
   { id: 'product-truth-linkedin', file: 'product-truth-linkedin.png', width: 1200, height: 627 },
@@ -21,14 +22,21 @@ const outputs = [
   { id: 'workflow', file: 'workflow.png', width: 1200, height: 675 },
   { id: 'stage-editorial', file: 'stage-editorial.png', width: 1200, height: 675 },
 ];
+const publicOutputIds = new Set([
+  'product-truth-discord',
+  'performance',
+  'stage-control',
+  'workflow',
+  'stage-editorial',
+]);
 
 function pngDimensions(buffer) {
   if (buffer.length < 24 || buffer.toString('ascii', 1, 4) !== 'PNG') throw new Error('Invalid PNG');
   return { width: buffer.readUInt32BE(16), height: buffer.readUInt32BE(20) };
 }
 
-async function verifyOutputs(directory) {
-  for (const output of outputs) {
+async function verifyOutputs(directory, expectedOutputs = outputs) {
+  for (const output of expectedOutputs) {
     const buffer = await fs.readFile(path.join(directory, output.file));
     const actual = pngDimensions(buffer);
     if (actual.width !== output.width || actual.height !== output.height) {
@@ -69,8 +77,9 @@ async function writeChecksums(directory) {
 }
 
 if (checkOnly) {
-  await verifyOutputs(siteMediaDir);
-  process.stdout.write(`Verified ${outputs.length} media assets.\n`);
+  const expectedOutputs = publicOnly ? outputs.filter((output) => publicOutputIds.has(output.id)) : outputs;
+  await verifyOutputs(siteMediaDir, expectedOutputs);
+  process.stdout.write(`Verified ${expectedOutputs.length} media assets.\n`);
   process.exit(0);
 }
 

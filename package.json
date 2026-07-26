@@ -32,7 +32,7 @@
     "build:prod": "npm run verify:ableton && tsc --noEmit && tsx build.ts --production && node scripts/verify-production-bundle.mjs",
     "build:public": "tsc -p tsconfig.public.json --noEmit",
     "ci": "npm run ci:public",
-    "ci:public": "npm run test:src && npm run test:static && npm run test:ui && npm run build:public && npm run test:release-surface",
+    "ci:public": "npm run test:src && npm run test:static && npm run test:ui && npm run media:check && npm run build:public && npm run test:release-surface",
     "ci:release": "npm run verify:ableton && npm run ci:public && npm run build:prod",
     "watch": "npm run verify:ableton && tsx build.ts --watch",
     "test:ui": "playwright test",
@@ -47,7 +47,8 @@
     "notices": "node scripts/generate-third-party-notices.mjs",
     "notices:check": "node scripts/generate-third-party-notices.mjs --check",
     "media:render": "node scripts/render-media-kit.mjs",
-    "media:check": "node scripts/render-media-kit.mjs --check",
+    "media:check": "node scripts/render-media-kit.mjs --check --public",
+    "media:check:owner": "node scripts/render-media-kit.mjs --check",
     "start": "npm run build && npx --no-install extensions-cli run",
     "package:release": "npm run build:prod && npx --no-install extensions-cli package -i dist/static",
     "package:kit": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/package-release-candidate.ps1"

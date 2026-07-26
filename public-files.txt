@@ -32,8 +32,11 @@ docs/apple-touch-icon.png
 docs/favicon-32.png
 docs/favicon.svg
 docs/index.html
-docs/media/
-docs/media-kit.html
+docs/media/performance.png
+docs/media/product-truth-discord.png
+docs/media/stage-control.png
+docs/media/stage-editorial.png
+docs/media/workflow.png
 docs/og-image.png
 docs/og-image.svg
 examples/

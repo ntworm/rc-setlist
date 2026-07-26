@@ -62,7 +62,7 @@
     .section-head p { margin:0; color:var(--muted); font-size:1.03rem; }
     .gallery { display:grid; grid-template-columns:1fr 1fr; gap:1rem; }
     figure { margin:0; min-width:0; overflow:hidden; border:1px solid var(--line); border-radius:16px; background:var(--panel2); }
-    figure img { width:100%; aspect-ratio:16/9; object-fit:cover; object-position:top left; }
+    figure img { width:100%; height:auto; aspect-ratio:16/9; object-fit:contain; object-position:top left; }
     figcaption { padding:1rem 1.1rem 1.15rem; }
     figcaption strong { display:block; font-size:1.08rem; }
     figcaption span { display:block; margin-top:.25rem; color:var(--muted); font-size:.9rem; }
@@ -71,7 +71,7 @@
     .workflow-copy h2 { max-width:10ch; }
     .workflow-copy p { color:var(--muted); }
     .workflow-copy code { color:var(--soft); }
-    .workflow-image { border:1px solid var(--line); border-radius:16px; box-shadow:0 24px 60px rgba(0,0,0,.35); }
+    .workflow-image { width:100%; height:auto; aspect-ratio:16/9; object-fit:contain; border:1px solid var(--line); border-radius:16px; box-shadow:0 24px 60px rgba(0,0,0,.35); }
     .features { display:grid; grid-template-columns:repeat(3,1fr); gap:1rem; }
     .card { min-width:0; padding:1.35rem; border:1px solid var(--line); border-radius:14px; background:linear-gradient(145deg,#15161b,#101115); }
     .card-number { color:var(--soft); font:800 .78rem/1 ui-monospace,Consolas,monospace; letter-spacing:.11em; }
@@ -88,9 +88,6 @@
     .checklist { margin:0; padding:0; list-style:none; }
     .checklist li { padding:.75rem 0; border-bottom:1px solid rgba(255,255,255,.12); color:#d6d0c7; }
     .checklist li::before { content:"✓"; margin-right:.7rem; color:var(--ok); font-weight:900; }
-    .media-cta { display:flex; align-items:center; justify-content:space-between; gap:2rem; padding:2rem; border:1px solid var(--line); border-radius:16px; background:var(--panel); }
-    .media-cta h3 { margin:0; font-size:1.55rem; }
-    .media-cta p { margin:.35rem 0 0; color:var(--muted); }
     footer { padding:2.5rem 0 3.5rem; color:var(--muted); font-size:.84rem; }
     footer p { margin:.45rem 0; }
     footer a { color:#d8d2c9; }
@@ -115,7 +112,6 @@
       .proof-grid { grid-template-columns:1fr; }
       .proof-item { border-right:0; border-bottom:1px solid var(--line); }
       .proof-item:last-child { border-bottom:0; }
-      .media-cta { align-items:flex-start; flex-direction:column; }
       .button { width:100%; }
       .actions { display:grid; }
     }
@@ -127,7 +123,7 @@
   <header class="topbar">
     <nav class="shell" aria-label="Primary navigation">
       <a class="brand" href="./"><span class="mark">RC</span><span>Ableton RC Setlist</span></a>
-      <div class="nav-links"><a href="#product">Product</a><a href="#workflow">Workflow</a><a href="#install">Install</a><a href="./media-kit.html">Media kit</a><a href="./README.md">Docs</a><a id="source" href="https://github.com/ntworm/rc-setlist">Source</a></div>
+      <div class="nav-links"><a href="#product">Product</a><a href="#workflow">Workflow</a><a href="#install">Install</a><a href="./README.md">Docs</a><a id="source" href="https://github.com/ntworm/rc-setlist">Source</a></div>
     </nav>
   </header>
 
@@ -188,7 +184,6 @@
       <ul class="checklist"><li>Install the single Ableton-RC-Setlist-0.3.0.ablx package</li><li>Install AbletonOSC separately from its upstream project</li><li>Start the local server from Extensions in Live</li><li>Open Stage Control or Performance on a trusted LAN</li><li>Rehearse transport, cues, click and lyrics before stage use</li></ul>
     </div></section>
 
-    <section class="section shell"><div class="media-cta"><div><h3>Need artwork for a post or community listing?</h3><p>Download the organized Product Truth, Workflow, interface and Stage Editorial assets.</p></div><a class="button primary" href="./media-kit.html">Open the media kit</a></div></section>
   </main>
 
   <footer><div class="shell"><p><strong>License:</strong> Ableton RC Setlist is source-available under the <a href="https://github.com/ntworm/rc-setlist/blob/main/LICENSE">PolyForm Noncommercial 1.0.0</a> license. Commercial use is not permitted.</p><p>Copyright © 2026 Gabriel Worm.</p><p>Ableton and Ableton Live are trademarks of Ableton AG.</p><p>Ableton RC Setlist is an independent project and is not affiliated with or endorsed by Ableton AG.</p></div></footer>

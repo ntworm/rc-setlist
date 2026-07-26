@@ -74,6 +74,34 @@ test('landing preserves the product-truth hero artwork aspect ratio', async ({ p
   expect(geometry.renderedRatio).toBeCloseTo(geometry.naturalRatio, 4);
 });
 
+test('landing preserves every public product screenshot aspect ratio', async ({ page }) => {
+  await page.setViewportSize({ width: 1413, height: 1024 });
+  await page.goto('/landing/');
+
+  const images = page.locator('.gallery img, .workflow-image');
+  await expect(images).toHaveCount(3);
+  for (let index = 0; index < 3; index += 1) {
+    const image = images.nth(index);
+    await image.scrollIntoViewIfNeeded();
+    await image.evaluate((element) => element.decode());
+    const geometry = await image.evaluate((element) => {
+      const rect = element.getBoundingClientRect();
+      return {
+        naturalRatio: element.naturalWidth / element.naturalHeight,
+        renderedRatio: rect.width / rect.height,
+      };
+    });
+    expect(geometry.renderedRatio).toBeCloseTo(geometry.naturalRatio, 4);
+  }
+});
+
+test('landing does not expose an owner media kit', async ({ page }) => {
+  await page.goto('/landing/');
+
+  await expect(page.locator('a[href="./media-kit.html"]')).toHaveCount(0);
+  await expect(page.getByText('Need artwork for a post or community listing?', { exact: true })).toHaveCount(0);
+});
+
 test('landing keeps keyboard focus visible and loads no external runtime asset', async ({ page }) => {
   const requests = [];
   page.on('request', (request) => requests.push(request.url()));

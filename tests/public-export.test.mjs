@@ -21,12 +21,26 @@ test('public export uses an explicit allowlist and reproducible verifier', () =>
     'static/',
     'tests/',
     'docs/index.html',
+    'docs/media/performance.png',
+    'docs/media/product-truth-discord.png',
+    'docs/media/stage-control.png',
+    'docs/media/stage-editorial.png',
+    'docs/media/workflow.png',
     'CODE_OF_CONDUCT.md',
     'LICENSE',
     'THIRD_PARTY_NOTICES.md',
     'vendor/README.md',
   ]) {
     assert.match(allowlist, new RegExp(`^${required.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'm'));
+  }
+
+  for (const privatePath of [
+    'docs/media/',
+    'docs/media-kit.html',
+    'docs/media/product-truth-linkedin.png',
+    'docs/media/product-truth-square.png',
+  ]) {
+    assert.doesNotMatch(allowlist, new RegExp(`^${privatePath.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'm'));
   }
 
   assert.doesNotMatch(allowlist, /AGENTS\.md|AGENT_GUIDE|\.agent-context|\.tgz|docs\/superpowers|docs\/agent|docs\/release\/BASELINE|release-kit|competitive_analysis|investigation_report/i);
