@@ -7,6 +7,25 @@ param(
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
 
+function Get-FileSha256 {
+    param([Parameter(Mandatory = $true)][string]$LiteralPath)
+
+    $stream = [IO.File]::OpenRead($LiteralPath)
+    try {
+        $sha256 = [Security.Cryptography.SHA256]::Create()
+        try {
+            $bytes = $sha256.ComputeHash($stream)
+            return ([BitConverter]::ToString($bytes)).Replace("-", "")
+        }
+        finally {
+            $sha256.Dispose()
+        }
+    }
+    finally {
+        $stream.Dispose()
+    }
+}
+
 $repoRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
 if ($Version -notmatch '^\d+\.\d+\.\d+$') {
     throw "Version must use semantic X.Y.Z format."
@@ -81,7 +100,7 @@ foreach ($exampleEntry in Get-ChildItem -LiteralPath $exampleSource) {
     Copy-Item -LiteralPath $exampleEntry.FullName -Destination (Join-Path $kitRoot "examples") -Recurse
 }
 
-$ablxHash = (Get-FileHash -LiteralPath $ablxFull -Algorithm SHA256).Hash
+$ablxHash = Get-FileSha256 -LiteralPath $ablxFull
 $ablxSize = (Get-Item -LiteralPath $ablxFull).Length
 $buildInfo = @(
     "Ableton RC Setlist $Version public release",
@@ -98,7 +117,7 @@ $hashLines = Get-ChildItem -LiteralPath $kitRoot -Recurse -File |
     Sort-Object FullName |
     ForEach-Object {
         $relative = $_.FullName.Substring($kitRoot.Length + 1).Replace("\", "/")
-        "{0}  {1}" -f (Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256).Hash.ToLowerInvariant(), $relative
+        "{0}  {1}" -f (Get-FileSha256 -LiteralPath $_.FullName).ToLowerInvariant(), $relative
     }
 [IO.File]::WriteAllLines((Join-Path $kitRoot "SHA256SUMS.txt"), $hashLines, [Text.UTF8Encoding]::new($false))
 

@@ -103,7 +103,8 @@ test('generated installation kit keeps English and Portuguese guides in their la
   const outputRoot = path.join(tempRoot, 'output');
   writeFileSync(ablxPath, '');
 
-  const result = spawnSync('powershell.exe', [
+  const powershellExecutable = process.platform === 'win32' ? 'powershell.exe' : 'pwsh';
+  const result = spawnSync(powershellExecutable, [
     '-NoProfile',
     '-ExecutionPolicy', 'Bypass',
     '-File', path.join(rootPath, 'scripts', 'package-release-candidate.ps1'),
@@ -111,7 +112,7 @@ test('generated installation kit keeps English and Portuguese guides in their la
     '-AblxPath', ablxPath,
     '-OutputRoot', outputRoot,
   ], { cwd: rootPath, encoding: 'utf8' });
-  assert.equal(result.status, 0, result.stderr || result.stdout);
+  assert.equal(result.status, 0, result.error?.message || result.stderr || result.stdout);
 
   const kitRoot = path.join(outputRoot, 'Ableton-RC-Setlist-0.4.1-Installation-Kit');
   const expectedGuides = ['INSTALL.md', 'USER-GUIDE.md', 'TROUBLESHOOTING.md', 'FAQ.md', 'TEST-CHECKLIST.md'];
