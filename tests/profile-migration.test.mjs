@@ -44,6 +44,19 @@ test('global lyrics and custom order migrate to Main Setlist without deleting so
   assert.equal(fs.existsSync(path.join(root, 'custom-order.json')), true);
 });
 
+test('profile initialization can skip global legacy migration for a project-local registry', async (t) => {
+  const root = makeRoot(t);
+  fs.mkdirSync(path.join(root, 'lyrics'), { recursive: true });
+  fs.writeFileSync(path.join(root, 'lyrics', 'Global Song.lrc'), '[00:00.00]Global only');
+
+  const manager = new ProfileManager(root, deterministicOptions());
+  await manager.initialize({ migrateLegacy: false });
+
+  assert.equal(fs.existsSync(path.join(manager.getActivePaths().lyrics, 'Global Song.lrc')), false);
+  const registry = JSON.parse(fs.readFileSync(path.join(root, 'profiles', 'index.json'), 'utf8'));
+  assert.equal(registry.migrationVersion, 0);
+});
+
 test('renamed extension imports profile lyrics from the known previous storage identity', async (t) => {
   const parent = makeRoot(t);
   const previousRoot = path.join(parent, 'worm.ableton-setlist-bridge');

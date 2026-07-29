@@ -2,6 +2,13 @@ import { StartServerOptions } from '../index.js';
 import { bridgeState, broadcastState, checkAndBroadcastLyrics } from '../core/bridge-state.js';
 import { executeAutomationActions } from '../automation/executor.js';
 
+const MCP_TRANSPORT_FRESHNESS_MS = 500;
+
+function hasFreshMcpTransportObservation(): boolean {
+  const age = bridgeState.mcpFallbackSync?.getSnapshot().timeSinceLastSessionInfoMs;
+  return typeof age === 'number' && age <= MCP_TRANSPORT_FRESHNESS_MS;
+}
+
 export function registerOscListeners(options: StartServerOptions = {}) {
   if (!bridgeState.oscClient) return;
 
@@ -23,6 +30,12 @@ export function registerOscListeners(options: StartServerOptions = {}) {
   });
 
   bridgeState.oscClient.on('current_song_time', (time) => {
+    // MCP and OSC sample the same playhead independently. When MCP is healthy,
+    // a slightly older OSC reply can otherwise overwrite the newer sample for
+    // one browser frame and make Bars.Beats.Sixteenths visibly jump backward.
+    // Keep one clock authority at a time; OSC resumes automatically if MCP is
+    // stale for more than the fallback window.
+    if (hasFreshMcpTransportObservation()) return;
     bridgeState.scheduler?.tick(time);
     if (bridgeState.isCreatingTestSession) {
       broadcastState();
@@ -78,6 +91,11 @@ export function registerOscListeners(options: StartServerOptions = {}) {
         console.log(`  ${i + 1}. "${s.title}"${tagStr} @ ${s.time.toFixed(1)}s (${s.sections.length} sections)`);
       });
     }
+    broadcastState();
+  });
+
+  bridgeState.oscClient.on('last_event_time', (value) => {
+    bridgeState.manager?.updateArrangementEndTime(value);
     broadcastState();
   });
 

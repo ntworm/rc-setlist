@@ -5,6 +5,7 @@ import { fileURLToPath } from 'node:url';
 
 const root = fileURLToPath(new URL('../', import.meta.url));
 const outputPath = path.join(root, 'THIRD_PARTY_NOTICES.md');
+const releaseVersion = JSON.parse(readFileSync(path.join(root, 'package.json'), 'utf8')).version;
 
 function npmProductionTree() {
   const npmExecPath = process.env.npm_execpath;
@@ -58,7 +59,8 @@ function buildNotices() {
 
   const header = `# Third-party notices\n\nThis file covers third-party components bundled in Ableton RC Setlist 0.4.0. It is generated from the installed production dependency tree; run \`npm run notices\` after dependency changes.\n\n## Ableton Extensions SDK\n\nThe Ableton Extensions SDK and CLI are licensed separately by Ableton AG. Their development archives are not redistributed in this source repository. Authorized SDK runtime components may be included only inside the packaged Ableton RC Setlist application under the applicable Ableton terms.\n\n## QRCode for JavaScript\n\nCopyright (c) 2009 Kazuhiko Arase\n\nLicense: MIT\n\n\`\`\`text\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the "Software"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in\nall copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN\nTHE SOFTWARE.\n\`\`\``;
 
-  return `${header}\n\n${sections.join('\n\n')}\n`;
+  const versionedHeader = header.replace('Ableton RC Setlist 0.4.0', `Ableton RC Setlist ${releaseVersion}`);
+  return `${versionedHeader}\n\n${sections.join('\n\n')}\n`;
 }
 
 const generated = buildNotices();

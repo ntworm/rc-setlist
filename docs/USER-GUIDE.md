@@ -10,6 +10,10 @@ Control or Performance view to select **English** or **Português (Brasil)**. Th
 choice is stored locally. Song names, section names and lyric/chord content are
 show data and are never translated.
 
+In Stage Control, change the language only while Live is stopped and the panel
+is unlocked. The selector is disabled during playback or while the safety lock
+is active so the show surface cannot be reconfigured accidentally.
+
 ## Locator grammar
 
 A song locator has a title. A section uses `Song > Section`.
@@ -37,9 +41,35 @@ Tags are case-insensitive and removed from the display name.
 
 ## Profiles
 
-Profiles separate setlist order, lyrics and related state. Create, select and
-rename profiles from the operator workspace. Use distinct profiles for separate
-shows instead of renaming files in extension storage.
+Profiles belong to the current Live Set. A saved `.als` may contain multiple
+setlists for alternate show orders, rehearsals or lineups, but Manage Setlists
+does not show profiles from another Ableton project. Opening another Live Set
+switches to that Set's separate profile registry.
+
+Within the current Live Set, profiles separate setlist order, lyrics, exports
+and related state. From Stage Control you can create, select and rename
+profiles, move an inactive profile to recoverable trash, and restore it later
+with the same UUID and data. Deletion is not a permanent erase.
+
+Profile changes are controller-only and the transport must be stopped. The active
+profile and the only remaining profile cannot be deleted. To move another profile
+to trash, type its displayed name exactly in the confirmation field.
+
+Older global profile storage is retained as a local backup but is not mixed into
+Manage Setlists. An exact legacy folder for the saved Live Set is migrated
+without deleting its source.
+
+## Setlist duration
+
+Stage Control shows the song duration on each song card. The header shows the
+total setlist duration. A song runs from its song locator to the next song locator,
+so any transition gap is included. The final song ends at Live's Arrangement end;
+the total runs from the first song locator to that same end and also includes
+transitions.
+
+Durations are estimates based on the song locator BPM, falling back to Live's
+current tempo. Tempo automation inside a song is not integrated into the estimate.
+An em dash means Live has not supplied a valid final Arrangement boundary yet.
 
 ## Operator workspace
 
@@ -48,7 +78,8 @@ Open `/setlist` from the tokenized controller URL shown in the Live panel.
 - Drag songs to change their displayed order.
 - Use Play and Stop for immediate transport actions.
 - Previous and Next require a deliberate 500 ms hold.
-- Select transport quantization and wait for Live to confirm the change.
+- Select transport quantization; the jump scheduler applies the requested value
+  immediately and reconciles it with a native Live reply when one is available.
 - Use the lyrics dialog to create, time and edit lyric lines.
 - Export the current tracklist as UTF-8 CSV.
 - Use fullscreen for a compact stage workstation.
@@ -79,9 +110,12 @@ Ableton RC Setlist accepts timed LRC lines:
 [00:04.50] A quiet pulse becomes our guide
 ```
 
-In the lyrics dialog you can paste lines, advance through them while audio plays,
-edit timestamps and save. The text is stored in the active profile. Plain text
-is also accepted for sequential display.
+The song selector at the top of the lyrics dialog applies to Create, Sync and
+Edit and opens on the current Arrangement song. Existing lyrics for that song
+load automatically. You can paste lines, advance through them while audio plays,
+edit timestamps and save. Inspecting another song in the dialog does not replace
+the synchronized line for the song currently shown in Stage Control. The text is
+stored in the active profile. Plain text is also accepted for sequential display.
 
 ## Setlist ordering and CSV
 
@@ -102,3 +136,6 @@ during rehearsals/shows.
 - Save a fallback setlist outside Ableton RC Setlist.
 - Do not change profiles, network or AbletonOSC installation during a show.
 - Verify the active profile and transport lock before enabling control.
+
+This release reads Arrangement locators. Session View support is deferred. The
+local Stage Control and Performance links continue to use HTTPS.

@@ -1,4 +1,4 @@
-# Ableton RC Setlist 0.4.0 tester guide
+# Ableton RC Setlist 0.4.1 tester guide
 
 Use only the release-candidate directory supplied by the maintainer. Start with
 `START-HERE.html` and record every result in its PT-BR checklist.
@@ -16,7 +16,7 @@ Use only the release-candidate directory supplied by the maintainer. Start with
 
 1. Verify the SHA-256 listed in `SHA256SUMS.txt`.
 2. Install AbletonOSC from upstream.
-3. Install `Ableton-RC-Setlist-0.4.0.ablx`.
+3. Install `Ableton-RC-Setlist-0.4.1.ablx`.
 4. Open **Extensions > Ableton RC Setlist** and start the server.
 5. Confirm no private path, SDK archive or real song content appears in the kit.
 6. With a fresh extension-data directory, confirm the first Start creates the
@@ -32,6 +32,12 @@ Use only the release-candidate directory supplied by the maintainer. Start with
   action rather than only updating the browser display.
 - Confirm setlist reordering and persistence after restart.
 - Create, edit, save and reload fictional lyrics.
+- Open Lyrics while a timed lyric is active, switch the shared song selector and
+  all three tabs, and confirm the active Stage Control lyric never disappears.
+- Confirm Stage Control selects the active Arrangement song and loads its saved
+  text when the Lyrics dialog opens.
+- Edit a lyric without saving, close and reopen the dialog, and confirm the
+  unsaved line and enabled Save action remain intact.
 - Confirm performance-view lyric progression.
 - If previous extension data exists, confirm its missing lyrics migrate into the
   default profile and its project-specific lyrics appear as separate profiles.
@@ -39,6 +45,13 @@ Use only the release-candidate directory supplied by the maintainer. Start with
 - Confirm controller/read-only behavior with and without the token.
 - Confirm empty set, malformed locator and missing AbletonOSC states are explained.
 - Confirm fullscreen and Wake Lock fallback remain usable.
+- Confirm Stage Control disables language changes during playback and while
+  locked, enables them only when stopped and unlocked, and shows the lock warning
+  in the selected interface language.
+- During continuous playback, watch several Bars/Beats/Sixteenths transitions,
+  especially beat `4` into beat `1`, and confirm the label never flashes back to
+  the previous sixteenth. Then confirm a real backward section jump, loop and
+  stopped-position change still reposition the label immediately.
 
 ## Network and resilience
 

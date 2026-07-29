@@ -1,5 +1,5 @@
 param(
-    [string]$Version = "0.4.0",
+    [string]$Version = "0.4.1",
     [string]$AblxPath,
     [string]$OutputRoot
 )
@@ -58,10 +58,12 @@ $copies = @(
     @{ Source = (Join-Path $repoRoot "docs/USER-GUIDE.md"); Target = "en/USER-GUIDE.md" },
     @{ Source = (Join-Path $repoRoot "docs/TROUBLESHOOTING.md"); Target = "en/TROUBLESHOOTING.md" },
     @{ Source = (Join-Path $repoRoot "docs/FAQ.md"); Target = "en/FAQ.md" },
+    @{ Source = (Join-Path $repoRoot "docs/RELEASE-NOTES-0.4.1.md"); Target = "en/RELEASE-NOTES.md" },
     @{ Source = (Join-Path $repoRoot "docs/pt-BR/INSTALL.md"); Target = "pt-BR/INSTALL.md" },
     @{ Source = (Join-Path $repoRoot "docs/pt-BR/USER-GUIDE.md"); Target = "pt-BR/USER-GUIDE.md" },
     @{ Source = (Join-Path $repoRoot "docs/pt-BR/TROUBLESHOOTING.md"); Target = "pt-BR/TROUBLESHOOTING.md" },
     @{ Source = (Join-Path $repoRoot "docs/pt-BR/FAQ.md"); Target = "pt-BR/FAQ.md" },
+    @{ Source = (Join-Path $repoRoot "docs/pt-BR/NOTAS-DA-VERSAO-0.4.1.md"); Target = "pt-BR/NOTAS-DA-VERSAO.md" },
     @{ Source = (Join-Path $repoRoot "CHANGELOG.md"); Target = "CHANGELOG.md" },
     @{ Source = (Join-Path $repoRoot "LICENSE"); Target = "LEGAL/LICENSE.txt" },
     @{ Source = (Join-Path $repoRoot "NOTICE"); Target = "LEGAL/NOTICE.txt" },

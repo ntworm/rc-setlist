@@ -194,6 +194,57 @@ test('parseLocator: tags are stripped from display name', () => {
   assert.strictEqual(r.section.autoClick, false);
 });
 
+test('parseLocator: tag-only locator becomes an automation section', () => {
+  const r = parseLocator('[stop]');
+  assert.deepStrictEqual(r, {
+    kind: 'automation',
+    section: {
+      name: '',
+      time: 0,
+      loopCount: null,
+      autoStop: true,
+      autoNext: false,
+      bpm: null,
+      autoClick: null,
+      skip: false,
+      automationOnly: true,
+    },
+  });
+});
+
+test('parseSetlist: tag-only automations belong to the preceding song', () => {
+  const parsed = parseSetlist([
+    { name: 'Song A', time: 0 },
+    { name: '[loop]', time: 20 },
+    { name: '[stop]', time: 40 },
+    { name: 'Song B', time: 60 },
+  ]);
+
+  assert.deepStrictEqual(parsed.songs.map((song) => song.title), ['Song A', 'Song B']);
+  assert.deepStrictEqual(
+    parsed.songs[0].sections.map((section) => ({
+      time: section.time,
+      loopCount: section.loopCount,
+      autoStop: section.autoStop,
+      automationOnly: section.automationOnly,
+    })),
+    [
+      { time: 20, loopCount: -1, autoStop: false, automationOnly: true },
+      { time: 40, loopCount: null, autoStop: true, automationOnly: true },
+    ],
+  );
+});
+
+test('parseSetlist: tag-only automation before the first song is hidden', () => {
+  const parsed = parseSetlist([
+    { name: '[stop]', time: 0 },
+    { name: 'Song A', time: 10 },
+  ]);
+
+  assert.deepStrictEqual(parsed.songs.map((song) => song.title), ['Song A']);
+  assert.deepStrictEqual(parsed.hidden, [{ name: '[stop]', time: 0 }]);
+});
+
 // --- SETLIST MANAGER TESTS ---
 
 test('SetlistManager: correctly tracks state and loop regions', () => {
@@ -249,6 +300,78 @@ test('SetlistManager: duplicate titles preserve chronological active identity', 
   );
 });
 
+test('SetlistManager: new songs enter a saved order at their Arrangement position', () => {
+  const manager = new SetlistManager();
+  manager.updateCues([
+    { name: 'Song A', time: 0 },
+    { name: 'Song D', time: 150 },
+  ]);
+  manager.setCustomOrder(['Song A', 'Song D']);
+
+  manager.updateCues([
+    { name: 'Song D', time: 150 },
+    { name: 'Song B', time: 50 },
+    { name: 'Song A', time: 0 },
+    { name: 'Song C', time: 100 },
+  ]);
+
+  assert.deepStrictEqual(
+    manager.getState().songs.map((song) => song.title),
+    ['Song A', 'Song B', 'Song C', 'Song D'],
+  );
+});
+
+test('SetlistManager: new songs do not erase an intentional manual order', () => {
+  const manager = new SetlistManager();
+  manager.updateCues([
+    { name: 'Song A', time: 0 },
+    { name: 'Song C', time: 100 },
+  ]);
+  manager.setCustomOrder(['Song C', 'Song A']);
+
+  manager.updateCues([
+    { name: 'Song A', time: 0 },
+    { name: 'Song B', time: 50 },
+    { name: 'Song C', time: 100 },
+  ]);
+
+  assert.deepStrictEqual(
+    manager.getState().songs.map((song) => song.title),
+    ['Song C', 'Song A', 'Song B'],
+  );
+});
+
+test('SetlistManager: publishes song and total durations from Arrangement end', () => {
+  const manager = new SetlistManager();
+  manager.updateCues([
+    { name: 'Song A [bpm 120]', time: 0 },
+    { name: 'Song B [bpm 60]', time: 120 },
+  ]);
+  manager.updateArrangementEndTime(240);
+
+  const state = manager.getState();
+  assert.equal(state.protocolVersion, 2);
+  assert.equal(state.songs[0].durationSeconds, 60);
+  assert.equal(state.songs[1].durationSeconds, 120);
+  assert.equal(state.totalDurationSeconds, 180);
+  assert.equal(state.arrangementEndTime, 240);
+});
+
+test('SetlistManager: keeps final and total durations unknown without a valid end', () => {
+  const manager = new SetlistManager();
+  manager.updateCues([
+    { name: 'Song A [bpm 120]', time: 0 },
+    { name: 'Song B [bpm 120]', time: 120 },
+  ]);
+  manager.updateArrangementEndTime(Number.NaN);
+
+  const state = manager.getState();
+  assert.equal(state.songs[0].durationSeconds, 60);
+  assert.equal(state.songs[1].durationSeconds, null);
+  assert.equal(state.totalDurationSeconds, null);
+  assert.equal(state.arrangementEndTime, null);
+});
+
 test('SetlistManager: checkAutomations fires [stop] action', () => {
   const manager = new SetlistManager();
   const cues = [
@@ -274,6 +397,25 @@ test('SetlistManager: checkAutomations fires [stop] action', () => {
   // Should NOT fire again (already fired)
   actions = manager.checkAutomations();
   assert.strictEqual(actions.length, 0);
+});
+
+test('SetlistManager: tag-only [stop] executes inside the preceding song', () => {
+  const manager = new SetlistManager();
+  manager.updateCues([
+    { name: 'Song A', time: 0 },
+    { name: '[stop]', time: 40 },
+    { name: 'Song B', time: 80 },
+  ]);
+
+  manager.updateTransport(41, true);
+
+  assert.deepStrictEqual(manager.checkAutomations(), [{ type: 'stop' }]);
+  const state = manager.getState();
+  assert.equal(state.songs[state.activeSongIndex].title, 'Song A');
+  assert.equal(
+    state.songs[state.activeSongIndex].sections[state.activeSectionIndex].automationOnly,
+    true,
+  );
 });
 
 test('SetlistManager: checkAutomations fires [next] action', () => {

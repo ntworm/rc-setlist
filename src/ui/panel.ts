@@ -1,9 +1,17 @@
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
 import { initialize } from '@ableton-extensions/sdk';
-import { startServer, stopServer, isServerRunning, getAuthToken } from '../index.js';
+import {
+  startServer,
+  stopServer,
+  isServerRunning,
+  getAuthToken,
+  getOscDiagnostics,
+  requestOscDiagnosticProbe,
+} from '../index.js';
 import { getLanAddresses, pickLanIps } from '../util/helpers.js';
 import { getAutoStart, getUiLocale, setAutoStart, setUiLocale, type UiLocale } from '../preferences.js';
+import { buildOscDiagnosticModel } from './osc-diagnostics.js';
 // __dirname is a global in CommonJS, which is our target format
 
 type ModalContext = ReturnType<typeof initialize>;
@@ -90,6 +98,9 @@ export async function showPanelDialog(context: ModalContext): Promise<void> {
         const next = !getAutoStart();
         const ok = setAutoStart(next);
         console.log(`[rc-setlist] auto-start toggled to ${next} (write ok=${ok})`);
+      } else if (action === 'diagnose-osc' && running) {
+        requestOscDiagnosticProbe();
+        await new Promise<void>((resolve) => setTimeout(resolve, 350));
       }
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
@@ -104,6 +115,10 @@ async function renderPanelDialog(context: ModalContext): Promise<string> {
   const port = 4444;
   const lanIps = getLanAddresses();
   const { primary: primaryIp } = pickLanIps(lanIps);
+  const oscDiagnostics = buildOscDiagnosticModel({
+    serverRunning: isRunning,
+    snapshot: getOscDiagnostics(),
+  });
 
   const panelDir = path.join(__dirname, 'static/panel');
   let html = '';
@@ -123,6 +138,7 @@ async function renderPanelDialog(context: ModalContext): Promise<string> {
         window.INITIAL_AUTO_START = ${getAutoStart()};
         window.INITIAL_TOKEN = "${getAuthToken()}";
         window.INITIAL_LOCALE = ${JSON.stringify(getUiLocale())};
+        window.INITIAL_OSC_DIAGNOSTICS = ${JSON.stringify(oscDiagnostics)};
       </script>
     `;
     html = html.replace('<body>', `<body>${injection}`);

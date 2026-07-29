@@ -1,8 +1,13 @@
 import assert from 'node:assert/strict';
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import path from 'node:path';
+import { spawnSync } from 'node:child_process';
 import { test } from 'node:test';
+import { fileURLToPath } from 'node:url';
 
 const rootUrl = new URL('../', import.meta.url);
+const rootPath = fileURLToPath(rootUrl);
 const read = (file) => readFileSync(new URL(file, rootUrl), 'utf8');
 
 test('release installation kit has a deterministic packager and owner-facing templates', () => {
@@ -26,6 +31,8 @@ test('release installation kit has a deterministic packager and owner-facing tem
     'pt-BR/TEST-CHECKLIST.md',
     'en/INSTALL.md',
     'pt-BR/INSTALL.md',
+    'en/RELEASE-NOTES.md',
+    'pt-BR/NOTAS-DA-VERSAO.md',
     'START-HERE.html',
     'Get-ChildItem -LiteralPath $exampleSource',
   ]) {
@@ -47,6 +54,88 @@ test('release templates describe the real prerequisites and safe local-network s
   assert.match(combined, /Ableton Live 12\.4\.5\+/);
   assert.match(combined, /AbletonOSC/);
   assert.match(combined, /trusted (?:local network|LAN)/i);
-  assert.match(combined, /Ableton-RC-Setlist-0\.4\.0\.ablx/);
+  assert.match(combined, /Ableton-RC-Setlist-0\.4\.1\.ablx/);
   assert.doesNotMatch(combined, /Ableton Setlist Bridge|commercial-song|real setlist/i);
+});
+
+test('release templates prevent the AbletonOSC folder mix-up in both languages', () => {
+  for (const path of [
+    'release-template/README.txt',
+    'release-template/en/TEST-CHECKLIST.md',
+    'release-template/pt-BR/TEST-CHECKLIST.md',
+  ]) {
+    const content = read(path);
+    assert.match(content, /User Library[\\/]Remote Scripts[\\/]AbletonOSC/i, `${path} must show the exact install target`);
+    assert.match(content, /User Remote Scripts/i, `${path} must distinguish Live's hidden preferences folder`);
+    assert.match(content, /AbletonOSC[\\/]__init__\.py/i, `${path} must show how to detect an extra nested folder`);
+  }
+});
+
+test('certificate onboarding is explicit in both languages and canonical English stays English', () => {
+  const englishCombined = [
+    read('release-template/START-HERE.html'),
+    read('release-template/README.txt'),
+    read('release-template/en/TEST-CHECKLIST.md'),
+    read('docs/INSTALL.md'),
+    read('docs/FAQ.md'),
+    read('docs/TROUBLESHOOTING.md'),
+  ].join('\n');
+  const portugueseCombined = [
+    read('release-template/START-HERE.html'),
+    read('release-template/README.txt'),
+    read('release-template/pt-BR/TEST-CHECKLIST.md'),
+    read('docs/pt-BR/INSTALL.md'),
+    read('docs/pt-BR/FAQ.md'),
+    read('docs/pt-BR/TROUBLESHOOTING.md'),
+  ].join('\n');
+
+  assert.match(englishCombined, /ERR_CERT_AUTHORITY_INVALID|certificate warning/i);
+  assert.match(englishCombined, /exactly matches the IP shown in the Live panel/i);
+  assert.match(portugueseCombined, /ERR_CERT_AUTHORITY_INVALID|aviso de certificado/i);
+  assert.match(portugueseCombined, /for exatamente o IP mostrado no painel do Live/i);
+  assert.doesNotMatch(read('docs/INSTALL.md'), /[ãõçáéíóú]/i);
+});
+
+test('generated installation kit keeps English and Portuguese guides in their language folders', (t) => {
+  const tempRoot = mkdtempSync(path.join(tmpdir(), 'rc-setlist-kit-contract-'));
+  t.after(() => rmSync(tempRoot, { recursive: true, force: true }));
+  const ablxPath = path.join(tempRoot, 'Ableton-RC-Setlist-0.4.1.ablx');
+  const outputRoot = path.join(tempRoot, 'output');
+  writeFileSync(ablxPath, '');
+
+  const result = spawnSync('powershell.exe', [
+    '-NoProfile',
+    '-ExecutionPolicy', 'Bypass',
+    '-File', path.join(rootPath, 'scripts', 'package-release-candidate.ps1'),
+    '-Version', '0.4.1',
+    '-AblxPath', ablxPath,
+    '-OutputRoot', outputRoot,
+  ], { cwd: rootPath, encoding: 'utf8' });
+  assert.equal(result.status, 0, result.stderr || result.stdout);
+
+  const kitRoot = path.join(outputRoot, 'Ableton-RC-Setlist-0.4.1-Installation-Kit');
+  const expectedGuides = ['INSTALL.md', 'USER-GUIDE.md', 'TROUBLESHOOTING.md', 'FAQ.md', 'TEST-CHECKLIST.md'];
+  for (const locale of ['en', 'pt-BR']) {
+    for (const guide of expectedGuides) {
+      assert.ok(existsSync(path.join(kitRoot, locale, guide)), `${locale}/${guide} must exist`);
+    }
+  }
+  assert.ok(existsSync(path.join(kitRoot, 'en', 'RELEASE-NOTES.md')), 'en/RELEASE-NOTES.md must exist');
+  assert.ok(existsSync(path.join(kitRoot, 'pt-BR', 'NOTAS-DA-VERSAO.md')), 'pt-BR/NOTAS-DA-VERSAO.md must exist');
+
+  const rootMarkdownOrHtml = readdirSync(kitRoot)
+    .filter((name) => /\.(?:md|html)$/i.test(name))
+    .sort();
+  assert.deepEqual(rootMarkdownOrHtml, ['CHANGELOG.md', 'START-HERE.html']);
+
+  const allRelativeFiles = [];
+  const walk = (directory) => {
+    for (const entry of readdirSync(directory, { withFileTypes: true })) {
+      const absolute = path.join(directory, entry.name);
+      if (entry.isDirectory()) walk(absolute);
+      else allRelativeFiles.push(path.relative(kitRoot, absolute).replaceAll('\\', '/'));
+    }
+  };
+  walk(kitRoot);
+  assert.equal(allRelativeFiles.some((file) => /LEIA-ME-INSTALACAO/i.test(file)), false);
 });

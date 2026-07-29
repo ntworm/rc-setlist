@@ -33,6 +33,7 @@ const songNames = [
 const songs = songNames.map((title, songIndex) => ({
   title,
   time: songIndex * 128,
+  durationSeconds: songIndex === 0 ? 60 : songIndex === 1 ? 120 : null,
   sections: [
     { name: 'INTRO', time: songIndex * 128, loopCount: null, autoStop: false, autoNext: false, bpm: null },
     { name: 'SECTION 1', time: songIndex * 128 + 24, loopCount: null, autoStop: false, autoNext: false, bpm: null },
@@ -64,7 +65,26 @@ const stateMessage = {
     signatureNumerator: 4,
     metronome: true,
     clipTriggerQuantization: 4,
+    totalDurationSeconds: 180,
   },
+};
+
+const profilesStateMessage = {
+  type: 'profiles_state',
+  version: 2,
+  activeProfileId: '11111111-1111-4111-8111-111111111111',
+  profiles: [
+    { id: '11111111-1111-4111-8111-111111111111', name: 'Main Setlist' },
+    { id: '22222222-2222-4222-8222-222222222222', name: '<Festival>' },
+  ],
+  deletedProfiles: [
+    {
+      id: '33333333-3333-4333-8333-333333333333',
+      name: 'Archive',
+      deletedAt: '2026-07-29T12:00:00.000Z',
+    },
+  ],
+  canMutate: true,
 };
 
 const lyricsMessage = {
@@ -87,6 +107,7 @@ const marketingSongNames = ['SONG 01', 'SONG 02', 'SONG 03', 'SONG 04', 'SONG 05
 const marketingSongs = marketingSongNames.map((title, songIndex) => ({
   title,
   time: songIndex * 128,
+  durationSeconds: 128,
   sections: [
     { name: 'INTRO', time: songIndex * 128, loopCount: null, autoStop: false, autoNext: false, bpm: null },
     { name: 'VERSE', time: songIndex * 128 + 24, loopCount: null, autoStop: false, autoNext: false, bpm: null },
@@ -110,6 +131,8 @@ const marketingStateMessage = {
   type: 'state',
   state: {
     songs: marketingSongs,
+    totalDurationSeconds: 640,
+    arrangementEndTime: 640,
     activeSongIndex: 2,
     activeSectionIndex: 2,
     currentSongTime: 318.5,
@@ -172,7 +195,7 @@ const server = http.createServer((request, response) => {
   const requestUrl = new URL(request.url || '/', `http://127.0.0.1:${port}`);
   if (requestUrl.pathname === '/__test__/state') {
     response.writeHead(200, { 'content-type': 'application/json; charset=utf-8' });
-    response.end(JSON.stringify(stateMessage));
+    response.end(JSON.stringify(activeScenario === 'marketing' ? marketingStateMessage : stateMessage));
     return;
   }
   if (requestUrl.pathname === '/__test__/messages') {
@@ -236,8 +259,21 @@ webSockets.on('connection', (socket) => {
     try {
       const parsed = JSON.parse(String(rawMessage));
       receivedMessages.push(parsed);
-      if (parsed.type === 'get_lyrics') {
-        socket.send(JSON.stringify(lyrics));
+      if (parsed.type === 'handshake') {
+        socket.send(JSON.stringify({
+          type: 'handshake_ack',
+          stateVersion: 1,
+          state: message.state,
+        }));
+      } else if (parsed.type === 'get_lyrics') {
+        const requestedSong = typeof parsed.song === 'string' && parsed.song
+          ? parsed.song
+          : lyrics.song;
+        socket.send(JSON.stringify(requestedSong === lyrics.song
+          ? lyrics
+          : { type: 'lyrics', song: requestedSong, format: 'none', lines: [] }));
+      } else if (parsed.type === 'profiles_get') {
+        socket.send(JSON.stringify(profilesStateMessage));
       }
     } catch {
       // The production UI ignores malformed messages, and so does the fixture.

@@ -8,24 +8,43 @@
 
 ## AbletonOSC does not appear
 
-- Confirm the `AbletonOSC` folder is directly inside the Remote Scripts folder.
+- Install it at `User Library/Remote Scripts/AbletonOSC`, not Live's hidden
+  `User Remote Scripts` preferences folder.
+- Confirm `AbletonOSC/__init__.py` exists directly inside that folder, with no
+  extra nested `AbletonOSC` directory.
 - Restart Live after copying it.
+- Select AbletonOSC as a Control Surface; its Input and Output can remain
+  `None`.
 - Follow the [upstream AbletonOSC instructions](https://github.com/ideoforms/AbletonOSC).
 
-## The panel starts but no songs appear
+## The panel starts but OSC controls or playhead do not respond
+
+- Choose **Check OSC** in the RC Setlist panel.
+- `Live connected` means AbletonOSC replies are reaching RC Setlist.
+- `Waiting for AbletonOSC` means the local server is running, but no reply has
+  arrived. Recheck the exact folder above, the Control Surface selection and
+  then restart Live.
+- `AbletonOSC connection interrupted` means replies were received previously
+  but have stopped.
+- Play/Stop and the moving playhead are the clearest end-to-end OSC checks.
+
+## No songs appear
 
 - Confirm the Live Set has Arrangement locators.
 - Start locator names with a song name; sections use `Song > Section`.
-- Confirm AbletonOSC is active and UDP is not blocked locally.
 - Use the panel restart action after changing the integration setup.
 
 ## The browser page does not open
 
+- On the first connection, `ERR_CERT_AUTHORITY_INVALID` is the expected warning
+  for RC Setlist's local self-signed certificate. Continue only when the address
+  exactly matches the IP shown in the Live panel and you are on a trusted LAN.
+  Each browser/device may require this once.
 - Open `https://localhost:4444/health` on the host.
 - Confirm the panel reports the server as running.
 - Allow inbound TCP `4444` only on the private network profile.
 - Put host and controller on the same non-guest LAN.
-- Accept the self-signed certificate only for the expected host.
+- Accept the self-signed certificate only for that exact panel address.
 
 ## Controls are read-only
 
@@ -57,9 +76,39 @@ not delete the old folders or overwrite files already present in the new profile
 
 ## Another extension uses OSC port 11001
 
-Ableton RC Setlist uses a cooperative listener design for compatible sibling extensions.
-Use current versions of both. If either logs a bind failure, restart Live and
-capture sanitized logs for a bug report.
+AbletonOSC sends every reply to its fixed UDP port `11001`. If another RC
+extension already owns that port, RC Setlist falls back to UDP 11101; it may
+still send commands, but it cannot receive AbletonOSC's replies. The compact
+panel reports this as `Live active · OSC return port busy`.
+
+When the local Ableton MCP bridge is also available, the **MCP fallback** keeps
+the playhead, play state and tempo synchronized and supplies **Total Duration**.
+RC Setlist also keeps the operator's **requested quantization** locally, so
+choosing `None` makes section jumps immediate even while native OSC replies are
+busy. **Check OSC** still reports the port conflict truthfully; it does not call
+the fallback a native OSC connection.
+
+If the MCP bridge is absent too, stop the other RC extension, restart RC Setlist
+and choose **Check OSC** again. Do not force two sockets to share `11001` on
+Windows; only one listener can receive each reply. For native OSC diagnostics,
+keep automatic start enabled for only one OSC-dependent RC extension.
+
+## Setlists from another Live Set appear
+
+Current builds store multiple setlists inside the current Live Set's own scope.
+They do not show the global profile list from older builds. Restart the RC
+Setlist server after opening the intended saved `.als` if the project was
+changed while an older build was running.
+
+Legacy global data is preserved as a backup and is not deleted. Only the former
+per-project folder that exactly matches the current saved Live Set is imported
+automatically.
+
+If project metadata arrives after startup, the temporary project scope is
+promoted to the saved `.als` scope. Profiles created during the delay, including
+`Second Setlist`, are copied without deleting the temporary source. For an
+unidentified Set, missing lyrics are recovered only when one legacy custom order
+matches the complete current song list; ambiguous matches are left untouched.
 
 ## What to include in a bug report
 

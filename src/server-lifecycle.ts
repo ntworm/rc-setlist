@@ -6,6 +6,8 @@ import { randomBytes } from 'node:crypto';
 import { StartServerOptions } from './index.js';
 import {
   bridgeState,
+  activateProjectProfileScope,
+  broadcastState,
   broadcastProfileState,
   checkAndBroadcastLyrics,
   getActiveProfilePaths,
@@ -18,7 +20,6 @@ import {
 import { getExtensionContext } from './context.js';
 import { SetlistManager } from './core/setlist-manager.js';
 import { JumpScheduler, type PendingJump } from './core/next-downbeat-jump.js';
-import { ProfileManager } from './core/profile-manager.js';
 import { EventLogger } from './core/event-log.js';
 import { CommandBus } from './core/command-bus.js';
 import { OSCClient } from './integration/osc-client.js';
@@ -32,12 +33,82 @@ import {
   setHttpAuthToken,
 } from './server/http.js';
 import { McpTcpClient } from './integration/mcp-client.js';
+import { McpFallbackSync } from './integration/mcp-fallback-sync.js';
 import { syncFromSdkContext } from './sync/sdk-sync.js';
 import { syncFromMcpInfo } from './sync/mcp-sync.js';
 import { registerOscListeners } from './osc/registration.js';
 import { executeCommandAction } from './commands/handlers.js';
+import {
+  resolveProjectIdentity,
+  projectIdentityFromMetadata,
+  projectSessionIdForSong,
+  type ProjectIdentity,
+} from './core/project-identity.js';
 
 const PORT = 4444;
+let projectRefreshPending = false;
+
+function newProjectSessionId(): string {
+  return randomBytes(16).toString('hex');
+}
+
+function currentSongHandleId(context: ReturnType<typeof getExtensionContext>): string {
+  try {
+    return context?.application?.song?.handle?.id?.toString() ?? '';
+  } catch {
+    return '';
+  }
+}
+
+async function resolveActiveProjectIdentity(options: StartServerOptions): Promise<ProjectIdentity> {
+  if (options.projectIdentity) return options.projectIdentity;
+  if (options.skipProjectDetector) {
+    return resolveProjectIdentity({
+      platform: 'linux',
+      sessionId: bridgeState.projectSessionId,
+      getProjectMetadata: async () => null,
+      readWindowTitle: async () => '',
+    });
+  }
+  return resolveProjectIdentity({
+    sessionId: bridgeState.projectSessionId,
+    getProjectMetadata: async () => bridgeState.mcpClient?.getProjectMetadata() ?? null,
+  });
+}
+
+async function refreshProjectScope(options: StartServerOptions): Promise<void> {
+  if (options.projectIdentity || options.skipProjectDetector || !bridgeState.server) return;
+  if (bridgeState.profileScopeSwitching) {
+    projectRefreshPending = true;
+    return;
+  }
+
+  bridgeState.profileScopeSwitching = true;
+  broadcastProfileState();
+  try {
+    await new Promise<void>((resolve) => setTimeout(resolve, 350));
+    const context = getExtensionContext();
+    bridgeState.projectSessionId = projectSessionIdForSong(
+      process.pid,
+      currentSongHandleId(context),
+      newProjectSessionId(),
+    );
+    const identity = await resolveActiveProjectIdentity(options);
+    if (identity.key !== bridgeState.projectIdentity?.key) {
+      console.log(`[Persistence] Live Set scope changed to: ${identity.displayName}`);
+      await activateProjectProfileScope(identity);
+    }
+  } catch (error) {
+    console.error(`[Persistence] Failed to switch Live Set scope: ${error instanceof Error ? error.message : String(error)}`);
+  } finally {
+    bridgeState.profileScopeSwitching = false;
+    broadcastProfileState();
+    if (projectRefreshPending) {
+      projectRefreshPending = false;
+      void refreshProjectScope(options);
+    }
+  }
+}
 
 function getOrGenerateToken(): string {
   if (!fs.existsSync(bridgeState.globalPersistenceDir)) {
@@ -112,6 +183,7 @@ export async function startServer(options: StartServerOptions = {}): Promise<voi
 
   try {
     bridgeState.manager = new SetlistManager();
+    bridgeState.lastCuesFingerprint = '__init__';
     bridgeState.scheduler = new JumpScheduler();
     bridgeState.scheduler.on(handleJumpSchedulerEvent);
 
@@ -125,8 +197,15 @@ export async function startServer(options: StartServerOptions = {}): Promise<voi
     bridgeState.authToken = getOrGenerateToken();
     setHttpAuthToken(bridgeState.authToken);
 
-    bridgeState.profileManager = new ProfileManager(bridgeState.globalPersistenceDir);
-    await bridgeState.profileManager.initialize();
+    const fallbackSessionId = bridgeState.projectSessionId || newProjectSessionId();
+    bridgeState.projectSessionId = projectSessionIdForSong(
+      process.pid,
+      currentSongHandleId(context),
+      fallbackSessionId,
+    );
+    bridgeState.mcpClient = new McpTcpClient();
+    const projectIdentity = await resolveActiveProjectIdentity(options);
+    await activateProjectProfileScope(projectIdentity);
 
     bridgeState.eventLogger = new EventLogger(bridgeState.globalPersistenceDir);
     bridgeState.commandBus = new CommandBus(bridgeState.manager, bridgeState.oscClient, bridgeState.eventLogger);
@@ -141,6 +220,7 @@ export async function startServer(options: StartServerOptions = {}): Promise<voi
 
     const hasContext = Boolean(context);
     bridgeState.manager?.setConnectionStatus('ableton', hasContext ? 'synced' : 'disconnected');
+    bridgeState.lastSongHandleId = currentSongHandleId(context);
 
     const activePaths = getActiveProfilePaths();
     const orderFilePath = activePaths.customOrder;
@@ -188,9 +268,12 @@ export async function startServer(options: StartServerOptions = {}): Promise<voi
         managerMetronome: state?.metronome ?? null,
         managerCurrentSongTime: state?.currentSongTime ?? null,
         managerIsPlaying: state?.isPlaying ?? null,
+        managerClipTriggerQuantization: state?.clipTriggerQuantization ?? null,
+        managerArrangementEndTime: state?.arrangementEndTime ?? null,
         managerActiveSong: state?.songs[state.activeSongIndex]?.title ?? null,
         managerActiveSection: state?.songs[state.activeSongIndex]?.sections[state.activeSectionIndex]?.name ?? null,
         pendingJump: bridgeState.scheduler?.getPending() ?? null,
+        mcp: bridgeState.mcpFallbackSync?.getSnapshot() ?? null,
       };
     });
 
@@ -364,6 +447,17 @@ export async function startServer(options: StartServerOptions = {}): Promise<voi
     if (context) {
       bridgeState.sdkSyncInterval = setInterval(() => {
         try {
+          const nextSongHandleId = currentSongHandleId(context);
+          if (
+            nextSongHandleId &&
+            bridgeState.lastSongHandleId &&
+            nextSongHandleId !== bridgeState.lastSongHandleId
+          ) {
+            bridgeState.lastSongHandleId = nextSongHandleId;
+            void refreshProjectScope(options);
+          } else if (nextSongHandleId && !bridgeState.lastSongHandleId) {
+            bridgeState.lastSongHandleId = nextSongHandleId;
+          }
           syncFromSdkContext(context);
         } catch (err) {
           console.error('[SDK-Sync] Error during polling sync:', err);
@@ -371,18 +465,45 @@ export async function startServer(options: StartServerOptions = {}): Promise<voi
       }, 100);
     }
 
-    bridgeState.mcpClient = new McpTcpClient();
-    bridgeState.mcpSyncInterval = setInterval(async () => {
-      if (!bridgeState.mcpClient || !bridgeState.manager) return;
-      try {
-        const info = await bridgeState.mcpClient.call('get_session_info');
-        if (info) {
-          syncFromMcpInfo(info);
-        }
-      } catch (err) {
-        // Quietly ignore connection errors to avoid spamming logs if MCP server is not running
-      }
-    }, 100);
+    if (bridgeState.mcpClient) {
+      bridgeState.mcpFallbackSync = new McpFallbackSync({
+        client: bridgeState.mcpClient,
+        onSessionInfo: (info) => syncFromMcpInfo(info),
+        onSongLength: (length) => {
+          if (!bridgeState.manager) return;
+          const oldVersion = bridgeState.manager.getState().stateVersion;
+          bridgeState.manager.updateArrangementEndTime(length);
+          if (bridgeState.manager.getState().stateVersion !== oldVersion) broadcastState();
+        },
+        needsProjectMetadata: () => bridgeState.projectIdentity?.source !== 'mcp-path',
+        onProjectMetadata: async (metadata) => {
+          const identity = projectIdentityFromMetadata(metadata);
+          if (!identity || identity.key === bridgeState.projectIdentity?.key) return;
+          if (bridgeState.profileScopeSwitching) {
+            projectRefreshPending = true;
+            return;
+          }
+          bridgeState.profileScopeSwitching = true;
+          broadcastProfileState();
+          try {
+            console.log(`[Persistence] Delayed Live Set metadata resolved: ${identity.displayName}`);
+            await activateProjectProfileScope(identity);
+          } finally {
+            bridgeState.profileScopeSwitching = false;
+            broadcastProfileState();
+            if (projectRefreshPending) {
+              projectRefreshPending = false;
+              void refreshProjectScope(options);
+            }
+          }
+        },
+      });
+      bridgeState.mcpSyncInterval = setInterval(() => {
+        void bridgeState.mcpFallbackSync?.tick().catch(() => {
+          // MCP is optional. Keep OSC/SDK operation quiet while the bridge is absent.
+        });
+      }, 100);
+    }
 
     bridgeState.serverRunning = true;
   } catch (err) {
@@ -407,6 +528,7 @@ export async function stopServer(): Promise<void> {
     clearInterval(bridgeState.mcpSyncInterval);
     bridgeState.mcpSyncInterval = null;
   }
+  bridgeState.mcpFallbackSync = null;
 
   if (bridgeState.mcpClient) {
     try {
@@ -452,5 +574,13 @@ export async function stopServer(): Promise<void> {
 
   bridgeState.manager = null;
   bridgeState.scheduler = null;
+  bridgeState.profileManager = null;
+  bridgeState.projectIdentity = null;
+  bridgeState.profileScopeSwitching = false;
+  bridgeState.lastSongHandleId = '';
+  bridgeState.legacyRecoveryKey = '';
+  bridgeState.legacyRecoveryPending = false;
+  bridgeState.legacyRecoveryPromise = null;
+  projectRefreshPending = false;
   bridgeState.serverRunning = false;
 }

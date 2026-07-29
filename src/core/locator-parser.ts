@@ -59,7 +59,7 @@ export function extractTags(raw: string): {
 }
 
 export function parseLocator(name: string): {
-  kind: 'song' | 'section' | 'hidden';
+  kind: 'song' | 'section' | 'automation' | 'hidden';
   songName?: string;
   songTags?: { loopCount: number | null; autoStop: boolean; autoNext: boolean; bpm: number | null; autoClick: boolean | null; skip: boolean };
   section?: Section;
@@ -87,6 +87,31 @@ export function parseLocator(name: string): {
     const songInfo = extractTags(parts[0]);
     if (songInfo.hidden) {
       return { kind: 'hidden', hiddenName: songInfo.displayName };
+    }
+    const hasAutomation = songInfo.loopCount !== null
+      || songInfo.autoStop
+      || songInfo.autoNext
+      || songInfo.bpm !== null
+      || songInfo.autoClick !== null
+      || songInfo.skip;
+    if (!songInfo.displayName) {
+      if (!hasAutomation) {
+        return { kind: 'hidden', hiddenName: trimmed };
+      }
+      return {
+        kind: 'automation',
+        section: {
+          name: '',
+          time: 0,
+          loopCount: songInfo.loopCount,
+          autoStop: songInfo.autoStop,
+          autoNext: songInfo.autoNext,
+          bpm: songInfo.bpm,
+          autoClick: songInfo.autoClick,
+          skip: songInfo.skip,
+          automationOnly: true,
+        },
+      };
     }
     return {
       kind: 'song',
@@ -140,6 +165,18 @@ export function parseSetlist(cues: { name: string; time: number }[]): Setlist {
     
     if (parsed.kind === 'hidden') {
       hidden.push({ name: parsed.hiddenName!, time: cue.time });
+      continue;
+    }
+
+    if (parsed.kind === 'automation') {
+      if (!currentSong) {
+        hidden.push({ name: cue.name, time: cue.time });
+        continue;
+      }
+      currentSong.sections.push({
+        ...parsed.section!,
+        time: cue.time,
+      });
       continue;
     }
     

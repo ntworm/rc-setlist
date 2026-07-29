@@ -21,7 +21,7 @@ test('public landing presents Ableton RC Setlist as source-available and noncomm
   assert.match(landing, /PolyForm Noncommercial 1\.0\.0/i);
   assert.match(landing, /independent project.+not affiliated with or endorsed by Ableton AG/is);
   assert.match(landing, /https:\/\/ntworm\.github\.io\/rc-setlist\//i);
-  assert.match(landing, /Release 0\.4\.0/);
+  assert.match(landing, /Release 0\.4\.1/);
   assert.match(landing, /id=["']languageSelect["']/);
   assert.doesNotMatch(landing, /Release candidate/i);
   assert.doesNotMatch(landing, /commercial distribution is in preparation|private beta|sales open/i);
@@ -44,6 +44,29 @@ test('public documentation describes external AbletonOSC without bundling it', (
   for (const [label, content] of [['README', readme], ['install guide', install]]) {
     assert.match(content, /github\.com\/ideoforms\/AbletonOSC/i, `${label} must link upstream AbletonOSC`);
     assert.doesNotMatch(content, /bundled.+AbletonOSC|vendor\/AbletonOSC/i, `${label} must not claim AbletonOSC is bundled`);
+  }
+});
+
+test('installation and troubleshooting guides prevent the AbletonOSC folder mix-up', () => {
+  for (const path of [
+    'docs/INSTALL.md',
+    'docs/TROUBLESHOOTING.md',
+    'docs/pt-BR/INSTALL.md',
+    'docs/pt-BR/TROUBLESHOOTING.md',
+  ]) {
+    const content = readRequired(path);
+    assert.match(content, /User Library[\\/]Remote Scripts[\\/]AbletonOSC/i, `${path} must show the exact install target`);
+    assert.match(content, /User Remote Scripts/i, `${path} must distinguish Live's hidden preferences folder`);
+    assert.match(content, /AbletonOSC[\\/]__init__\.py/i, `${path} must show how to detect an extra nested folder`);
+  }
+});
+
+test('troubleshooting explains the fixed OSC return-port conflict outside the Live panel', () => {
+  for (const path of ['docs/TROUBLESHOOTING.md', 'docs/pt-BR/TROUBLESHOOTING.md']) {
+    const content = readRequired(path);
+    assert.match(content, /UDP 11101|porta 11101/i, `${path} must identify the fallback listener symptom`);
+    assert.match(content, /another\s+RC\s+extension|outra\s+extens[aã]o\s+RC/i, `${path} must identify the competing RC extension`);
+    assert.match(content, /only one|apenas uma/i, `${path} must recommend one OSC auto-start owner`);
   }
 });
 
@@ -70,11 +93,75 @@ test('public docs contain the required user, contributor, privacy and security p
     'docs/pt-BR/USER-GUIDE.md',
     'docs/pt-BR/TROUBLESHOOTING.md',
     'docs/pt-BR/FAQ.md',
+    'docs/RELEASE-NOTES-0.4.1.md',
+    'docs/pt-BR/NOTAS-DA-VERSAO-0.4.1.md',
   ];
 
   for (const path of required) {
     assert.ok(existsSync(new URL(`../${path}`, import.meta.url)), `${path} must exist`);
   }
+});
+
+test('0.4.1 guides and changelog document durations, recoverable profiles and WebSocket compatibility', () => {
+  const englishGuide = read('docs/USER-GUIDE.md');
+  const portugueseGuide = read('docs/pt-BR/USER-GUIDE.md');
+  const changelog = read('CHANGELOG.md');
+
+  assert.match(englishGuide, /song duration[\s\S]*total setlist duration/i);
+  assert.match(englishGuide, /recoverable trash[\s\S]*restore/i);
+  assert.match(englishGuide, /transport (?:must be|is) stopped/i);
+  assert.match(portugueseGuide, /duração de cada música[\s\S]*duração total do setlist/i);
+  assert.match(portugueseGuide, /lixeira recuperável[\s\S]*restaur/i);
+  assert.match(portugueseGuide, /transporte (?:deve estar|está)\s+parado/i);
+
+  assert.match(changelog, /\[ws\][^\n]*profiles_state[^\n]*version 2/i);
+  assert.match(changelog, /\[ws\][^\n]*(?:durationSeconds|totalDurationSeconds)[^\n]*optional/i);
+});
+
+test('0.4.1 guides document current-Live-Set profile scope and the PT-BR rehearsal recipe', () => {
+  const englishGuide = readRequired('docs/USER-GUIDE.md');
+  const portugueseGuide = readRequired('docs/pt-BR/USER-GUIDE.md');
+  const portugueseChecklist = readRequired('release-template/pt-BR/TEST-CHECKLIST.md');
+  const changelog = readRequired('CHANGELOG.md');
+
+  assert.match(englishGuide, /current Live Set[\s\S]*multiple\s+setlists/i);
+  assert.match(portugueseGuide, /Live Set atual[\s\S]*v[aá]rios\s+setlists/i);
+  for (const marker of ['TESTE 01', '[loop 2x]', '[stop]', 'TESTE 01B']) {
+    assert.ok(portugueseChecklist.includes(marker), `PT-BR checklist must include ${marker}`);
+  }
+  assert.match(portugueseChecklist, /criar[\s\S]*selecionar[\s\S]*renomear[\s\S]*excluir[\s\S]*restaurar/i);
+  assert.match(changelog, /current Live Set|Live Set atual/i);
+  assert.match(changelog, /mobile[\s\S]*rename|rename[\s\S]*mobile/i);
+});
+
+test('0.4.1 troubleshooting documents OSC return-port fallback and safe data recovery', () => {
+  const english = readRequired('docs/TROUBLESHOOTING.md');
+  const portuguese = readRequired('docs/pt-BR/TROUBLESHOOTING.md');
+  const changelog = readRequired('CHANGELOG.md');
+
+  assert.match(english, /MCP fallback[\s\S]*Total Duration[\s\S]*requested quantization/i);
+  assert.match(english, /temporary project scope[\s\S]*Second Setlist[\s\S]*without deleting/i);
+  assert.match(portuguese, /fallback MCP[\s\S]*dura/i);
+  assert.match(portuguese, /escopo tempor[\s\S]*Second Setlist[\s\S]*sem apagar/i);
+  assert.match(changelog, /quantization[\s\S]*MCP[\s\S]*temporary project scope/i);
+});
+
+test('0.4.1 release notes are bilingual, linked and describe the tested release', () => {
+  const changelog = readRequired('CHANGELOG.md');
+  const readme = readRequired('README.md');
+  const englishIndex = readRequired('docs/README.md');
+  const portugueseIndex = readRequired('docs/pt-BR/README.md');
+  const englishNotes = readRequired('docs/RELEASE-NOTES-0.4.1.md');
+  const portugueseNotes = readRequired('docs/pt-BR/NOTAS-DA-VERSAO-0.4.1.md');
+
+  assert.match(changelog, /^## \[0\.4\.1\] - 2026-07-29/m);
+  assert.ok(changelog.indexOf('## [0.4.1]') < changelog.indexOf('## [0.4.0]'));
+  assert.match(englishIndex, /RELEASE-NOTES-0\.4\.1\.md/);
+  assert.match(portugueseIndex, /NOTAS-DA-VERSAO-0\.4\.1\.md/);
+  assert.match(englishNotes, /setlist duration[\s\S]*Manage Setlists[\s\S]*lyrics[\s\S]*bar display/i);
+  assert.match(portugueseNotes, /dura[cç][aã]o total[\s\S]*Gerenciar setlists[\s\S]*letras[\s\S]*compasso/i);
+  assert.match(readme, /\[Landing page and screenshots\]\(https:\/\/ntworm\.github\.io\/rc-setlist\/\)/);
+  assert.match(readme, /!\[Ableton RC Setlist Stage Control\]\(docs\/media\/en\/stage-control\.png\)/);
 });
 
 test('public landing contains truthful site media and keeps the owner media kit private', () => {

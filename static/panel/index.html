@@ -13,6 +13,7 @@
       --text-muted: #8e8e9f;
       --accent: hsl(32, 100%, 55%);
       --success: hsl(145, 100%, 45%);
+      --warning: hsl(38, 100%, 56%);
       --danger: hsl(355, 100%, 60%);
     }
 
@@ -27,10 +28,10 @@
       color: var(--text);
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       font-size: 13px;
-      padding: 20px;
+      padding: 16px;
       display: flex;
       flex-direction: column;
-      gap: 16px;
+      gap: 8px;
       height: 100vh;
       overflow: hidden;
     }
@@ -70,7 +71,7 @@
     .qr-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 16px;
+      gap: 12px;
       flex: 1;
       min-height: 0;
     }
@@ -79,12 +80,12 @@
       background: var(--card-bg);
       border: 1px solid var(--border);
       border-radius: 12px;
-      padding: 16px;
+      padding: 12px;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      gap: 10px;
+      gap: 8px;
       text-align: center;
     }
 
@@ -163,7 +164,7 @@
       background: var(--card-bg);
       border: 1px solid var(--border);
       border-radius: 8px;
-      padding: 10px 16px;
+      padding: 8px 12px;
       display: flex;
       justify-content: space-between;
       align-items: center;
@@ -187,6 +188,15 @@
       box-shadow: 0 0 8px var(--success);
     }
 
+    .status-dot.warning {
+      background-color: var(--warning);
+      box-shadow: 0 0 8px var(--warning);
+    }
+
+    .status-dot.neutral {
+      background-color: var(--text-muted);
+    }
+
     .status-text {
       font-weight: 700;
       font-size: 11px;
@@ -200,12 +210,44 @@
       color: var(--danger);
     }
 
+    .status-text.warning {
+      color: var(--warning);
+    }
+
+    .status-text.neutral {
+      color: var(--text-muted);
+    }
+
+    .osc-diagnostic {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 8px 10px;
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .osc-copy {
+      min-width: 0;
+    }
+
     /* Footer Buttons */
     .footer {
       display: flex;
       gap: 8px;
       border-top: 1px solid var(--border);
-      padding-top: 12px;
+      padding-top: 8px;
+    }
+
+    .auto-start-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 8px 4px 2px;
+      border-top: 1px solid var(--border);
     }
   </style>
 </head>
@@ -228,9 +270,17 @@
   <div class="status-bar">
     <div class="status-indicator">
       <div id="statusDot" class="status-dot"></div>
-      <span id="statusText" class="status-text inactive" data-i18n="panel.serverStopped">Server stopped</span>
+      <span id="statusText" class="status-text inactive">Server stopped</span>
     </div>
     <div id="infoPort" style="font-size: 11px; color: var(--text-muted)">Port: &mdash;</div>
+  </div>
+
+  <div class="osc-diagnostic" aria-live="polite">
+    <div id="oscStatusDot" class="status-dot"></div>
+    <div class="osc-copy">
+      <span id="oscStatusText" class="status-text inactive">Start the server to test AbletonOSC</span>
+    </div>
+    <button class="btn" id="btnDiagnoseOsc" onclick="sendAction('diagnose-osc')" data-i18n="panel.checkOsc">Check OSC</button>
   </div>
 
   <!-- QR Codes Grid -->
@@ -269,7 +319,7 @@
   </div>
 
   <!-- Auto-start toggle (persisted in .setlist/auto-start) -->
-  <div style="display: flex; align-items: center; justify-content: space-between; padding: 12px 4px 4px 4px; border-top: 1px solid var(--border); margin-top: 12px;">
+  <div class="auto-start-row">
     <div>
       <div style="font-weight: 600; font-size: 11px;" data-i18n="panel.autoStart">Start automatically with Live</div>
       <div style="font-size: 10px; color: var(--text-muted); margin-top: 2px;" id="autoStartHint" data-i18n="panel.autoStartHint">Prevents conflicts with other RC extensions. This setting persists between sessions.</div>
@@ -285,6 +335,13 @@
     const port = window.INITIAL_PORT || 4444;
     const primaryIp = window.INITIAL_PRIMARY_IP || '127.0.0.1';
     let autoStart = !!window.INITIAL_AUTO_START;
+    const oscDiagnostics = window.INITIAL_OSC_DIAGNOSTICS || {
+      state: 'stopped',
+      listenPort: null,
+      rxCount: 0,
+      txCount: 0,
+      lastReplyAgeMs: null
+    };
     const i18n = RcSetlistI18n;
     const languageSelect = document.getElementById('languageSelect');
     i18n.setLocale(window.INITIAL_LOCALE || 'en');
@@ -293,6 +350,9 @@
     const statusDot = document.getElementById('statusDot');
     const statusText = document.getElementById('statusText');
     const infoPort = document.getElementById('infoPort');
+    const oscStatusDot = document.getElementById('oscStatusDot');
+    const oscStatusText = document.getElementById('oscStatusText');
+    const btnDiagnoseOsc = document.getElementById('btnDiagnoseOsc');
     const qrGrid = document.getElementById('qrGrid');
     const placeholderText = document.getElementById('placeholderText');
 
@@ -321,9 +381,27 @@
         : i18n.t('panel.port', { port: '\u2014' });
     }
 
+    function renderOscStatus() {
+      const stateKeys = {
+        'stopped': 'panel.oscStopped',
+        'port-conflict': 'panel.oscPortConflict',
+        'no-reply': 'panel.oscNoReply',
+        'responding': 'panel.oscResponding',
+        'stale': 'panel.oscStale'
+      };
+      const responding = oscDiagnostics.state === 'responding';
+      const warning = ['port-conflict', 'no-reply', 'stale'].includes(oscDiagnostics.state);
+      const stateClass = responding ? 'active' : warning ? 'warning' : 'neutral';
+      oscStatusDot.className = `status-dot ${stateClass}`;
+      oscStatusText.className = `status-text ${stateClass}`;
+      oscStatusText.textContent = i18n.t(stateKeys[oscDiagnostics.state] || 'panel.oscNoReply');
+      btnDiagnoseOsc.disabled = !isRunning;
+    }
+
     i18n.subscribe((locale) => {
       renderAutoStart();
       renderStatus();
+      renderOscStatus();
       sendAction(`set-language:${locale}`);
     });
 
@@ -386,6 +464,7 @@
       btnStop.disabled = true;
       btnRestart.disabled = true;
     }
+    renderOscStatus();
   </script>
 </body>
 </html>

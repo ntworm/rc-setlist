@@ -18,9 +18,10 @@ form part of its setlist workflow. Install it from
 
 ## Why does the browser show a certificate warning?
 
-The local server creates a self-signed certificate so phone features and secure
-WebSockets can work on the LAN. Accept it only for the expected Ableton RC Setlist host
-on a trusted network.
+On the first connection the browser may show `ERR_CERT_AUTHORITY_INVALID`
+because RC Setlist creates a local self-signed certificate for secure WebSockets.
+Continue only when the address exactly matches the IP shown in the Live panel
+and you are on a trusted LAN. Each browser/device may require this once.
 
 ## Where are lyrics stored?
 
@@ -34,7 +35,7 @@ fictional text; Ableton RC Setlist does not provide commercial lyrics.
 
 ## Does macOS work?
 
-The code is designed to be portable, but 0.4.0 marks macOS experimental until a
+The code is designed to be portable, but 0.4.1 marks macOS experimental until a
 complete real-device matrix is recorded.
 
 ## Can I put Ableton RC Setlist on the public internet?

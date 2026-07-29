@@ -39,6 +39,8 @@ test('real interfaces expose neutral marketing state', async ({ page }) => {
   await expect(page.getByText('SONG 03', { exact: true }).first()).toBeVisible();
   await expect(page.getByText('CHORUS', { exact: true }).first()).toBeVisible();
   await expect(page.getByText('SONG 04', { exact: true }).first()).toBeVisible();
+  await expect(page.getByText('10:40', { exact: true })).toBeVisible();
+  await expect(page.getByText('2:08', { exact: true })).toHaveCount(5);
   await expect(page.getByText('Neon Signal')).toHaveCount(0);
 });
 

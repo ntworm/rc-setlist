@@ -10,7 +10,7 @@
   <text x="58" y="206" font-family="Arial,sans-serif" font-size="65" font-weight="900" fill="#f5f1e8" letter-spacing="-3">Your Live Set.</text>
   <text x="58" y="278" font-family="Arial,sans-serif" font-size="52" font-weight="900" fill="#ff6b1a" letter-spacing="-2">Ready for the stage.</text>
   <text x="58" y="335" font-family="Arial,sans-serif" font-size="22" fill="#cbc6be">Setlist · guarded transport · synchronized lyrics</text>
-  <text x="58" y="570" font-family="Consolas,monospace" font-size="15" font-weight="700" fill="#ffb07d" letter-spacing="2">PRODUCT TRUTH · v0.4.0 · LOCAL FIRST</text>
+  <text x="58" y="570" font-family="Consolas,monospace" font-size="15" font-weight="700" fill="#ffb07d" letter-spacing="2">PRODUCT TRUTH · v0.4.1 · LOCAL FIRST</text>
 
   <g filter="url(#shadow)" transform="translate(590 74) rotate(1 270 160)">
     <rect width="570" height="320" rx="15" fill="#0d0e11" stroke="#3b3c43"/>

@@ -6,6 +6,7 @@ import * as fs from 'node:fs';
 import { tmpdir } from 'node:os';
 import { setExtensionContext, clearExtensionContext } from '../src/context.ts';
 import { startServer, stopServer, isServerRunning } from '../src/index.ts';
+import { bridgeState } from '../src/core/bridge-state.ts';
 
 // Helper to find a free port
 function getFreePort() {
@@ -27,6 +28,13 @@ test('Server Lifecycle: start, stop, port collision handling', async () => {
   setExtensionContext({
     environment: {
       storageDirectory: testStorageDir
+    },
+    application: {
+      song: {
+        handle: { id: 42 },
+        tempo: 120,
+        cuePoints: [{ name: 'Lifecycle Song', time: 0 }]
+      }
     }
   });
 
@@ -48,10 +56,30 @@ test('Server Lifecycle: start, stop, port collision handling', async () => {
     // Keep server open to ensure pollInterval/timers are stable and don't crash
     await new Promise((resolve) => setTimeout(resolve, 300));
     assert.strictEqual(isServerRunning(), true);
+    assert.deepStrictEqual(bridgeState.manager.getState().songs.map(({ title }) => title), ['Lifecycle Song']);
+    const firstSessionKey = bridgeState.projectIdentity.key;
+    await bridgeState.profileManager.create('Second Setlist');
 
     // 3. Stop successfully
     await stopServer();
     assert.strictEqual(isServerRunning(), false);
+
+    // Restarting RC Setlist inside the same Live session must reopen the same
+    // temporary scope instead of hiding a profile created moments earlier.
+    await startServer({
+      port: testPort,
+      skipOsc: true,
+      skipCerts: true,
+      skipProjectDetector: true
+    });
+    assert.strictEqual(bridgeState.projectIdentity.key, firstSessionKey);
+    assert.deepStrictEqual(
+      bridgeState.profileManager.list().map(({ name }) => name),
+      ['Main Setlist', 'Second Setlist']
+    );
+    await new Promise((resolve) => setTimeout(resolve, 150));
+    assert.deepStrictEqual(bridgeState.manager.getState().songs.map(({ title }) => title), ['Lifecycle Song']);
+    await stopServer();
 
     // 4. Start a dummy TCP server on our test port to force collision (omitting host so Node uses the same default wildcard binding family)
     const dummyServer = net.createServer();

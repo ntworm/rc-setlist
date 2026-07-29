@@ -65,6 +65,35 @@
     'panel.serverStopped': { en: 'Server stopped', 'pt-BR': 'Servidor parado' },
     'panel.serverRunning': { en: 'Server running', 'pt-BR': 'Servidor em execução' },
     'panel.port': { en: 'Port: {port}', 'pt-BR': 'Porta: {port}' },
+    'panel.oscStopped': {
+      en: 'Start the server to test AbletonOSC',
+      'pt-BR': 'Inicie o servidor para testar o AbletonOSC',
+    },
+    'panel.oscNoReply': {
+      en: 'Waiting for AbletonOSC',
+      'pt-BR': 'Aguardando o AbletonOSC',
+    },
+    'panel.oscPortConflict': {
+      en: 'Live active · OSC return port busy',
+      'pt-BR': 'Live ativo · porta de retorno OSC ocupada',
+    },
+    'panel.oscResponding': {
+      en: 'Live connected',
+      'pt-BR': 'Live conectado',
+    },
+    'panel.oscStale': {
+      en: 'AbletonOSC connection interrupted',
+      'pt-BR': 'Conexão com AbletonOSC interrompida',
+    },
+    'panel.oscTraffic': {
+      en: 'UDP {port} · TX {tx} · RX {rx}',
+      'pt-BR': 'UDP {port} · TX {tx} · RX {rx}',
+    },
+    'panel.checkOsc': { en: 'Check OSC', 'pt-BR': 'Verificar OSC' },
+    'panel.oscInstallHint': {
+      en: 'Install AbletonOSC directly in User Library/Remote Scripts/AbletonOSC — not the hidden User Remote Scripts preferences folder — and confirm __init__.py is directly inside AbletonOSC. Then select it as a Control Surface and restart Live.',
+      'pt-BR': 'Instale o AbletonOSC diretamente em User Library/Remote Scripts/AbletonOSC — não na pasta oculta User Remote Scripts das preferências — e confirme que __init__.py está diretamente dentro de AbletonOSC. Depois selecione-o como Control Surface e reinicie o Live.',
+    },
     'panel.stageControl': { en: 'Stage Control', 'pt-BR': 'Controle de palco' },
     'panel.performanceDisplay': { en: 'Performance Display', 'pt-BR': 'Tela de performance' },
     'panel.openComputer': { en: 'Open on this computer', 'pt-BR': 'Abrir neste computador' },
@@ -79,6 +108,10 @@
     'panel.autoStartHint': {
       en: 'Prevents conflicts with other RC extensions. This setting persists between sessions.',
       'pt-BR': 'Evita conflitos com outras extensões RC. Esta configuração é mantida entre sessões.',
+    },
+    'panel.certificateFirstUse': {
+      en: 'First connection: your browser may show ERR_CERT_AUTHORITY_INVALID because RC Setlist creates a local self-signed certificate. Continue only when the address exactly matches the IP shown in the Live panel and you are on a trusted LAN. Each browser/device may require this once.',
+      'pt-BR': 'Primeira conexão: o navegador pode mostrar ERR_CERT_AUTHORITY_INVALID porque o RC Setlist cria um certificado local autoassinado. Continue somente se o endereço for exatamente o IP mostrado no painel do Live e a rede local for confiável. Cada navegador/aparelho pode exigir isso uma vez.',
     },
     'panel.on': { en: 'On', 'pt-BR': 'Ligado' },
     'panel.off': { en: 'Off', 'pt-BR': 'Desligado' },
@@ -135,6 +168,7 @@
     'setlist.transportAria': { en: 'Main transport', 'pt-BR': 'Transporte principal' },
     'setlist.currentSong': { en: 'Active song', 'pt-BR': 'Música ativa' },
     'setlist.activeSection': { en: 'Active section', 'pt-BR': 'Seção ativa' },
+    'setlist.automationMarker': { en: 'Automation marker', 'pt-BR': 'Marcador de automação' },
     'setlist.bpmBar': { en: 'BPM / bar', 'pt-BR': 'BPM / compasso' },
     'setlist.timecode': { en: 'Timecode', 'pt-BR': 'Timecode' },
     'setlist.lyricLine': { en: 'Lyric line', 'pt-BR': 'Linha da letra' },
@@ -160,6 +194,33 @@
     'setlist.noSongs': {
       en: 'No songs with locators were found in the project.',
       'pt-BR': 'Nenhuma música com localizadores foi encontrada no projeto.',
+    },
+    'setlist.activeSetlist': { en: 'Active setlist', 'pt-BR': 'Setlist ativo' },
+    'setlist.active': { en: 'Active', 'pt-BR': 'Ativo' },
+    'setlist.manageSetlists': { en: 'Manage setlists', 'pt-BR': 'Gerenciar setlists' },
+    'setlist.waitingProfiles': { en: 'Waiting for setlists...', 'pt-BR': 'Aguardando setlists...' },
+    'setlist.totalDuration': { en: 'Total duration', 'pt-BR': 'Duração total' },
+    'setlist.unknownDuration': { en: 'Unknown duration', 'pt-BR': 'Duração desconhecida' },
+    'setlist.createSetlist': { en: 'Create setlist', 'pt-BR': 'Criar setlist' },
+    'setlist.setlistName': { en: 'Setlist name', 'pt-BR': 'Nome do setlist' },
+    'setlist.create': { en: 'Create', 'pt-BR': 'Criar' },
+    'setlist.savedSetlists': { en: 'Saved setlists', 'pt-BR': 'Setlists salvos' },
+    'setlist.rename': { en: 'Rename', 'pt-BR': 'Renomear' },
+    'setlist.renameSetlist': { en: 'Rename {name}', 'pt-BR': 'Renomear {name}' },
+    'setlist.delete': { en: 'Delete', 'pt-BR': 'Excluir' },
+    'setlist.restore': { en: 'Restore', 'pt-BR': 'Restaurar' },
+    'setlist.deletedSetlists': { en: 'Deleted setlists', 'pt-BR': 'Setlists excluídos' },
+    'setlist.stopLiveFirst': {
+      en: 'Stop Ableton Live before changing setlists.',
+      'pt-BR': 'Pare o Ableton Live antes de alterar os setlists.',
+    },
+    'setlist.confirmationName': {
+      en: 'Type “{name}” to confirm',
+      'pt-BR': 'Digite “{name}” para confirmar',
+    },
+    'setlist.operationFailed': {
+      en: 'The setlist operation failed. Check the stage log and try again.',
+      'pt-BR': 'A operação do setlist falhou. Verifique o log de palco e tente novamente.',
     },
     'setlist.noSavedLyrics': { en: '— no saved lyrics —', 'pt-BR': '— nenhuma letra salva —' },
     'setlist.nextValue': { en: 'Next: {name}', 'pt-BR': 'Próxima: {name}' },

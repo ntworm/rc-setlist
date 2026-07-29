@@ -31,6 +31,17 @@ function ensureTextEncodingGlobals(): void {
   }
 }
 
+export interface OscDebugSnapshot {
+  oscTargetHost: string;
+  oscTargetPort: number;
+  oscListenPort: number;
+  oscIsConnected: boolean;
+  oscLastMessageTime: number;
+  oscTimeSinceLastMessageMs: number | null;
+  oscRxCount: number;
+  oscTxCount: number;
+}
+
 export class OSCClient extends EventEmitter {
   private server: dgram.Socket | null = null;
   private targetPort: number = 11000;
@@ -108,6 +119,7 @@ export class OSCClient extends EventEmitter {
       '/live/song/get/is_playing',
       '/live/song/get/current_song_time',
       '/live/song/get/cue_points',
+      '/live/song/get/last_event_time',
       '/live/song/get/metronome',
       '/live/song/get/signature_numerator',
       '/live/song/get/signature_denominator',
@@ -150,6 +162,11 @@ export class OSCClient extends EventEmitter {
       }
       this.emit('cue_points', cues);
       console.log(`[OSC] cue_points reply: ${cues.length} cue(s) — ${cues.map(c => c.name).join(', ')}`);
+    } else if (address === '/live/song/get/last_event_time') {
+      const value = args[0]?.value;
+      if (typeof value === 'number' && Number.isFinite(value) && this.shouldEmit(address, value)) {
+        this.emit('last_event_time', value);
+      }
     } else if (address === '/live/song/get/metronome') {
       const val = args[0]?.value;
       const metronome = val === 1 || val === true || val === 'true';
@@ -317,6 +334,7 @@ export class OSCClient extends EventEmitter {
   public getIsPlaying(): void { this.send('/live/song/get/is_playing'); }
   public getCurrentSongTime(): void { this.send('/live/song/get/current_song_time'); }
   public getCuePoints(): void { this.send('/live/song/get/cue_points'); }
+  public getLastEventTime(): void { this.send('/live/song/get/last_event_time'); }
   public startPlaying(): void { this.send('/live/song/start_playing'); }
   public stopPlaying(): void { this.send('/live/song/stop_playing'); }
   public getMetronome(): void { this.send('/live/song/get/metronome'); }
@@ -332,7 +350,7 @@ export class OSCClient extends EventEmitter {
     this.send('/live/song/set/clip_trigger_quantization', [{ type: 'integer', value: val }]);
   }
 
-  public getDebugSnapshot(): Record<string, unknown> {
+  public getDebugSnapshot(): OscDebugSnapshot {
     return {
       oscTargetHost: this.targetHost,
       oscTargetPort: this.targetPort,
@@ -379,6 +397,7 @@ export class OSCClient extends EventEmitter {
     // loop would cause noticeable UI lag when the set has many markers.
     this.cuePointsPollInterval = setInterval(() => {
       this.send('/live/song/get/cue_points');
+      this.getLastEventTime();
     }, 2000);
   }
 
@@ -401,6 +420,12 @@ export class OSCClient extends EventEmitter {
     this.getSignatureDenominator();
     this.getClipTriggerQuantization();
     this.getCurrentSongTime();
+    this.getLastEventTime();
+  }
+
+  public requestDiagnosticProbe(): void {
+    this.requestInitialState();
+    this.getCuePoints();
   }
 
   public stopPropertyListeners(): void {

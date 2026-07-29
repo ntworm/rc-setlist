@@ -43,6 +43,7 @@ const allowedContentRulePaths = new Map([
   ['stale-product-slug', new Set([
     'src/core/profile-migration.ts',
     'tests/profile-migration.test.mjs',
+    'tests/project-profile-scope.test.mjs',
     'tests/release-surface.test.mjs',
   ])],
 ]);

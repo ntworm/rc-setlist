@@ -33,8 +33,12 @@ test('empty storage creates and remembers Main Setlist with profile-local paths'
   await manager.initialize();
 
   assert.equal(manager.list().length, 1);
+  assert.deepEqual(manager.listDeleted(), []);
   assert.equal(manager.getActive().name, 'Main Setlist');
   assert.equal(typeof manager.delete, 'undefined');
+  const registry = JSON.parse(fs.readFileSync(path.join(root, 'profiles', 'index.json'), 'utf8'));
+  assert.equal(registry.schemaVersion, 2);
+  assert.deepEqual(registry.deletedProfiles, []);
   const paths = manager.getActivePaths();
   assert.equal(paths.root, path.join(root, 'profiles', manager.getActive().id));
   assert.equal(paths.lyrics, path.join(paths.root, 'lyrics'));
@@ -143,24 +147,183 @@ test('absent index and bak rebuilds index from directory profile.json scanning',
   assert.equal(restarted.getActive().name, 'Main Setlist'); // Main Setlist is the oldest profile
 });
 
-test('schemaVersion 2 throws future_schema without rewriting index.json or index.json.bak', async (t) => {
+test('inactive profile moves to recoverable trash and restores with the same UUID and data', async (t) => {
+  const root = makeRoot(t);
+  const options = deterministicOptions();
+  const manager = new ProfileManager(root, options);
+  await manager.initialize();
+  const festival = await manager.create('Festival');
+  const originalPaths = manager.getPaths(festival.id);
+  fs.writeFileSync(path.join(originalPaths.lyrics, 'song.txt'), 'lyrics survive');
+
+  const removed = await manager.remove(festival.id, 'Festival');
+
+  assert.equal(removed.id, festival.id);
+  assert.equal(manager.list().some((profile) => profile.id === festival.id), false);
+  assert.equal(manager.listDeleted().some((profile) => profile.id === festival.id), true);
+  assert.equal(fs.existsSync(originalPaths.root), false);
+  const trashRoot = path.join(root, 'profiles', '.trash', festival.id);
+  assert.equal(fs.readFileSync(path.join(trashRoot, 'lyrics', 'song.txt'), 'utf8'), 'lyrics survive');
+
+  const restarted = new ProfileManager(root, options);
+  await restarted.initialize();
+  assert.equal(restarted.listDeleted().some((profile) => profile.id === festival.id), true);
+
+  const restored = await restarted.restore(festival.id);
+
+  assert.equal(restored.id, festival.id);
+  assert.equal(restarted.getActive().name, 'Main Setlist');
+  assert.equal(restarted.listDeleted().some((profile) => profile.id === festival.id), false);
+  assert.equal(fs.readFileSync(path.join(restarted.getPaths(festival.id).lyrics, 'song.txt'), 'utf8'), 'lyrics survive');
+});
+
+test('remove rejects the active profile, the only profile, and a wrong exact-name confirmation', async (t) => {
+  const root = makeRoot(t);
+  const manager = new ProfileManager(root, deterministicOptions());
+  await manager.initialize();
+  const active = manager.getActive();
+
+  await assert.rejects(
+    manager.remove(active.id, active.name),
+    (err) => err instanceof ProfileError && err.code === 'invalid_profile'
+  );
+
+  const festival = await manager.create('Festival');
+  await assert.rejects(
+    manager.remove(active.id, active.name),
+    (err) => err instanceof ProfileError && err.code === 'invalid_profile'
+  );
+  await assert.rejects(
+    manager.remove(festival.id, 'festival'),
+    (err) => err instanceof ProfileError && err.code === 'invalid_profile'
+  );
+  assert.equal(manager.list().some((profile) => profile.id === festival.id), true);
+  assert.equal(fs.existsSync(manager.getPaths(festival.id).root), true);
+});
+
+test('remove rolls the directory move back when the registry commit fails', async (t) => {
+  const root = makeRoot(t);
+  let failIndex = false;
+  const manager = new ProfileManager(root, {
+    ...deterministicOptions(),
+    writeJsonAtomic: async (filePath, value) => {
+      if (failIndex && filePath.endsWith('index.json')) {
+        throw new Error('Injected remove registry failure');
+      }
+      await fs.promises.mkdir(path.dirname(filePath), { recursive: true });
+      await fs.promises.writeFile(filePath, JSON.stringify(value, null, 2), 'utf8');
+    }
+  });
+  await manager.initialize();
+  const festival = await manager.create('Festival');
+  const originalRoot = manager.getPaths(festival.id).root;
+
+  failIndex = true;
+  await assert.rejects(
+    manager.remove(festival.id, festival.name),
+    (err) => err instanceof ProfileError && err.code === 'profile_io_error'
+  );
+
+  assert.equal(fs.existsSync(originalRoot), true);
+  assert.equal(fs.existsSync(path.join(root, 'profiles', '.trash', festival.id)), false);
+  assert.equal(manager.list().some((profile) => profile.id === festival.id), true);
+  assert.deepEqual(manager.listDeleted(), []);
+});
+
+test('restore rolls the directory move back when the registry commit fails', async (t) => {
+  const root = makeRoot(t);
+  let failIndex = false;
+  const manager = new ProfileManager(root, {
+    ...deterministicOptions(),
+    writeJsonAtomic: async (filePath, value) => {
+      if (failIndex && filePath.endsWith('index.json')) {
+        throw new Error('Injected restore registry failure');
+      }
+      await fs.promises.mkdir(path.dirname(filePath), { recursive: true });
+      await fs.promises.writeFile(filePath, JSON.stringify(value, null, 2), 'utf8');
+    }
+  });
+  await manager.initialize();
+  const festival = await manager.create('Festival');
+  await manager.remove(festival.id, festival.name);
+
+  failIndex = true;
+  await assert.rejects(
+    manager.restore(festival.id),
+    (err) => err instanceof ProfileError && err.code === 'profile_io_error'
+  );
+
+  assert.equal(fs.existsSync(path.join(root, 'profiles', festival.id)), false);
+  assert.equal(fs.existsSync(path.join(root, 'profiles', '.trash', festival.id)), true);
+  assert.equal(manager.listDeleted().some((profile) => profile.id === festival.id), true);
+});
+
+test('restore rejects a name collision and preserves the trashed profile', async (t) => {
+  const root = makeRoot(t);
+  const manager = new ProfileManager(root, deterministicOptions());
+  await manager.initialize();
+  const festival = await manager.create('Festival');
+  await manager.remove(festival.id, festival.name);
+  await manager.create('festival');
+
+  await assert.rejects(
+    manager.restore(festival.id),
+    (err) => err instanceof ProfileError && err.code === 'duplicate_profile_name'
+  );
+  assert.equal(fs.existsSync(path.join(root, 'profiles', '.trash', festival.id)), true);
+});
+
+test('deleted profiles retain legacy-source deduplication across restart', async (t) => {
+  const root = makeRoot(t);
+  const options = deterministicOptions();
+  const manager = new ProfileManager(root, options);
+  await manager.initialize();
+  const festival = await manager.create('Festival');
+  await manager.recordLegacySource('project:festival', festival.id);
+  await manager.remove(festival.id, festival.name);
+
+  const restarted = new ProfileManager(root, options);
+  await restarted.initialize();
+  assert.equal(restarted.hasLegacySource('project:festival'), true);
+  assert.equal(restarted.listDeleted().some((profile) => profile.id === festival.id), true);
+});
+
+test('schemaVersion 1 upgrades to schemaVersion 2 during initialization', async (t) => {
+  const root = makeRoot(t);
+  const manager = new ProfileManager(root, deterministicOptions());
+  await manager.initialize();
+  const indexPath = path.join(root, 'profiles', 'index.json');
+  const registry = JSON.parse(fs.readFileSync(indexPath, 'utf8'));
+  delete registry.deletedProfiles;
+  registry.schemaVersion = 1;
+  fs.writeFileSync(indexPath, JSON.stringify(registry));
+
+  const restarted = new ProfileManager(root, deterministicOptions());
+  await restarted.initialize();
+
+  const upgraded = JSON.parse(fs.readFileSync(indexPath, 'utf8'));
+  assert.equal(upgraded.schemaVersion, 2);
+  assert.deepEqual(upgraded.deletedProfiles, []);
+});
+
+test('schemaVersion 3 throws future_schema without rewriting index.json or index.json.bak', async (t) => {
   const root = makeRoot(t);
   const manager = new ProfileManager(root, deterministicOptions());
   await manager.initialize();
   const indexPath = path.join(root, 'profiles', 'index.json');
   const indexBakPath = indexPath + '.bak';
 
-  // Set up schema 2 registry on disk
-  const schema2Data = JSON.stringify({ schemaVersion: 2, activeProfileId: '123', profiles: [] });
-  fs.writeFileSync(indexPath, schema2Data);
-  fs.writeFileSync(indexBakPath, schema2Data);
+  // Set up schema 3 registry on disk
+  const schema3Data = JSON.stringify({ schemaVersion: 3, activeProfileId: '123', profiles: [] });
+  fs.writeFileSync(indexPath, schema3Data);
+  fs.writeFileSync(indexBakPath, schema3Data);
 
   const restarted = new ProfileManager(root, deterministicOptions());
   await assert.rejects(restarted.initialize(), (err) => err instanceof ProfileError && err.code === 'future_schema');
 
   // Verify files were not rewritten
-  assert.equal(fs.readFileSync(indexPath, 'utf8'), schema2Data);
-  assert.equal(fs.readFileSync(indexBakPath, 'utf8'), schema2Data);
+  assert.equal(fs.readFileSync(indexPath, 'utf8'), schema3Data);
+  assert.equal(fs.readFileSync(indexBakPath, 'utf8'), schema3Data);
 });
 
 test('invalid IDs, path traversal, and timestamps validation', async (t) => {

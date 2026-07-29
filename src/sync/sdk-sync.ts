@@ -1,5 +1,5 @@
 import { type ExtensionContext } from '../context.js';
-import { bridgeState, broadcastState } from '../core/bridge-state.js';
+import { attemptCompatibleLegacyRecovery, bridgeState, broadcastState } from '../core/bridge-state.js';
 
 export function syncFromSdkContext(context: ExtensionContext): void {
   if (!bridgeState.manager) return;
@@ -30,6 +30,7 @@ export function syncFromSdkContext(context: ExtensionContext): void {
       if (fingerprint !== bridgeState.lastCuesFingerprint) {
         bridgeState.lastCuesFingerprint = fingerprint;
         bridgeState.manager.updateCues(cues);
+        void attemptCompatibleLegacyRecovery();
       }
     } catch (err) {
       console.error('[SDK-Sync] Failed to sync cue points:', err);

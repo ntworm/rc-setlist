@@ -302,7 +302,53 @@
     return { begin, observe, reset, settle, snapshot };
   }
 
+  function createBarDisplayStabilizer(options = {}) {
+    const jitterToleranceBeats = Number.isFinite(options.jitterToleranceBeats)
+      ? Math.max(0, options.jitterToleranceBeats)
+      : 0.5;
+    let lastVisualBeats = null;
+    let wasPlaying = false;
+
+    function update(estimatedBeats, isPlaying) {
+      if (!Number.isFinite(estimatedBeats)) return lastVisualBeats ?? 0;
+      const playing = Boolean(isPlaying);
+      if (lastVisualBeats === null || !playing || !wasPlaying) {
+        lastVisualBeats = estimatedBeats;
+        wasPlaying = playing;
+        return lastVisualBeats;
+      }
+      if (
+        estimatedBeats < lastVisualBeats
+        && lastVisualBeats - estimatedBeats < jitterToleranceBeats
+      ) {
+        return lastVisualBeats;
+      }
+      lastVisualBeats = estimatedBeats;
+      wasPlaying = playing;
+      return lastVisualBeats;
+    }
+
+    function reset() {
+      lastVisualBeats = null;
+      wasPlaying = false;
+    }
+
+    function observeState(previousState, nextState) {
+      const discontinuity = !previousState
+        || !nextState
+        || previousState.activeSongIndex !== nextState.activeSongIndex
+        || previousState.activeSectionIndex !== nextState.activeSectionIndex
+        || previousState.currentLoopIteration !== nextState.currentLoopIteration
+        || previousState.isPlaying !== nextState.isPlaying;
+      if (discontinuity) reset();
+      return discontinuity;
+    }
+
+    return { observeState, reset, update };
+  }
+
   globalScope.SetlistTransportRuntime = {
+    createBarDisplayStabilizer,
     createJumpConfirmation,
     createQuantizationConfirmation,
     mountHoldButton,

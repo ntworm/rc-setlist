@@ -10,7 +10,15 @@ import { ProfileManager, ProfileError } from './profile-manager.js';
 import { EventLogger } from './event-log.js';
 import { CommandBus } from './command-bus.js';
 import { McpTcpClient } from '../integration/mcp-client.js';
+import { McpFallbackSync } from '../integration/mcp-fallback-sync.js';
 import { parseLrc, parseTxt } from './lyrics-parser.js';
+import {
+  initializeProjectProfileScope,
+  recoverCompatibleLegacyPayload,
+  type ProjectProfileScope,
+} from './project-profile-scope.js';
+import type { ProjectIdentity } from './project-identity.js';
+import type { ProfileManagerOptions } from './profile-manager.js';
 
 export interface BridgeState {
   manager: SetlistManager | null;
@@ -22,6 +30,7 @@ export interface BridgeState {
   commandBus: CommandBus | null;
   server: http.Server | https.Server | null;
   mcpClient: McpTcpClient | null;
+  mcpFallbackSync: McpFallbackSync | null;
 
   pollInterval: NodeJS.Timeout | null;
   sdkSyncInterval: NodeJS.Timeout | null;
@@ -33,6 +42,13 @@ export interface BridgeState {
   isCreatingTestSession: boolean;
   authToken: string;
   globalPersistenceDir: string;
+  projectIdentity: ProjectIdentity | null;
+  profileScopeSwitching: boolean;
+  lastSongHandleId: string;
+  projectSessionId: string;
+  legacyRecoveryKey: string;
+  legacyRecoveryPending: boolean;
+  legacyRecoveryPromise: Promise<void> | null;
 }
 
 export const bridgeState: BridgeState = {
@@ -45,6 +61,7 @@ export const bridgeState: BridgeState = {
   commandBus: null,
   server: null,
   mcpClient: null,
+  mcpFallbackSync: null,
 
   pollInterval: null,
   sdkSyncInterval: null,
@@ -56,6 +73,13 @@ export const bridgeState: BridgeState = {
   isCreatingTestSession: false,
   authToken: '',
   globalPersistenceDir: '',
+  projectIdentity: null,
+  profileScopeSwitching: false,
+  lastSongHandleId: '',
+  projectSessionId: '',
+  legacyRecoveryKey: '',
+  legacyRecoveryPending: false,
+  legacyRecoveryPromise: null,
 };
 
 export function requireProfileManager(): ProfileManager {
@@ -77,13 +101,19 @@ export function broadcastState(): void {
 }
 
 export function profileStatePayload() {
-  const profiles = requireProfileManager().list().map(({ id, name }) => ({ id, name }));
+  const manager = requireProfileManager();
+  const profiles = manager.list().map(({ id, name }) => ({ id, name }));
+  const deletedProfiles = manager.listDeleted().map(({ id, name, deletedAt }) => ({ id, name, deletedAt }));
   return {
     type: 'profiles_state',
-    version: 1,
-    activeProfileId: requireProfileManager().getActive().id,
+    version: 2,
+    activeProfileId: manager.getActive().id,
     profiles,
-    canMutate: bridgeState.manager ? !bridgeState.manager.getState().isPlaying : false,
+    deletedProfiles,
+    canMutate: bridgeState.manager
+      ? !bridgeState.manager.getState().isPlaying && !bridgeState.profileScopeSwitching
+      : false,
+    projectName: bridgeState.projectIdentity?.displayName ?? '',
   } as const;
 }
 
@@ -124,6 +154,66 @@ export function checkAndBroadcastLyrics(activeSongTitle: string): void {
   }
 }
 
+export function attemptCompatibleLegacyRecovery(): Promise<void> {
+  if (bridgeState.legacyRecoveryPending) {
+    return bridgeState.legacyRecoveryPromise ?? Promise.resolve();
+  }
+  if (
+    bridgeState.projectIdentity?.source !== 'session'
+    || !bridgeState.manager
+    || !bridgeState.profileManager
+  ) return Promise.resolve();
+
+  const state = bridgeState.manager.getState();
+  const setlistManager = bridgeState.manager;
+  const profileManager = bridgeState.profileManager;
+  const identityKey = bridgeState.projectIdentity.key;
+  const songTitles = state.songs.map(({ title }) => title);
+  if (songTitles.length === 0) return Promise.resolve();
+  const key = `${identityKey}:${profileManager.getActive().id}:${songTitles
+    .map((title) => title.normalize('NFKC').trim().toLocaleLowerCase('und'))
+    .sort()
+    .join('|')}`;
+  if (key === bridgeState.legacyRecoveryKey) return Promise.resolve();
+
+  bridgeState.legacyRecoveryPending = true;
+  const recovery = recoverCompatibleLegacyPayload({
+    storageRoot: bridgeState.globalPersistenceDir,
+    manager: profileManager,
+    songTitles,
+  }).then((result) => {
+    if (
+      !result.recovered
+      || bridgeState.manager !== setlistManager
+      || bridgeState.profileManager !== profileManager
+      || bridgeState.projectIdentity?.key !== identityKey
+    ) return;
+    const recoveredIsActive = profileManager.getActive().id === result.profileId;
+    if (recoveredIsActive) setlistManager.setCustomOrder(result.customOrder);
+    bridgeState.lastActiveSongTitle = '';
+    broadcastProfileState();
+    broadcastState();
+    const nextState = setlistManager.getState();
+    const currentSong = nextState.songs[nextState.activeSongIndex];
+    if (recoveredIsActive && currentSong) checkAndBroadcastLyrics(currentSong.title);
+  }).catch((error) => {
+    console.error(`[Lyrics] Compatible legacy recovery failed: ${error instanceof Error ? error.message : String(error)}`);
+  }).finally(() => {
+    if (
+      bridgeState.profileManager === profileManager
+      && bridgeState.projectIdentity?.key === identityKey
+    ) {
+      bridgeState.legacyRecoveryKey = key;
+      bridgeState.legacyRecoveryPending = false;
+    }
+    if (bridgeState.legacyRecoveryPromise === recovery) {
+      bridgeState.legacyRecoveryPromise = null;
+    }
+  });
+  bridgeState.legacyRecoveryPromise = recovery;
+  return recovery;
+}
+
 export function loadCustomOrder(filePath: string): string[] {
   if (!fs.existsSync(filePath)) return [];
   const parsed = JSON.parse(fs.readFileSync(filePath, 'utf8'));
@@ -133,6 +223,48 @@ export function loadCustomOrder(filePath: string): string[] {
   return parsed;
 }
 
+export async function activateProjectProfileScope(
+  identity: ProjectIdentity,
+  managerOptions?: ProfileManagerOptions,
+): Promise<ProjectProfileScope> {
+  const previousScope = bridgeState.profileManager && bridgeState.projectIdentity
+    ? {
+        identity: bridgeState.projectIdentity,
+        root: path.resolve(bridgeState.globalPersistenceDir, 'project-setlists', bridgeState.projectIdentity.key),
+        manager: bridgeState.profileManager,
+      }
+    : null;
+  const promoteFrom = previousScope
+    && previousScope.identity.source !== 'mcp-path'
+    && identity.source === 'mcp-path'
+    ? previousScope
+    : undefined;
+  if (promoteFrom && bridgeState.legacyRecoveryPromise) {
+    await bridgeState.legacyRecoveryPromise;
+  }
+  const scope = await initializeProjectProfileScope({
+    storageRoot: bridgeState.globalPersistenceDir,
+    identity,
+    ...(promoteFrom ? { promoteFrom } : {}),
+    adoptOrphanSession: previousScope === null,
+    ...(managerOptions ? { managerOptions } : {}),
+  });
+  const nextOrder = loadCustomOrder(scope.manager.getActivePaths().customOrder);
+
+  bridgeState.profileManager = scope.manager;
+  bridgeState.projectIdentity = identity;
+  bridgeState.manager?.setCustomOrder(nextOrder);
+  bridgeState.lastActiveSongTitle = '';
+  bridgeState.legacyRecoveryKey = '';
+  bridgeState.legacyRecoveryPending = false;
+  bridgeState.legacyRecoveryPromise = null;
+  broadcastProfileState();
+  broadcastState();
+  const currentSong = bridgeState.manager?.getState().songs[bridgeState.manager.getState().activeSongIndex];
+  if (currentSong) checkAndBroadcastLyrics(currentSong.title);
+  return scope;
+}
+
 export async function selectProfile(id: string): Promise<void> {
   const profiles = requireProfileManager();
   const nextPaths = profiles.getPaths(id);
@@ -140,6 +272,7 @@ export async function selectProfile(id: string): Promise<void> {
   await profiles.select(id);
   bridgeState.manager!.setCustomOrder(nextOrder);
   bridgeState.lastActiveSongTitle = '';
+  bridgeState.legacyRecoveryKey = '';
   broadcastProfileState();
   broadcastState();
   const state = bridgeState.manager!.getState();

@@ -1,6 +1,7 @@
 export interface Section {
   name: string;
   time: number;
+  automationOnly?: true;
   loopCount: number | null;
   autoStop: boolean;
   autoNext: boolean;
@@ -12,6 +13,7 @@ export interface Section {
 export interface Song {
   title: string;
   time: number;
+  durationSeconds?: number | null;
   sections: Section[];
   loopCount: number | null;
   autoStop: boolean;
@@ -27,6 +29,7 @@ export interface Setlist {
 }
 
 export interface SetlistState {
+  protocolVersion?: 2;
   songs: Song[];
   hidden: { name: string; time: number }[];
   activeSongIndex: number;
@@ -42,6 +45,8 @@ export interface SetlistState {
   loopCount: number | null;
   currentLoopIteration: number;
   clipTriggerQuantization: number;
+  totalDurationSeconds?: number | null;
+  arrangementEndTime?: number | null;
 
   // Reliability Core state fields
   stateVersion: number;

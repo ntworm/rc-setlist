@@ -33,6 +33,12 @@ export async function executeCommandAction(command: ShowCommand, ws?: AugmentedW
   if (command.type === 'set_panic' && msg.active && !bridgeState.oscClient) {
     throw new Error('OSC client is not initialized.');
   }
+  if (
+    bridgeState.profileScopeSwitching &&
+    ['profile_create', 'profile_select', 'profile_rename', 'profile_delete', 'profile_restore'].includes(command.type)
+  ) {
+    throw new Error('Cannot modify setlists while the current Live Set is changing.');
+  }
 
   const osc = bridgeState.oscClient!;
 
@@ -70,6 +76,12 @@ export async function executeCommandAction(command: ShowCommand, ws?: AugmentedW
       break;
     case 'set_quantization':
       osc.setClipTriggerQuantization(msg.value);
+      // AbletonOSC may be able to receive this setter while its fixed reply
+      // port is owned by another RC extension. Keep the operator's requested
+      // value authoritative for local jump scheduling until an observed OSC
+      // value is available to reconcile it.
+      bridgeState.manager!.updateQuantization(msg.value);
+      broadcastState();
       break;
     case 'create_test_session':
       await executeCreateTestSessionCommand(msg);
@@ -108,6 +120,20 @@ export async function executeCommandAction(command: ShowCommand, ws?: AugmentedW
         throw new Error('Cannot rename profile while transport is playing.');
       }
       await bridgeState.profileManager!.rename(msg.id, msg.name);
+      broadcastProfileState();
+      break;
+    case 'profile_delete':
+      if (bridgeState.manager!.getState().isPlaying) {
+        throw new Error('Cannot remove profile while transport is playing.');
+      }
+      await bridgeState.profileManager!.remove(msg.id, msg.confirmationName);
+      broadcastProfileState();
+      break;
+    case 'profile_restore':
+      if (bridgeState.manager!.getState().isPlaying) {
+        throw new Error('Cannot restore profile while transport is playing.');
+      }
+      await bridgeState.profileManager!.restore(msg.id);
       broadcastProfileState();
       break;
   }
@@ -294,7 +320,12 @@ function executeExportCsvCommand(msg: any, ws?: AugmentedWebSocket): void {
       const customOrder = bridgeState.manager!.getCustomOrder();
       const rows: CsvTracklistRow[] = state.songs.map((song, idx) => {
         const customIdx = customOrder.indexOf(song.title);
-        const durationSec = calculateSongDurationSec(song, state.songs, state.tempo ?? 120);
+        const durationSec = calculateSongDurationSec(
+          song,
+          state.songs,
+          state.tempo ?? 120,
+          state.arrangementEndTime ?? null,
+        );
 
         let lyricCount = 0;
         try {

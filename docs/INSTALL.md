@@ -17,27 +17,28 @@ the Ableton RC Setlist release kit.
 
 1. Download AbletonOSC from its [upstream repository](https://github.com/ideoforms/AbletonOSC).
 2. Follow its upstream installation instructions.
-3. Place the `AbletonOSC` folder directly in your Live Remote Scripts directory.
-   Common user-library locations are:
-   - Windows: `%USERPROFILE%\Documents\Ableton\User Library\Remote Scripts\`
-   - macOS: `~/Music/Ableton/User Library/Remote Scripts/`
+3. Place the `AbletonOSC` folder directly in your Live Remote Scripts directory:
+   - Windows: `%USERPROFILE%\Documents\Ableton\User Library\Remote Scripts\AbletonOSC`
+   - macOS: `~/Music/Ableton/User Library/Remote Scripts/AbletonOSC`
 4. Restart Live.
 5. Open **Settings/Preferences > Link, Tempo & MIDI** and select AbletonOSC as a
    Control Surface.
 
-If AbletonOSC does not appear, check that the folder is not nested twice and
-consult its upstream documentation.
+Important: use `User Library/Remote Scripts/AbletonOSC`, not Live's hidden
+`User Remote Scripts` preferences folder (that folder is for
+`UserConfiguration.txt`). Confirm that `AbletonOSC/__init__.py` exists directly
+at that location, without another nested `AbletonOSC` folder.
 
 ## 2. Install Ableton RC Setlist
 
-1. Download `Ableton-RC-Setlist-0.4.0.ablx` from the
+1. Download `Ableton-RC-Setlist-0.4.1.ablx` from the
    [latest GitHub release](https://github.com/ntworm/rc-setlist/releases/latest).
 2. Open the `.ablx` and follow the Ableton Live installation prompt.
 3. Restart Live if the extension does not appear immediately.
 4. Open **Extensions > Ableton RC Setlist**.
 
 The same `.ablx` contains both interface languages. English is selected by
-default; choose **Português (Brasil)** from the language menu in the panel,
+default; choose **Brazilian Portuguese** from the language menu in the panel,
 Stage Control or Performance view. The choice is remembered locally.
 
 Do not install SDK or CLI archives as an end user.
@@ -49,9 +50,10 @@ Do not install SDK or CLI archives as an end user.
 3. On the host computer, open `https://localhost:4444/setlist`.
 4. On a phone/tablet, use the LAN URL or QR code shown by the panel.
 
-The browser will warn about a self-signed certificate. Continue only when the
-address matches the Ableton RC Setlist host on a trusted LAN. Each browser/device may
-need to accept the certificate once.
+First connection: your browser may show `ERR_CERT_AUTHORITY_INVALID` because RC
+Setlist creates a local self-signed certificate. Continue only when the address
+exactly matches the IP shown in the Live panel and you are on a trusted LAN.
+Each browser/device may require this once.
 
 ## 4. Open the two views
 
@@ -64,7 +66,7 @@ post screenshots containing the full URL.
 ## 5. Verify the first session
 
 1. Load a Live Set with fictional test locators from [the example](../examples/README.md).
-2. Confirm AbletonOSC reports activity.
+2. In the RC Setlist panel, choose **Check OSC** and confirm received traffic.
 3. Confirm songs/sections appear in `/setlist`.
 4. Open `/performance` and verify the active song follows Live's playhead.
 5. Try Play/Stop and a guarded Previous/Next hold from the controller view.

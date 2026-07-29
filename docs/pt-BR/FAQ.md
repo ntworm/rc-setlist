@@ -19,9 +19,11 @@ incluído no pacote.
 
 ## Por que o navegador mostra um aviso de certificado?
 
-O servidor local cria um certificado autoassinado para WebSockets seguros e
-recursos do celular na LAN. Aceite somente para o host esperado do Ableton RC
-Setlist em uma rede confiável.
+Na primeira conexão, o navegador pode mostrar `ERR_CERT_AUTHORITY_INVALID`
+porque o RC Setlist cria um certificado local autoassinado para WebSockets
+seguros. Continue somente se o endereço for exatamente o IP mostrado no painel
+do Live e a rede local for confiável. Cada navegador/aparelho pode exigir isso
+uma vez.
 
 ## Onde as letras ficam salvas?
 
@@ -35,7 +37,7 @@ demonstração usam texto fictício; o Ableton RC Setlist não fornece letras co
 
 ## O macOS funciona?
 
-O código foi projetado para ser portátil, mas a versão 0.4.0 mantém o macOS como
+O código foi projetado para ser portátil, mas a versão 0.4.1 mantém o macOS como
 experimental até existir uma matriz completa em hardware real.
 
 ## Posso expor o Ableton RC Setlist na internet?

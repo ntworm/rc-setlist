@@ -6,7 +6,7 @@
  * LibreOffice / Google Sheets / Numbers.
  */
 
-import type { Song } from '../types.js';
+export { calculateSongDurationSec } from './setlist-metrics.js';
 
 export const CSV_DELIM = ';';
 export const CSV_LINE_END = '\r\n';
@@ -25,21 +25,6 @@ export interface CsvTracklistRow {
   inSetlist: boolean;
   cuesCount: number;
   lastPlayedAt: string | null;
-}
-
-export function calculateSongDurationSec(
-  song: Pick<Song, 'time' | 'bpm'>,
-  songs: readonly Pick<Song, 'time' | 'bpm'>[],
-  fallbackBpm: number,
-): number | null {
-  const chronological = [...songs].sort((a, b) => a.time - b.time);
-  const index = chronological.indexOf(song);
-  const nextSong = index >= 0 ? chronological[index + 1] : undefined;
-  const bpm = song.bpm ?? fallbackBpm;
-  if (!nextSong || bpm <= 0) return null;
-
-  const durationBeats = nextSong.time - song.time;
-  return durationBeats > 0 ? Math.round((durationBeats / bpm) * 60) : null;
 }
 
 function escapeField(value: string | number | null | boolean | undefined): string {
