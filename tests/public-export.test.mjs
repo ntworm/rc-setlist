@@ -69,6 +69,7 @@ test('snapshot verifier scopes scanner self-references to exact files', () => {
     'docs/TROUBLESHOOTING.md',
     'docs/pt-BR/TROUBLESHOOTING.md',
     'tests/profile-migration.test.mjs',
+    'tests/project-profile-scope.test.mjs',
     'tests/release-package.test.mjs',
     'tests/release-surface.test.mjs',
   ]) {

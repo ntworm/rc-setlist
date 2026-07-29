@@ -1,5 +1,6 @@
 import { Section, Song, SetlistState } from '../types.js';
 import { parseSetlist } from './locator-parser.js';
+import { calculateSetlistMetrics } from './setlist-metrics.js';
 
 export type AutomationAction =
   | { type: 'stop' }
@@ -24,6 +25,7 @@ export class SetlistManager {
   private signatureNumerator: number = 4;
   private signatureDenominator: number = 4;
   private clipTriggerQuantization: number = 4; // Default to 1 Bar (4)
+  private arrangementEndTime: number | null = null;
 
   private customOrder: string[] = [];
 
@@ -71,13 +73,41 @@ export class SetlistManager {
 
   private sortSongs(): void {
     if (this.customOrder.length === 0) return;
-    this.songs.sort((a, b) => {
-      const idxA = this.customOrder.indexOf(a.title);
-      const idxB = this.customOrder.indexOf(b.title);
-      const posA = idxA === -1 ? 9999 : idxA;
-      const posB = idxB === -1 ? 9999 : idxB;
-      return posA - posB;
-    });
+    const chronological = [...this.songs].sort((a, b) => a.time - b.time);
+    const ordered = chronological
+      .filter((song) => this.customOrder.includes(song.title))
+      .sort((a, b) => {
+        const orderDifference = this.customOrder.indexOf(a.title) - this.customOrder.indexOf(b.title);
+        return orderDifference || a.time - b.time;
+      });
+
+    for (let chronologicalIndex = 0; chronologicalIndex < chronological.length; chronologicalIndex++) {
+      const song = chronological[chronologicalIndex]!;
+      if (ordered.includes(song)) continue;
+
+      let insertAt = -1;
+      for (let previousIndex = chronologicalIndex - 1; previousIndex >= 0; previousIndex--) {
+        const previousPosition = ordered.indexOf(chronological[previousIndex]!);
+        if (previousPosition !== -1) {
+          insertAt = previousPosition + 1;
+          break;
+        }
+      }
+
+      if (insertAt === -1) {
+        for (let nextIndex = chronologicalIndex + 1; nextIndex < chronological.length; nextIndex++) {
+          const nextPosition = ordered.indexOf(chronological[nextIndex]!);
+          if (nextPosition !== -1) {
+            insertAt = nextPosition;
+            break;
+          }
+        }
+      }
+
+      ordered.splice(insertAt === -1 ? ordered.length : insertAt, 0, song);
+    }
+
+    this.songs = ordered;
   }
 
   public updateTransport(time: number, isPlaying: boolean, tempo?: number): void {
@@ -310,9 +340,15 @@ export class SetlistManager {
   public getState(): SetlistState {
     const activeSong = this.songs[this.activeSongIndex];
     const activeSection = activeSong?.sections[this.activeSectionIndex];
+    const metrics = calculateSetlistMetrics(this.songs, this.arrangementEndTime, this.tempo);
+    const songs = this.songs.map((song) => ({
+      ...song,
+      durationSeconds: metrics.songDurationSecondsByStart.get(song.time) ?? null,
+    }));
 
     const state: any = {
-      songs: this.songs,
+      protocolVersion: 2,
+      songs,
       hidden: this.hidden,
       activeSongIndex: this.activeSongIndex,
       activeSectionIndex: this.activeSectionIndex,
@@ -329,6 +365,8 @@ export class SetlistManager {
       loopCount: this.loopCount,
       currentLoopIteration: this.currentLoopIteration,
       clipTriggerQuantization: this.clipTriggerQuantization,
+      totalDurationSeconds: metrics.totalDurationSeconds,
+      arrangementEndTime: this.arrangementEndTime,
 
       stateVersion: this.stateVersion,
       connection: {
@@ -401,6 +439,14 @@ export class SetlistManager {
   public updateQuantization(val: number): void {
     this.clipTriggerQuantization = val;
     this.stateVersion++;
+  }
+
+  public updateArrangementEndTime(value: number | null): void {
+    const normalized = typeof value === 'number' && Number.isFinite(value) ? value : null;
+    if (normalized !== this.arrangementEndTime) {
+      this.arrangementEndTime = normalized;
+      this.stateVersion++;
+    }
   }
 
   public getRawCues(): { name: string; time: number; cueIndex?: number }[] {

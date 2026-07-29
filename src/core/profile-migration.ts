@@ -8,7 +8,7 @@ import {
 } from './profile-manager.js';
 
 const GLOBAL_SOURCE = 'global';
-const PREVIOUS_STORAGE_NAMES = [
+export const LEGACY_PROFILE_STORAGE_NAMES = [
   'ntworm.rc-setlist',
   'worm.ableton-setlist-bridge',
 ] as const;
@@ -70,7 +70,7 @@ async function migratePreviousInstallations(storageRoot: string, manager: Profil
   const storageParent = path.dirname(resolvedRoot);
   const currentStorageName = path.basename(resolvedRoot).toLocaleLowerCase('en-US');
 
-  for (const previousStorageName of PREVIOUS_STORAGE_NAMES) {
+  for (const previousStorageName of LEGACY_PROFILE_STORAGE_NAMES) {
     if (previousStorageName.toLocaleLowerCase('en-US') === currentStorageName) continue;
 
     const previousRoot = path.join(storageParent, previousStorageName);

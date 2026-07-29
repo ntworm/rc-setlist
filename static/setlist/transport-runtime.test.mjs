@@ -539,3 +539,45 @@ test('quantization confirmation replaces requests and restores confirmed state o
   assert.equal(controller.snapshot().displayValue, 4);
   assert.deepEqual(failures.map((entry) => entry.commandId), ['q-new', 'q-timeout']);
 });
+
+test('bar display stabilizer clamps sample jitter but accepts real repositioning', () => {
+  const { createBarDisplayStabilizer } = loadRuntime();
+  const stabilizer = createBarDisplayStabilizer();
+  const formatBar = (beats) => {
+    const bar = Math.floor(beats / 4) + 1;
+    const remaining = beats % 4;
+    const beat = Math.floor(remaining) + 1;
+    const sixteenth = Math.floor((remaining % 1) * 4) + 1;
+    return `${bar}.${beat}.${sixteenth}`;
+  };
+
+  const state = {
+    activeSongIndex: 1,
+    activeSectionIndex: 2,
+    currentLoopIteration: 1,
+    isPlaying: true,
+  };
+
+  assert.equal(stabilizer.observeState(null, state), true);
+  assert.equal(stabilizer.observeState(state, { ...state }), false);
+  assert.equal(formatBar(stabilizer.update(84.02, true)), '22.1.1');
+  assert.equal(formatBar(stabilizer.update(83.98, true)), '22.1.1');
+  assert.equal(stabilizer.observeState(state, { ...state, activeSectionIndex: 3 }), true);
+  assert.equal(formatBar(stabilizer.update(83.98, true)), '21.4.4');
+  assert.equal(stabilizer.update(84.3, true), 84.3);
+  assert.equal(stabilizer.update(90, true), 90);
+  assert.equal(stabilizer.update(80, true), 80);
+  assert.equal(stabilizer.observeState(state, { ...state, currentLoopIteration: 2 }), true);
+  assert.equal(stabilizer.update(79.8, true), 79.8);
+  const stoppedState = { ...state, isPlaying: false };
+  assert.equal(stabilizer.observeState(state, stoppedState), true);
+  assert.equal(stabilizer.observeState(stoppedState, state), true);
+  assert.equal(stabilizer.update(79.6, true), 79.6);
+  assert.equal(stabilizer.update(79, false), 79);
+  assert.equal(stabilizer.update(78.8, true), 78.8);
+  assert.equal(stabilizer.update(80, true), 80);
+  assert.equal(stabilizer.update(79.5, true), 79.5);
+  assert.equal(stabilizer.update(Number.NaN, true), 79.5);
+  stabilizer.reset();
+  assert.equal(stabilizer.update(79.3, true), 79.3);
+});

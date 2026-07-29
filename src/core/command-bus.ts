@@ -176,7 +176,17 @@ export class CommandBus extends EventEmitter {
   }
 
   private isLocal(type: string): boolean {
-    const localTypes = new Set(['reorder', 'save_lyrics', 'create_test_session', 'profiles_get', 'profile_create', 'profile_select', 'profile_rename']);
+    const localTypes = new Set([
+      'reorder',
+      'save_lyrics',
+      'create_test_session',
+      'profiles_get',
+      'profile_create',
+      'profile_select',
+      'profile_rename',
+      'profile_delete',
+      'profile_restore',
+    ]);
     return localTypes.has(type);
   }
 

@@ -10,6 +10,85 @@ async function emitServerMessage(page, payload) {
   }, payload);
 }
 
+async function emitPlayingState(page, isPlaying) {
+  await page.evaluate(async (playing) => {
+    const message = await fetch('/__test__/state').then((response) => response.json());
+    message.state.isPlaying = playing;
+    await fetch('/__test__/emit', { method: 'POST', body: JSON.stringify(message) });
+  }, isPlaying);
+}
+
+async function expectControlMessage(page, predicate) {
+  await expect.poll(async () => (await receivedControlMessages(page)).find(predicate)).toBeTruthy();
+}
+
+test('Setlist renders durations and sends UUID-based profile actions safely', async ({ page }) => {
+  await page.goto('/setlist/');
+
+  await expect(page.locator('.song-time').nth(0)).toHaveText('1:00');
+  await expect(page.locator('.song-time').nth(1)).toHaveText('2:00');
+  await expect(page.locator('#totalSetlistDuration')).toHaveText('3:00');
+  await expect(page.locator('#profileSelect')).toContainText('<Festival>');
+  await expect(page.locator('#profileSelect festival')).toHaveCount(0);
+
+  await page.locator('#profileSelect').selectOption('22222222-2222-4222-8222-222222222222');
+  await expectControlMessage(
+    page,
+    (message) => message.type === 'profile_select' &&
+      message.id === '22222222-2222-4222-8222-222222222222' &&
+      /^profile-select-/.test(message.commandId)
+  );
+
+  await page.locator('#btnManageProfiles').click();
+  await expect(page.locator('#profileManageModal')).toHaveClass(/open/);
+  await expect(
+    page.locator('[data-profile-id="11111111-1111-4111-8111-111111111111"] .profile-delete-button')
+  ).toHaveCount(0);
+
+  await page.locator('#profileCreateName').fill('Tour Set');
+  await page.locator('#btnCreateProfile').click();
+  await expectControlMessage(
+    page,
+    (message) => message.type === 'profile_create' &&
+      message.name === 'Tour Set' &&
+      /^profile-create-/.test(message.commandId)
+  );
+
+  const festivalRow = page.locator('[data-profile-id="22222222-2222-4222-8222-222222222222"]');
+  await festivalRow.locator('.profile-rename-input').fill('Festival 2027');
+  await festivalRow.locator('.profile-rename-button').click();
+  await expectControlMessage(
+    page,
+    (message) => message.type === 'profile_rename' &&
+      message.id === '22222222-2222-4222-8222-222222222222' &&
+      message.name === 'Festival 2027' &&
+      /^profile-rename-/.test(message.commandId)
+  );
+
+  const deleteButton = festivalRow.locator('.profile-delete-button');
+  await expect(deleteButton).toBeDisabled();
+  await festivalRow.locator('.profile-delete-confirmation').fill('<Festival>');
+  await expect(deleteButton).toBeEnabled();
+  await deleteButton.click();
+  await expectControlMessage(
+    page,
+    (message) => message.type === 'profile_delete' &&
+      message.id === '22222222-2222-4222-8222-222222222222' &&
+      message.confirmationName === '<Festival>' &&
+      /^profile-delete-/.test(message.commandId)
+  );
+
+  await page
+    .locator('[data-deleted-profile-id="33333333-3333-4333-8333-333333333333"] .profile-restore-button')
+    .click();
+  await expectControlMessage(
+    page,
+    (message) => message.type === 'profile_restore' &&
+      message.id === '33333333-3333-4333-8333-333333333333' &&
+      /^profile-restore-/.test(message.commandId)
+  );
+});
+
 async function installFullscreenStubs(page, options = {}) {
   const modes = {
     fullscreenMode: options.fullscreenMode || 'success',
@@ -205,6 +284,61 @@ test('Setlist jump feedback stays stable until authoritative state confirmation'
   await expect(oldSection).not.toHaveClass(/active/);
 });
 
+test('Setlist bar display rejects poll jitter and accepts a real sub-threshold cue jump', async ({ page }) => {
+  await page.goto('/setlist/');
+  const fixture = await page.evaluate(async () => fetch('/__test__/state').then((response) => response.json()));
+  const baseline = {
+    ...fixture,
+    state: {
+      ...fixture.state,
+      currentSongTime: 84,
+      isPlaying: true,
+    },
+  };
+  await page.evaluate(() => {
+    window.__barHistory = [];
+    window.__barObserver?.disconnect();
+    const target = document.querySelector('#hudBar');
+    window.__barObserver = new MutationObserver(() => window.__barHistory.push(target.textContent));
+    window.__barObserver.observe(target, { childList: true, characterData: true, subtree: true });
+  });
+  await emitServerMessage(page, baseline);
+  await page.waitForTimeout(40);
+  expect(await page.locator('#hudBar').textContent()).toMatch(/^22\.1\./);
+  await page.evaluate(() => { window.__barHistory = []; });
+
+  const smallRollback = {
+    ...baseline,
+    state: { ...baseline.state, currentSongTime: 83.75 },
+  };
+  await emitServerMessage(page, smallRollback);
+  await page.waitForTimeout(120);
+  let history = await page.evaluate(() => window.__barHistory);
+  expect(history.some((value) => /^21\.4\./.test(value))).toBe(false);
+
+  await page.evaluate(() => { window.__barHistory = []; });
+  await emitServerMessage(page, {
+    ...smallRollback,
+    state: {
+      ...smallRollback.state,
+      activeSectionIndex: smallRollback.state.activeSectionIndex + 1,
+    },
+  });
+  await page.waitForTimeout(120);
+  history = await page.evaluate(() => window.__barHistory);
+  expect(history.some((value) => /^21\.4\./.test(value))).toBe(true);
+});
+
+test('Setlist bar display freezes its last valid value while disconnected', async ({ page }) => {
+  await page.goto('/setlist/?scenario=stale');
+  await expect(page.locator('body')).toHaveClass(/connection-stale/);
+  const frozenBar = await page.locator('#hudBar').textContent();
+
+  await page.waitForTimeout(350);
+
+  await expect(page.locator('#hudBar')).toHaveText(frozenBar || '');
+});
+
 test('Performance preserves its last state while reconnecting', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/performance/?scenario=stale');
@@ -342,6 +476,7 @@ test('Wake Lock rejection and reacquisition are handled in the browser', async (
 test('Reduced motion and keyboard focus remain visible', async ({ page }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.goto('/setlist/');
+  await emitPlayingState(page, false);
   await page.keyboard.press('Tab');
   const state = await page.evaluate(() => ({
     activeId: document.activeElement?.id,
@@ -391,6 +526,86 @@ test('Setlist closes a modal with Escape and restores focus to its opener', asyn
   await expect(opener).toBeFocused();
 });
 
+test('Setlist language safety follows playback and lock state and retranslates warnings', async ({ page }) => {
+  await page.goto('/setlist/');
+  const language = page.locator('#languageSelect');
+  const lock = page.locator('#btnLock');
+  const section = page.locator('.section-btn').first();
+
+  await expect(language).toBeDisabled();
+  await emitPlayingState(page, false);
+  await expect(language).toBeEnabled();
+
+  await lock.click();
+  await expect(language).toBeDisabled();
+  await section.click();
+  await expect(page.locator('#lockToast')).toContainText('PANEL LOCKED');
+
+  await lock.click();
+  await expect(language).toBeEnabled();
+  await language.selectOption('pt-BR');
+  await lock.click();
+  await section.click();
+  await expect(page.locator('#lockToast')).toContainText('PAINEL BLOQUEADO');
+});
+
+test('Lyrics ownership keeps the active HUD while one selector drives every editor tab', async ({ page }) => {
+  await page.goto('/setlist/');
+  const activeTitle = 'OPEN CIRCUIT — EXTENDED DEMO TITLE FOR RESPONSIVE TESTING';
+  const hudLyric = page.locator('#hudLyric');
+  await expect(hudLyric).not.toHaveText('—');
+  const originalHudLine = await hudLyric.textContent();
+
+  await page.locator('.tools-menu > summary').click();
+  await page.getByRole('button', { name: 'Lyrics' }).click();
+  const selector = page.locator('#lyricsSongSelect');
+  await expect(selector).toHaveValue(activeTitle);
+  await expect(page.locator('#lyricsRawText')).toHaveValue(/Demo line one for synchronized text/);
+  const selectorPrecedesTabs = await page.locator('#lyricsSongControl').evaluate((node) =>
+    Boolean(node.compareDocumentPosition(document.querySelector('#lyricsTabCreate')) & Node.DOCUMENT_POSITION_FOLLOWING)
+  );
+  expect(selectorPrecedesTabs).toBe(true);
+
+  await page.locator('#lyricsTabEdit').click();
+  await expect(page.locator('.lyric-edit-ts').first()).toHaveText('[00:00.00]');
+  await page.locator('#lyricsTabCreate').click();
+
+  await selector.selectOption('WALK-IN');
+  await expectControlMessage(page, (message) => message.type === 'get_lyrics' && message.song === 'WALK-IN');
+  await page.locator('#lyricsTabSync').click();
+  await expect(selector).toHaveValue('WALK-IN');
+  await expect(page.locator('#lyricsSyncSongTitle')).toHaveText('WALK-IN');
+  await page.locator('#lyricsTabEdit').click();
+  await expect(selector).toHaveValue('WALK-IN');
+  await expect(page.locator('#lyricsEditSongTitle')).toHaveText('WALK-IN');
+  await expect(hudLyric).toHaveText(originalHudLine || '');
+
+  const messages = await receivedControlMessages(page);
+  expect(messages.some((message) => message.type === 'save_lyrics')).toBe(false);
+});
+
+test('Lyrics keeps an unsaved edit when the modal closes and reopens', async ({ page }) => {
+  await page.goto('/setlist/');
+  await page.locator('.tools-menu > summary').click();
+  await page.getByRole('button', { name: 'Lyrics' }).click();
+  await page.locator('#lyricsTabEdit').click();
+
+  await page.locator('.lyric-edit-text').first().dblclick();
+  const inlineEditor = page.locator('#lyricsEditList input[type="text"]');
+  await inlineEditor.fill('Unsaved rehearsal draft');
+  await inlineEditor.press('Enter');
+  await expect(page.locator('#btnSaveEditedLyrics')).toBeEnabled();
+
+  await page.locator('.lyrics-modal-header .btn-close').click();
+  await page.getByRole('button', { name: 'Lyrics' }).click();
+  await page.locator('#lyricsTabEdit').click();
+
+  await expect(page.locator('.lyric-edit-text').first()).toHaveText('Unsaved rehearsal draft');
+  await expect(page.locator('#btnSaveEditedLyrics')).toBeEnabled();
+  const messages = await receivedControlMessages(page);
+  expect(messages.some((message) => message.type === 'save_lyrics')).toBe(false);
+});
+
 for (const surface of [
   {
     route: '/performance/?scenario=marketing',
@@ -404,6 +619,7 @@ for (const surface of [
   test(`${surface.route} switches to Portuguese without translating show data and persists it`, async ({ page }) => {
     await page.goto(surface.route);
     await expect(page.getByText('SONG 03', { exact: true }).first()).toBeVisible();
+    if (surface.route.startsWith('/setlist/')) await emitPlayingState(page, false);
 
     await page.locator('#languageSelect').selectOption('pt-BR');
     await expect(page.locator('html')).toHaveAttribute('lang', 'pt-BR');
@@ -412,6 +628,7 @@ for (const surface of [
     await expect(page.getByText('CHORUS', { exact: true }).first()).toBeVisible();
 
     await page.reload();
+    if (surface.route.startsWith('/setlist/')) await emitPlayingState(page, false);
     await expect(page.locator('html')).toHaveAttribute('lang', 'pt-BR');
     await expect(page.getByText(surface.translatedLabel, { exact: true }).first()).toBeVisible();
 

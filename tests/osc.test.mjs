@@ -113,6 +113,24 @@ test('OSC polling fallback requests is_playing', async () => {
   assert.ok(requestedAddresses.includes('/live/song/get/is_playing'));
 });
 
+test('OSC parses and requests Arrangement last_event_time', () => {
+  const client = new OSCClient();
+  const received = [];
+  const sent = [];
+  client.on('last_event_time', (value) => received.push(value));
+  client.send = (address) => sent.push(address);
+
+  client.getLastEventTime();
+  client['handleIncoming']({
+    oscType: 'message',
+    address: '/live/song/get/last_event_time',
+    args: [{ value: 384 }],
+  });
+
+  assert.deepStrictEqual(sent, ['/live/song/get/last_event_time']);
+  assert.deepStrictEqual(received, [384]);
+});
+
 test('OSC encoding works when Ableton embedded runtime has no global TextEncoder', () => {
   const originalTextEncoder = globalThis.TextEncoder;
   const originalTextDecoder = globalThis.TextDecoder;

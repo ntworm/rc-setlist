@@ -7,6 +7,7 @@ import { tmpdir } from 'node:os';
 import { WebSocket } from 'ws';
 import { setExtensionContext, clearExtensionContext } from '../src/context.ts';
 import { startServer, stopServer, getAuthToken, isServerRunning } from '../src/index.ts';
+import { bridgeState } from '../src/core/bridge-state.ts';
 
 function getFreePort() {
   return new Promise((resolve, reject) => {
@@ -16,6 +17,19 @@ function getFreePort() {
       s.close(() => resolve(port));
     });
     s.on('error', reject);
+  });
+}
+
+function waitForMessage(ws, predicate) {
+  return new Promise((resolve) => {
+    const handler = (data) => {
+      const message = JSON.parse(data.toString());
+      if (predicate(message)) {
+        ws.off('message', handler);
+        resolve(message);
+      }
+    };
+    ws.on('message', handler);
   });
 }
 
@@ -105,6 +119,9 @@ test('WebSocket profile and reliability core protocol', async () => {
     });
     assert.ok(profilesState);
     assert.ok(Array.isArray(profilesState.profiles));
+    assert.strictEqual(profilesState.version, 2);
+    assert.ok(Array.isArray(profilesState.deletedProfiles));
+    const originalProfileId = profilesState.activeProfileId;
 
     // Create a new profile over WS
     const newProfileName = 'WS Test Profile';
@@ -145,6 +162,89 @@ test('WebSocket profile and reliability core protocol', async () => {
       ws.on('message', handler);
     });
     assert.ok(renamedProfilesState);
+
+    // Select the original profile so the renamed profile can be safely removed.
+    const selectedOriginal = waitForMessage(
+      ws,
+      (msg) => msg.type === 'profiles_state' && msg.activeProfileId === originalProfileId
+    );
+    ws.send(JSON.stringify({
+      type: 'profile_select',
+      id: originalProfileId,
+      commandId: 'select-original'
+    }));
+    await selectedOriginal;
+
+    // Profile removal is blocked while Ableton transport is playing.
+    bridgeState.manager.updateTransport(0, true);
+    const playingDeleteFailure = waitForMessage(
+      ws,
+      (msg) => msg.type === 'command_status' && msg.commandId === 'delete-while-playing'
+    );
+    ws.send(JSON.stringify({
+      type: 'profile_delete',
+      id: createdProfile.id,
+      confirmationName: renamedProfileName,
+      commandId: 'delete-while-playing'
+    }));
+    assert.strictEqual((await playingDeleteFailure).status, 'failed');
+    bridgeState.manager.updateTransport(0, false);
+
+    // Remove to recoverable trash.
+    const deletedStatePromise = waitForMessage(
+      ws,
+      (msg) => msg.type === 'profiles_state' &&
+        !msg.profiles.some((profile) => profile.id === createdProfile.id) &&
+        msg.deletedProfiles?.some((profile) => profile.id === createdProfile.id)
+    );
+    ws.send(JSON.stringify({
+      type: 'profile_delete',
+      id: createdProfile.id,
+      confirmationName: renamedProfileName,
+      commandId: 'delete-p1'
+    }));
+    const deletedState = await deletedStatePromise;
+    assert.strictEqual(deletedState.version, 2);
+
+    // Restore returns the same stable UUID and leaves the original profile active.
+    const restoredStatePromise = waitForMessage(
+      ws,
+      (msg) => msg.type === 'profiles_state' &&
+        msg.profiles.some((profile) => profile.id === createdProfile.id) &&
+        !msg.deletedProfiles?.some((profile) => profile.id === createdProfile.id)
+    );
+    ws.send(JSON.stringify({
+      type: 'profile_restore',
+      id: createdProfile.id,
+      commandId: 'restore-p1'
+    }));
+    const restoredState = await restoredStatePromise;
+    assert.strictEqual(restoredState.activeProfileId, originalProfileId);
+
+    // Read-only clients cannot remove or restore profiles.
+    const readOnlyWs = new WebSocket(`ws://127.0.0.1:${port}/ws`);
+    await new Promise((resolve, reject) => {
+      readOnlyWs.on('open', resolve);
+      readOnlyWs.on('error', reject);
+    });
+    const readOnlyHandshake = waitForMessage(readOnlyWs, (msg) => msg.type === 'handshake_ack');
+    readOnlyWs.send(JSON.stringify({ type: 'handshake', clientId: 'read-only-client' }));
+    const readOnlyAck = await readOnlyHandshake;
+    readOnlyWs.send(JSON.stringify({ type: 'sync_confirm', stateVersion: readOnlyAck.stateVersion }));
+    await new Promise((resolve) => setTimeout(resolve, 20));
+
+    for (const message of [
+      { type: 'profile_delete', id: createdProfile.id, confirmationName: renamedProfileName },
+      { type: 'profile_restore', id: createdProfile.id }
+    ]) {
+      const unauthorized = waitForMessage(
+        readOnlyWs,
+        (msg) => msg.type === 'error' && msg.code === 'unauthorized'
+      );
+      readOnlyWs.send(JSON.stringify(message));
+      assert.strictEqual((await unauthorized).code, 'unauthorized');
+    }
+    readOnlyWs.close();
 
     // 5. Preflight check over WS
     ws.send(JSON.stringify({ type: 'preflight_check' }));

@@ -1,6 +1,6 @@
 # Third-party notices
 
-This file covers third-party components bundled in Ableton RC Setlist 0.4.0. It is generated from the installed production dependency tree; run `npm run notices` after dependency changes.
+This file covers third-party components bundled in Ableton RC Setlist 0.4.1. It is generated from the installed production dependency tree; run `npm run notices` after dependency changes.
 
 ## Ableton Extensions SDK
 

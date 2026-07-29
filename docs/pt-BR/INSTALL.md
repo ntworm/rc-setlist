@@ -18,18 +18,20 @@ repositório nem no kit de lançamento.
 1. Baixe o AbletonOSC no [repositório oficial](https://github.com/ideoforms/AbletonOSC).
 2. Siga as instruções de instalação do projeto.
 3. Coloque a pasta `AbletonOSC` diretamente no diretório de Remote Scripts do Live:
-   - Windows: `%USERPROFILE%\Documents\Ableton\User Library\Remote Scripts\`
-   - macOS: `~/Music/Ableton/User Library/Remote Scripts/`
+   - Windows: `%USERPROFILE%\Documents\Ableton\User Library\Remote Scripts\AbletonOSC`
+   - macOS: `~/Music/Ableton/User Library/Remote Scripts/AbletonOSC`
 4. Reinicie o Live.
 5. Abra **Settings/Preferences > Link, Tempo & MIDI** e selecione AbletonOSC como
    Control Surface.
 
-Se o AbletonOSC não aparecer, confirme que a pasta não ficou aninhada duas vezes
-e consulte a documentação do projeto.
+Importante: use `User Library/Remote Scripts/AbletonOSC`, e não a pasta oculta
+`User Remote Scripts` das preferências do Live (ela serve para
+`UserConfiguration.txt`). Confirme que `AbletonOSC/__init__.py` existe
+diretamente nesse local, sem outra pasta `AbletonOSC` aninhada.
 
 ## 2. Instalar o Ableton RC Setlist
 
-1. Baixe `Ableton-RC-Setlist-0.4.0.ablx` na
+1. Baixe `Ableton-RC-Setlist-0.4.1.ablx` na
    [release mais recente do GitHub](https://github.com/ntworm/rc-setlist/releases/latest).
 2. Abra o `.ablx` e siga a confirmação de instalação do Ableton Live.
 3. Reinicie o Live se a extensão não aparecer imediatamente.
@@ -48,9 +50,10 @@ Não instale arquivos do SDK ou da CLI como usuário final.
 3. No computador principal, abra `https://localhost:4444/setlist`.
 4. Em um celular ou tablet, use a URL da LAN ou o QR code mostrado no painel.
 
-O navegador avisará sobre um certificado autoassinado. Continue somente quando
-o endereço corresponder ao computador do Ableton RC Setlist em uma rede local
-confiável. Cada navegador ou aparelho pode precisar aceitar o certificado uma vez.
+Primeira conexão: o navegador pode mostrar `ERR_CERT_AUTHORITY_INVALID` porque o
+RC Setlist cria um certificado local autoassinado. Continue somente se o endereço
+for exatamente o IP mostrado no painel do Live e a rede local for confiável. Cada
+navegador/aparelho pode exigir isso uma vez.
 
 ## 4. Abrir as duas visualizações
 
@@ -63,7 +66,7 @@ publique capturas mostrando o endereço completo.
 ## 5. Verificar a primeira sessão
 
 1. Abra um Live Set com localizadores fictícios do [exemplo](../../examples/README.md).
-2. Confirme atividade no AbletonOSC.
+2. No painel do RC Setlist, escolha **Verificar OSC** e confirme tráfego recebido.
 3. Confirme que músicas e seções aparecem em `/setlist`.
 4. Abra `/performance` e confirme que a música ativa acompanha o playhead do Live.
 5. Teste Play/Stop e o acionamento protegido por hold de Anterior/Próxima.

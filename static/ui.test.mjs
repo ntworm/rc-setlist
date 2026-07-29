@@ -142,6 +142,53 @@ test('Static UI Setlist: loads the safe transport runtime and dock controls', ()
   assert.match(setlistHtml, /id="quantizationSelect"/);
 });
 
+test('Static UI Setlist: exposes duration metrics and complete profile controls', () => {
+  const setlistHtml = fs.readFileSync(path.join(__dirname, 'setlist', 'index.html'), 'utf8');
+  const setlistJs = fs.readFileSync(path.join(__dirname, 'setlist', 'setlist.js'), 'utf8');
+
+  for (const marker of ['profileSelect', 'profileManageModal', 'totalSetlistDuration']) {
+    assert.match(setlistHtml, new RegExp(`id="${marker}"`));
+  }
+  for (const marker of ['profile_delete', 'profile_restore', 'durationSeconds']) {
+    assert.match(setlistJs, new RegExp(marker));
+  }
+  assert.match(setlistJs, /function profileRegistryFingerprint\(/);
+  assert.match(setlistJs, /renameInput\.addEventListener\(['"]keydown['"]/);
+  assert.match(setlistJs, /profileState = \{ \.\.\.profileState, canMutate: !lastState\.isPlaying \};\s*updateProfileMutationAvailability\(\);/);
+});
+
+test('Static UI: automation-only sections receive a localized visible label', () => {
+  const setlistJs = fs.readFileSync(path.join(__dirname, 'setlist', 'setlist.js'), 'utf8');
+  const performanceJs = fs.readFileSync(path.join(__dirname, 'performance', 'performance.js'), 'utf8');
+  const i18nSource = fs.readFileSync(path.join(__dirname, 'shared', 'i18n.js'), 'utf8');
+
+  assert.match(setlistJs, /automationOnly/);
+  assert.match(performanceJs, /automationOnly/);
+  assert.match(i18nSource, /setlist\.automationMarker/);
+  assert.match(i18nSource, /Automation marker/);
+  assert.match(i18nSource, /Marcador de automa/);
+});
+
+test('Static UI Panel: separates server status from actionable OSC diagnostics', () => {
+  const panelHtml = fs.readFileSync(path.join(__dirname, 'panel', 'index.html'), 'utf8');
+  const i18nSource = fs.readFileSync(path.join(__dirname, 'shared', 'i18n.js'), 'utf8');
+
+  for (const marker of ['oscStatusDot', 'oscStatusText', 'btnDiagnoseOsc']) {
+    assert.match(panelHtml, new RegExp(`id="${marker}"`));
+  }
+  for (const state of ['stopped', 'port-conflict', 'no-reply', 'responding', 'stale']) {
+    assert.match(panelHtml, new RegExp(`['"]${state}['"]`));
+  }
+  assert.match(panelHtml, /diagnose-osc/);
+  assert.doesNotMatch(panelHtml, /certificate-notice|oscInstallHint/);
+  assert.doesNotMatch(panelHtml, /ERR_CERT_AUTHORITY_INVALID|User Remote Scripts/);
+  assert.doesNotMatch(panelHtml, /id="statusText"[^>]*data-i18n=/);
+  assert.match(i18nSource, /User Library\/Remote Scripts\/AbletonOSC/);
+  assert.match(i18nSource, /User Remote Scripts/);
+  assert.match(i18nSource, /Check OSC/);
+  assert.match(i18nSource, /Verificar OSC/);
+});
+
 test('Static UI Setlist: omits handlers for controls removed from the operator surface', () => {
   const setlistJsPath = path.join(__dirname, 'setlist', 'setlist.js');
   const setlistJs = fs.readFileSync(setlistJsPath, 'utf8');

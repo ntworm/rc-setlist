@@ -1,12 +1,22 @@
 const i18n = RcSetlistI18n;
 const t = (key, params) => i18n.t(key, params);
-i18n.bindSelector(document.getElementById('languageSelect'));
+const languageSelect = document.getElementById('languageSelect');
+i18n.bindSelector(languageSelect);
 
 let ws;
 const port = window.location.port || '4444';
 const statusDot = document.getElementById('statusDot');
 const statusText = document.getElementById('statusText');
 const songListDiv = document.getElementById('songList');
+const profileSelect = document.getElementById('profileSelect');
+const profileManageModal = document.getElementById('profileManageModal');
+const profileCreateName = document.getElementById('profileCreateName');
+const btnCreateProfile = document.getElementById('btnCreateProfile');
+const profileList = document.getElementById('profileList');
+const deletedProfileList = document.getElementById('deletedProfileList');
+const deletedProfileSection = document.getElementById('deletedProfileSection');
+const profileMutationNotice = document.getElementById('profileMutationNotice');
+const totalSetlistDuration = document.getElementById('totalSetlistDuration');
 
 const hudSong = document.getElementById('hudSong');
 const hudSection = document.getElementById('hudSection');
@@ -36,8 +46,18 @@ let lastFlashBeat = -1;
 let currentLyrics = { song: '', format: 'none', lines: [] };
 let currentLyricsIdx = -1;
 let isController = false;
+let isSynchronized = false;
 let previousHoldController = null;
 let nextHoldController = null;
+let profileState = {
+  version: 2,
+  activeProfileId: '',
+  profiles: [],
+  deletedProfiles: [],
+  canMutate: false,
+  projectName: '',
+};
+const pendingProfileCommands = new Map();
 
 function showConnectionFailure() {
   const hasState = Boolean(lastState);
@@ -108,10 +128,10 @@ function showLockWarning() {
     toast.style.zIndex = '99999';
     toast.style.transition = 'opacity 0.2s ease, transform 0.2s ease';
     toast.style.opacity = '0';
-    toast.textContent = t('setlist.lockWarning');
     document.body.appendChild(toast);
   }
 
+  toast.textContent = t('setlist.lockWarning');
   toast.style.opacity = '1';
   toast.style.transform = 'translateX(-50%) translateY(-5px)';
 
@@ -131,6 +151,11 @@ window.addEventListener('DOMContentLoaded', () => {
     modal.setAttribute('aria-modal', 'true');
     modal.setAttribute('aria-hidden', 'true');
   });
+  profileSelect.addEventListener('change', () => {
+    if (!profileSelect.value || profileSelect.value === profileState.activeProfileId) return;
+    sendProfileCommand('profile_select', { id: profileSelect.value });
+  });
+  profileCreateName.addEventListener('input', updateProfileMutationAvailability);
 });
 
 const modalOpeners = new WeakMap();
@@ -142,6 +167,236 @@ function closeManagedModal(modal) {
   const opener = modalOpeners.get(modal);
   modalOpeners.delete(modal);
   opener?.focus?.();
+}
+
+function toggleProfileManageModal() {
+  toggleManagedModal(profileManageModal, renderProfileState);
+}
+
+function closeProfileManageModal(event) {
+  if (event.target === profileManageModal) {
+    closeManagedModal(profileManageModal);
+  }
+}
+
+function profileCommandId(type) {
+  return `${type.replaceAll('_', '-')}-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+}
+
+function canMutateProfiles() {
+  return Boolean(
+    isController &&
+    profileState.canMutate &&
+    ws &&
+    ws.readyState === WebSocket.OPEN
+  );
+}
+
+function requestProfiles() {
+  if (ws?.readyState === WebSocket.OPEN) {
+    ws.send(JSON.stringify({ type: 'profiles_get' }));
+  }
+}
+
+function sendProfileCommand(type, payload = {}) {
+  if (!canMutateProfiles()) {
+    showToast(t('setlist.stopLiveFirst'), 'error');
+    renderProfileState();
+    return;
+  }
+  const commandId = profileCommandId(type);
+  pendingProfileCommands.set(commandId, type);
+  ws.send(JSON.stringify({ type, ...payload, commandId }));
+}
+
+function updateProfileMutationAvailability() {
+  const mutable = canMutateProfiles();
+  profileSelect.disabled = !mutable;
+  profileCreateName.disabled = !mutable;
+  btnCreateProfile.disabled = !mutable || !profileCreateName.value.normalize('NFKC').trim();
+  profileMutationNotice.hidden = mutable;
+  profileMutationNotice.textContent = mutable ? '' : t('setlist.stopLiveFirst');
+  profileManageModal.querySelectorAll('.profile-mutation-control').forEach((control) => {
+    if (!control.classList.contains('profile-delete-button')) {
+      control.disabled = !mutable;
+    }
+  });
+  profileManageModal.querySelectorAll('.profile-delete-group').forEach((group) => {
+    const confirmation = group.querySelector('.profile-delete-confirmation');
+    const deleteButton = group.querySelector('.profile-delete-button');
+    deleteButton.disabled = !mutable ||
+      confirmation.value.normalize('NFKC').trim() !== confirmation.dataset.expectedName;
+  });
+}
+
+function appendProfileName(container, profile, deleted = false) {
+  const name = document.createElement('strong');
+  name.className = 'profile-name';
+  name.textContent = profile.name;
+  container.appendChild(name);
+  if (profile.id === profileState.activeProfileId) {
+    const badge = document.createElement('span');
+    badge.className = 'profile-active-badge';
+    badge.textContent = t('setlist.active');
+    container.appendChild(badge);
+  } else if (deleted && profile.deletedAt) {
+    const deletedAt = document.createElement('small');
+    deletedAt.textContent = new Date(profile.deletedAt).toLocaleString(i18n.getLocale());
+    container.appendChild(deletedAt);
+  }
+}
+
+function profileRegistryFingerprint(state) {
+  return JSON.stringify({
+    activeProfileId: state.activeProfileId,
+    deletedProfiles: (state.deletedProfiles || []).map(({ id, name, deletedAt }) => ({ id, name, deletedAt })),
+    profiles: (state.profiles || []).map(({ id, name }) => ({ id, name })),
+    projectName: state.projectName || '',
+    version: state.version,
+  });
+}
+
+function captureProfileFieldFocus() {
+  const field = document.activeElement;
+  if (!field?.matches?.('.profile-rename-input, .profile-delete-confirmation')) return null;
+  const row = field.closest('.profile-row');
+  if (!row) return null;
+  return {
+    className: field.classList.contains('profile-rename-input')
+      ? 'profile-rename-input'
+      : 'profile-delete-confirmation',
+    deletedProfileId: row.dataset.deletedProfileId || '',
+    profileId: row.dataset.profileId || '',
+    selectionEnd: field.selectionEnd,
+    selectionStart: field.selectionStart,
+    value: field.value,
+  };
+}
+
+function restoreProfileFieldFocus(snapshot) {
+  if (!snapshot) return;
+  const rows = Array.from(profileManageModal.querySelectorAll('.profile-row'));
+  const row = rows.find((candidate) => (
+    (candidate.dataset.profileId || '') === snapshot.profileId &&
+    (candidate.dataset.deletedProfileId || '') === snapshot.deletedProfileId
+  ));
+  const field = row?.querySelector(`.${snapshot.className}`);
+  if (!field || field.disabled) return;
+  field.value = snapshot.value;
+  field.focus({ preventScroll: true });
+  if (snapshot.selectionStart !== null && snapshot.selectionEnd !== null) {
+    field.setSelectionRange(snapshot.selectionStart, snapshot.selectionEnd);
+  }
+}
+
+function renderProfileState() {
+  const focusedField = captureProfileFieldFocus();
+  profileSelect.textContent = '';
+  for (const profile of profileState.profiles) {
+    const option = document.createElement('option');
+    option.value = profile.id;
+    option.textContent = profile.name;
+    option.selected = profile.id === profileState.activeProfileId;
+    profileSelect.appendChild(option);
+  }
+
+  profileList.textContent = '';
+  for (const profile of profileState.profiles) {
+    const row = document.createElement('article');
+    row.className = 'profile-row';
+    row.dataset.profileId = profile.id;
+
+    const heading = document.createElement('div');
+    heading.className = 'profile-row-heading';
+    appendProfileName(heading, profile);
+    row.appendChild(heading);
+
+    const renameGroup = document.createElement('div');
+    renameGroup.className = 'profile-action-group';
+    const renameInput = document.createElement('input');
+    renameInput.className = 'profile-rename-input profile-mutation-control';
+    renameInput.type = 'text';
+    renameInput.maxLength = 80;
+    renameInput.value = profile.name;
+    renameInput.setAttribute('aria-label', t('setlist.renameSetlist', { name: profile.name }));
+    const renameButton = document.createElement('button');
+    renameButton.className = 'btn profile-rename-button profile-mutation-control';
+    renameButton.type = 'button';
+    renameButton.textContent = t('setlist.rename');
+    const submitRename = () => {
+      const name = renameInput.value.normalize('NFKC').trim();
+      if (name && name !== profile.name) {
+        sendProfileCommand('profile_rename', { id: profile.id, name });
+      }
+    };
+    renameButton.addEventListener('click', submitRename);
+    renameInput.addEventListener('keydown', (event) => {
+      if (event.key !== 'Enter') return;
+      event.preventDefault();
+      submitRename();
+    });
+    renameGroup.append(renameInput, renameButton);
+    row.appendChild(renameGroup);
+
+    if (profile.id !== profileState.activeProfileId) {
+      const deleteGroup = document.createElement('div');
+      deleteGroup.className = 'profile-action-group profile-delete-group';
+      const confirmation = document.createElement('input');
+      confirmation.className = 'profile-delete-confirmation profile-mutation-control';
+      confirmation.type = 'text';
+      confirmation.autocomplete = 'off';
+      confirmation.dataset.expectedName = profile.name;
+      confirmation.placeholder = t('setlist.confirmationName', { name: profile.name });
+      confirmation.setAttribute('aria-label', t('setlist.confirmationName', { name: profile.name }));
+      const deleteButton = document.createElement('button');
+      deleteButton.className = 'btn btn-danger profile-delete-button profile-mutation-control';
+      deleteButton.type = 'button';
+      deleteButton.textContent = t('setlist.delete');
+      const updateDeleteButton = () => {
+        deleteButton.disabled = !canMutateProfiles() || confirmation.value.normalize('NFKC').trim() !== profile.name;
+      };
+      confirmation.addEventListener('input', updateDeleteButton);
+      deleteButton.addEventListener('click', () => {
+        sendProfileCommand('profile_delete', {
+          id: profile.id,
+          confirmationName: confirmation.value.normalize('NFKC').trim(),
+        });
+      });
+      deleteGroup.append(confirmation, deleteButton);
+      row.appendChild(deleteGroup);
+      updateDeleteButton();
+    }
+    profileList.appendChild(row);
+  }
+
+  deletedProfileList.textContent = '';
+  const deletedProfiles = Array.isArray(profileState.deletedProfiles) ? profileState.deletedProfiles : [];
+  deletedProfileSection.hidden = deletedProfiles.length === 0;
+  for (const profile of deletedProfiles) {
+    const row = document.createElement('article');
+    row.className = 'profile-row deleted-profile-row';
+    row.dataset.deletedProfileId = profile.id;
+    const heading = document.createElement('div');
+    heading.className = 'profile-row-heading';
+    appendProfileName(heading, profile, true);
+    const restoreButton = document.createElement('button');
+    restoreButton.className = 'btn profile-restore-button profile-mutation-control';
+    restoreButton.type = 'button';
+    restoreButton.textContent = t('setlist.restore');
+    restoreButton.addEventListener('click', () => {
+      sendProfileCommand('profile_restore', { id: profile.id });
+    });
+    row.append(heading, restoreButton);
+    deletedProfileList.appendChild(row);
+  }
+  updateProfileMutationAvailability();
+  restoreProfileFieldFocus(focusedField);
+}
+
+function createProfile() {
+  const name = profileCreateName.value.normalize('NFKC').trim();
+  if (!name) return;
+  sendProfileCommand('profile_create', { name });
 }
 
 function toggleManagedModal(modal, onOpen) {
@@ -401,6 +656,8 @@ function navigateAdjacent(direction) {
 
 function updateTransportAvailability() {
   const available = canUseTransport();
+  languageSelect.disabled = isLocked || Boolean(lastState?.isPlaying);
+  languageSelect.setAttribute('aria-disabled', String(languageSelect.disabled));
   btnPlay.disabled = !available;
   btnStop.disabled = !available;
   btnMetronome.disabled = !available;
@@ -473,14 +730,17 @@ function connect() {
 
   ws.onclose = (event) => {
     console.log('[WS] closed:', event.code, event.reason || '(no reason)');
+    barDisplayStabilizer.reset();
     statusDot.className = 'status-dot';
     statusText.textContent = t(lastState ? 'status.reconnecting' : 'status.disconnected');
     isController = false;
+    isSynchronized = false;
     previousHoldController?.reset();
     nextHoldController?.reset();
     jumpConfirmation.clear();
     quantizationConfirmation.reset();
     updateTransportAvailability();
+    renderProfileState();
     showConnectionFailure();
     if (event.code !== 1000 && event.code !== 1001) {
       appendLog(t('feedback.wsClosed', { code: event.code, reason: event.reason || '(none)' }), 'warn');
@@ -497,7 +757,10 @@ function connect() {
       if (payload.type === 'handshake_ack') {
         // Send sync_confirm
         ws.send(JSON.stringify({ type: 'sync_confirm', stateVersion: payload.stateVersion }));
+        isSynchronized = true;
+        requestProfiles();
         if (payload.state) {
+          barDisplayStabilizer.observeState(lastState, payload.state);
           lastState = payload.state;
           quantizationConfirmation.observe(lastState.clipTriggerQuantization);
           jumpConfirmation.observeState(lastState);
@@ -509,7 +772,12 @@ function connect() {
       }
       if (payload.type === 'state') {
         const prevActiveIdx = lastState ? lastState.activeSongIndex : -1;
+        barDisplayStabilizer.observeState(lastState, payload.state);
         lastState = payload.state;
+        if (profileState.profiles.length > 0) {
+          profileState = { ...profileState, canMutate: !lastState.isPlaying };
+          updateProfileMutationAvailability();
+        }
         quantizationConfirmation.observe(lastState.clipTriggerQuantization);
         lastReceivedTime = performance.now();
         document.body.classList.remove('connection-stale');
@@ -536,16 +804,19 @@ function connect() {
         appendLog(payload.message, payload.level, payload.timestamp);
       } else if (payload.type === 'lyrics') {
         // Backend broadcasts {type:'lyrics', song, format, lines} whenever
-        // the active song changes (or via get_lyrics request). Store it
-        // locally so the HUD can show the active line during playback.
-        currentLyrics = {
-          song: payload.song || '',
-          format: payload.format || 'none',
-          lines: Array.isArray(payload.lines) ? payload.lines : []
-        };
-        currentLyricsIdx = -1; // force re-evaluation against the new lines
-        renderActiveLyric();
-        // Also pump into the visual editor (if open and matching song).
+        // the active song changes or a modal editor requests another song.
+        // Only the active song owns the HUD; editor-only replies must never
+        // replace the synchronized lyrics being performed.
+        if (payload.song === activeSongTitle()) {
+          currentLyrics = {
+            song: payload.song || '',
+            format: payload.format || 'none',
+            lines: Array.isArray(payload.lines) ? payload.lines : []
+          };
+          currentLyricsIdx = -1; // force re-evaluation against the new lines
+          renderActiveLyric();
+        }
+        // The modal separately accepts a reply matching its selected song.
         applyLyricsLoadToEditor(payload);
       } else if (payload.type === 'csv_ready') {
         handleCsvReady(payload.url, payload.count, payload.fileName);
@@ -563,8 +834,32 @@ function connect() {
           appendLog(t('feedback.controller'), 'info');
         }
         updateTransportAvailability();
+        if (isSynchronized) requestProfiles();
+        renderProfileState();
+      } else if (payload.type === 'profiles_state') {
+        const nextProfileState = {
+          version: payload.version,
+          activeProfileId: typeof payload.activeProfileId === 'string' ? payload.activeProfileId : '',
+          profiles: Array.isArray(payload.profiles) ? payload.profiles : [],
+          deletedProfiles: Array.isArray(payload.deletedProfiles) ? payload.deletedProfiles : [],
+          canMutate: Boolean(payload.canMutate),
+          projectName: typeof payload.projectName === 'string' ? payload.projectName : '',
+        };
+        const registryChanged =
+          profileRegistryFingerprint(nextProfileState) !== profileRegistryFingerprint(profileState);
+        profileState = nextProfileState;
+        if (registryChanged) renderProfileState();
+        else updateProfileMutationAvailability();
       } else if (payload.type === 'command_status') {
         quantizationConfirmation.settle(payload);
+        const profileCommand = pendingProfileCommands.get(payload.commandId);
+        if (profileCommand && ['confirmed', 'failed', 'expired', 'cancelled'].includes(payload.status)) {
+          pendingProfileCommands.delete(payload.commandId);
+          if (payload.status === 'failed') {
+            showToast(t('setlist.operationFailed'), 'error');
+          }
+          requestProfiles();
+        }
       } else if (payload.type === 'error') {
         const message = t('feedback.serverError', { detail: payload.message });
         appendLog(`⚠ ${message}`, 'error');
@@ -591,6 +886,18 @@ function formatBeatsAsTime(beats, bpmSource) {
   const s = Math.floor(seconds % 60);
   const ms = Math.floor((seconds % 1) * 100);
   return `${m}:${s.toString().padStart(2, '0')}:${ms.toString().padStart(2, '0')}`;
+}
+
+function formatDuration(seconds, includeHours = false) {
+  if (typeof seconds !== 'number' || !Number.isFinite(seconds) || seconds < 0) return '—';
+  const rounded = Math.round(seconds);
+  const hours = Math.floor(rounded / 3600);
+  const minutes = Math.floor((rounded % 3600) / 60);
+  const secs = rounded % 60;
+  if (includeHours || hours > 0) {
+    return `${hours}:${String(minutes).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+  }
+  return `${minutes}:${String(secs).padStart(2, '0')}`;
 }
 
 
@@ -663,6 +970,14 @@ function updateDriftBadge(state, activeSong) {
 }
 
 const latencyCompensationMs = 90; // compensate for polling intervals + socket transit
+const barDisplayStabilizer = SetlistTransportRuntime.createBarDisplayStabilizer();
+
+function sectionDisplayName(section) {
+  if (!section) return t('common.none');
+  return section.automationOnly || !section.name
+    ? t('setlist.automationMarker')
+    : section.name;
+}
 
 function getEstimatedBeats() {
   if (!lastState) return 0;
@@ -679,7 +994,7 @@ function tick() {
     const activeSection = activeSong ? activeSong.sections[lastState.activeSectionIndex] : null;
 
     hudSong.textContent = activeSong ? activeSong.title : t('common.none');
-    hudSection.textContent = activeSection ? activeSection.name : t('common.none');
+    hudSection.textContent = sectionDisplayName(activeSection);
     hudBpm.textContent = lastState.tempo ? lastState.tempo.toFixed(1) : '120.0';
 
     // Drift: compare live tempo with the cue-derived BPM expectation.
@@ -712,10 +1027,10 @@ function tick() {
     }
 
     if (nextIsCurrent && nextSectionObj) {
-      hudNextSection.textContent = t('setlist.nextRepeat', { name: nextSectionObj.name });
+      hudNextSection.textContent = t('setlist.nextRepeat', { name: sectionDisplayName(nextSectionObj) });
     } else {
       hudNextSection.textContent = nextSectionObj
-        ? t('setlist.nextValue', { name: nextSectionObj.name })
+        ? t('setlist.nextValue', { name: sectionDisplayName(nextSectionObj) })
         : t('setlist.nextEnd');
     }
 
@@ -748,13 +1063,17 @@ function tick() {
       }
     }
 
-    // Bar calculation (Bars.Beats.Sixteenths)
+    // Bar calculation (Bars.Beats.Sixteenths). Keep the last valid visual
+    // value while disconnected instead of reseeding from stale extrapolation.
     const num = lastState.signatureNumerator || 4;
-    const bar = Math.floor(estimatedBeats / num) + 1;
-    const remainingBeats = estimatedBeats % num;
-    const beat = Math.floor(remainingBeats) + 1;
-    const sixteenths = Math.floor((remainingBeats % 1) * 4) + 1;
-    hudBar.textContent = `${bar}.${beat}.${sixteenths}`;
+    if (isSynchronized) {
+      const barDisplayBeats = barDisplayStabilizer.update(estimatedBeats, lastState.isPlaying);
+      const bar = Math.floor(barDisplayBeats / num) + 1;
+      const remainingBeats = barDisplayBeats % num;
+      const beat = Math.floor(remainingBeats) + 1;
+      const sixteenths = Math.floor((remainingBeats % 1) * 4) + 1;
+      hudBar.textContent = `${bar}.${beat}.${sixteenths}`;
+    }
 
     // Update Lyrics Sync Timer display
     if (typeof isLyricsSyncing !== 'undefined' && isLyricsSyncing) {
@@ -849,6 +1168,10 @@ function sendReorder(songTitles) {
 }
 
 function renderSongList(state) {
+  totalSetlistDuration.textContent = formatDuration(state.totalDurationSeconds);
+  totalSetlistDuration.title = typeof state.totalDurationSeconds === 'number'
+    ? t('setlist.totalDuration')
+    : t('setlist.unknownDuration');
   if (!state.songs || state.songs.length === 0) {
     songListDiv.innerHTML = `<div style="text-align: center; color: var(--text-muted); padding: 2rem;">${escapeLyricsEditorText(t('setlist.noSongs'))}</div>`;
     lastRenderedSongsJson = '';
@@ -881,7 +1204,7 @@ function renderSongList(state) {
             ${song.autoNext ? `<span class="next-badge">⏭ NEXT</span>` : ''}
             ${typeof song.bpm === 'number' ? `<span class="bpm-badge">♩ ${song.bpm} BPM</span>` : ''}
           </div>
-          <span class="song-time">${formatBeatsAsTime(song.time, song)}</span>
+          <span class="song-time">${formatDuration(song.durationSeconds)}</span>
         </div>
 
         ${song.sections && song.sections.length > 0 ? `
@@ -890,7 +1213,7 @@ function renderSongList(state) {
               const isActiveSection = isActiveSong && secIdx === state.activeSectionIndex;
               return `
                 <button class="section-btn ${isActiveSection ? 'active' : ''}" data-song="${songIdx}" data-section="${secIdx}" onclick="jumpTo(${songIdx}, ${secIdx})">
-                  <span class="section-name">${escapeLyricsEditorText(sec.name)}</span>
+                  <span class="section-name">${escapeLyricsEditorText(sectionDisplayName(sec))}</span>
                   ${sec.loopCount !== null ? `<span class="loop-badge">${sec.loopCount === -1 ? '↻ LOOP' : `↻ LOOP ${sec.loopCount}x`}</span>` : ''}
                   ${sec.autoStop ? `<span class="stop-badge">■ STOP</span>` : ''}
                   ${sec.autoNext ? `<span class="next-badge">⏭ NEXT</span>` : ''}
@@ -1138,12 +1461,26 @@ let lyricsEditLines = []; // [{timestamp, text}]
 let lyricsEditDirty = false;
 let lyricsEditLastLoadedSong = '';
 let lyricsEditActiveTab = 'create';
+let lyricsSelectedSong = '';
+const lyricsCreateDrafts = new Map();
 const TAB_BUTTONS = {
   create: document.getElementById('lyricsTabCreate'),
   sync: document.getElementById('lyricsTabSync'),
   edit: document.getElementById('lyricsTabEdit'),
 };
 const NO_TIMESTAMP = '[--:--.--]';
+
+function activeSongTitle() {
+  const index = lastState?.activeSongIndex;
+  if (!Number.isInteger(index) || index < 0) return '';
+  return lastState.songs?.[index]?.title || '';
+}
+
+lyricsRawText.addEventListener('input', () => {
+  const song = lyricsSongSelect.value;
+  if (!song) return;
+  lyricsCreateDrafts.set(song, { text: lyricsRawText.value, dirty: true });
+});
 
 function switchLyricsTab(tab) {
   if (!['create', 'sync', 'edit'].includes(tab)) return;
@@ -1164,8 +1501,7 @@ function switchLyricsTab(tab) {
   if (tab === 'edit') {
     refreshLyricsEditor();
   } else if (tab === 'sync') {
-    // Make sure Step1 inputs reflect current song before sync starts.
-    // (No state change needed; user starts sync explicitly.)
+    lyricsSyncSongTitle.textContent = lyricsSongSelect.value || '—';
   }
 }
 
@@ -1182,26 +1518,30 @@ function markLyricsDirty(dirty) {
 function refreshLyricsEditor() {
   if (!lyricsSongSelect) return;
   const song = lyricsSongSelect.value;
-  if (lyricsEditLastLoadedSong !== song || lyricsEditLines.length === 0) {
-    // Pull from cache: if currentLyrics is for this song, use its raw text
-    // by re-fetching via ws (so we get the saved-on-disk version).
+  if (lyricsEditLastLoadedSong !== song) {
     loadLyricsEditFromServer(song);
     return;
   }
+  lyricsEditSongTitle.textContent = song || '—';
   renderLyricsEditList();
 }
 
 function loadLyricsEditFromServer(song) {
+  lyricsSelectedSong = song || '';
+  lyricsSyncSongTitle.textContent = lyricsSelectedSong || '—';
+  lyricsEditSongTitle.textContent = lyricsSelectedSong || '—';
+  const draft = lyricsCreateDrafts.get(lyricsSelectedSong);
+  lyricsRawText.value = draft?.text || '';
+  lyricsEditLastLoadedSong = lyricsSelectedSong;
+  lyricsEditLines = [];
+  markLyricsDirty(false);
+  renderLyricsEditList();
+  if (!lyricsSelectedSong) return;
   if (!ws || ws.readyState !== WebSocket.OPEN) {
     showToast(t('lyrics.notConnected'), 'error');
     return;
   }
-  lyricsEditLastLoadedSong = song;
-  lyricsEditSongTitle.textContent = song;
-  lyricsEditLines = [];
-  markLyricsDirty(false);
-  renderLyricsEditList();
-  ws.send(JSON.stringify({ type: 'get_lyrics', song }));
+  ws.send(JSON.stringify({ type: 'get_lyrics', song: lyricsSelectedSong }));
 }
 
 function applyLyricsLoadToEditor(payload) {
@@ -1210,9 +1550,17 @@ function applyLyricsLoadToEditor(payload) {
   const song = lyricsSongSelect.value;
   if (payload.song !== song || lyricsEditLastLoadedSong !== song) return;
   if (lyricsEditDirty) return; // do not clobber edits
+  const draft = lyricsCreateDrafts.get(song);
+  if (!draft?.dirty) {
+    const text = (Array.isArray(payload.lines) ? payload.lines : [])
+      .map((line) => line.text || '')
+      .join('\n');
+    lyricsCreateDrafts.set(song, { text, dirty: false });
+    lyricsRawText.value = text;
+  }
   lyricsEditLines = (Array.isArray(payload.lines) ? payload.lines : [])
     .map((line) => ({
-      timestamp: typeof line.time === 'number' && line.time > 0 ? formatSecondsToLrcTime(line.time) : NO_TIMESTAMP,
+      timestamp: typeof line.time === 'number' && line.time >= 0 ? formatSecondsToLrcTime(line.time) : NO_TIMESTAMP,
       text: line.text || '',
     }));
   markLyricsDirty(false);
@@ -1383,27 +1731,23 @@ function saveLyricsEdit() {
 }
 
 function onLyricsSongChange() {
-  // When user switches song, reset editor cache so it re-fetches.
+  const nextSong = lyricsSongSelect.value;
+  if (nextSong === lyricsSelectedSong) return;
   if (lyricsEditDirty) {
     if (!confirm(t('lyrics.discardSong'))) {
-      // Revert select to previous value
-      if (lyricsEditLastLoadedSong) lyricsSongSelect.value = lyricsEditLastLoadedSong;
+      lyricsSongSelect.value = lyricsSelectedSong;
       return;
     }
   }
-  lyricsEditLastLoadedSong = '';
-  lyricsEditLines = [];
-  markLyricsDirty(false);
-  if (lyricsEditActiveTab === 'edit') {
-    refreshLyricsEditor();
-  }
+  loadLyricsEditFromServer(nextSong);
 }
 
 function toggleLyricsModal() {
   toggleManagedModal(lyricsModal, () => {
-    populateLyricsSongs();
-    switchLyricsTab('create');
+    const tabToRestore = lyricsEditDirty ? lyricsEditActiveTab : 'create';
     resetLyricsSyncWorkflow();
+    populateLyricsSongs();
+    switchLyricsTab(tabToRestore);
   });
 }
 
@@ -1414,15 +1758,37 @@ function closeLyricsModal(e) {
 }
 
 function populateLyricsSongs() {
+  const previousSong = lyricsSelectedSong || lyricsSongSelect.value;
   lyricsSongSelect.innerHTML = '';
-  if (lastState && lastState.songs) {
+  const titles = [];
+  if (Array.isArray(lastState?.songs)) {
     lastState.songs.forEach(song => {
+      titles.push(song.title);
       const option = document.createElement('option');
       option.value = song.title;
       option.textContent = song.title;
       lyricsSongSelect.appendChild(option);
     });
   }
+  const activeTitle = activeSongTitle();
+  const preserveUnsavedEdit = lyricsEditDirty && titles.includes(lyricsSelectedSong);
+  const selectedSong = preserveUnsavedEdit
+    ? lyricsSelectedSong
+    : titles.includes(activeTitle)
+      ? activeTitle
+      : titles.includes(previousSong)
+        ? previousSong
+        : titles[0] || '';
+  lyricsSongSelect.value = selectedSong;
+  if (preserveUnsavedEdit) {
+    lyricsSyncSongTitle.textContent = selectedSong || '—';
+    lyricsEditSongTitle.textContent = selectedSong || '—';
+    const draft = lyricsCreateDrafts.get(selectedSong);
+    lyricsRawText.value = draft?.text || '';
+    renderLyricsEditList();
+    return;
+  }
+  loadLyricsEditFromServer(selectedSong);
 }
 
 function startLyricsSyncWorkflow() {
@@ -1441,6 +1807,7 @@ function startLyricsSyncWorkflow() {
   lyricsSyncedLines = [];
   lyricsSyncActiveIndex = 0;
   isLyricsSyncing = true;
+  lyricsSongSelect.disabled = true;
 
   lyricsSyncSongTitle.textContent = lyricsSongSelect.value;
 
@@ -1455,6 +1822,7 @@ function resetLyricsSyncWorkflow() {
   lyricsLinesToSync = [];
   lyricsSyncedLines = [];
   lyricsSyncActiveIndex = 0;
+  lyricsSongSelect.disabled = false;
 
   btnLyricsTap.disabled = false;
   btnLyricsTap.textContent = t('lyrics.markNow');
@@ -1462,6 +1830,7 @@ function resetLyricsSyncWorkflow() {
 
   lyricsStepInput.style.display = 'block';
   lyricsStepSync.style.display = 'none';
+  lyricsSyncSongTitle.textContent = lyricsSongSelect.value || '—';
 }
 
 function getEstimatedSeconds() {
@@ -1553,6 +1922,7 @@ function promptForToken() {
 i18n.subscribe(() => {
   updateLockVisuals();
   renderMidiMappings();
+  renderProfileState();
   lastRenderedSongsJson = '';
   if (lastState) renderSongList(lastState);
   renderActiveLyric();

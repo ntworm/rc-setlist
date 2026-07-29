@@ -93,9 +93,55 @@ body {
 }
 
 .app-bar-actions {
+  order: 2;
   justify-content: flex-end;
   min-width: 0;
   gap: 0.45rem;
+}
+
+.profile-header-group {
+  order: 1;
+  display: grid;
+  grid-template-columns: minmax(8rem, 13rem) auto auto;
+  align-items: center;
+  min-width: 0;
+  gap: 0.4rem;
+}
+
+.profile-select-control,
+.total-duration-control {
+  display: grid;
+  min-width: 0;
+  gap: 0.16rem;
+  color: var(--ui-muted);
+  font-size: 0.55rem;
+  font-weight: 850;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.profile-select-control select {
+  min-width: 0;
+  height: 28px;
+  border: 1px solid var(--ui-border);
+  border-radius: 7px;
+  background: #101115;
+  color: var(--ui-text);
+  padding: 0 0.45rem;
+  font-size: 0.68rem;
+  font-weight: 750;
+  text-overflow: ellipsis;
+}
+
+.total-duration-control {
+  min-width: 4.6rem;
+}
+
+.total-duration-control strong {
+  color: var(--ui-accent-strong);
+  font-family: var(--ui-mono);
+  font-size: 0.74rem;
+  font-variant-numeric: tabular-nums;
 }
 
 .app-bar .ui-button,
@@ -770,6 +816,43 @@ body {
   font-size: 1rem;
 }
 
+.lyrics-modal-header {
+  gap: 0.75rem;
+}
+
+.lyrics-modal-header h2,
+.lyrics-modal-header .btn-close {
+  flex: 0 0 auto;
+}
+
+.lyrics-song-control {
+  display: grid;
+  flex: 1 1 16rem;
+  min-width: 0;
+  gap: 0.2rem;
+}
+
+.lyrics-song-control span {
+  overflow: hidden;
+  color: var(--ui-muted);
+  font-size: 0.62rem;
+  font-weight: 800;
+  line-height: 1.1;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.lyrics-song-control select {
+  width: 100%;
+  min-width: 0;
+  min-height: 40px;
+  border: 1px solid var(--ui-border);
+  border-radius: 8px;
+  background: #101115;
+  color: var(--ui-text);
+  padding: 0.45rem 0.65rem;
+}
+
 .btn-close {
   display: grid;
   width: 2.5rem;
@@ -805,6 +888,101 @@ body {
   border-radius: 8px;
   background: #101115 !important;
   color: var(--ui-text) !important;
+}
+
+.profile-modal-content {
+  width: min(56rem, 100%);
+}
+
+.profile-modal-body,
+.profile-list {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.profile-modal-body section {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.profile-modal-body h3 {
+  margin: 0;
+  color: var(--ui-text);
+  font-size: 0.78rem;
+}
+
+.profile-mutation-notice {
+  margin: 0;
+  border: 1px solid rgba(255, 154, 47, 0.38);
+  border-radius: 8px;
+  background: var(--ui-accent-soft);
+  color: var(--ui-accent-strong);
+  padding: 0.65rem 0.75rem;
+  font-size: 0.72rem;
+}
+
+.profile-create-controls,
+.profile-action-group {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  min-width: 0;
+  gap: 0.45rem;
+}
+
+.profile-create-controls input,
+.profile-action-group input {
+  width: 100%;
+  min-width: 0;
+  min-height: 44px;
+  padding: 0.55rem 0.65rem;
+}
+
+.profile-row {
+  display: grid;
+  grid-template-columns: minmax(8rem, 0.8fr) minmax(12rem, 1fr) minmax(12rem, 1fr);
+  align-items: center;
+  min-width: 0;
+  gap: 0.55rem;
+  border: 1px solid var(--ui-border);
+  border-radius: 10px;
+  background: rgba(23, 24, 29, 0.84);
+  padding: 0.65rem;
+}
+
+.deleted-profile-row {
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.profile-row-heading {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  gap: 0.45rem;
+  flex-wrap: wrap;
+}
+
+.profile-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.profile-row-heading small {
+  width: 100%;
+  color: var(--ui-muted);
+  font-size: 0.62rem;
+}
+
+.profile-active-badge {
+  border: 1px solid rgba(66, 216, 137, 0.3);
+  border-radius: 999px;
+  background: var(--ui-success-soft);
+  color: #82eab0;
+  padding: 0.15rem 0.38rem;
+  font-size: 0.52rem;
+  font-weight: 850;
+  text-transform: uppercase;
 }
 
 .lyrics-tab {
@@ -948,6 +1126,14 @@ body {
     gap: 0.35rem;
   }
 
+  .profile-header-group {
+    grid-template-columns: minmax(7rem, 10rem) auto;
+  }
+
+  .total-duration-control {
+    display: none;
+  }
+
   .language-select {
     max-width: 6rem;
     padding-inline: 0.45rem;
@@ -993,6 +1179,15 @@ body {
     justify-content: flex-start;
   }
 
+  .profile-header-group {
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    width: 100%;
+  }
+
+  .total-duration-control {
+    display: grid;
+  }
+
   .setlist-workspace {
     display: flex;
     flex-direction: column;
@@ -1032,5 +1227,19 @@ body {
 
   .hud {
     grid-auto-rows: minmax(5rem, auto);
+  }
+
+  .profile-row,
+  .deleted-profile-row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .lyrics-modal-header {
+    flex-wrap: wrap;
+  }
+
+  .lyrics-song-control {
+    order: 3;
+    flex-basis: 100%;
   }
 }

@@ -187,6 +187,13 @@ function getEstimatedBeats() {
   return lastState.currentSongTime + elapsedBeats;
 }
 
+function sectionDisplayName(section) {
+  if (!section) return t('common.none').toUpperCase();
+  return section.automationOnly || !section.name
+    ? t('setlist.automationMarker')
+    : section.name;
+}
+
 function updateUINonTimeSensitive(state) {
   // Find current and next song
   const currentSong = state.songs[state.activeSongIndex];
@@ -217,13 +224,13 @@ function updateUINonTimeSensitive(state) {
     }
   }
 
-  sectionName.textContent = currentSection ? currentSection.name : t('common.none').toUpperCase();
+  sectionName.textContent = sectionDisplayName(currentSection);
   
   if (nextIsCurrent && nextSectionObj) {
-    nextSection.textContent = t('next.repeat', { name: nextSectionObj.name });
+    nextSection.textContent = t('next.repeat', { name: sectionDisplayName(nextSectionObj) });
   } else {
     nextSection.textContent = nextSectionObj
-      ? `${nextSectionObj.name}${nextSectionObj.loopCount !== null ? ' [L]' : ''}`
+      ? `${sectionDisplayName(nextSectionObj)}${nextSectionObj.loopCount !== null ? ' [L]' : ''}`
       : t('performance.end');
   }
 
