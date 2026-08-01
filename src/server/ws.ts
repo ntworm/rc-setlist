@@ -124,8 +124,8 @@ export class SetlistWSServer extends EventEmitter {
         const url = new NodeURL(req.url ?? '', `http://${host}`);
         tokenParsed = url.searchParams.get('token');
         isController = tokenParsed === this.authToken && this.authToken !== '';
-      } catch (err) {
-        console.warn('[WS] Could not extract the token from the URL:', err);
+      } catch {
+        console.warn('[WS] Could not parse the connection URL.');
       }
 
       ws.isController = isController;
@@ -200,8 +200,13 @@ export class SetlistWSServer extends EventEmitter {
         console.log('[WS] Client disconnected');
       });
 
-      ws.on('error', (err) => {
-        console.error('[WS] Client socket error:', err);
+      ws.on('error', (error) => {
+        const codeValue = (error as Error & { code?: unknown }).code;
+        const code = typeof codeValue === 'string'
+          && /^[A-Z0-9_]{1,64}$/.test(codeValue)
+          ? codeValue
+          : 'UNKNOWN';
+        console.error(`[WS] Client socket error (${code}).`);
       });
     });
 

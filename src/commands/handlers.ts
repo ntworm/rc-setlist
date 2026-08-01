@@ -23,6 +23,11 @@ import { getQuantizationBeats } from '../core/next-downbeat-jump.js';
 import { atomicWriteFile } from '../util/atomic-write.js';
 
 type MessageOf<T extends ClientMessage['type']> = Extract<ClientMessage, { type: T }>;
+type TestSessionMarker = { name: string; beats: number };
+type CuePointResult =
+  | { status: 'confirmed'; transport: 'mcp' }
+  | { status: 'accepted'; transport: 'osc' }
+  | { status: 'error'; transport: 'osc'; message?: string };
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -370,7 +375,7 @@ async function executeExportCsvCommand(_msg: MessageOf<'export_csv'>, ws?: Augme
 }
 
 async function executeCreateTestSessionCommand(_msg: MessageOf<'create_test_session'>): Promise<void> {
-  const markers: Array<{ name: string; beats: number }> = [
+  const markers: TestSessionMarker[] = [
     { name: 'TEST ALPHA [bpm 90] [click]', beats: 0 },
     { name: 'TEST ALPHA > INTRO [loop 2x]', beats: 8 },
     { name: 'TEST ALPHA > VERSE 1', beats: 24 },
@@ -422,17 +427,26 @@ async function executeCreateTestSessionCommand(_msg: MessageOf<'create_test_sess
     bridgeState.oscClient.send('/live/song/set/loop', [{ type: 'integer', value: 0 }]);
     await delay(200);
 
-    let createdCount = 0;
+    const confirmedByMcp: TestSessionMarker[] = [];
+    let acceptedByOsc = 0;
+    let tryMcp = true;
     for (let i = 0; i < markers.length; i++) {
       const marker = markers[i]!;
       const targetBeat = marker.beats;
 
-      const res = await createCuePoint(marker.name, targetBeat);
+      const res = await createCuePoint(marker.name, targetBeat, tryMcp);
+      if (res.transport === 'osc') tryMcp = false;
 
-      if (res.status === 'ok') {
-        createdCount++;
+      if (res.status === 'confirmed') {
+        confirmedByMcp.push(marker);
         bridgeState.wsServer?.broadcastLog(
-          `Created: ${marker.name} at beat ${targetBeat} (${createdCount}/${markers.length})`,
+          `Created: ${marker.name} at beat ${targetBeat} (${confirmedByMcp.length}/${markers.length})`,
+          'info'
+        );
+      } else if (res.status === 'accepted') {
+        acceptedByOsc++;
+        bridgeState.wsServer?.broadcastLog(
+          `Requested: ${marker.name} at beat ${targetBeat}; awaiting Ableton confirmation.`,
           'info'
         );
       } else {
@@ -446,6 +460,13 @@ async function executeCreateTestSessionCommand(_msg: MessageOf<'create_test_sess
       await delay(100);
     }
 
+    bridgeState.oscClient.getCuePoints();
+    if (acceptedByOsc > 0) await delay(750);
+    const createdCount = countConfirmedTestSessionMarkers(
+      markers,
+      confirmedByMcp,
+      bridgeState.manager?.getRawCues() ?? [],
+    );
     assertCompleteTestSession(createdCount, markers.length);
 
     console.log(
@@ -455,8 +476,6 @@ async function executeCreateTestSessionCommand(_msg: MessageOf<'create_test_sess
       `Automatic setup complete: ${createdCount}/${markers.length} locators. Select "Refresh" in Stage Control.`,
       'info'
     );
-
-    bridgeState.oscClient.getCuePoints();
 
     const lyricsDir = getActiveProfilePaths().lyrics;
     let lyricsSaved = 0;
@@ -499,12 +518,30 @@ export function assertCompleteTestSession(createdCount: number, expectedCount: n
   throw new Error(`${missingCount} of ${expectedCount} locator(s) could not be created.`);
 }
 
-async function createCuePoint(name: string, beat: number): Promise<{ status: string; message?: string }> {
-  try {
-    const res = await callDebuggerMcp('create_cue_point', { name, time: beat });
-    if (isRecord(res) && res.status === 'ok') return { status: 'ok' };
-  } catch {
-    // MCP unavailable or timed out — fall through to OSC fallback
+export function countConfirmedTestSessionMarkers(
+  requested: readonly TestSessionMarker[],
+  confirmedByMcp: readonly TestSessionMarker[],
+  observedCues: ReadonlyArray<{ name: string; time: number }>,
+): number {
+  return requested.filter((marker) => {
+    const confirmed = confirmedByMcp.some((candidate) =>
+      candidate.name === marker.name && candidate.beats === marker.beats
+    );
+    if (confirmed) return true;
+    return observedCues.some((cue) =>
+      cue.name === marker.name && Math.abs(cue.time - marker.beats) < 0.000_001
+    );
+  }).length;
+}
+
+async function createCuePoint(name: string, beat: number, tryMcp: boolean): Promise<CuePointResult> {
+  if (tryMcp) {
+    try {
+      const res = await callDebuggerMcp('create_cue_point', { name, time: beat });
+      if (isRecord(res) && res.status === 'ok') return { status: 'confirmed', transport: 'mcp' };
+    } catch {
+      // MCP unavailable or timed out — use OSC and verify through observed state.
+    }
   }
   return createCuePointViaOsc(name, beat);
 }
@@ -541,10 +578,10 @@ function callDebuggerMcp(command: string, params: Record<string, unknown>): Prom
   });
 }
 
-function createCuePointViaOsc(name: string, beat: number): Promise<{ status: string; message?: string }> {
+function createCuePointViaOsc(name: string, beat: number): Promise<CuePointResult> {
   return new Promise((resolve) => {
     if (!bridgeState.oscClient) {
-      resolve({ status: 'error', message: 'OSC client not initialized' });
+      resolve({ status: 'error', transport: 'osc', message: 'OSC client not initialized' });
       return;
     }
     const accepted = bridgeState.oscClient.send('/live/song/create_cue_point', [
@@ -553,8 +590,8 @@ function createCuePointViaOsc(name: string, beat: number): Promise<{ status: str
     ]);
     setTimeout(() => {
       resolve(accepted
-        ? { status: 'ok' }
-        : { status: 'error', message: 'OSC socket did not accept the message' });
+        ? { status: 'accepted', transport: 'osc' }
+        : { status: 'error', transport: 'osc', message: 'OSC socket did not accept the message' });
     }, 100);
   });
 }

@@ -349,6 +349,12 @@ test('WebSocket Hardening: rate limiting rules', async () => {
 test('WebSocket Hardening: max payload size restriction', async () => {
   const { wsServer, server } = createServerAndWS('any');
   const port = await startServer(server);
+  const capturedErrors = [];
+  const originalError = console.error;
+  console.error = (...args) => {
+    capturedErrors.push(args.join(' '));
+    originalError(...args);
+  };
 
   try {
     const ws = new WebSocket(`ws://127.0.0.1:${port}/ws`);
@@ -380,8 +386,14 @@ test('WebSocket Hardening: max payload size restriction', async () => {
     });
 
     assert.strictEqual(isClosed, true, 'Connection should be closed/dropped due to excessive payload size');
+    assert.deepStrictEqual(
+      capturedErrors.filter((line) => line.includes('[WS] Client socket error')),
+      ['[WS] Client socket error (WS_ERR_UNSUPPORTED_MESSAGE_LENGTH).'],
+    );
+    assert.equal(capturedErrors.some((line) => line.includes(process.cwd())), false);
 
   } finally {
+    console.error = originalError;
     await stopServerAndWS(server, wsServer);
   }
 });

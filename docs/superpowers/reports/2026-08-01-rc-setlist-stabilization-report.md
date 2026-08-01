@@ -1,7 +1,7 @@
 # RC Setlist stabilization report
 
-Date: 2026-08-01  
-Baseline: `origin/main` at `1b6efb4`  
+Date: 2026-08-01
+Baseline: `origin/main` at `1b6efb4`
 Verified implementation: `0573ce9`
 
 ## Outcome
@@ -59,6 +59,5 @@ The final timings stay effectively constant as setlist size grows because transp
 ## Residual integration boundaries
 
 - The production bundle was built and loaded, but this workstation run did not drive a real Ableton Live session end to end.
-- AbletonOSC's cue-point fallback can confirm local UDP socket acceptance, not remote application of the cue. The setup now refuses success when the local send was not accepted and rejects incomplete batches.
+- AbletonOSC's UDP cue-point fallback has no direct acknowledgement. Test-session setup therefore requires each locator to be confirmed by MCP or observed in refreshed Ableton state before reporting success.
 - Persisted custom order is title-based for backward compatibility. Duplicate titles remain valid and retain chronological identity, but independently reordering two identically named songs would require a future stable song-ID protocol revision.
-

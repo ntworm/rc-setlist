@@ -6,6 +6,7 @@ import { SetlistManager } from '../src/core/setlist-manager.ts';
 import { CommandBus } from '../src/core/command-bus.ts';
 import {
   assertCompleteTestSession,
+  countConfirmedTestSessionMarkers,
   executeCommandAction,
   executeJumpCommand,
 } from '../src/commands/handlers.ts';
@@ -60,6 +61,21 @@ function installHarness(initialQuantization = 0) {
 test('test-session setup rejects incomplete locator creation', () => {
   assert.doesNotThrow(() => assertCompleteTestSession(27, 27));
   assert.throws(() => assertCompleteTestSession(26, 27), /1 of 27 locator/);
+});
+
+test('test-session setup counts only MCP-confirmed or Ableton-observed locators', () => {
+  const requested = [
+    { name: 'A', beats: 0 },
+    { name: 'B', beats: 8 },
+    { name: 'C', beats: 16 },
+  ];
+  const confirmedByMcp = [{ name: 'A', beats: 0 }];
+  const observed = [
+    { name: 'B', time: 8 },
+    { name: 'C', time: 17 },
+  ];
+
+  assert.equal(countConfirmedTestSessionMarkers(requested, confirmedByMcp, observed), 2);
 });
 
 test('quantization request becomes local scheduler authority without an OSC reply', async () => {
