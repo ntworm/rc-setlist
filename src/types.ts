@@ -72,7 +72,6 @@ export interface SetlistState {
 export type CommandStatus =
   | 'created'
   | 'sent'
-  | 'acknowledged'
   | 'confirmed'
   | 'failed'
   | 'expired'
@@ -85,8 +84,6 @@ export interface ShowCommand<TPayload = any> {
   sourceClientId: string;
   createdAt: number;
   status: CommandStatus;
-  retryCount: number;
-  maxRetries: number;
   timeoutMs: number;
 }
 

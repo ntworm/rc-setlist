@@ -208,7 +208,7 @@ export async function startServer(options: StartServerOptions = {}): Promise<voi
     await activateProjectProfileScope(projectIdentity);
 
     bridgeState.eventLogger = new EventLogger(bridgeState.globalPersistenceDir);
-    bridgeState.commandBus = new CommandBus(bridgeState.manager, bridgeState.oscClient, bridgeState.eventLogger);
+    bridgeState.commandBus = new CommandBus(bridgeState.manager, bridgeState.eventLogger);
 
     bridgeState.commandBus.on('command_settled', (cmd) => {
       bridgeState.wsServer?.broadcast({

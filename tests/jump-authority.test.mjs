@@ -63,8 +63,6 @@ test('quantization request becomes local scheduler authority without an OSC repl
       sourceClientId: 'test',
       createdAt: Date.now(),
       status: 'sent',
-      retryCount: 0,
-      maxRetries: 3,
       timeoutMs: 3000,
     });
 
@@ -83,7 +81,7 @@ test('quantization request becomes local scheduler authority without an OSC repl
 
 test('quantization command confirms through optimistic observable state', async () => {
   const harness = installHarness(4);
-  const bus = new CommandBus(harness.manager, bridgeState.oscClient, { log() {} });
+  const bus = new CommandBus(harness.manager, { log() {} });
   bridgeState.commandBus = bus;
   try {
     const command = bus.registerCommand('quantization-confirmed', 'set_quantization', { value: 0 }, 'test');
