@@ -26,6 +26,13 @@ test('public landing presents Ableton RC Setlist as source-available and noncomm
   assert.doesNotMatch(landing, /Release candidate/i);
   assert.doesNotMatch(landing, /commercial distribution is in preparation|private beta|sales open/i);
   assert.doesNotMatch(landing, /fonts\.googleapis\.com|fonts\.gstatic\.com|google-analytics|googletagmanager/i);
+  assert.match(
+    landing,
+    /@font-face\s*\{[^}]*font-family:\s*["']Inter["'][^}]*src:\s*url\(["']?\.\/fonts\/InterVariable\.woff2["']?\)/is,
+    'the landing must self-host its deterministic Inter webfont',
+  );
+  assert.ok(existsSync(new URL('../docs/fonts/InterVariable.woff2', import.meta.url)));
+  assert.ok(existsSync(new URL('../docs/fonts/OFL.txt', import.meta.url)));
 });
 
 test('public documentation uses the official compatibility floor', () => {

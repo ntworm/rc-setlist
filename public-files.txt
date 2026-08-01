@@ -32,6 +32,8 @@ docs/USER-GUIDE.md
 docs/apple-touch-icon.png
 docs/favicon-32.png
 docs/favicon.svg
+docs/fonts/InterVariable.woff2
+docs/fonts/OFL.txt
 docs/index.html
 docs/media/en/performance.png
 docs/media/en/product-truth-discord.png
