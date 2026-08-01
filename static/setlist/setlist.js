@@ -1,5 +1,6 @@
 const i18n = RcSetlistI18n;
 const t = (key, params) => i18n.t(key, params);
+const controllerRuntime = RcSetlistControllerRuntime;
 const languageSelect = document.getElementById('languageSelect');
 i18n.bindSelector(languageSelect);
 
@@ -17,6 +18,8 @@ const deletedProfileList = document.getElementById('deletedProfileList');
 const deletedProfileSection = document.getElementById('deletedProfileSection');
 const profileMutationNotice = document.getElementById('profileMutationNotice');
 const totalSetlistDuration = document.getElementById('totalSetlistDuration');
+const operationToast = document.getElementById('operationToast');
+let operationToastTimer = null;
 
 const hudSong = document.getElementById('hudSong');
 const hudSection = document.getElementById('hudSection');
@@ -71,9 +74,21 @@ function showConnectionFailure() {
   overlay.classList.add('visible');
 }
 
+function showToast(message, level = 'info') {
+  if (!operationToast) return;
+  if (operationToastTimer) clearTimeout(operationToastTimer);
+  operationToast.textContent = message;
+  operationToast.dataset.level = level;
+  operationToast.hidden = false;
+  operationToastTimer = setTimeout(() => {
+    operationToast.hidden = true;
+    operationToastTimer = null;
+  }, 5000);
+}
+
 // MIDI Mapping State
 let midiAccess = null;
-let midiMappings = Object.assign({
+const midiMappingDefaults = {
   'play': null,
   'stop': null,
   'next_song': null,
@@ -82,7 +97,12 @@ let midiMappings = Object.assign({
   'prev_section': null,
   'toggle_click': null,
   'toggle_lock': null
-}, JSON.parse(localStorage.getItem('bridge_midi_mappings')) || {});
+};
+let midiMappings = controllerRuntime.readMidiMappings(
+  localStorage,
+  'bridge_midi_mappings',
+  midiMappingDefaults,
+);
 let activeMidiMappingKey = null; // Key currently being mapped
 let currentMidiInputId = localStorage.getItem('bridge_midi_input_id') || '';
 
@@ -690,13 +710,11 @@ function mountTransportControls() {
 
 function connect() {
   const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-  const urlParams = new URLSearchParams(window.location.search);
-  let token = urlParams.get('token');
-  if (token && token !== 'null' && token !== 'undefined') {
-    localStorage.setItem('setlist_token', token);
-  } else {
-    token = localStorage.getItem('setlist_token') || '';
-  }
+  const token = controllerRuntime.consumeControllerToken({
+    historyRef: window.history,
+    locationRef: window.location,
+    storageRef: localStorage,
+  });
   const url = `${protocol}//${window.location.hostname}:${port}/ws?token=${encodeURIComponent(token)}`;
   const loggedUrl = url.replace(/token=[^&]+/g, 'token=***');
   console.log('[WS] connecting to', loggedUrl);
@@ -739,6 +757,7 @@ function connect() {
     nextHoldController?.reset();
     jumpConfirmation.clear();
     quantizationConfirmation.reset();
+    lyricsSaveTracker.failAll('disconnected');
     updateTransportAvailability();
     renderProfileState();
     showConnectionFailure();
@@ -826,6 +845,7 @@ function connect() {
         jumpConfirmation.executed(payload);
       } else if (payload.type === 'auth_status') {
         isController = Boolean(payload.isController);
+        if (!isController) lyricsSaveTracker.failAll('unauthorized');
         if (!payload.isController) {
           appendLog(t('feedback.readOnly'), 'warn');
           const statusTextEl = document.getElementById('statusText');
@@ -851,6 +871,7 @@ function connect() {
         if (registryChanged) renderProfileState();
         else updateProfileMutationAvailability();
       } else if (payload.type === 'command_status') {
+        lyricsSaveTracker.settle(payload);
         quantizationConfirmation.settle(payload);
         const profileCommand = pendingProfileCommands.get(payload.commandId);
         if (profileCommand && ['confirmed', 'failed', 'expired', 'cancelled'].includes(payload.status)) {
@@ -861,6 +882,7 @@ function connect() {
           requestProfiles();
         }
       } else if (payload.type === 'error') {
+        lyricsSaveTracker.failAll('server_error');
         const message = t('feedback.serverError', { detail: payload.message });
         appendLog(`⚠ ${message}`, 'error');
         alert(message);
@@ -1463,6 +1485,10 @@ let lyricsEditLastLoadedSong = '';
 let lyricsEditActiveTab = 'create';
 let lyricsSelectedSong = '';
 const lyricsCreateDrafts = new Map();
+const lyricsSaveTracker = controllerRuntime.createPendingCommandTracker({
+  timeoutMs: 8_000,
+  onSettled: handleLyricsSaveSettled,
+});
 const TAB_BUTTONS = {
   create: document.getElementById('lyricsTabCreate'),
   sync: document.getElementById('lyricsTabSync'),
@@ -1511,7 +1537,63 @@ function markLyricsDirty(dirty) {
     lyricsDirtyBadge.style.display = dirty ? 'inline-block' : 'none';
   }
   if (btnSaveEditedLyrics) {
-    btnSaveEditedLyrics.disabled = !dirty;
+    btnSaveEditedLyrics.disabled = !dirty || lyricsSaveTracker.hasKind('edit');
+  }
+}
+
+function lyricsSaveCommandId(kind) {
+  return `lyrics-${kind}-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+}
+
+function canPersistLyrics() {
+  return Boolean(
+    isController
+    && isSynchronized
+    && ws
+    && ws.readyState === WebSocket.OPEN
+  );
+}
+
+function beginLyricsSave(kind, message, metadata) {
+  if (!canPersistLyrics()) {
+    showToast(t(isController ? 'lyrics.notConnected' : 'lyrics.readOnlySave'), 'error');
+    return false;
+  }
+  const commandId = lyricsSaveCommandId(kind);
+  if (!lyricsSaveTracker.begin({ commandId, kind, metadata })) return false;
+
+  if (kind === 'edit') markLyricsDirty(lyricsEditDirty);
+  if (kind === 'sync') btnSaveSyncLyrics.disabled = true;
+  try {
+    ws.send(JSON.stringify({ ...message, commandId }));
+    return true;
+  } catch {
+    lyricsSaveTracker.settle({ commandId, status: 'failed' });
+    return false;
+  }
+}
+
+function handleLyricsSaveSettled(entry, status) {
+  const confirmed = status === 'confirmed';
+  if (entry.kind === 'edit') {
+    if (confirmed) {
+      markLyricsDirty(false);
+      appendLog(t('lyrics.saved', entry.metadata), 'info');
+    } else {
+      markLyricsDirty(true);
+      showToast(t('lyrics.saveFailed'), 'error');
+      appendLog(t('lyrics.saveFailed'), 'error');
+    }
+    return;
+  }
+
+  btnSaveSyncLyrics.disabled = lyricsSyncActiveIndex < lyricsLinesToSync.length;
+  if (confirmed) {
+    appendLog(t('lyrics.syncSaved', entry.metadata), 'info');
+    toggleLyricsModal();
+  } else {
+    showToast(t('lyrics.saveFailed'), 'error');
+    appendLog(t('lyrics.saveFailed'), 'error');
   }
 }
 
@@ -1714,20 +1796,16 @@ function saveLyricsEdit() {
     .filter((l) => l.timestamp && l.timestamp !== NO_TIMESTAMP)
     .map((l) => `${l.timestamp} ${l.text}`)
     .join('\n');
-  if (ws && ws.readyState === WebSocket.OPEN) {
-    ws.send(JSON.stringify({
+  const count = lyricsEditLines.filter(l => l.timestamp !== NO_TIMESTAMP).length;
+  beginLyricsSave(
+    'edit',
+    {
       type: 'save_lyrics',
       song,
       text: lrcBody,
-    }));
-    appendLog(t('lyrics.saved', {
-      song,
-      count: lyricsEditLines.filter(l => l.timestamp !== NO_TIMESTAMP).length,
-    }), 'info');
-    markLyricsDirty(false);
-  } else {
-    showToast(t('lyrics.notConnected'), 'error');
-  }
+    },
+    { song, count },
+  );
 }
 
 function onLyricsSongChange() {
@@ -1818,6 +1896,10 @@ function startLyricsSyncWorkflow() {
 }
 
 function resetLyricsSyncWorkflow() {
+  if (lyricsSaveTracker.hasKind('sync')) {
+    showToast(t('lyrics.savePending'), 'warn');
+    return;
+  }
   isLyricsSyncing = false;
   lyricsLinesToSync = [];
   lyricsSyncedLines = [];
@@ -1887,16 +1969,15 @@ function saveSyncLyrics() {
   const selectedSong = lyricsSongSelect.value;
   const fileContent = lyricsSyncedLines.map(l => `${l.timestamp} ${l.text}`).join('\n');
 
-  if (ws && ws.readyState === WebSocket.OPEN) {
-    ws.send(JSON.stringify({
+  beginLyricsSave(
+    'sync',
+    {
       type: 'save_lyrics',
       song: selectedSong,
       text: fileContent
-    }));
-  }
-
-  appendLog(t('lyrics.syncSaved', { song: selectedSong }), 'info');
-  toggleLyricsModal();
+    },
+    { song: selectedSong },
+  );
 }
 
 // Bind spacebar key for tapping

@@ -606,6 +606,40 @@ test('Lyrics keeps an unsaved edit when the modal closes and reopens', async ({ 
   expect(messages.some((message) => message.type === 'save_lyrics')).toBe(false);
 });
 
+test('Lyrics keeps a failed save dirty and clears it only after confirmation', async ({ page }) => {
+  await page.goto('/setlist/?scenario=lyrics-save-fails');
+  await page.locator('.tools-menu > summary').click();
+  await page.getByRole('button', { name: 'Lyrics' }).click();
+  await page.locator('#lyricsTabEdit').click();
+  await page.locator('.lyric-edit-text').first().dblclick();
+  const failedEditor = page.locator('#lyricsEditList input[type="text"]');
+  await failedEditor.fill('Draft that must survive a disk failure');
+  await failedEditor.press('Enter');
+  await page.locator('#btnSaveEditedLyrics').click();
+
+  await expectControlMessage(
+    page,
+    (message) => message.type === 'save_lyrics' && /^lyrics-edit-/.test(message.commandId)
+  );
+  await expect(page.locator('#btnSaveEditedLyrics')).toBeEnabled();
+  await expect(page.locator('#lyricsDirtyBadge')).toBeVisible();
+  await expect(page.locator('.lyric-edit-text').first()).toHaveText('Draft that must survive a disk failure');
+  await expect(page.locator('#operationToast')).toContainText('not saved');
+
+  await page.goto('/setlist/');
+  await page.locator('.tools-menu > summary').click();
+  await page.getByRole('button', { name: 'Lyrics' }).click();
+  await page.locator('#lyricsTabEdit').click();
+  await page.locator('.lyric-edit-text').first().dblclick();
+  const confirmedEditor = page.locator('#lyricsEditList input[type="text"]');
+  await confirmedEditor.fill('Confirmed draft');
+  await confirmedEditor.press('Enter');
+  await page.locator('#btnSaveEditedLyrics').click();
+
+  await expect(page.locator('#btnSaveEditedLyrics')).toBeDisabled();
+  await expect(page.locator('#lyricsDirtyBadge')).toBeHidden();
+});
+
 for (const surface of [
   {
     route: '/performance/?scenario=marketing',

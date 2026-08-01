@@ -274,6 +274,12 @@ webSockets.on('connection', (socket) => {
           : { type: 'lyrics', song: requestedSong, format: 'none', lines: [] }));
       } else if (parsed.type === 'profiles_get') {
         socket.send(JSON.stringify(profilesStateMessage));
+      } else if (parsed.type === 'save_lyrics' && typeof parsed.commandId === 'string') {
+        socket.send(JSON.stringify({
+          type: 'command_status',
+          commandId: parsed.commandId,
+          status: scenario === 'lyrics-save-fails' ? 'failed' : 'confirmed',
+        }));
       }
     } catch {
       // The production UI ignores malformed messages, and so does the fixture.

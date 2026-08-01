@@ -1243,3 +1243,21 @@ body {
     flex-basis: 100%;
   }
 }
+.operation-toast {
+  position: fixed;
+  z-index: 100000;
+  right: 1rem;
+  bottom: 1rem;
+  max-width: min(32rem, calc(100vw - 2rem));
+  padding: 0.8rem 1rem;
+  border: 1px solid var(--card-border);
+  border-radius: 8px;
+  background: var(--card-bg);
+  color: var(--text);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.45);
+  font-weight: 700;
+}
+
+.operation-toast[data-level="error"] { border-color: var(--danger); }
+.operation-toast[data-level="success"] { border-color: var(--success); }
+.operation-toast[data-level="warn"] { border-color: var(--warning, #f59e0b); }

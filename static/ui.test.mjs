@@ -142,6 +142,23 @@ test('Static UI Setlist: loads the safe transport runtime and dock controls', ()
   assert.match(setlistHtml, /id="quantizationSelect"/);
 });
 
+test('Static UI Setlist: uses guarded controller storage and confirmed lyrics saves', () => {
+  const setlistHtml = fs.readFileSync(path.join(__dirname, 'setlist', 'index.html'), 'utf8');
+  const setlistJs = fs.readFileSync(path.join(__dirname, 'setlist', 'setlist.js'), 'utf8');
+  const runtimeIndex = setlistHtml.indexOf('src="./controller-runtime.js"');
+  const applicationIndex = setlistHtml.indexOf('src="./setlist.js"');
+
+  assert.ok(runtimeIndex >= 0 && runtimeIndex < applicationIndex, 'controller runtime loads before setlist.js');
+  assert.match(setlistJs, /readMidiMappings\(/);
+  assert.match(setlistJs, /consumeControllerToken\(/);
+  assert.match(setlistJs, /lyricsSaveTracker\.settle\(payload\)/);
+  assert.match(setlistJs, /status === 'confirmed'[\s\S]*markLyricsDirty\(false\)/);
+  assert.doesNotMatch(
+    setlistJs,
+    /JSON\.parse\(localStorage\.getItem\(['"]bridge_midi_mappings['"]\)\)/,
+  );
+});
+
 test('Static UI Setlist: exposes duration metrics and complete profile controls', () => {
   const setlistHtml = fs.readFileSync(path.join(__dirname, 'setlist', 'index.html'), 'utf8');
   const setlistJs = fs.readFileSync(path.join(__dirname, 'setlist', 'setlist.js'), 'utf8');

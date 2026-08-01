@@ -302,6 +302,18 @@
     },
     'lyrics.noValidLines': { en: 'No valid lyric lines were found.', 'pt-BR': 'Nenhuma linha de letra válida foi encontrada.' },
     'lyrics.notConnected': { en: 'Not connected to the server.', 'pt-BR': 'Sem conexão com o servidor.' },
+    'lyrics.readOnlySave': {
+      en: 'Lyrics can only be saved by a synchronized controller.',
+      'pt-BR': 'As letras só podem ser salvas por um controlador sincronizado.',
+    },
+    'lyrics.saveFailed': {
+      en: 'Lyrics were not saved. Your edits are still available; check the connection and try again.',
+      'pt-BR': 'A letra não foi salva. Suas edições continuam disponíveis; verifique a conexão e tente novamente.',
+    },
+    'lyrics.savePending': {
+      en: 'Wait for the current lyrics save to finish.',
+      'pt-BR': 'Aguarde o salvamento atual da letra terminar.',
+    },
     'lyrics.invalidTimecode': {
       en: 'Invalid timecode. Use [mm:ss.xx] or leave it empty.',
       'pt-BR': 'Timecode inválido. Use [mm:ss.xx] ou deixe vazio.',
