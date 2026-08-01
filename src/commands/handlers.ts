@@ -1,4 +1,3 @@
-import * as fs from 'node:fs';
 import * as path from 'node:path';
 import * as net from 'node:net';
 import { WebSocket } from 'ws';
@@ -20,12 +19,13 @@ import {
 } from '../core/csv-export.js';
 import { buildClickPreviewWav, clickPreviewFilename } from '../core/click-preview.js';
 import { getQuantizationBeats } from '../core/next-downbeat-jump.js';
+import { atomicWriteFile } from '../util/atomic-write.js';
 
 export async function executeCommandAction(command: ShowCommand, ws?: AugmentedWebSocket): Promise<void> {
   const msg = command.payload;
 
   const requiresOsc = new Set([
-    'play', 'stop', 'metronome', 'refresh', 'jump', 'set_quantization'
+    'play', 'stop', 'metronome', 'refresh', 'jump', 'set_quantization', 'create_test_session'
   ]);
   if (requiresOsc.has(command.type) && !bridgeState.oscClient) {
     throw new Error('OSC client is not initialized.');
@@ -66,13 +66,13 @@ export async function executeCommandAction(command: ShowCommand, ws?: AugmentedW
       await executeReorderCommand(msg);
       break;
     case 'save_lyrics':
-      executeSaveLyricsCommand(msg);
+      await executeSaveLyricsCommand(msg);
       break;
     case 'click_preview':
-      executeClickPreviewCommand(msg, ws);
+      await executeClickPreviewCommand(msg, ws);
       break;
     case 'export_csv':
-      executeExportCsvCommand(msg, ws);
+      await executeExportCsvCommand(msg, ws);
       break;
     case 'set_quantization':
       osc.setClipTriggerQuantization(msg.value);
@@ -219,21 +219,11 @@ async function executeReorderCommand(msg: any): Promise<void> {
   }
 
   const { songTitles } = msg;
-  if (bridgeState.manager && songTitles) {
-    bridgeState.manager.setCustomOrder(songTitles);
-
+  if (bridgeState.manager && Array.isArray(songTitles) && songTitles.every((title) => typeof title === 'string')) {
     try {
       const orderFilePath = getActiveProfilePaths().customOrder;
-      const targetPersistenceDir = path.dirname(orderFilePath);
-
-      if (!fs.existsSync(targetPersistenceDir)) {
-        fs.mkdirSync(targetPersistenceDir, { recursive: true });
-      }
-      fs.writeFileSync(
-        orderFilePath,
-        JSON.stringify(songTitles, null, 2),
-        'utf-8'
-      );
+      await atomicWriteFile(orderFilePath, JSON.stringify(songTitles, null, 2), 'utf8');
+      bridgeState.manager.setCustomOrder(songTitles);
       console.log(`[Persistence] Custom song order saved to ${orderFilePath}`);
       bridgeState.wsServer?.broadcastLog('Custom song order saved.', 'info');
     } catch (err) {
@@ -245,7 +235,7 @@ async function executeReorderCommand(msg: any): Promise<void> {
   }
 }
 
-function executeSaveLyricsCommand(msg: any): void {
+async function executeSaveLyricsCommand(msg: any): Promise<void> {
   if (bridgeState.manager?.getState().mode === 'show') {
     throw new Error('Cannot save or modify lyrics in Show mode.');
   }
@@ -254,12 +244,8 @@ function executeSaveLyricsCommand(msg: any): void {
     const cleanTitle = msg.song.replace(/[\\/:*?"<>|]/g, '_').trim();
     const targetLyricsDir = getActiveProfilePaths().lyrics;
 
-    if (!fs.existsSync(targetLyricsDir)) {
-      fs.mkdirSync(targetLyricsDir, { recursive: true });
-    }
-
     const lrcPath = path.join(targetLyricsDir, `${cleanTitle}.lrc`);
-    fs.writeFileSync(lrcPath, msg.text, 'utf-8');
+    await atomicWriteFile(lrcPath, msg.text, 'utf8');
     console.log(`[Lyrics] Saved synchronized lyrics for "${msg.song}" to ${lrcPath}`);
     bridgeState.wsServer?.broadcastLog(`Synchronized lyrics for "${msg.song}" saved.`, 'info');
 
@@ -277,7 +263,7 @@ function executeSaveLyricsCommand(msg: any): void {
   }
 }
 
-function executeClickPreviewCommand(msg: any, ws?: AugmentedWebSocket): void {
+async function executeClickPreviewCommand(msg: any, ws?: AugmentedWebSocket): Promise<void> {
   try {
     const state = bridgeState.manager?.getState();
     const requestedBpm = (typeof msg.bpm === 'number' && msg.bpm > 0)
@@ -288,12 +274,9 @@ function executeClickPreviewCommand(msg: any, ws?: AugmentedWebSocket): void {
       : 4;
     const wav = buildClickPreviewWav({ bpm: requestedBpm, beats });
     const audioDir = getActiveProfilePaths().audio;
-    if (!fs.existsSync(audioDir)) {
-      fs.mkdirSync(audioDir, { recursive: true });
-    }
     const fileName = clickPreviewFilename(requestedBpm, beats);
     const fullPath = path.join(audioDir, fileName);
-    fs.writeFileSync(fullPath, wav);
+    await atomicWriteFile(fullPath, wav);
     console.log(`[Click] Wrote preview WAV to ${fullPath} (bpm=${requestedBpm}, beats=${beats}, ${wav.length}B)`);
 
     if (ws && ws.readyState === WebSocket.OPEN) {
@@ -311,7 +294,7 @@ function executeClickPreviewCommand(msg: any, ws?: AugmentedWebSocket): void {
   }
 }
 
-function executeExportCsvCommand(msg: any, ws?: AugmentedWebSocket): void {
+async function executeExportCsvCommand(msg: any, ws?: AugmentedWebSocket): Promise<void> {
   try {
     const state = bridgeState.manager?.getState();
     if (!state || !state.songs.length) {
@@ -352,13 +335,10 @@ function executeExportCsvCommand(msg: any, ws?: AugmentedWebSocket): void {
       });
       const csv = buildTracklistCsv(rows);
       const exportsDir = getActiveProfilePaths().exports;
-      if (!fs.existsSync(exportsDir)) {
-        fs.mkdirSync(exportsDir, { recursive: true });
-      }
       const stamp = csvFilenameTimestamp();
       const fileName = `tracklist-${stamp}.csv`;
       const fullPath = path.join(exportsDir, fileName);
-      fs.writeFileSync(fullPath, csv, 'utf-8');
+      await atomicWriteFile(fullPath, csv, 'utf8');
       console.log(`[CSV] Wrote tracklist export to ${fullPath} (${rows.length} rows)`);
       bridgeState.wsServer?.broadcastLog(`Tracklist exported: ${fileName} (${rows.length} songs)`, 'info');
 
@@ -419,7 +399,7 @@ async function executeCreateTestSessionCommand(msg: any): Promise<void> {
     'TEST GOLF': `[00:00.00]TEST GOLF — SONG 7\n[00:04.57]Metronome on at 105 bpm\n[00:13.71]Stops at the verse\n`,
   };
 
-  if (!bridgeState.oscClient) return;
+  if (!bridgeState.oscClient) throw new Error('OSC client is not initialized.');
 
   try {
     bridgeState.isCreatingTestSession = true;
@@ -466,16 +446,13 @@ async function executeCreateTestSessionCommand(msg: any): Promise<void> {
     bridgeState.oscClient.getCuePoints();
 
     const lyricsDir = getActiveProfilePaths().lyrics;
-    if (!fs.existsSync(lyricsDir)) {
-      fs.mkdirSync(lyricsDir, { recursive: true });
-    }
     let lyricsSaved = 0;
     let lyricsSkipped = 0;
     for (const [songTitle, lrcContent] of Object.entries(lyricsBySong)) {
       const cleanTitle = songTitle.replace(/[\\/:*?"<>|]/g, '_').trim();
       const lrcPath = path.join(lyricsDir, `${cleanTitle}.lrc`);
       try {
-        fs.writeFileSync(lrcPath, lrcContent, 'utf-8');
+        await atomicWriteFile(lrcPath, lrcContent, 'utf8');
         lyricsSaved++;
         console.log(`[Automation] Saved lyrics for "${songTitle}" to ${lrcPath}`);
       } catch (err) {
@@ -493,10 +470,12 @@ async function executeCreateTestSessionCommand(msg: any): Promise<void> {
         `⚠ ${lyricsSkipped} lyric file(s) could not be saved.`,
         'warn'
       );
+      throw new Error(`${lyricsSkipped} lyric file(s) could not be saved.`);
     }
   } catch (err) {
     console.error('[Automation] Error creating test locators:', err);
     bridgeState.wsServer?.broadcastLog(`Could not create test locators: ${err}`, 'error');
+    throw err;
   } finally {
     bridgeState.isCreatingTestSession = false;
   }

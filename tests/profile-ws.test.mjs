@@ -106,6 +106,27 @@ test('WebSocket profile and reliability core protocol', async () => {
 
     await new Promise((resolve) => setTimeout(resolve, 100));
 
+    // A persistence failure must not publish an order that was never saved.
+    bridgeState.manager.updateCues([
+      { name: 'Song A', time: 0 },
+      { name: 'Song B', time: 32 },
+    ]);
+    const orderPath = bridgeState.profileManager.getActivePaths().customOrder;
+    fs.mkdirSync(orderPath, { recursive: true });
+    const reorderStatusPromise = waitForMessage(
+      ws,
+      (msg) => msg.type === 'command_status' && msg.commandId === 'reorder-disk-failure'
+    );
+    ws.send(JSON.stringify({
+      type: 'reorder',
+      songTitles: ['Song B', 'Song A'],
+      commandId: 'reorder-disk-failure',
+    }));
+    const reorderStatus = await reorderStatusPromise;
+    assert.equal(reorderStatus.status, 'failed');
+    assert.deepEqual(bridgeState.manager.getState().songs.map(({ title }) => title), ['Song A', 'Song B']);
+    fs.rmSync(orderPath, { recursive: true, force: true });
+
     // 4. Mutation tests: Profiles API over WS
     // Fetch profiles state
     ws.send(JSON.stringify({ type: 'profiles_get' }));
