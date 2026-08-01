@@ -3,6 +3,7 @@ import { WebSocketServer, WebSocket } from 'ws';
 import { EventEmitter } from 'node:events';
 import { URL as NodeURL } from 'node:url';
 import { SetlistState, AugmentedWebSocket } from '../types.js';
+import { decodeClientMessage } from './client-message.js';
 
 export function isValidOrigin(origin: string, reqHost: string): boolean {
   const expected = reqHost.toLowerCase();
@@ -138,7 +139,12 @@ export class SetlistWSServer extends EventEmitter {
             }
             return;
           }
-          this.emit('client_message', msg, ws);
+          const decoded = decodeClientMessage(msg);
+          if (!decoded.ok) {
+            ws.send(JSON.stringify({ type: 'error', ...decoded }));
+            return;
+          }
+          this.emit('client_message', decoded.message, ws);
         } catch (err) {
           console.warn('[WS] Could not decode the JSON message:', err);
         }
