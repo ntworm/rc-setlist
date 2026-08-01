@@ -20,9 +20,6 @@ const DEFAULT_LOCAL_POLICY: CommandPolicy = Object.freeze({
 export const COMMAND_POLICIES: Readonly<Record<string, CommandPolicy>> = Object.freeze({
   play: { completion: 'observable', critical: true, timeoutMs: 5_000 },
   stop: { completion: 'observable', safetyLane: true, timeoutMs: 5_000 },
-  toggle_play: { completion: 'observable', critical: true, timeoutMs: 5_000 },
-  next_cue: { completion: 'observable', critical: true, timeoutMs: 5_000 },
-  prev_cue: { completion: 'observable', critical: true, timeoutMs: 5_000 },
   jump: { completion: 'observable', critical: true, timeoutMs: 5_000 },
   metronome: { completion: 'observable', timeoutMs: 3_000 },
   set_quantization: { completion: 'observable', timeoutMs: 3_000 },
@@ -249,8 +246,6 @@ export class CommandBus extends EventEmitter {
       let matches = false;
       if (command.type === 'play') matches = state.isPlaying;
       else if (command.type === 'stop') matches = !state.isPlaying;
-      else if (command.type === 'toggle_play') matches = typeof payload?.targetIsPlaying === 'boolean'
-        && state.isPlaying === payload.targetIsPlaying;
       else if (command.type === 'metronome') matches = typeof payload?.value === 'boolean'
         && state.metronome === payload.value;
       else if (command.type === 'set_quantization') matches = typeof payload?.value === 'number'
@@ -259,12 +254,6 @@ export class CommandBus extends EventEmitter {
         && state.activeSongIndex === payload.songIndex
         && (payload.sectionIndex === undefined || payload.sectionIndex === null
           || state.activeSectionIndex === payload.sectionIndex);
-      else if (command.type === 'next_cue' || command.type === 'prev_cue') {
-        matches = payload?.expectedSongIndex !== undefined
-          && state.activeSongIndex === payload.expectedSongIndex
-          && (payload.expectedSectionIndex === undefined || payload.expectedSectionIndex === null
-            || state.activeSectionIndex === payload.expectedSectionIndex);
-      }
       if (matches) confirmed.push(command.commandId);
     }
 
