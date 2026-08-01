@@ -110,8 +110,8 @@ async function refreshProjectScope(options: StartServerOptions): Promise<void> {
       console.log(`[Persistence] Live Set scope changed to: ${identity.displayName}`);
       await activateProjectProfileScope(identity);
     }
-  } catch (error) {
-    console.error(`[Persistence] Failed to switch Live Set scope: ${error instanceof Error ? error.message : String(error)}`);
+  } catch {
+    console.error('[Persistence] Failed to switch Live Set scope.');
   } finally {
     bridgeState.profileScopeSwitching = false;
     broadcastProfileState();
@@ -202,7 +202,7 @@ export async function startServer(options: StartServerOptions = {}): Promise<voi
     const context = getExtensionContext();
     if (context && context.environment.storageDirectory) {
       bridgeState.globalPersistenceDir = context.environment.storageDirectory;
-      console.log(`[Persistence] Storage directory resolved to: ${bridgeState.globalPersistenceDir}`);
+      console.log('[Persistence] Storage directory available.');
     } else {
       bridgeState.globalPersistenceDir = typeof __dirname !== 'undefined' ? path.join(__dirname, '../.setlist') : './.setlist';
     }
@@ -227,6 +227,7 @@ export async function startServer(options: StartServerOptions = {}): Promise<voi
         type: 'command_status',
         commandId: cmd.commandId,
         status: cmd.status,
+        ...(cmd.reason ? { reason: cmd.reason } : {}),
       });
     });
 
@@ -242,10 +243,10 @@ export async function startServer(options: StartServerOptions = {}): Promise<voi
         const raw = fs.readFileSync(orderFilePath, 'utf-8');
         const order = JSON.parse(raw) as string[];
         bridgeState.manager.setCustomOrder(order);
-        console.log(`[Persistence] Custom song order loaded from ${orderFilePath}`);
+        console.log('[Persistence] Custom song order loaded.');
       }
-    } catch (err) {
-      console.error(`[Persistence] Failed to load custom order: ${err}`);
+    } catch {
+      console.error('[Persistence] Failed to load custom song order.');
     }
 
     setCsvExportResolver(async (rawName: string) => {
@@ -519,7 +520,7 @@ export async function startServer(options: StartServerOptions = {}): Promise<voi
 
     bridgeState.serverRunning = true;
   } catch (err) {
-    console.error(`[rc-setlist] startServer failed, cleaning up: ${err}`);
+    console.error('[rc-setlist] server startup failed; cleaning up.');
     await stopServer();
     throw err;
   }

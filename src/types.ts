@@ -78,7 +78,13 @@ export type CommandStatus =
   | 'expired'
   | 'cancelled';
 
-export interface ShowCommand<TPayload = any> {
+export type CommandFailureReason =
+  | 'panic_active'
+  | 'critical_commands_locked'
+  | 'execution_failed'
+  | 'timeout';
+
+export interface ShowCommand<TPayload = unknown> {
   commandId: string;
   type: string;
   payload: TPayload;
@@ -86,6 +92,7 @@ export interface ShowCommand<TPayload = any> {
   createdAt: number;
   status: CommandStatus;
   timeoutMs: number;
+  reason?: CommandFailureReason;
 }
 
 import { WebSocket } from 'ws';

@@ -198,10 +198,10 @@ export class OSCClient extends EventEmitter {
     }
   }
 
-  public send(address: string, args: any[] = []): void {
+  public send(address: string, args: any[] = []): boolean {
     if (typeof address !== 'string' || !address.startsWith('/')) {
       this.emit('error', new Error(`[OSC] send: invalid address ${JSON.stringify(address)}`));
-      return;
+      return false;
     }
     const safeArgs = Array.isArray(args) ? args : [];
     const oscMsg = {
@@ -216,10 +216,10 @@ export class OSCClient extends EventEmitter {
       buffer = Buffer.from(encoded.buffer, encoded.byteOffset, encoded.byteLength);
     } catch (err) {
       this.emit('error', err);
-      return;
+      return false;
     }
     const socket = this.server;
-    if (!socket) return;
+    if (!socket) return false;
     this.txCount++;
     dbg('TX', `#${this.txCount} ${address} args=${JSON.stringify(safeArgs)} → ${this.targetHost}:${this.targetPort} via socket listenPort=${this.listenPort}`);
     socket.send(buffer, this.targetPort, this.targetHost, (err) => {
@@ -228,6 +228,7 @@ export class OSCClient extends EventEmitter {
         this.emit('error', err);
       }
     });
+    return true;
   }
 
   public start(): Promise<void> {

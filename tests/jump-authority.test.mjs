@@ -4,7 +4,11 @@ import { bridgeState } from '../src/core/bridge-state.ts';
 import { JumpScheduler } from '../src/core/next-downbeat-jump.ts';
 import { SetlistManager } from '../src/core/setlist-manager.ts';
 import { CommandBus } from '../src/core/command-bus.ts';
-import { executeCommandAction, executeJumpCommand } from '../src/commands/handlers.ts';
+import {
+  assertCompleteTestSession,
+  executeCommandAction,
+  executeJumpCommand,
+} from '../src/commands/handlers.ts';
 import { handleJumpSchedulerEvent } from '../src/server-lifecycle.ts';
 
 function installHarness(initialQuantization = 0) {
@@ -53,13 +57,18 @@ function installHarness(initialQuantization = 0) {
   };
 }
 
+test('test-session setup rejects incomplete locator creation', () => {
+  assert.doesNotThrow(() => assertCompleteTestSession(27, 27));
+  assert.throws(() => assertCompleteTestSession(26, 27), /1 of 27 locator/);
+});
+
 test('quantization request becomes local scheduler authority without an OSC reply', async () => {
   const harness = installHarness(4);
   try {
     await executeCommandAction({
       commandId: 'quantization-none',
       type: 'set_quantization',
-      payload: { value: 0 },
+      payload: { type: 'set_quantization', value: 0 },
       sourceClientId: 'test',
       createdAt: Date.now(),
       status: 'sent',
@@ -84,7 +93,12 @@ test('quantization command confirms through optimistic observable state', async 
   const bus = new CommandBus(harness.manager, { log() {} });
   bridgeState.commandBus = bus;
   try {
-    const command = bus.registerCommand('quantization-confirmed', 'set_quantization', { value: 0 }, 'test');
+    const command = bus.registerCommand(
+      'quantization-confirmed',
+      'set_quantization',
+      { type: 'set_quantization', value: 0 },
+      'test',
+    );
     const settled = new Promise((resolve) => bus.once('command_settled', resolve));
     bus.dispatch(command, () => executeCommandAction(command));
     const result = await settled;

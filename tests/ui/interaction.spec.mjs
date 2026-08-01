@@ -640,6 +640,27 @@ test('Lyrics keeps a failed save dirty and clears it only after confirmation', a
   await expect(page.locator('#lyricsDirtyBadge')).toBeHidden();
 });
 
+test('Lyrics refuses to report success while an edited line has no timestamp', async ({ page }) => {
+  await page.goto('/setlist/');
+  await page.locator('.tools-menu > summary').click();
+  await page.getByRole('button', { name: 'Lyrics' }).click();
+  await page.locator('#lyricsTabEdit').click();
+  await page.getByRole('button', { name: '+ Line', exact: true }).click();
+
+  const inlineEditor = page.locator('#lyricsEditList input[type="text"]');
+  await inlineEditor.fill('This line must not disappear');
+  await inlineEditor.press('Enter');
+  await page.locator('#btnSaveEditedLyrics').click();
+
+  await expect(page.locator('#operationToast')).toContainText('timestamp');
+  await expect(page.locator('#lyricsDirtyBadge')).toBeVisible();
+  await expect(page.locator('.lyric-edit-text').last()).toHaveText('This line must not disappear');
+  const messages = await receivedControlMessages(page);
+  expect(messages.some((message) =>
+    message.type === 'save_lyrics' && message.text.includes('This line must not disappear')
+  )).toBe(false);
+});
+
 for (const surface of [
   {
     route: '/performance/?scenario=marketing',

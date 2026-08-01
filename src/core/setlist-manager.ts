@@ -78,6 +78,7 @@ export class SetlistManager {
   private sortSongs(): void {
     const chronological = [...this.songs].sort((a, b) => a.time - b.time);
     if (this.customOrder.length === 0) {
+      this.songs = chronological;
       this.rebuildChronologicalIndex();
       this.invalidateDerivedSongs();
       return;

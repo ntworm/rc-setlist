@@ -1,7 +1,7 @@
 import { EventEmitter } from 'node:events';
 import type { EventLogger } from './event-log.js';
 import type { SetlistManager } from './setlist-manager.js';
-import type { CommandStatus, ShowCommand } from '../types.js';
+import type { CommandFailureReason, CommandStatus, ShowCommand } from '../types.js';
 
 type CommandCompletion = 'local' | 'observable';
 
@@ -45,11 +45,13 @@ export const COMMAND_POLICIES: Readonly<Record<string, CommandPolicy>> = Object.
 });
 
 type QueuedCommand = {
-  command: ShowCommand;
+  command: ShowCommand<unknown>;
   executeFn: () => void | Promise<void>;
 };
 
-class CommandDeadlineError extends Error {}
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
 
 function policyFor(type: string): CommandPolicy {
   return COMMAND_POLICIES[type] ?? DEFAULT_LOCAL_POLICY;
@@ -62,14 +64,10 @@ function terminal(status: CommandStatus): boolean {
     || status === 'cancelled';
 }
 
-function failureMessage(error: unknown): string {
-  return error instanceof Error ? error.message : 'Command execution failed.';
-}
-
 export class CommandBus extends EventEmitter {
   private processedIds = new Map<string, number>();
-  private commandHistory = new Map<string, ShowCommand>();
-  private pendingCommands: ShowCommand[] = [];
+  private commandHistory = new Map<string, ShowCommand<unknown>>();
+  private pendingCommands: ShowCommand<unknown>[] = [];
   private commandQueue: QueuedCommand[] = [];
   private isProcessingQueue = false;
   private timeoutInterval: NodeJS.Timeout | null = null;
@@ -112,13 +110,13 @@ export class CommandBus extends EventEmitter {
     return this.processedIds.has(commandId);
   }
 
-  public registerCommand(
+  public registerCommand<TPayload>(
     commandId: string,
     type: string,
-    payload: any,
+    payload: TPayload,
     sourceClientId: string,
-  ): ShowCommand {
-    const command: ShowCommand = {
+  ): ShowCommand<TPayload> {
+    const command: ShowCommand<TPayload> = {
       commandId,
       type,
       payload,
@@ -139,16 +137,16 @@ export class CommandBus extends EventEmitter {
     return command;
   }
 
-  public dispatch(command: ShowCommand, executeFn: () => void | Promise<void>): void {
+  public dispatch<TPayload>(command: ShowCommand<TPayload>, executeFn: () => void | Promise<void>): void {
     const state = this.manager.getState();
     const allowedDuringPanic = command.type === 'stop' || command.type === 'set_panic';
     if (state.safety.panicActive && !allowedDuringPanic) {
-      this.updateStatus(command.commandId, 'failed', 'Rejected: Panic mode is active.');
+      this.updateStatus(command.commandId, 'failed', 'panic_active');
       return;
     }
 
     if (state.safety.criticalCommandsLocked && policyFor(command.type).critical) {
-      this.updateStatus(command.commandId, 'failed', 'Rejected: Critical commands are locked.');
+      this.updateStatus(command.commandId, 'failed', 'critical_commands_locked');
       return;
     }
 
@@ -175,34 +173,15 @@ export class CommandBus extends EventEmitter {
   private async execute(item: QueuedCommand): Promise<void> {
     const { command, executeFn } = item;
     if (terminal(command.status)) return;
-    const remainingMs = command.timeoutMs - (Date.now() - command.createdAt);
-    if (remainingMs <= 0) {
-      this.updateStatus(command.commandId, 'expired', 'Timeout exceeded before execution');
-      return;
-    }
-
-    let deadline: NodeJS.Timeout | null = null;
     try {
-      await Promise.race([
-        Promise.resolve().then(executeFn),
-        new Promise<never>((_, reject) => {
-          deadline = setTimeout(() => reject(new CommandDeadlineError()), remainingMs);
-          deadline.unref?.();
-        }),
-      ]);
+      await executeFn();
       if (policyFor(command.type).completion === 'local') {
         this.updateStatus(command.commandId, 'confirmed');
       } else {
         this.resolveObservableConfirmations();
       }
     } catch (error) {
-      if (error instanceof CommandDeadlineError) {
-        this.updateStatus(command.commandId, 'expired', 'Execution deadline exceeded');
-      } else {
-        this.updateStatus(command.commandId, 'failed', failureMessage(error));
-      }
-    } finally {
-      if (deadline) clearTimeout(deadline);
+      this.updateStatus(command.commandId, 'failed', 'execution_failed');
     }
   }
 
@@ -219,11 +198,16 @@ export class CommandBus extends EventEmitter {
     }
   }
 
-  public updateStatus(commandId: string, status: CommandStatus, reason?: string): void {
+  public updateStatus(
+    commandId: string,
+    status: CommandStatus,
+    reason?: CommandFailureReason,
+  ): void {
     const command = this.commandHistory.get(commandId);
     if (!command || terminal(command.status)) return;
 
     command.status = status;
+    if (reason) command.reason = reason;
     this.logger.log({
       type: `command_${status}`,
       clientId: command.sourceClientId,
@@ -247,12 +231,12 @@ export class CommandBus extends EventEmitter {
     const now = Date.now();
     for (const command of [...this.pendingCommands]) {
       if (now - command.createdAt > command.timeoutMs) {
-        this.updateStatus(command.commandId, 'expired', 'Timeout exceeded without confirmation');
+        this.updateStatus(command.commandId, 'expired', 'timeout');
       }
     }
   }
 
-  public getPending(): ShowCommand[] {
+  public getPending(): ShowCommand<unknown>[] {
     return [...this.pendingCommands];
   }
 
@@ -261,7 +245,7 @@ export class CommandBus extends EventEmitter {
     const confirmed: string[] = [];
 
     for (const command of this.pendingCommands) {
-      const payload = command.payload;
+      const payload = isRecord(command.payload) ? command.payload : {};
       let matches = false;
       if (command.type === 'play') matches = state.isPlaying;
       else if (command.type === 'stop') matches = !state.isPlaying;

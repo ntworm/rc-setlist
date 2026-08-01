@@ -107,6 +107,21 @@ test('pending lyrics state remains dirty until confirmation and survives failure
   assert.equal(dirty, false);
 });
 
+test('lyrics edit revisions reject stale save confirmations', () => {
+  const runtime = loadRuntime();
+  const guard = runtime.createEditRevisionGuard();
+  guard.selectSong('Song A');
+  const saved = guard.snapshot();
+  assert.equal(guard.matches(saved), true);
+
+  guard.changed();
+  assert.equal(guard.matches(saved), false, 'an edit after save makes its confirmation stale');
+
+  const secondSave = guard.snapshot();
+  guard.selectSong('Song B');
+  assert.equal(guard.matches(secondSave), false, 'a song switch makes the old confirmation stale');
+});
+
 test('disconnect and timeout settle pending commands as failures', () => {
   const runtime = loadRuntime();
   const callbacks = [];

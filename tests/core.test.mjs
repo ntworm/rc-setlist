@@ -341,6 +341,19 @@ test('SetlistManager: new songs do not erase an intentional manual order', () =>
   );
 });
 
+test('SetlistManager clearing a profile order restores chronological display order', () => {
+  const manager = new SetlistManager();
+  manager.updateCues([
+    { name: 'Song A', time: 0 },
+    { name: 'Song B', time: 100 },
+  ]);
+  manager.setCustomOrder(['Song B', 'Song A']);
+  assert.deepStrictEqual(manager.getState().songs.map((song) => song.title), ['Song B', 'Song A']);
+
+  manager.setCustomOrder([]);
+  assert.deepStrictEqual(manager.getState().songs.map((song) => song.title), ['Song A', 'Song B']);
+});
+
 test('SetlistManager inserts new songs without repeated linear index searches', () => {
   const manager = new SetlistManager();
   manager.updateCues([

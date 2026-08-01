@@ -149,6 +149,11 @@ test('OSC encoding works when Ableton embedded runtime has no global TextEncoder
   }
 });
 
+test('OSC send reports when no bound socket accepted the message', () => {
+  const client = new OSCClient();
+  assert.equal(client.send('/live/song/get/tempo'), false);
+});
+
 test('OSC shared socket reuse reports the actual bound listen port', async () => {
   const runtime = globalThis;
   const previousSocket = runtime.abletonOSCSocket;

@@ -7,8 +7,13 @@ export type ClientMessage =
   | (BaseMessage & { type: 'handshake'; clientId: string })
   | (BaseMessage & { type: 'sync_confirm'; stateVersion: number })
   | (BaseMessage & { type: 'get_lyrics'; song?: string })
-  | (BaseMessage & { type: 'profiles_get' | 'preflight_check' })
-  | (BaseMessage & { type: 'play' | 'stop' | 'refresh' | 'export_csv' | 'create_test_session' })
+  | (BaseMessage & { type: 'profiles_get' })
+  | (BaseMessage & { type: 'preflight_check' })
+  | (BaseMessage & { type: 'play' })
+  | (BaseMessage & { type: 'stop' })
+  | (BaseMessage & { type: 'refresh' })
+  | (BaseMessage & { type: 'export_csv' })
+  | (BaseMessage & { type: 'create_test_session' })
   | (BaseMessage & { type: 'metronome'; value: boolean })
   | (BaseMessage & { type: 'set_quantization'; value: number })
   | (BaseMessage & { type: 'jump'; songIndex: number; sectionIndex?: number | null })
@@ -19,7 +24,8 @@ export type ClientMessage =
   | (BaseMessage & { type: 'set_critical_lock'; locked: boolean })
   | (BaseMessage & { type: 'set_mode'; mode: 'rehearsal' | 'show' })
   | (BaseMessage & { type: 'profile_create'; name: string })
-  | (BaseMessage & { type: 'profile_select' | 'profile_restore'; id: string })
+  | (BaseMessage & { type: 'profile_select'; id: string })
+  | (BaseMessage & { type: 'profile_restore'; id: string })
   | (BaseMessage & { type: 'profile_rename'; id: string; name: string })
   | (BaseMessage & { type: 'profile_delete'; id: string; confirmationName: string });
 
@@ -120,9 +126,6 @@ export function decodeClientMessage(input: unknown): DecodeClientMessageResult {
       if (!Array.isArray(input.songTitles) || input.songTitles.length > MAX_REORDER_SONGS
         || !input.songTitles.every((title) => isBoundedText(title, MAX_SONG_TITLE_LENGTH))) {
         return fail('Invalid songTitles; expected a bounded array of non-empty strings.');
-      }
-      if (new Set(input.songTitles).size !== input.songTitles.length) {
-        return fail('Invalid songTitles; duplicate titles are ambiguous.');
       }
       break;
     }

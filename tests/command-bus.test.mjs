@@ -68,7 +68,9 @@ test('rejected local handlers settle as failed', async () => {
   const command = bus.registerCommand('failed-local', 'export_csv', {}, 'test');
   const result = settled(bus, command.commandId);
   bus.dispatch(command, async () => { throw new Error('disk unavailable'); });
-  assert.equal((await result).status, 'failed');
+  const settledCommand = await result;
+  assert.equal(settledCommand.status, 'failed');
+  assert.equal(settledCommand.reason, 'execution_failed');
   assert.equal(bus.getPending().length, 0);
   bus.stop();
 });
@@ -134,19 +136,28 @@ test('panic can be released and stop remains available while critical commands a
   bus.stop();
 });
 
-test('an expired local handler cannot block the ordered queue forever', async () => {
+test('an expired mutation keeps later ordered work behind its underlying handler', async () => {
   const { bus } = createBus();
-  const first = bus.registerCommand('hung-refresh', 'refresh', {}, 'test');
-  first.createdAt -= first.timeoutMs;
-  const second = bus.registerCommand('next-refresh', 'refresh', {}, 'test');
+  let releaseFirst;
+  const firstHandler = new Promise((resolve) => { releaseFirst = resolve; });
+  const first = bus.registerCommand('slow-save', 'save_lyrics', {}, 'test');
+  first.timeoutMs = 10;
+  const second = bus.registerCommand('next-save', 'save_lyrics', {}, 'test');
   let secondExecuted = false;
 
-  bus.dispatch(first, () => new Promise(() => {}));
+  bus.dispatch(first, () => firstHandler);
   bus.dispatch(second, () => { secondExecuted = true; });
   await new Promise((resolve) => setTimeout(resolve, 25));
+  bus.checkTimeouts();
+  await new Promise((resolve) => setImmediate(resolve));
 
   assert.equal(first.status, 'expired');
-  assert.equal(second.status, 'confirmed');
+  assert.equal(second.status, 'sent');
+  assert.equal(secondExecuted, false);
+
+  const secondResult = settled(bus, second.commandId);
+  releaseFirst();
+  assert.equal((await secondResult).status, 'confirmed');
   assert.equal(secondExecuted, true);
   bus.stop();
 });

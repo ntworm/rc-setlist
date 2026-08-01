@@ -87,7 +87,6 @@ test('decoder rejects invalid scalar command fields', () => {
 test('decoder prevents malformed reorder data from reaching persistence', () => {
   expectInvalid({ type: 'reorder', songTitles: 'Song A' }, /songTitles/);
   expectInvalid({ type: 'reorder', songTitles: ['Song A', 7] }, /songTitles/);
-  expectInvalid({ type: 'reorder', songTitles: ['Song A', 'Song A'] }, /duplicate/);
   expectInvalid({ type: 'reorder', songTitles: [''] }, /songTitles/);
 
   const result = decodeClientMessage({
@@ -97,6 +96,12 @@ test('decoder prevents malformed reorder data from reaching persistence', () => 
   });
   assert.equal(result.ok, true);
   assert.deepEqual(result.message.songTitles, ['Song B', 'Song A']);
+
+  const duplicateTitles = decodeClientMessage({
+    type: 'reorder',
+    songTitles: ['Repeated', 'Song B', 'Repeated'],
+  });
+  assert.equal(duplicateTitles.ok, true, 'duplicate song titles are valid in existing setlists');
 });
 
 test('decoder bounds lyrics and profile mutation fields', () => {

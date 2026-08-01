@@ -283,8 +283,8 @@
     'lyrics.editing': { en: 'Editing:', 'pt-BR': 'Editando:' },
     'lyrics.addLine': { en: '+ Line', 'pt-BR': '+ Linha' },
     'lyrics.editHelp': {
-      en: 'Double-click any line to edit it. Lines without timestamps use [--:--.--] and are ignored by the HUD until marked in the Sync tab.',
-      'pt-BR': 'Clique duas vezes em uma linha para editá-la. Linhas sem marcação usam [--:--.--] e são ignoradas pelo HUD até serem marcadas na aba Sincronizar.',
+      en: 'Double-click any line to edit it. Lines without timestamps use [--:--.--] and must be marked before the LRC can be saved.',
+      'pt-BR': 'Clique duas vezes em uma linha para editá-la. Linhas sem marcação usam [--:--.--] e precisam ser marcadas antes de salvar o LRC.',
     },
     'lyrics.emptyEditor': {
       en: 'No lines yet. Select "+ Line" to begin, or use Create to generate the base text.',
@@ -317,6 +317,10 @@
     'lyrics.invalidTimecode': {
       en: 'Invalid timecode. Use [mm:ss.xx] or leave it empty.',
       'pt-BR': 'Timecode inválido. Use [mm:ss.xx] ou deixe vazio.',
+    },
+    'lyrics.missingTimecodes': {
+      en: 'Every line needs a timestamp before the LRC can be saved.',
+      'pt-BR': 'Todas as linhas precisam de uma marcação de tempo antes de salvar o LRC.',
     },
     'lyrics.discardTab': {
       en: 'There are unsaved changes in the Edit tab. Discard them?',

@@ -129,6 +129,31 @@
     };
   }
 
+  function createEditRevisionGuard() {
+    let song = '';
+    let revision = 0;
+
+    return {
+      changed() {
+        revision++;
+      },
+      matches(snapshot) {
+        return Boolean(
+          snapshot
+          && snapshot.song === song
+          && snapshot.revision === revision
+        );
+      },
+      selectSong(nextSong) {
+        song = typeof nextSong === 'string' ? nextSong : '';
+        revision++;
+      },
+      snapshot() {
+        return { song, revision };
+      },
+    };
+  }
+
   function createActiveClassController(root) {
     let songIndex = -1;
     let sectionIndex = -1;
@@ -174,6 +199,7 @@
   globalScope.RcSetlistControllerRuntime = Object.freeze({
     consumeControllerToken,
     createActiveClassController,
+    createEditRevisionGuard,
     createPendingCommandTracker,
     readMidiMappings,
   });

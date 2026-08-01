@@ -182,8 +182,16 @@ export class SetlistWSServer extends EventEmitter {
             return;
           }
           this.emit('client_message', decoded.message, ws);
-        } catch (err) {
-          console.warn('[WS] Could not decode the JSON message:', err);
+        } catch {
+          console.warn('[WS] Rejected malformed JSON message.');
+          if (ws.readyState === WebSocket.OPEN) {
+            ws.send(JSON.stringify({
+              type: 'error',
+              ok: false,
+              code: 'invalid_message',
+              message: 'Message must be valid JSON.',
+            }));
+          }
         }
       });
 

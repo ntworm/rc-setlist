@@ -111,7 +111,7 @@ export async function loadCerts(): Promise<void> {
     }
     httpsOptions = { key, cert };
     useHttps = true;
-    console.log(`[rc-setlist] loaded HTTPS certs from ${certDir}`);
+    console.log('[rc-setlist] loaded persisted HTTPS certificates');
     return;
   } catch {
     // Generate new
@@ -140,9 +140,9 @@ export async function loadCerts(): Promise<void> {
       cert: Buffer.from(pems.cert, 'utf8'),
     };
     useHttps = true;
-    console.log(`[rc-setlist] saved new certs to ${certDir}`);
-  } catch (err) {
-    console.error(`[rc-setlist] cert generation failed: ${err}; falling back to HTTP`);
+    console.log('[rc-setlist] saved new HTTPS certificates');
+  } catch {
+    console.error('[rc-setlist] certificate generation failed; falling back to HTTP');
     useHttps = false;
     httpsOptions = null;
   }
@@ -167,8 +167,8 @@ async function generateAndApplyEphemeral(altNames: SubjectAltNameEntry[]): Promi
       cert: Buffer.from(pems.cert, 'utf8'),
     };
     useHttps = true;
-  } catch (err) {
-    console.error(`[rc-setlist] ephemeral cert generation failed, falling back to HTTP`);
+  } catch {
+    console.error('[rc-setlist] ephemeral certificate generation failed; falling back to HTTP');
     useHttps = false;
     httpsOptions = null;
   }

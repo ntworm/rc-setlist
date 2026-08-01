@@ -111,6 +111,12 @@ test('WebSocket profile and reliability core protocol', async () => {
       { name: 'Song A', time: 0 },
       { name: 'Song B', time: 32 },
     ]);
+    const remoteLogs = [];
+    const captureRemoteLogs = (data) => {
+      const message = JSON.parse(data.toString());
+      if (message.type === 'log') remoteLogs.push(message);
+    };
+    ws.on('message', captureRemoteLogs);
     const orderPath = bridgeState.profileManager.getActivePaths().customOrder;
     fs.mkdirSync(orderPath, { recursive: true });
     const reorderStatusPromise = waitForMessage(
@@ -124,6 +130,13 @@ test('WebSocket profile and reliability core protocol', async () => {
     }));
     const reorderStatus = await reorderStatusPromise;
     assert.equal(reorderStatus.status, 'failed');
+    assert.equal(reorderStatus.reason, 'execution_failed');
+    assert.doesNotMatch(JSON.stringify(reorderStatus), /setlist-test-ws-/);
+    ws.off('message', captureRemoteLogs);
+    assert.equal(
+      remoteLogs.some((entry) => JSON.stringify(entry).includes(path.basename(testStorageDir))),
+      false,
+    );
     assert.deepEqual(bridgeState.manager.getState().songs.map(({ title }) => title), ['Song A', 'Song B']);
     fs.rmSync(orderPath, { recursive: true, force: true });
 

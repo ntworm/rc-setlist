@@ -1,7 +1,8 @@
 import * as path from 'node:path';
 import * as net from 'node:net';
 import { WebSocket } from 'ws';
-import { ShowCommand, AugmentedWebSocket } from '../types.js';
+import type { ShowCommand, AugmentedWebSocket } from '../types.js';
+import type { ClientMessage } from '../server/client-message.js';
 import {
   bridgeState,
   broadcastState,
@@ -21,28 +22,38 @@ import { buildClickPreviewWav, clickPreviewFilename } from '../core/click-previe
 import { getQuantizationBeats } from '../core/next-downbeat-jump.js';
 import { atomicWriteFile } from '../util/atomic-write.js';
 
-export async function executeCommandAction(command: ShowCommand, ws?: AugmentedWebSocket): Promise<void> {
-  const msg = command.payload;
+type MessageOf<T extends ClientMessage['type']> = Extract<ClientMessage, { type: T }>;
 
-  const requiresOsc = new Set([
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+export async function executeCommandAction(
+  command: ShowCommand<ClientMessage>,
+  ws?: AugmentedWebSocket,
+): Promise<void> {
+  const msg = command.payload;
+  if (command.type !== msg.type) throw new Error('Command type does not match its validated payload.');
+
+  const requiresOsc = new Set<ClientMessage['type']>([
     'play', 'stop', 'metronome', 'refresh', 'jump', 'set_quantization', 'create_test_session'
   ]);
-  if (requiresOsc.has(command.type) && !bridgeState.oscClient) {
+  if (requiresOsc.has(msg.type) && !bridgeState.oscClient) {
     throw new Error('OSC client is not initialized.');
   }
-  if (command.type === 'set_panic' && msg.active && !bridgeState.oscClient) {
+  if (msg.type === 'set_panic' && msg.active && !bridgeState.oscClient) {
     throw new Error('OSC client is not initialized.');
   }
   if (
     bridgeState.profileScopeSwitching &&
-    ['profile_create', 'profile_select', 'profile_rename', 'profile_delete', 'profile_restore'].includes(command.type)
+    ['profile_create', 'profile_select', 'profile_rename', 'profile_delete', 'profile_restore'].includes(msg.type)
   ) {
     throw new Error('Cannot modify setlists while the current Live Set is changing.');
   }
 
   const osc = bridgeState.oscClient!;
 
-  switch (command.type) {
+  switch (msg.type) {
     case 'play':
       osc.startPlaying();
       break;
@@ -139,7 +150,7 @@ export async function executeCommandAction(command: ShowCommand, ws?: AugmentedW
   }
 }
 
-export function executeJumpCommand(msg: any): void {
+export function executeJumpCommand(msg: MessageOf<'jump'>): void {
   if (!bridgeState.manager || !bridgeState.scheduler || !bridgeState.oscClient) return;
   const song = bridgeState.manager.getState().songs[msg.songIndex];
   if (!song) return;
@@ -213,7 +224,7 @@ export function executeJumpCommand(msg: any): void {
   }
 }
 
-async function executeReorderCommand(msg: any): Promise<void> {
+async function executeReorderCommand(msg: MessageOf<'reorder'>): Promise<void> {
   if (bridgeState.manager?.getState().mode === 'show' && bridgeState.manager?.getState().isPlaying) {
     throw new Error('Cannot reorder setlist while transport is playing in Show mode.');
   }
@@ -224,18 +235,18 @@ async function executeReorderCommand(msg: any): Promise<void> {
       const orderFilePath = getActiveProfilePaths().customOrder;
       await atomicWriteFile(orderFilePath, JSON.stringify(songTitles, null, 2), 'utf8');
       bridgeState.manager.setCustomOrder(songTitles);
-      console.log(`[Persistence] Custom song order saved to ${orderFilePath}`);
+      console.log('[Persistence] Custom song order saved.');
       bridgeState.wsServer?.broadcastLog('Custom song order saved.', 'info');
     } catch (err) {
-      console.error(`[Persistence] Failed to save custom order: ${err}`);
-      bridgeState.wsServer?.broadcastLog(`Could not save the custom song order: ${err}`, 'error');
+      console.error('[Persistence] Failed to save custom song order.');
+      bridgeState.wsServer?.broadcastLog('Could not save the custom song order.', 'error');
       throw err;
     }
     broadcastState();
   }
 }
 
-async function executeSaveLyricsCommand(msg: any): Promise<void> {
+async function executeSaveLyricsCommand(msg: MessageOf<'save_lyrics'>): Promise<void> {
   if (bridgeState.manager?.getState().mode === 'show') {
     throw new Error('Cannot save or modify lyrics in Show mode.');
   }
@@ -246,7 +257,7 @@ async function executeSaveLyricsCommand(msg: any): Promise<void> {
 
     const lrcPath = path.join(targetLyricsDir, `${cleanTitle}.lrc`);
     await atomicWriteFile(lrcPath, msg.text, 'utf8');
-    console.log(`[Lyrics] Saved synchronized lyrics for "${msg.song}" to ${lrcPath}`);
+    console.log(`[Lyrics] Saved synchronized lyrics for "${msg.song}".`);
     bridgeState.wsServer?.broadcastLog(`Synchronized lyrics for "${msg.song}" saved.`, 'info');
 
     const lyrics = loadLyricsForSong(msg.song);
@@ -257,13 +268,13 @@ async function executeSaveLyricsCommand(msg: any): Promise<void> {
       lines: lyrics.lines
     });
   } catch (err) {
-    console.error('[Lyrics] Error saving lyrics:', err);
-    bridgeState.wsServer?.broadcastLog(`Could not save lyrics: ${err instanceof Error ? err.message : String(err)}`, 'error');
+    console.error('[Lyrics] Failed to save synchronized lyrics.');
+    bridgeState.wsServer?.broadcastLog('Could not save lyrics.', 'error');
     throw err;
   }
 }
 
-async function executeClickPreviewCommand(msg: any, ws?: AugmentedWebSocket): Promise<void> {
+async function executeClickPreviewCommand(msg: MessageOf<'click_preview'>, ws?: AugmentedWebSocket): Promise<void> {
   try {
     const state = bridgeState.manager?.getState();
     const requestedBpm = (typeof msg.bpm === 'number' && msg.bpm > 0)
@@ -277,7 +288,7 @@ async function executeClickPreviewCommand(msg: any, ws?: AugmentedWebSocket): Pr
     const fileName = clickPreviewFilename(requestedBpm, beats);
     const fullPath = path.join(audioDir, fileName);
     await atomicWriteFile(fullPath, wav);
-    console.log(`[Click] Wrote preview WAV to ${fullPath} (bpm=${requestedBpm}, beats=${beats}, ${wav.length}B)`);
+    console.log(`[Click] Wrote preview WAV (bpm=${requestedBpm}, beats=${beats}, ${wav.length}B).`);
 
     if (ws && ws.readyState === WebSocket.OPEN) {
       ws.send(JSON.stringify({
@@ -288,13 +299,13 @@ async function executeClickPreviewCommand(msg: any, ws?: AugmentedWebSocket): Pr
       }));
     }
   } catch (err) {
-    console.error('[Click] Error generating preview:', err);
-    bridgeState.wsServer?.broadcastLog(`Could not generate the click preview: ${err instanceof Error ? err.message : String(err)}`, 'error');
+    console.error('[Click] Failed to generate preview.');
+    bridgeState.wsServer?.broadcastLog('Could not generate the click preview.', 'error');
     throw err;
   }
 }
 
-async function executeExportCsvCommand(msg: any, ws?: AugmentedWebSocket): Promise<void> {
+async function executeExportCsvCommand(_msg: MessageOf<'export_csv'>, ws?: AugmentedWebSocket): Promise<void> {
   try {
     const state = bridgeState.manager?.getState();
     if (!state || !state.songs.length) {
@@ -339,7 +350,7 @@ async function executeExportCsvCommand(msg: any, ws?: AugmentedWebSocket): Promi
       const fileName = `tracklist-${stamp}.csv`;
       const fullPath = path.join(exportsDir, fileName);
       await atomicWriteFile(fullPath, csv, 'utf8');
-      console.log(`[CSV] Wrote tracklist export to ${fullPath} (${rows.length} rows)`);
+      console.log(`[CSV] Wrote tracklist export (${rows.length} rows).`);
       bridgeState.wsServer?.broadcastLog(`Tracklist exported: ${fileName} (${rows.length} songs)`, 'info');
 
       if (ws && ws.readyState === WebSocket.OPEN) {
@@ -352,13 +363,13 @@ async function executeExportCsvCommand(msg: any, ws?: AugmentedWebSocket): Promi
       }
     }
   } catch (err) {
-    console.error('[CSV] Error exporting tracklist:', err);
-    bridgeState.wsServer?.broadcastLog(`Could not export CSV: ${err instanceof Error ? err.message : String(err)}`, 'error');
+    console.error('[CSV] Failed to export tracklist.');
+    bridgeState.wsServer?.broadcastLog('Could not export CSV.', 'error');
     throw err;
   }
 }
 
-async function executeCreateTestSessionCommand(msg: any): Promise<void> {
+async function executeCreateTestSessionCommand(_msg: MessageOf<'create_test_session'>): Promise<void> {
   const markers: Array<{ name: string; beats: number }> = [
     { name: 'TEST ALPHA [bpm 90] [click]', beats: 0 },
     { name: 'TEST ALPHA > INTRO [loop 2x]', beats: 8 },
@@ -418,22 +429,24 @@ async function executeCreateTestSessionCommand(msg: any): Promise<void> {
 
       const res = await createCuePoint(marker.name, targetBeat);
 
-      if (res && res.status === 'ok') {
+      if (res.status === 'ok') {
         createdCount++;
         bridgeState.wsServer?.broadcastLog(
           `Created: ${marker.name} at beat ${targetBeat} (${createdCount}/${markers.length})`,
           'info'
         );
       } else {
-        const errMsg = res && (res as any).message ? (res as any).message : 'OSC/MCP timeout or error';
+        const errMsg = res.message ?? 'OSC/MCP timeout or error';
         console.warn(`[Automation] Marker ${marker.name} failed: ${errMsg}`);
         bridgeState.wsServer?.broadcastLog(
-          `Locator ${i + 1}/${markers.length} (${marker.name}) failed: ${errMsg}`,
+          `Locator ${i + 1}/${markers.length} (${marker.name}) failed.`,
           'warn'
         );
       }
       await delay(100);
     }
+
+    assertCompleteTestSession(createdCount, markers.length);
 
     console.log(
       `[Automation] Automated creation of test locators complete (${createdCount}/${markers.length})`
@@ -454,11 +467,10 @@ async function executeCreateTestSessionCommand(msg: any): Promise<void> {
       try {
         await atomicWriteFile(lrcPath, lrcContent, 'utf8');
         lyricsSaved++;
-        console.log(`[Automation] Saved lyrics for "${songTitle}" to ${lrcPath}`);
-      } catch (err) {
+        console.log(`[Automation] Saved lyrics for "${songTitle}".`);
+      } catch {
         lyricsSkipped++;
-        const errMsg = err instanceof Error ? err.message : String(err);
-        console.error(`[Automation] Failed to save lyrics for "${songTitle}": ${errMsg}`);
+        console.error(`[Automation] Failed to save lyrics for "${songTitle}".`);
       }
     }
     bridgeState.wsServer?.broadcastLog(
@@ -473,25 +485,31 @@ async function executeCreateTestSessionCommand(msg: any): Promise<void> {
       throw new Error(`${lyricsSkipped} lyric file(s) could not be saved.`);
     }
   } catch (err) {
-    console.error('[Automation] Error creating test locators:', err);
-    bridgeState.wsServer?.broadcastLog(`Could not create test locators: ${err}`, 'error');
+    console.error('[Automation] Failed to create the complete test session.');
+    bridgeState.wsServer?.broadcastLog('Could not create all test locators.', 'error');
     throw err;
   } finally {
     bridgeState.isCreatingTestSession = false;
   }
 }
 
+export function assertCompleteTestSession(createdCount: number, expectedCount: number): void {
+  if (createdCount === expectedCount) return;
+  const missingCount = Math.max(0, expectedCount - createdCount);
+  throw new Error(`${missingCount} of ${expectedCount} locator(s) could not be created.`);
+}
+
 async function createCuePoint(name: string, beat: number): Promise<{ status: string; message?: string }> {
   try {
     const res = await callDebuggerMcp('create_cue_point', { name, time: beat });
-    if (res && res.status === 'ok') return { status: 'ok' };
+    if (isRecord(res) && res.status === 'ok') return { status: 'ok' };
   } catch {
     // MCP unavailable or timed out — fall through to OSC fallback
   }
   return createCuePointViaOsc(name, beat);
 }
 
-function callDebuggerMcp(command: string, params: Record<string, unknown>): Promise<any> {
+function callDebuggerMcp(command: string, params: Record<string, unknown>): Promise<unknown> {
   return new Promise((resolve, reject) => {
     const client = net.connect({ host: '127.0.0.1', port: 9888 }, () => {
       const req = JSON.stringify({ type: command, params }) + '\n';
@@ -529,12 +547,14 @@ function createCuePointViaOsc(name: string, beat: number): Promise<{ status: str
       resolve({ status: 'error', message: 'OSC client not initialized' });
       return;
     }
-    bridgeState.oscClient.send('/live/song/create_cue_point', [
+    const accepted = bridgeState.oscClient.send('/live/song/create_cue_point', [
       { type: 'string', value: name },
       { type: 'float', value: beat }
     ]);
     setTimeout(() => {
-      resolve({ status: 'ok' });
+      resolve(accepted
+        ? { status: 'ok' }
+        : { status: 'error', message: 'OSC socket did not accept the message' });
     }, 100);
   });
 }

@@ -38,6 +38,42 @@ function stopServerAndWS(server, wsServer) {
   });
 }
 
+test('WebSocket Hardening: malformed JSON receives a bounded structured error', async () => {
+  const { wsServer, server } = createServerAndWS('token123');
+  const port = await startServer(server);
+
+  try {
+    const ws = new WebSocket(`ws://127.0.0.1:${port}/ws`);
+    await new Promise((resolve, reject) => {
+      ws.once('open', resolve);
+      ws.once('error', reject);
+    });
+
+    const errorPromise = new Promise((resolve, reject) => {
+      const timer = setTimeout(() => reject(new Error('Timed out waiting for invalid_message')), 1000);
+      ws.on('message', (data) => {
+        const message = JSON.parse(data.toString());
+        if (message.type === 'error' && message.code === 'invalid_message') {
+          clearTimeout(timer);
+          resolve(message);
+        }
+      });
+    });
+    ws.send('{"type":"play",BROKEN');
+
+    const message = await errorPromise;
+    assert.deepStrictEqual(message, {
+      type: 'error',
+      ok: false,
+      code: 'invalid_message',
+      message: 'Message must be valid JSON.',
+    });
+    ws.close();
+  } finally {
+    await stopServerAndWS(server, wsServer);
+  }
+});
+
 test('WebSocket Hardening: isValidOrigin same-origin helper checks', () => {
   // Same host and port matching
   assert.strictEqual(isValidOrigin('https://192.168.1.42:4444', '192.168.1.42:4444'), true);

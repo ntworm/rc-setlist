@@ -1472,6 +1472,7 @@ let lyricsEditLastLoadedSong = '';
 let lyricsEditActiveTab = 'create';
 let lyricsSelectedSong = '';
 const lyricsCreateDrafts = new Map();
+const lyricsEditRevisionGuard = controllerRuntime.createEditRevisionGuard();
 const lyricsSaveTracker = controllerRuntime.createPendingCommandTracker({
   timeoutMs: 8_000,
   onSettled: handleLyricsSaveSettled,
@@ -1528,6 +1529,11 @@ function markLyricsDirty(dirty) {
   }
 }
 
+function markLyricsChanged() {
+  lyricsEditRevisionGuard.changed();
+  markLyricsDirty(true);
+}
+
 function lyricsSaveCommandId(kind) {
   return `lyrics-${kind}-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
 }
@@ -1563,14 +1569,16 @@ function beginLyricsSave(kind, message, metadata) {
 function handleLyricsSaveSettled(entry, status) {
   const confirmed = status === 'confirmed';
   if (entry.kind === 'edit') {
-    if (confirmed) {
-      markLyricsDirty(false);
+    const matchesSavedRevision = lyricsEditRevisionGuard.matches(entry.metadata?.editState);
+    if (confirmed && matchesSavedRevision) {
+      lyricsEditDirty = false;
       appendLog(t('lyrics.saved', entry.metadata), 'info');
-    } else {
-      markLyricsDirty(true);
+    } else if (!confirmed) {
+      if (matchesSavedRevision) lyricsEditDirty = true;
       showToast(t('lyrics.saveFailed'), 'error');
       appendLog(t('lyrics.saveFailed'), 'error');
     }
+    markLyricsDirty(lyricsEditDirty);
     return;
   }
 
@@ -1597,6 +1605,7 @@ function refreshLyricsEditor() {
 
 function loadLyricsEditFromServer(song) {
   lyricsSelectedSong = song || '';
+  lyricsEditRevisionGuard.selectSong(lyricsSelectedSong);
   lyricsSyncSongTitle.textContent = lyricsSelectedSong || '—';
   lyricsEditSongTitle.textContent = lyricsSelectedSong || '—';
   const draft = lyricsCreateDrafts.get(lyricsSelectedSong);
@@ -1700,7 +1709,7 @@ function beginInlineLyricEdit(idx, el) {
   const commit = () => {
     const newText = input.value;
     lyricsEditLines[idx] = { ...original, text: newText };
-    markLyricsDirty(true);
+    markLyricsChanged();
     renderLyricsEditList();
   };
   const cancel = () => {
@@ -1739,7 +1748,7 @@ function beginInlineLyricTsEdit(idx, el) {
       }
     }
     lyricsEditLines[idx] = { ...original, timestamp: val };
-    markLyricsDirty(true);
+    markLyricsChanged();
     renderLyricsEditList();
   };
   const cancel = () => {
@@ -1754,7 +1763,7 @@ function beginInlineLyricTsEdit(idx, el) {
 
 function addLyricLine() {
   lyricsEditLines.push({ timestamp: NO_TIMESTAMP, text: '' });
-  markLyricsDirty(true);
+  markLyricsChanged();
   renderLyricsEditList();
   // Scroll to bottom and start editing the new line
   setTimeout(() => {
@@ -1768,22 +1777,21 @@ function addLyricLine() {
 function removeLyricLine(idx) {
   if (idx < 0 || idx >= lyricsEditLines.length) return;
   lyricsEditLines.splice(idx, 1);
-  markLyricsDirty(true);
+  markLyricsChanged();
   renderLyricsEditList();
 }
 
 function saveLyricsEdit() {
   if (!lyricsEditDirty) return;
   const song = lyricsSongSelect.value;
-  // Build LRC body: only timestamped lines; editor allows no-ts lines but
-  // we still emit them with [00:00.00] (silent lines) so the LRC remains
-  // complete. Actually NO — we skip no-ts lines, since the lyrics-parser
-  // expects well-formed timestamps. The HUD already filters them out.
+  if (lyricsEditLines.some((line) => line.timestamp === NO_TIMESTAMP)) {
+    showToast(t('lyrics.missingTimecodes'), 'error');
+    return;
+  }
   const lrcBody = lyricsEditLines
-    .filter((l) => l.timestamp && l.timestamp !== NO_TIMESTAMP)
     .map((l) => `${l.timestamp} ${l.text}`)
     .join('\n');
-  const count = lyricsEditLines.filter(l => l.timestamp !== NO_TIMESTAMP).length;
+  const count = lyricsEditLines.length;
   beginLyricsSave(
     'edit',
     {
@@ -1791,7 +1799,7 @@ function saveLyricsEdit() {
       song,
       text: lrcBody,
     },
-    { song, count },
+    { song, count, editState: lyricsEditRevisionGuard.snapshot() },
   );
 }
 
