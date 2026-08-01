@@ -7,6 +7,25 @@ export interface SetlistMetrics {
   totalDurationSeconds: number | null;
 }
 
+function durationFromBoundary(
+  song: Pick<TimedSong, 'time' | 'bpm'>,
+  nextStart: number | null | undefined,
+  fallbackBpm: number,
+): number | null {
+  const bpm = song.bpm ?? fallbackBpm;
+  if (
+    typeof nextStart !== 'number'
+    || !Number.isFinite(nextStart)
+    || typeof bpm !== 'number'
+    || !Number.isFinite(bpm)
+    || bpm <= 0
+  ) {
+    return null;
+  }
+  const durationBeats = nextStart - song.time;
+  return durationBeats > 0 ? Math.round((durationBeats / bpm) * 60) : null;
+}
+
 export function calculateSongDurationSec(
   song: Pick<TimedSong, 'time' | 'bpm'>,
   songs: readonly Pick<TimedSong, 'time' | 'bpm'>[],
@@ -18,19 +37,7 @@ export function calculateSongDurationSec(
   const nextStart = index >= 0 && index < chronological.length - 1
     ? chronological[index + 1]!.time
     : arrangementEndTime;
-  const bpm = song.bpm ?? fallbackBpm;
-  if (
-    typeof nextStart !== 'number'
-    || !Number.isFinite(nextStart)
-    || typeof bpm !== 'number'
-    || !Number.isFinite(bpm)
-    || bpm <= 0
-  ) {
-    return null;
-  }
-
-  const durationBeats = nextStart - song.time;
-  return durationBeats > 0 ? Math.round((durationBeats / bpm) * 60) : null;
+  return durationFromBoundary(song, nextStart, fallbackBpm);
 }
 
 export function calculateSetlistMetrics(
@@ -43,13 +50,12 @@ export function calculateSetlistMetrics(
   let total = 0;
   let complete = chronological.length > 0;
 
-  for (const song of chronological) {
-    const duration = calculateSongDurationSec(
-      song,
-      chronological,
-      fallbackBpm,
-      arrangementEndTime,
-    );
+  for (let index = 0; index < chronological.length; index++) {
+    const song = chronological[index]!;
+    const nextStart = index < chronological.length - 1
+      ? chronological[index + 1]!.time
+      : arrangementEndTime;
+    const duration = durationFromBoundary(song, nextStart, fallbackBpm);
     songDurationSecondsByStart.set(song.time, duration);
     if (duration === null) complete = false;
     else total += duration;

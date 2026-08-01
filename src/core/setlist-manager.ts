@@ -26,6 +26,9 @@ export class SetlistManager {
   private signatureDenominator: number = 4;
   private clipTriggerQuantization: number = 4; // Default to 1 Bar (4)
   private arrangementEndTime: number | null = null;
+  private chronologicalSongs: Array<{ song: Song; displayIndex: number }> = [];
+  private derivedSongs: Song[] | null = null;
+  private derivedTotalDurationSeconds: number | null = null;
 
   private customOrder: string[] = [];
 
@@ -72,18 +75,24 @@ export class SetlistManager {
   }
 
   private sortSongs(): void {
-    if (this.customOrder.length === 0) return;
     const chronological = [...this.songs].sort((a, b) => a.time - b.time);
+    if (this.customOrder.length === 0) {
+      this.rebuildChronologicalIndex();
+      this.invalidateDerivedSongs();
+      return;
+    }
+    const customRank = new Map(this.customOrder.map((title, index) => [title, index]));
     const ordered = chronological
-      .filter((song) => this.customOrder.includes(song.title))
+      .filter((song) => customRank.has(song.title))
       .sort((a, b) => {
-        const orderDifference = this.customOrder.indexOf(a.title) - this.customOrder.indexOf(b.title);
+        const orderDifference = customRank.get(a.title)! - customRank.get(b.title)!;
         return orderDifference || a.time - b.time;
       });
+    const orderedSongs = new Set(ordered);
 
     for (let chronologicalIndex = 0; chronologicalIndex < chronological.length; chronologicalIndex++) {
       const song = chronological[chronologicalIndex]!;
-      if (ordered.includes(song)) continue;
+      if (orderedSongs.has(song)) continue;
 
       let insertAt = -1;
       for (let previousIndex = chronologicalIndex - 1; previousIndex >= 0; previousIndex--) {
@@ -105,17 +114,48 @@ export class SetlistManager {
       }
 
       ordered.splice(insertAt === -1 ? ordered.length : insertAt, 0, song);
+      orderedSongs.add(song);
     }
 
     this.songs = ordered;
+    this.rebuildChronologicalIndex();
+    this.invalidateDerivedSongs();
+  }
+
+  private rebuildChronologicalIndex(): void {
+    const displayIndex = new Map(this.songs.map((song, index) => [song, index]));
+    this.chronologicalSongs = [...this.songs]
+      .sort((a, b) => a.time - b.time)
+      .map((song) => ({ song, displayIndex: displayIndex.get(song)! }));
+  }
+
+  private invalidateDerivedSongs(): void {
+    this.derivedSongs = null;
+    this.derivedTotalDurationSeconds = null;
+  }
+
+  private getDerivedSongs(): { songs: Song[]; totalDurationSeconds: number | null } {
+    if (!this.derivedSongs) {
+      const metrics = calculateSetlistMetrics(this.songs, this.arrangementEndTime, this.tempo);
+      this.derivedSongs = this.songs.map((song) => ({
+        ...song,
+        durationSeconds: metrics.songDurationSecondsByStart.get(song.time) ?? null,
+      }));
+      this.derivedTotalDurationSeconds = metrics.totalDurationSeconds;
+    }
+    return {
+      songs: this.derivedSongs,
+      totalDurationSeconds: this.derivedTotalDurationSeconds,
+    };
   }
 
   public updateTransport(time: number, isPlaying: boolean, tempo?: number): void {
     const prevTime = this.currentSongTime;
     this.currentSongTime = time;
     this.isPlaying = isPlaying;
-    if (tempo !== undefined) {
+    if (tempo !== undefined && tempo !== this.tempo) {
       this.tempo = tempo;
+      this.invalidateDerivedSongs();
     }
 
     if (this.loopActive) {
@@ -163,17 +203,21 @@ export class SetlistManager {
       time = Math.min(time, this.loopEndBeat - 0.02);
     }
     
-    const chronologicalSongs = [...this.songs].sort((a, b) => a.time - b.time);
-    let activeSong: Song | null = null;
-    for (let i = chronologicalSongs.length - 1; i >= 0; i--) {
-      const song = chronologicalSongs[i]!;
-      if (time >= song.time) {
-        activeSong = song;
-        break;
+    let low = 0;
+    let high = this.chronologicalSongs.length - 1;
+    let activeEntry: { song: Song; displayIndex: number } | null = null;
+    while (low <= high) {
+      const middle = Math.floor((low + high) / 2);
+      const candidate = this.chronologicalSongs[middle]!;
+      if (candidate.song.time <= time) {
+        activeEntry = candidate;
+        low = middle + 1;
+      } else {
+        high = middle - 1;
       }
     }
-    
-    this.activeSongIndex = activeSong ? this.songs.indexOf(activeSong) : -1;
+    const activeSong = activeEntry?.song ?? null;
+    this.activeSongIndex = activeEntry?.displayIndex ?? -1;
 
     let newSectionIndex = -1;
     if (activeSong) {
@@ -340,15 +384,11 @@ export class SetlistManager {
   public getState(): SetlistState {
     const activeSong = this.songs[this.activeSongIndex];
     const activeSection = activeSong?.sections[this.activeSectionIndex];
-    const metrics = calculateSetlistMetrics(this.songs, this.arrangementEndTime, this.tempo);
-    const songs = this.songs.map((song) => ({
-      ...song,
-      durationSeconds: metrics.songDurationSecondsByStart.get(song.time) ?? null,
-    }));
+    const derived = this.getDerivedSongs();
 
     const state: any = {
       protocolVersion: 2,
-      songs,
+      songs: derived.songs,
       hidden: this.hidden,
       activeSongIndex: this.activeSongIndex,
       activeSectionIndex: this.activeSectionIndex,
@@ -365,7 +405,7 @@ export class SetlistManager {
       loopCount: this.loopCount,
       currentLoopIteration: this.currentLoopIteration,
       clipTriggerQuantization: this.clipTriggerQuantization,
-      totalDurationSeconds: metrics.totalDurationSeconds,
+      totalDurationSeconds: derived.totalDurationSeconds,
       arrangementEndTime: this.arrangementEndTime,
 
       stateVersion: this.stateVersion,
@@ -445,6 +485,7 @@ export class SetlistManager {
     const normalized = typeof value === 'number' && Number.isFinite(value) ? value : null;
     if (normalized !== this.arrangementEndTime) {
       this.arrangementEndTime = normalized;
+      this.invalidateDerivedSongs();
       this.stateVersion++;
     }
   }
@@ -458,7 +499,9 @@ export class SetlistManager {
   }
 
   public setCustomOrder(order: string[]): void {
-    this.customOrder = order;
+    this.customOrder = Array.isArray(order) && order.every((title) => typeof title === 'string')
+      ? [...order]
+      : [];
     this.sortSongs();
     this.updateActiveIndices();
     this.stateVersion++;

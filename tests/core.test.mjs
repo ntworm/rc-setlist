@@ -876,3 +876,54 @@ test('SetlistManager: correctly tracks and updates global quantization level', (
   state = manager.getState();
   assert.strictEqual(state.clipTriggerQuantization, 7);
 });
+test('SetlistManager reuses derived songs for transport-only updates and invalidates inputs', () => {
+  const manager = new SetlistManager();
+  manager.updateCues([
+    { name: 'Song A', time: 0 },
+    { name: 'Song B', time: 120 },
+  ]);
+  manager.updateArrangementEndTime(240);
+
+  const initialSongs = manager.getState().songs;
+  assert.strictEqual(manager.getState().songs, initialSongs);
+
+  manager.updateTransport(32, true, 120);
+  assert.strictEqual(manager.getState().songs, initialSongs, 'transport position must reuse derived songs');
+
+  manager.updateTransport(33, true, 90);
+  const tempoSongs = manager.getState().songs;
+  assert.notStrictEqual(tempoSongs, initialSongs, 'fallback tempo affects durations');
+  assert.strictEqual(manager.getState().songs, tempoSongs);
+
+  manager.updateArrangementEndTime(300);
+  const endSongs = manager.getState().songs;
+  assert.notStrictEqual(endSongs, tempoSongs);
+
+  manager.setCustomOrder(['Song B', 'Song A']);
+  const orderedSongs = manager.getState().songs;
+  assert.notStrictEqual(orderedSongs, endSongs);
+  assert.deepStrictEqual(orderedSongs.map(({ title }) => title), ['Song B', 'Song A']);
+
+  manager.updateCues([
+    { name: 'Song A', time: 0 },
+    { name: 'Song B', time: 120 },
+    { name: 'Song C', time: 240 },
+  ]);
+  assert.notStrictEqual(manager.getState().songs, orderedSongs);
+});
+
+test('SetlistManager resolves chronological active song under custom display order', () => {
+  const manager = new SetlistManager();
+  manager.updateCues([
+    { name: 'Song A', time: 0 },
+    { name: 'Song B', time: 100 },
+    { name: 'Song C', time: 200 },
+  ]);
+  manager.setCustomOrder(['Song C', 'Song A', 'Song B']);
+  manager.updateTransport(150, true, 120);
+
+  const state = manager.getState();
+  assert.deepStrictEqual(state.songs.map(({ title }) => title), ['Song C', 'Song A', 'Song B']);
+  assert.equal(state.activeSongIndex, 2);
+  assert.equal(state.songs[state.activeSongIndex].title, 'Song B');
+});
