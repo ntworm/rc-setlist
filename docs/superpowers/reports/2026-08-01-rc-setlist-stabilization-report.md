@@ -2,7 +2,7 @@
 
 Date: 2026-08-01
 Baseline: `origin/main` at `1b6efb4`
-Verified implementation: `0573ce9`
+Verified implementation: `4f55cbb`
 
 ## Outcome
 
@@ -29,7 +29,7 @@ The implementation was compared with the primary documentation and reference imp
 ## Fresh verification
 
 - `npm run ci:public`: passed.
-  - source: 218 passed
+  - source: 219 passed
   - static/documentation: 89 passed
   - Playwright: 59 passed
   - public media: 10 verified
@@ -38,7 +38,7 @@ The implementation was compared with the primary documentation and reference imp
 - `npm run docs:check`: 20 documents, no broken local links.
 - `npm run notices:check`: current.
 - `npm audit --audit-level=high`: 0 vulnerabilities.
-- Node test coverage run: 331 passed; 85.16% lines, 77.96% branches, 83.27% functions.
+- Node test coverage run: 332 passed; 85.59% lines, 78.07% branches, 84.30% functions.
 
 The shell runtime was Node 24.13.1, while the package declares Node >=24.16.0. Tests and both builds passed, but the release environment should still use the declared minimum or newer.
 
