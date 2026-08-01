@@ -23,6 +23,7 @@ function durationFromBoundary(
   ) {
     return null;
   }
+
   const durationBeats = nextStart - song.time;
   return durationBeats > 0 ? Math.round((durationBeats / bpm) * 60) : null;
 }

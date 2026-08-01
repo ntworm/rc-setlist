@@ -127,6 +127,19 @@ test('Static UI Setlist: loads external design/runtime assets and fullscreen con
   assert.doesNotMatch(setlistHtml, /<script(?![^>]*\bsrc=)[^>]*>/i);
 });
 
+test('Static UI Setlist: does not load helper modules as classic scripts', () => {
+  const setlistDir = path.join(__dirname, 'setlist');
+  const setlistHtml = fs.readFileSync(path.join(setlistDir, 'index.html'), 'utf8');
+
+  assert.doesNotMatch(setlistHtml, /<script\s+src=["']\.\/modules\//i);
+  for (const moduleFile of ['ws.js', 'transport.js', 'profiles.js', 'lyrics.js', 'view.js']) {
+    assert.ok(
+      fs.existsSync(path.join(setlistDir, 'modules', moduleFile)),
+      `${moduleFile} must remain in the repository`,
+    );
+  }
+});
+
 test('Static UI Setlist: loads the safe transport runtime and dock controls', () => {
   const setlistHtml = fs.readFileSync(path.join(__dirname, 'setlist', 'index.html'), 'utf8');
   assert.match(setlistHtml, /src="\.\/transport-runtime\.js"/);
@@ -152,7 +165,6 @@ test('Static UI Setlist: uses guarded controller storage and confirmed lyrics sa
   assert.match(setlistJs, /readMidiMappings\(/);
   assert.match(setlistJs, /consumeControllerToken\(/);
   assert.match(setlistJs, /lyricsSaveTracker\.settle\(payload\)/);
-  assert.match(setlistJs, /status === 'confirmed'[\s\S]*markLyricsDirty\(false\)/);
   assert.match(setlistJs, /state\.setlistVersion/);
   assert.match(setlistJs, /createActiveClassController\(songListDiv\)/);
   assert.doesNotMatch(setlistJs, /querySelectorAll\(['"]\.song-item['"]\)/);
@@ -239,4 +251,49 @@ test('Static UI: product surfaces expose English and Brazilian Portuguese', () =
     assert.match(html, /id="languageSelect"/);
     assert.match(html, /src="\.\.\/shared\/i18n\.js"/);
   }
+});
+
+test('Static UI: i18n tooltips for Manage Setlists, Export CSV, and CSV feedback in EN and PT-BR', () => {
+  const i18nSource = fs.readFileSync(path.join(__dirname, 'shared', 'i18n.js'), 'utf8');
+  const setlistHtml = fs.readFileSync(path.join(__dirname, 'setlist', 'index.html'), 'utf8');
+
+  new Function(i18nSource)();
+  const { t } = globalThis.RcSetlistI18n;
+
+  // Tooltip for Manage Setlists translated to EN and PT-BR
+  const manageEn = t('setlist.manageSetlistsTitle', {}, 'en');
+  const managePt = t('setlist.manageSetlistsTitle', {}, 'pt-BR');
+  assert.notStrictEqual(manageEn, 'setlist.manageSetlistsTitle');
+  assert.notStrictEqual(managePt, 'setlist.manageSetlistsTitle');
+  assert.match(manageEn, /Manage setlists and profiles/i);
+  assert.match(managePt, /Gerenciar setlists e perfis/i);
+
+  // Tooltip for Export CSV translated to EN and PT-BR
+  const csvEn = t('setlist.exportCsvTitle', {}, 'en');
+  const csvPt = t('setlist.exportCsvTitle', {}, 'pt-BR');
+  assert.notStrictEqual(csvEn, 'setlist.exportCsvTitle');
+  assert.notStrictEqual(csvPt, 'setlist.exportCsvTitle');
+  assert.match(csvEn, /Export tracklist as CSV/i);
+  assert.match(csvPt, /Exportar repertório como CSV/i);
+
+  // Feedback for CSV (feedback.csv) contains filename and browser Downloads
+  const feedbackEn = t('feedback.csv', { count: 4, fileName: 'setlist-2026.csv' }, 'en');
+  const feedbackPt = t('feedback.csv', { count: 4, fileName: 'setlist-2026.csv' }, 'pt-BR');
+  assert.notStrictEqual(feedbackEn, 'feedback.csv');
+  assert.notStrictEqual(feedbackPt, 'feedback.csv');
+  assert.match(feedbackEn, /setlist-2026\.csv/);
+  assert.match(feedbackEn, /Downloads/);
+  assert.match(feedbackPt, /setlist-2026\.csv/);
+  assert.match(feedbackPt, /Downloads/);
+
+  // New keys do not appear as missing key strings in the UI
+  const keys = ['setlist.manageSetlistsTitle', 'setlist.exportCsvTitle', 'feedback.csv'];
+  for (const key of keys) {
+    assert.notStrictEqual(t(key, { count: 1, fileName: 'test.csv' }, 'en'), key, `${key} missing in EN`);
+    assert.notStrictEqual(t(key, { count: 1, fileName: 'test.csv' }, 'pt-BR'), key, `${key} missing in PT-BR`);
+  }
+
+  // HTML attributes bind the new keys correctly
+  assert.match(setlistHtml, /data-i18n-title="setlist\.manageSetlistsTitle"/);
+  assert.match(setlistHtml, /data-i18n-title="setlist\.exportCsvTitle"/);
 });

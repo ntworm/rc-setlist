@@ -4,6 +4,8 @@ import * as http from 'node:http';
 import {
   createHttpRequestListener,
   handleHttp,
+  loadResponseFile,
+  safeAttachmentName,
   setHttpAuthToken,
   setDebugSnapshotProvider,
   sanitizeUrl,
@@ -52,48 +54,6 @@ test('HTTP Security: sanitizeUrl query token redaction', () => {
   assert.strictEqual(sanitizeUrl(''), '');
 });
 
-test('HTTP Security: /debug/snapshot authentication', async () => {
-  const token = 'my_secret_token_123';
-  const server = createServer(token);
-  const port = await startServer(server);
-
-  try {
-    // 1. Request without token
-    const resNoToken = await makeRequest({
-      hostname: '127.0.0.1',
-      port,
-      path: '/debug/snapshot',
-      method: 'GET'
-    });
-    assert.strictEqual(resNoToken.status, 401);
-    const jsonNoToken = JSON.parse(resNoToken.body);
-    assert.strictEqual(jsonNoToken.error, 'unauthorized: invalid or missing security token');
-
-    // 2. Request with wrong token
-    const resWrongToken = await makeRequest({
-      hostname: '127.0.0.1',
-      port,
-      path: '/debug/snapshot?token=wrong',
-      method: 'GET'
-    });
-    assert.strictEqual(resWrongToken.status, 401);
-
-    // 3. Request with valid token
-    const resValidToken = await makeRequest({
-      hostname: '127.0.0.1',
-      port,
-      path: `/debug/snapshot?token=${token}`,
-      method: 'GET'
-    });
-    assert.strictEqual(resValidToken.status, 200);
-    const jsonValidToken = JSON.parse(resValidToken.body);
-    assert.strictEqual(jsonValidToken.dummy, 'data');
-
-  } finally {
-    await stopServer(server);
-  }
-});
-
 test('HTTP Security: production debug snapshot requires an explicit true flag', async () => {
   const previousNodeEnv = process.env.NODE_ENV;
   const previousDebugFlag = process.env.ENABLE_DEBUG_SNAPSHOT;
@@ -134,6 +94,65 @@ test('HTTP Security: rejected async handlers return a controlled 500', async () 
     assert.strictEqual(response.status, 500);
     assert.strictEqual(response.body, 'internal server error\n');
     assert.doesNotMatch(response.body, /sensitive resolver detail/);
+  } finally {
+    await stopServer(server);
+  }
+});
+
+test('HTTP Security: HEAD response metadata does not read the response body', async () => {
+  let readCalled = false;
+  const file = await loadResponseFile('virtual.csv', true, {
+    async stat() { return { size: 42, isFile: () => true }; },
+    async readFile() { readCalled = true; return Buffer.from('secret body'); },
+  });
+  assert.deepStrictEqual(file, { length: 42, data: null });
+  assert.strictEqual(readCalled, false);
+});
+
+test('HTTP Security: attachment filenames cannot inject headers or paths', () => {
+  assert.strictEqual(
+    safeAttachmentName('../Tour "Set"\r\nX-Injected: yes.csv'),
+    'Tour _Set___X-Injected_ yes.csv',
+  );
+});
+
+test('HTTP Security: /debug/snapshot authentication', async () => {
+  const token = 'my_secret_token_123';
+  const server = createServer(token);
+  const port = await startServer(server);
+
+  try {
+    // 1. Request without token
+    const resNoToken = await makeRequest({
+      hostname: '127.0.0.1',
+      port,
+      path: '/debug/snapshot',
+      method: 'GET'
+    });
+    assert.strictEqual(resNoToken.status, 401);
+    const jsonNoToken = JSON.parse(resNoToken.body);
+    assert.strictEqual(jsonNoToken.error, 'unauthorized: invalid or missing security token');
+
+    // 2. Request with wrong token
+    const resWrongToken = await makeRequest({
+      hostname: '127.0.0.1',
+      port,
+      path: '/debug/snapshot?token=wrong',
+      method: 'GET'
+    });
+    assert.strictEqual(resWrongToken.status, 401);
+
+    // 3. Request with valid token
+    const resValidToken = await makeRequest({
+      hostname: '127.0.0.1',
+      port,
+      path: `/debug/snapshot?token=${token}`,
+      method: 'GET'
+    });
+    assert.strictEqual(resValidToken.status, 200);
+    const jsonValidToken = JSON.parse(resValidToken.body);
+    assert.strictEqual(jsonValidToken.dummy, 'data');
+
   } finally {
     await stopServer(server);
   }

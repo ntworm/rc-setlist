@@ -6,12 +6,6 @@ import { TextDecoder as NodeTextDecoder, TextEncoder as NodeTextEncoder } from '
 // @ts-ignore
 import * as osc from 'osc-min';
 
-type OscMessageListener = (message: Buffer) => void;
-type OscRuntime = typeof globalThis & {
-  abletonOSCSocket?: dgram.Socket | null;
-  abletonOSCListeners?: Set<OscMessageListener> | null;
-};
-
 const DEBUG_LOG = process.env.SETLIST_OSC_DEBUG === '1';
 const DEBUG_LOG_PATH = process.env.SETLIST_OSC_DEBUG_LOG
   || path.join(process.env.TEMP || process.env.TMP || '/tmp', 'setlist-osc.log');
@@ -243,22 +237,24 @@ export class OSCClient extends EventEmitter {
     }, 1000);
 
     return new Promise((resolve, reject) => {
-      const g = globalThis as OscRuntime;
+      const g = globalThis as any;
 
-      const onMessage: OscMessageListener = (msg: Buffer) => {
+      this.onMessageCallback = (msg: Buffer) => {
         this.handleMessage(msg);
       };
-      this.onMessageCallback = onMessage;
 
       if (g.abletonOSCSocket) {
         this.server = g.abletonOSCSocket;
-        const listeners = g.abletonOSCListeners ?? new Set<OscMessageListener>();
-        g.abletonOSCListeners = listeners;
-        listeners.add(onMessage);
-        const address = g.abletonOSCSocket.address();
-        if (typeof address !== 'string') this.listenPort = address.port;
-        dbg('START', `reused shared socket addr=${JSON.stringify(address)} listenersCount=${listeners.size}`);
-        console.log(`[OSC] Shared OSC listening socket reused on port ${this.listenPort}`);
+        if (!(g.abletonOSCListeners instanceof Set)) {
+          g.abletonOSCListeners = new Set();
+        }
+        g.abletonOSCListeners.add(this.onMessageCallback);
+        const addr = (g.abletonOSCSocket.address && typeof g.abletonOSCSocket.address === 'function') ? g.abletonOSCSocket.address() : null;
+        if (addr && typeof addr === 'object' && Number.isInteger(addr.port) && addr.port > 0) {
+          this.listenPort = addr.port;
+        }
+        dbg('START', `reused shared socket addr=${JSON.stringify(addr)} listenersCount=${g.abletonOSCListeners.size}`);
+        console.log(`[OSC] Shared OSC listening socket reused on port ${this.listenPort || 'unknown'}`);
         resolve();
         return;
       }
@@ -296,7 +292,7 @@ export class OSCClient extends EventEmitter {
 
           g.abletonOSCSocket = serverSocket;
           g.abletonOSCListeners = new Set();
-          g.abletonOSCListeners.add(onMessage);
+          g.abletonOSCListeners.add(this.onMessageCallback);
 
           serverSocket.on('message', (msg) => {
             if (g.abletonOSCListeners) {
@@ -323,7 +319,7 @@ export class OSCClient extends EventEmitter {
       this.connectionCheckInterval = null;
     }
     this.stopPolling();
-    const g = globalThis as OscRuntime;
+    const g = globalThis as any;
     if (this.onMessageCallback) {
       if (g.abletonOSCListeners) {
         g.abletonOSCListeners.delete(this.onMessageCallback);

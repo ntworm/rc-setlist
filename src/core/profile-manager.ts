@@ -1,5 +1,9 @@
 import * as path from 'node:path';
 import * as fs from 'node:fs/promises';
+import { writeJsonAtomic as defaultWriteJsonAtomic } from './profile/storage.js';
+import { moveToTrash as defaultMoveToTrash } from './profile/trash.js';
+import { createInitialRegistry } from './profile/registry.js';
+import { copyLyricsDirectory } from './profile/migration.js';
 
 const DEFAULT_PROFILE_NAME = 'Main Setlist';
 const LEGACY_DEFAULT_PROFILE_NAME = 'Setlist Principal';
@@ -219,7 +223,7 @@ export class ProfileManager {
     this.indexPath = path.resolve(this.profilesRoot, 'index.json');
     this.randomUUID = options.randomUUID ?? safeRandomUUID;
     this.now = options.now ?? (() => new Date().toISOString());
-    this.atomicWrite = options.writeJsonAtomic ?? writeJsonAtomic;
+    this.atomicWrite = options.writeJsonAtomic ?? ((filePath: string, value: unknown) => defaultWriteJsonAtomic(filePath, value));
   }
 
   private requireRegistry(): ProfileRegistry {
@@ -535,7 +539,7 @@ export class ProfileManager {
     };
 
     try {
-      await fs.rename(sourcePaths.root, trashPaths.root);
+      await defaultMoveToTrash(id, this.profilesRoot, this.trashRoot, deletedProfile.deletedAt);
     } catch (cause) {
       throw new ProfileError('profile_io_error', `Could not move "${profile.name}" to recoverable trash.`, { cause });
     }
@@ -804,14 +808,8 @@ export class ProfileManager {
         const profileMeta: ProfileMetadata = { ...defaultProfile };
         await this.atomicWrite(defaultPaths.metadata, profileMeta);
 
-        const defaultRegistry: ProfileRegistry = {
-          schemaVersion: 2,
-          activeProfileId: defaultId,
-          profiles: [defaultProfile],
-          deletedProfiles: [],
-          legacySources: {},
-          migrationVersion: 0
-        };
+        const defaultRegistry = createInitialRegistry(defaultId, DEFAULT_PROFILE_NAME, defaultProfile.createdAt);
+        defaultRegistry.migrationVersion = 0;
 
         await this.atomicWrite(this.indexPath, defaultRegistry);
         this.registry = defaultRegistry;

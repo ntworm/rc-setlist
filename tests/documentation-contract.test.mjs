@@ -21,7 +21,7 @@ test('public landing presents Ableton RC Setlist as source-available and noncomm
   assert.match(landing, /PolyForm Noncommercial 1\.0\.0/i);
   assert.match(landing, /independent project.+not affiliated with or endorsed by Ableton AG/is);
   assert.match(landing, /https:\/\/ntworm\.github\.io\/rc-setlist\//i);
-  assert.match(landing, /Release 0\.4\.1/);
+  assert.match(landing, /Release 0\.5\.0/);
   assert.match(landing, /id=["']languageSelect["']/);
   assert.doesNotMatch(landing, /Release candidate/i);
   assert.doesNotMatch(landing, /commercial distribution is in preparation|private beta|sales open/i);
@@ -102,11 +102,59 @@ test('public docs contain the required user, contributor, privacy and security p
     'docs/pt-BR/FAQ.md',
     'docs/RELEASE-NOTES-0.4.1.md',
     'docs/pt-BR/NOTAS-DA-VERSAO-0.4.1.md',
+    'docs/RELEASE-NOTES-0.4.2.md',
+    'docs/pt-BR/NOTAS-DA-VERSAO-0.4.2.md',
+    'docs/RELEASE-NOTES-0.5.0.md',
+    'docs/pt-BR/NOTAS-DA-VERSAO-0.5.0.md',
   ];
 
   for (const path of required) {
     assert.ok(existsSync(new URL(`../${path}`, import.meta.url)), `${path} must exist`);
   }
+});
+
+test('0.4.2 local test notes remain preserved as the historical candidate', () => {
+  const changelog = readRequired('CHANGELOG.md');
+  const englishNotes = readRequired('docs/RELEASE-NOTES-0.4.2.md');
+  const portugueseNotes = readRequired('docs/pt-BR/NOTAS-DA-VERSAO-0.4.2.md');
+
+  assert.match(changelog, /^## \[0\.4\.2\] - 2026-08-01/m);
+  assert.match(changelog, />\s+Section|relative section/i);
+  assert.match(changelog, /\[ignore\]/i);
+  assert.match(changelog, /local test candidate|candidato local de teste/i);
+
+  assert.match(englishNotes, /local test candidate[\s\S]*not (?:a )?published release/i);
+  assert.match(englishNotes, />\s+Section[\s\S]*\[ignore\][\s\S]*visual/i);
+  assert.match(englishNotes, /pt-BR\/NOTAS-DA-VERSAO-0\.4\.2\.md/);
+  assert.match(portugueseNotes, /candidato local de teste[\s\S]*n[aã]o [ée] uma vers[aã]o publicada/i);
+  assert.match(portugueseNotes, />\s+Se[cç][aã]o[\s\S]*\[ignore\][\s\S]*visual/i);
+  assert.match(portugueseNotes, /\.\.\/RELEASE-NOTES-0\.4\.2\.md/);
+
+});
+
+test('0.5.0 final notes are bilingual and promote the field-tested release surface', () => {
+  const changelog = readRequired('CHANGELOG.md');
+  const englishNotes = readRequired('docs/RELEASE-NOTES-0.5.0.md');
+  const portugueseNotes = readRequired('docs/pt-BR/NOTAS-DA-VERSAO-0.5.0.md');
+  const landing = readRequired('docs/index.html');
+  const readme = readRequired('README.md');
+
+  assert.match(changelog, /^## \[0\.5\.0\] - 2026-08-01/m);
+  assert.match(changelog, />\s+Section|relative section/i);
+  assert.match(changelog, /\[ignore\]/i);
+  assert.match(changelog, /sections_count[\s\S]*automations/i);
+
+  assert.match(englishNotes, /0\.5\.0[\s\S]*explicit[\s\S]*relative[\s\S]*\[ignore\]/i);
+  assert.match(englishNotes, /setlist[\s\S]*sections_count[\s\S]*automations/i);
+  assert.match(englishNotes, /pt-BR\/NOTAS-DA-VERSAO-0\.5\.0\.md/);
+  assert.match(portugueseNotes, /0\.5\.0[\s\S]*expl.cita[\s\S]*relativa[\s\S]*\[ignore\]/i);
+  assert.match(portugueseNotes, /setlist[\s\S]*sections_count[\s\S]*automations/i);
+  assert.match(portugueseNotes, /\.\.\/RELEASE-NOTES-0\.5\.0\.md/);
+
+  assert.match(landing, /Release 0\.5\.0/);
+  assert.match(landing, /RELEASE-NOTES-0\.5\.0\.md/);
+  assert.match(readme, /Ableton-RC-Setlist-0\.5\.0\.ablx/);
+  assert.match(readme, /docs\/RELEASE-NOTES-0\.5\.0\.md/);
 });
 
 test('0.4.1 guides and changelog document durations, recoverable profiles and WebSocket compatibility', () => {
@@ -153,18 +201,16 @@ test('0.4.1 troubleshooting documents OSC return-port fallback and safe data rec
   assert.match(changelog, /quantization[\s\S]*MCP[\s\S]*temporary project scope/i);
 });
 
-test('0.4.1 release notes are bilingual, linked and describe the tested release', () => {
+test('0.4.1 release notes remain preserved, bilingual and describe the tested release', () => {
   const changelog = readRequired('CHANGELOG.md');
   const readme = readRequired('README.md');
-  const englishIndex = readRequired('docs/README.md');
-  const portugueseIndex = readRequired('docs/pt-BR/README.md');
   const englishNotes = readRequired('docs/RELEASE-NOTES-0.4.1.md');
   const portugueseNotes = readRequired('docs/pt-BR/NOTAS-DA-VERSAO-0.4.1.md');
 
   assert.match(changelog, /^## \[0\.4\.1\] - 2026-07-29/m);
   assert.ok(changelog.indexOf('## [0.4.1]') < changelog.indexOf('## [0.4.0]'));
-  assert.match(englishIndex, /RELEASE-NOTES-0\.4\.1\.md/);
-  assert.match(portugueseIndex, /NOTAS-DA-VERSAO-0\.4\.1\.md/);
+  assert.match(englishNotes, /pt-BR\/NOTAS-DA-VERSAO-0\.4\.1\.md/);
+  assert.match(portugueseNotes, /\.\.\/RELEASE-NOTES-0\.4\.1\.md/);
   assert.match(englishNotes, /setlist duration[\s\S]*Manage Setlists[\s\S]*lyrics[\s\S]*bar display/i);
   assert.match(portugueseNotes, /dura[cç][aã]o total[\s\S]*Gerenciar setlists[\s\S]*letras[\s\S]*compasso/i);
   assert.match(readme, /\[Landing page and screenshots\]\(https:\/\/ntworm\.github\.io\/rc-setlist\/\)/);
@@ -259,4 +305,21 @@ test('public Markdown and HTML have no broken local links', () => {
     encoding: 'utf8',
   });
   assert.equal(result.status, 0, `${result.stdout}\n${result.stderr}`);
+});
+
+test('documentation and guides explain relative locators, ignore tag, Manage Setlists and CSV downloads', () => {
+  for (const path of ['docs/USER-GUIDE.md', 'docs/pt-BR/USER-GUIDE.md']) {
+    const content = readRequired(path);
+    assert.match(content, /> Se[çc][ãa]o|> Section/i, `${path} must document relative locator syntax`);
+    assert.match(content, /\[ignore\]/i, `${path} must document ignore tag`);
+    assert.match(content, /Manage Setlists|Gerenciar setlists/i, `${path} must document Manage Setlists discovery`);
+    assert.match(content, /Downloads/i, `${path} must document browser Downloads location for CSV`);
+    assert.match(content, /sections_count/i, `${path} must document named-section CSV data`);
+    assert.match(content, /automations/i, `${path} must document automation CSV data`);
+    assert.doesNotMatch(content, /CSV[^\n]*(?:plays|last_played_at)/i, `${path} must not promise unavailable play history`);
+  }
+  const changelog = readRequired('CHANGELOG.md');
+  assert.match(changelog, /## \[Unreleased\]/i, 'CHANGELOG.md must have Unreleased section');
+  assert.match(changelog, /relative section locator syntax/i, 'CHANGELOG.md must document relative section locators');
+  assert.match(changelog, /\[ignore\]/i, 'CHANGELOG.md must document ignore tag');
 });

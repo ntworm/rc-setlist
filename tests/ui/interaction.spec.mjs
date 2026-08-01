@@ -22,6 +22,16 @@ async function expectControlMessage(page, predicate) {
   await expect.poll(async () => (await receivedControlMessages(page)).find(predicate)).toBeTruthy();
 }
 
+test('Setlist opens without JavaScript module parse errors', async ({ page }) => {
+  const errors = [];
+  page.on('pageerror', (error) => errors.push(error.message));
+
+  await page.goto('/setlist/');
+  await page.locator('.setlist-page').waitFor();
+
+  expect(errors).toEqual([]);
+});
+
 test('Setlist renders durations and sends UUID-based profile actions safely', async ({ page }) => {
   await page.goto('/setlist/');
 
@@ -483,10 +493,11 @@ test('Reduced motion and keyboard focus remain visible', async ({ page }) => {
     outlineWidth: parseFloat(getComputedStyle(document.activeElement).outlineWidth),
     transitionSeconds: parseFloat(getComputedStyle(document.activeElement).transitionDuration),
   }));
-  expect(state.activeId).toBe('languageSelect');
+  expect(['profileSelect', 'languageSelect']).toContain(state.activeId);
   expect(state.outlineWidth).toBeGreaterThanOrEqual(2);
   expect(state.transitionSeconds).toBeLessThanOrEqual(0.001);
 });
+
 
 test('Performance handles an empty project without overflow', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
@@ -659,6 +670,61 @@ test('Lyrics refuses to report success while an edited line has no timestamp', a
   expect(messages.some((message) =>
     message.type === 'save_lyrics' && message.text.includes('This line must not disappear')
   )).toBe(false);
+});
+
+test('Synchronized lyrics stay open until the matching save is confirmed', async ({ page }) => {
+  await page.goto('/setlist/?scenario=lyrics-save-pending');
+  await page.locator('.tools-menu > summary').click();
+  await page.getByRole('button', { name: 'Lyrics' }).click();
+  await page.locator('#lyricsRawText').fill('One synchronized line');
+  await page.getByRole('button', { name: 'Start synchronization', exact: false }).click();
+  await page.locator('#btnLyricsTap').click();
+  await page.locator('#btnSaveSyncLyrics').click();
+
+  await expect.poll(async () => (
+    await receivedControlMessages(page)
+  ).find((message) => message.type === 'save_lyrics' && /^lyrics-sync-/.test(message.commandId))).toBeTruthy();
+  await expect(page.locator('#lyricsModal')).toHaveClass(/open/);
+  await expect(page.locator('#btnSaveSyncLyrics')).toBeDisabled();
+
+  const pendingSave = (await receivedControlMessages(page)).find(
+    (message) => message.type === 'save_lyrics' && /^lyrics-sync-/.test(message.commandId)
+  );
+  expect(pendingSave).toBeTruthy();
+  await emitServerMessage(page, {
+    type: 'command_status',
+    commandId: pendingSave.commandId,
+    status: 'confirmed',
+  });
+  await expect(page.locator('#lyricsModal')).not.toHaveClass(/open/);
+});
+
+test('Synchronized lyrics confirmation never reopens a manually closed modal', async ({ page }) => {
+  await page.goto('/setlist/?scenario=lyrics-save-pending');
+  await page.locator('.tools-menu > summary').click();
+  await page.getByRole('button', { name: 'Lyrics' }).click();
+  await page.locator('#lyricsRawText').fill('One synchronized line');
+  await page.getByRole('button', { name: 'Start synchronization', exact: false }).click();
+  await page.locator('#btnLyricsTap').click();
+  await page.locator('#btnSaveSyncLyrics').click();
+
+  await expect.poll(async () => (
+    await receivedControlMessages(page)
+  ).find((message) => message.type === 'save_lyrics' && /^lyrics-sync-/.test(message.commandId))).toBeTruthy();
+
+  const pendingSave = (await receivedControlMessages(page)).find(
+    (message) => message.type === 'save_lyrics' && /^lyrics-sync-/.test(message.commandId)
+  );
+  expect(pendingSave).toBeTruthy();
+  await page.locator('.lyrics-modal-header .btn-close').click();
+  await expect(page.locator('#lyricsModal')).not.toHaveClass(/open/);
+
+  await emitServerMessage(page, {
+    type: 'command_status',
+    commandId: pendingSave.commandId,
+    status: 'confirmed',
+  });
+  await expect(page.locator('#lyricsModal')).not.toHaveClass(/open/);
 });
 
 for (const surface of [

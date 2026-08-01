@@ -149,29 +149,31 @@ test('OSC encoding works when Ableton embedded runtime has no global TextEncoder
   }
 });
 
-test('OSC send reports when no bound socket accepted the message', () => {
+test('OSC send reports whether a bound socket accepted the packet', async () => {
   const client = new OSCClient();
-  assert.equal(client.send('/live/song/get/tempo'), false);
-});
+  assert.strictEqual(client.send('/live/song/get/tempo'), false);
 
-test('OSC shared socket reuse reports the actual bound listen port', async () => {
   const runtime = globalThis;
   const previousSocket = runtime.abletonOSCSocket;
   const previousListeners = runtime.abletonOSCListeners;
+  const sends = [];
   let closed = false;
   runtime.abletonOSCSocket = {
     address: () => ({ address: '127.0.0.1', family: 'IPv4', port: 11101 }),
+    send: (...args) => { sends.push(args); },
     close: () => { closed = true; },
   };
-  runtime.abletonOSCListeners = new Set();
+  delete runtime.abletonOSCListeners;
 
-  const client = new OSCClient();
   try {
     await client.start();
-    assert.equal(client.getDebugSnapshot().oscListenPort, 11101);
+    assert.strictEqual(client.getDebugSnapshot().oscListenPort, 11101);
+    assert.strictEqual(client.send('/live/song/get/tempo'), true);
+    assert.strictEqual(sends.length, 1);
+    assert.ok(runtime.abletonOSCListeners instanceof Set);
   } finally {
     await client.stop();
-    assert.equal(closed, true);
+    assert.strictEqual(closed, true);
     if (previousSocket === undefined) delete runtime.abletonOSCSocket;
     else runtime.abletonOSCSocket = previousSocket;
     if (previousListeners === undefined) delete runtime.abletonOSCListeners;

@@ -37,6 +37,18 @@ test('Server Lifecycle: starts graceful close before forcing lingering connectio
   assert.deepStrictEqual(calls, ['close', 'closeAllConnections']);
 });
 
+test('Server Lifecycle: drains the event log after stopping command intake', async () => {
+  const calls = [];
+  bridgeState.commandBus = { stop() { calls.push('commandBus.stop'); } };
+  bridgeState.eventLogger = { async flush() { calls.push('eventLogger.flush'); } };
+
+  await stopServer();
+
+  assert.deepStrictEqual(calls, ['commandBus.stop', 'eventLogger.flush']);
+  assert.strictEqual(bridgeState.commandBus, null);
+  assert.strictEqual(bridgeState.eventLogger, null);
+});
+
 test('Server Lifecycle: start, stop, port collision handling', async () => {
   // Set up a clean storage directory to prevent polluting local config
   const testStorageDir = path.join(tmpdir(), 'setlist-test-' + Math.random().toString(36).substring(7));

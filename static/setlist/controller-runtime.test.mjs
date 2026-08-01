@@ -6,9 +6,10 @@ import vm from 'node:vm';
 import { fileURLToPath } from 'node:url';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
-const source = fs.readFileSync(path.join(here, 'controller-runtime.js'), 'utf8');
+const sourcePath = path.join(here, 'controller-runtime.js');
 
 function loadRuntime() {
+  const source = fs.readFileSync(sourcePath, 'utf8');
   const context = { console, URL, globalThis: null, setTimeout, clearTimeout };
   context.globalThis = context;
   vm.runInNewContext(source, context, { filename: 'controller-runtime.js' });

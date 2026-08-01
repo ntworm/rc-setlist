@@ -15,32 +15,7 @@
       <span class="app-brand-mark">SB</span>
       <span class="app-brand-copy"><strong>Ableton RC Setlist</strong><small data-i18n="setlist.title">Stage control</small></span>
     </div>
-    <div class="app-bar-actions">
-      <label class="language-control">
-        <span class="sr-only" data-i18n="common.language">Language</span>
-        <select id="languageSelect" class="language-select" aria-label="Language" data-i18n-aria-label="common.language">
-          <option value="en">English</option>
-          <option value="pt-BR">Português (Brasil)</option>
-        </select>
-      </label>
-      <button id="btnLock" class="ui-button" type="button" onclick="toggleLock()">
-        <span id="lockIcon" aria-hidden="true">🔓</span> <span id="lockText">Panel unlocked</span>
-      </button>
-      <details class="tools-menu">
-        <summary class="ui-button" data-i18n="setlist.tools">Tools</summary>
-        <div class="tools-popover">
-          <button class="ui-button" type="button" onclick="toggleMidiModal()">MIDI</button>
-          <button class="ui-button" type="button" onclick="toggleLyricsModal()" data-i18n="setlist.lyrics">Lyrics</button>
-          <button id="btnExportCsv" class="ui-button" type="button" onclick="exportCsv()" title="Export tracklist as CSV" data-i18n="setlist.exportCsv" data-i18n-title="setlist.exportCsvTitle">Export CSV</button>
-          <button class="ui-button" type="button" onclick="toggleHelp()" data-i18n="setlist.help">Help</button>
-        </div>
-      </details>
-      <button id="fullscreenButton" class="ui-button" type="button" aria-pressed="false">Full screen</button>
-      <button class="status-badge" type="button" onclick="promptForToken()" title="Authenticate or change the security token" data-i18n-title="setlist.authenticateTitle">
-        <span id="statusDot" class="status-dot"></span>
-        <span id="statusText">Offline</span>
-      </button>
-    </div>
+
     <div class="profile-header-group">
       <label class="profile-select-control" for="profileSelect">
         <span data-i18n="setlist.activeSetlist">Active setlist</span>
@@ -48,13 +23,39 @@
           <option data-i18n="setlist.waitingProfiles">Waiting for setlists...</option>
         </select>
       </label>
-      <button id="btnManageProfiles" class="ui-button" type="button" onclick="toggleProfileManageModal()" data-i18n="setlist.manageSetlists">Manage setlists</button>
-      <span class="total-duration-control">
-        <span data-i18n="setlist.totalDuration">Total duration</span>
-        <strong id="totalSetlistDuration">&mdash;</strong>
-      </span>
+      <button id="btnManageProfiles" class="ui-button" type="button" onclick="toggleProfileManageModal()" data-i18n="setlist.manageSetlists" data-i18n-title="setlist.manageSetlistsTitle" title="Manage setlists and profiles (creating, renaming, deleting, and restoring setlists require Live stopped)">Manage setlists</button>
+    </div>
+
+    <div class="app-bar-actions">
+      <label class="language-control">
+        <span class="sr-only" data-i18n="common.language">Language</span>
+        <select id="languageSelect" class="language-select" aria-label="Language" data-i18n-aria-label="common.language">
+          <option value="en" data-i18n="common.english">EN</option>
+          <option value="pt-BR" data-i18n="common.portuguese">PT</option>
+        </select>
+      </label>
+
+      <button id="btnLock" class="ui-button" type="button" onclick="toggleLock()">
+        <span id="lockIcon" aria-hidden="true">🔓</span> <span id="lockText">Panel unlocked</span>
+      </button>
+      <details class="tools-menu">
+        <summary class="ui-button" data-i18n="setlist.tools">🛠️ Tools</summary>
+        <div class="tools-popover">
+          <button class="ui-button" type="button" onclick="toggleMidiModal()">MIDI</button>
+          <button class="ui-button" type="button" onclick="toggleLyricsModal()" data-i18n="setlist.lyrics">Lyrics</button>
+          <button id="btnExportCsv" class="ui-button" type="button" onclick="exportCsv()" title="Export tracklist as CSV" data-i18n="setlist.exportCsv" data-i18n-title="setlist.exportCsvTitle">Export CSV</button>
+          <button class="ui-button" type="button" onclick="toggleHelp()" data-i18n="setlist.help">Help</button>
+        </div>
+      </details>
+      <button id="fullscreenButton" class="ui-button" type="button" aria-pressed="false" data-i18n="fullscreen.enter">⛶ Full screen</button>
+
+      <button class="status-badge" type="button" onclick="promptForToken()" title="Authenticate or change the security token" data-i18n-title="setlist.authenticateTitle">
+        <span id="statusDot" class="status-dot"></span>
+        <span id="statusText">Offline</span>
+      </button>
     </div>
   </header>
+
 
   <!-- Help Modal -->
   <div id="helpModal" class="modal-overlay" onclick="closeHelp(event)">
@@ -97,6 +98,10 @@
                   <td style="padding: 0.5rem 0;"><code>[skip]</code></td>
                   <td data-i18n="help.skip">Skips the segment and advances directly to the next section.</td>
                 </tr>
+                <tr style="border-bottom: 1px dashed rgba(255,255,255,0.05);">
+                  <td style="padding: 0.5rem 0;"><code>[ignore]</code></td>
+                  <td data-i18n="help.ignore">[ignore]: hides technical markers or overrides action tags without creating songs, sections or automations.</td>
+                </tr>
               </tbody>
             </table>
           </div>
@@ -130,6 +135,7 @@
           <div>
             <div style="font-weight: 700; margin-bottom: 0.35rem; color: var(--accent);" data-i18n="help.extra">Extra Features &amp; Filters:</div>
             <ul style="font-size: 0.8rem; margin: 0; padding-left: 1.2rem; line-height: 1.5; color: var(--text-muted);">
+              <li data-i18n="help.relativeSyntax">&gt; Section: relative locator attached to the preceding song (e.g. &gt; Intro).</li>
               <li data-i18n="help.hidden">[hidden] or the _ prefix: hides the locator from the visual setlist.</li>
               <li data-i18n="help.lock">🔒 Lock Mode: blocks taps and drags on phones or tablets to prevent accidental stage input.</li>
               <li data-i18n="help.metronome">⚡ Visual Metronome: the BPM and bar card flashes with the click using +90 ms network compensation.</li>
@@ -137,6 +143,7 @@
               <li data-i18n="help.network">🔌 Network Loss: shows an alert if Wi-Fi or the WebSocket connection to Ableton Live drops.</li>
             </ul>
           </div>
+
 
           <div>
             <div style="font-weight: 700; margin-bottom: 0.35rem; color: var(--accent);" data-i18n="help.hierarchy">Locator Hierarchy in Ableton Live:</div>
@@ -301,7 +308,7 @@ A quiet pulse becomes our guide..." style="width: 100%; height: 180px; padding: 
               <button id="btnSaveEditedLyrics" class="btn btn-success" onclick="saveLyricsEdit()" disabled style="padding: 0.35rem 0.75rem; font-size: 0.8rem;" data-i18n="lyrics.saveLrc">Save LRC</button>
             </div>
           </div>
-          <p style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 0.75rem;" data-i18n="lyrics.editHelp">Double-click any line to edit it. Lines without timestamps use [--:--.--] and must be marked before the LRC can be saved.</p>
+          <p style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 0.75rem;" data-i18n="lyrics.editHelp">Double-click any line to edit it. Lines without timestamps use [--:--.--] and are ignored by the HUD until marked in the Sync tab.</p>
           <div id="lyricsEditList" style="display: flex; flex-direction: column; gap: 0.4rem; min-height: 80px;">
             <!-- Populated dynamically -->
           </div>
@@ -318,8 +325,15 @@ A quiet pulse becomes our guide..." style="width: 100%; height: 180px; padding: 
     <section class="setlist-pane" aria-label="Songs and sections" data-i18n-aria-label="setlist.songsAria">
       <!-- Setlist View -->
         <div class="setlist-container">
-          <h2 class="section-title" data-i18n="setlist.songsProject">Songs in Project</h2>
+          <div class="setlist-pane-header">
+            <h2 class="section-title" data-i18n="setlist.songsProject">Songs in Project</h2>
+            <div class="total-duration-control">
+              <span class="total-duration-label" data-i18n="setlist.totalDuration">Total duration</span>
+              <strong id="totalSetlistDuration" class="total-duration-value">&mdash;</strong>
+            </div>
+          </div>
           <div id="songList" class="song-list">
+
             <!-- Dynamic list -->
             <div style="text-align: center; color: var(--text-muted); padding: 2rem;">
               <span data-i18n="setlist.waitingServer">Waiting for the WebSocket server...</span>

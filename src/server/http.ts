@@ -104,16 +104,29 @@ function debugSnapshotEnabled(): boolean {
   return /^(?:1|true)$/i.test(process.env.ENABLE_DEBUG_SNAPSHOT?.trim() ?? '');
 }
 
-async function loadResponseFile(
+export interface ResponseFileSystem {
+  stat(filePath: string): Promise<{ size: number; isFile(): boolean }>;
+  readFile(filePath: string): Promise<Buffer>;
+}
+
+export async function loadResponseFile(
   filePath: string,
   isHead: boolean,
+  fileSystem: ResponseFileSystem = fs,
 ): Promise<{ length: number; data: Buffer | null }> {
   if (isHead) {
-    const stat = await fs.stat(filePath);
+    const stat = await fileSystem.stat(filePath);
+    if (!stat.isFile()) throw new Error('response path is not a regular file');
     return { length: stat.size, data: null };
   }
-  const data = await fs.readFile(filePath);
+  const data = await fileSystem.readFile(filePath);
   return { length: data.length, data };
+}
+
+export function safeAttachmentName(value: string): string {
+  const baseName = path.posix.basename(String(value).replace(/\\/g, '/'));
+  const sanitized = baseName.replace(/[^A-Za-z0-9 ._()\-]/g, '_').slice(0, 180);
+  return sanitized || 'setlist.csv';
 }
 
 async function serveStaticFile(reqUrl: string, res: http.ServerResponse, isHead: boolean = false): Promise<void> {
@@ -284,7 +297,7 @@ export async function handleHttp(req: http.IncomingMessage, res: http.ServerResp
       res.setHeader('Content-Length', String(file.length));
       res.setHeader(
         'Content-Disposition',
-        `attachment; filename="${resolved.friendlyName.replace(/["\r\n]/g, '_')}"`
+        `attachment; filename="${safeAttachmentName(resolved.friendlyName)}"`
       );
       res.end(file.data ?? undefined);
     } catch {

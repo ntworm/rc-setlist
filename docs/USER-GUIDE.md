@@ -16,14 +16,15 @@ is active so the show surface cannot be reconfigured accidentally.
 
 ## Locator grammar
 
-A song locator has a title. A section uses `Song > Section`.
+A song locator has a title. A section uses `Song > Section` or the relative syntax `> Section` (which attaches to the preceding song). Standalone action tags like `[stop]` and relative automation locators like `> [stop]` belong to the chronologically preceding song.
 
 ```text
-Neon Signal [bpm 122] [click]
-Neon Signal > Intro
-Neon Signal > Verse
-Neon Signal > Chorus [loop 2x]
-Neon Signal > Outro [stop]
+Song A [bpm 122] [click]
+> Intro
+> Verse
+> Chorus [loop 4x]
+[stop]
+Technical cue [ignore]
 ```
 
 | Tag | Effect |
@@ -36,14 +37,16 @@ Neon Signal > Outro [stop]
 | `[click]` / `[click off]` | Enable or disable Live's metronome. |
 | `[skip]` | Skip this section/song. |
 | `[hidden]` | Keep an automation anchor out of the visible setlist. |
+| `[ignore]` | Technical marker that hides the locator and takes precedence over any action tags. |
 
-Tags are case-insensitive and removed from the display name.
+Tags are case-insensitive and removed from the display name. The `[ignore]` tag takes precedence over automation tags, hiding the marker and ignoring any action tags on that locator without creating songs, sections, or automations.
 
 ## Profiles
 
 Profiles belong to the current Live Set. A saved `.als` may contain multiple
-setlists for alternate show orders, rehearsals or lineups, but Manage Setlists
-does not show profiles from another Ableton project. Opening another Live Set
+setlists for alternate show orders, rehearsals or lineups. The active setlist selector
+and **Manage Setlists** button are located at the top of Stage Control.
+Manage Setlists does not show profiles from another Ableton project. Opening another Live Set
 switches to that Set's separate profile registry.
 
 Within the current Live Set, profiles separate setlist order, lyrics, exports
@@ -81,7 +84,7 @@ Open `/setlist` from the tokenized controller URL shown in the Live panel.
 - Select transport quantization; the jump scheduler applies the requested value
   immediately and reconciles it with a native Live reply when one is available.
 - Use the lyrics dialog to create, time and edit lyric lines.
-- Export the current tracklist as UTF-8 CSV.
+- Export the current tracklist as UTF-8 CSV (saves a copy in the active profile's `exports/` folder and downloads to your browser's Downloads folder).
 - Use fullscreen for a compact stage workstation.
 
 The UI keeps the last valid state visible during brief reconnects. A reconnect
@@ -120,8 +123,13 @@ stored in the active profile. Plain text is also accepted for sequential display
 ## Setlist ordering and CSV
 
 Custom order is presentation state; it does not move locators inside the Live
-Set. CSV export includes the visible song data and uses semicolon separators with
-UTF-8 BOM for spreadsheet compatibility.
+Set. CSV export includes one row per visible song with the active `setlist`,
+`start_beat`, declared BPM, numeric and readable duration, `sections_count`,
+named `sections`, locator `automations` and `lyric_lines`. It intentionally does
+not invent musical key, per-song signature, play counts or last-played history.
+The file uses semicolon separators with UTF-8 BOM for spreadsheet compatibility,
+is saved in the active profile directory under `exports/` and is sent to your
+browser's Downloads.
 
 ## Auto-start
 

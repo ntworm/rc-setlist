@@ -10,6 +10,14 @@ const rootUrl = new URL('../', import.meta.url);
 const rootPath = fileURLToPath(rootUrl);
 const read = (file) => readFileSync(new URL(file, rootUrl), 'utf8');
 
+test('0.5.0 metadata and installation kit identify the same final release', () => {
+  assert.equal(JSON.parse(read('package.json')).version, '0.5.0');
+  assert.match(read('release-template/README.txt'), /Ableton-RC-Setlist-0\.5\.0\.ablx/);
+  assert.match(read('scripts/package-release-candidate.ps1'), /\[string\]\$Version = "0\.5\.0"/);
+  assert.match(read('scripts/package-release-candidate.ps1'), /RELEASE-NOTES-0\.5\.0\.md/);
+  assert.match(read('scripts/package-release-candidate.ps1'), /NOTAS-DA-VERSAO-0\.5\.0\.md/);
+});
+
 test('release installation kit has a deterministic packager and owner-facing templates', () => {
   for (const file of [
     'scripts/package-release-candidate.ps1',
@@ -54,7 +62,7 @@ test('release templates describe the real prerequisites and safe local-network s
   assert.match(combined, /Ableton Live 12\.4\.5\+/);
   assert.match(combined, /AbletonOSC/);
   assert.match(combined, /trusted (?:local network|LAN)/i);
-  assert.match(combined, /Ableton-RC-Setlist-0\.4\.1\.ablx/);
+  assert.match(combined, /Ableton-RC-Setlist-0\.5\.0\.ablx/);
   assert.doesNotMatch(combined, /Ableton Setlist Bridge|commercial-song|real setlist/i);
 });
 
@@ -99,7 +107,7 @@ test('certificate onboarding is explicit in both languages and canonical English
 test('generated installation kit keeps English and Portuguese guides in their language folders', (t) => {
   const tempRoot = mkdtempSync(path.join(tmpdir(), 'rc-setlist-kit-contract-'));
   t.after(() => rmSync(tempRoot, { recursive: true, force: true }));
-  const ablxPath = path.join(tempRoot, 'Ableton-RC-Setlist-0.4.1.ablx');
+  const ablxPath = path.join(tempRoot, 'Ableton-RC-Setlist-0.5.0.ablx');
   const outputRoot = path.join(tempRoot, 'output');
   writeFileSync(ablxPath, '');
 
@@ -108,13 +116,13 @@ test('generated installation kit keeps English and Portuguese guides in their la
     '-NoProfile',
     '-ExecutionPolicy', 'Bypass',
     '-File', path.join(rootPath, 'scripts', 'package-release-candidate.ps1'),
-    '-Version', '0.4.1',
+    '-Version', '0.5.0',
     '-AblxPath', ablxPath,
     '-OutputRoot', outputRoot,
   ], { cwd: rootPath, encoding: 'utf8' });
   assert.equal(result.status, 0, result.error?.message || result.stderr || result.stdout);
 
-  const kitRoot = path.join(outputRoot, 'Ableton-RC-Setlist-0.4.1-Installation-Kit');
+  const kitRoot = path.join(outputRoot, 'Ableton-RC-Setlist-0.5.0-Installation-Kit');
   const expectedGuides = ['INSTALL.md', 'USER-GUIDE.md', 'TROUBLESHOOTING.md', 'FAQ.md', 'TEST-CHECKLIST.md'];
   for (const locale of ['en', 'pt-BR']) {
     for (const guide of expectedGuides) {
@@ -139,4 +147,10 @@ test('generated installation kit keeps English and Portuguese guides in their la
   };
   walk(kitRoot);
   assert.equal(allRelativeFiles.some((file) => /LEIA-ME-INSTALACAO/i.test(file)), false);
+});
+
+test('verify-production-bundle.mjs rejects bundles missing relative locator semantics', () => {
+  const verifierScript = readFileSync(new URL('../scripts/verify-production-bundle.mjs', import.meta.url), 'utf8');
+  assert.match(verifierScript, /relative-section/);
+  assert.match(verifierScript, /relative-automation/);
 });

@@ -275,6 +275,7 @@ webSockets.on('connection', (socket) => {
       } else if (parsed.type === 'profiles_get') {
         socket.send(JSON.stringify(profilesStateMessage));
       } else if (parsed.type === 'save_lyrics' && typeof parsed.commandId === 'string') {
+        if (scenario === 'lyrics-save-pending') return;
         socket.send(JSON.stringify({
           type: 'command_status',
           commandId: parsed.commandId,

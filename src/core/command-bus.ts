@@ -1,15 +1,19 @@
 import { EventEmitter } from 'node:events';
-import type { EventLogger } from './event-log.js';
 import type { SetlistManager } from './setlist-manager.js';
-import type { CommandFailureReason, CommandStatus, ShowCommand } from '../types.js';
+import type { EventLogger } from './event-log.js';
+import type {
+  CommandFailureReason,
+  CommandStatus,
+  ShowCommand,
+} from '../types.js';
 
 type CommandCompletion = 'local' | 'observable';
 
 export interface CommandPolicy {
-  completion: CommandCompletion;
-  critical?: boolean;
-  safetyLane?: boolean;
-  timeoutMs: number;
+  readonly completion: CommandCompletion;
+  readonly critical?: true;
+  readonly safetyLane?: true;
+  readonly timeoutMs: number;
 }
 
 const DEFAULT_LOCAL_POLICY: CommandPolicy = Object.freeze({
@@ -18,27 +22,27 @@ const DEFAULT_LOCAL_POLICY: CommandPolicy = Object.freeze({
 });
 
 export const COMMAND_POLICIES: Readonly<Record<string, CommandPolicy>> = Object.freeze({
-  play: { completion: 'observable', critical: true, timeoutMs: 5_000 },
-  stop: { completion: 'observable', safetyLane: true, timeoutMs: 5_000 },
-  jump: { completion: 'observable', critical: true, timeoutMs: 5_000 },
-  metronome: { completion: 'observable', timeoutMs: 3_000 },
-  set_quantization: { completion: 'observable', timeoutMs: 3_000 },
+  play: Object.freeze({ completion: 'observable', critical: true, timeoutMs: 5_000 }),
+  stop: Object.freeze({ completion: 'observable', safetyLane: true, timeoutMs: 5_000 }),
+  jump: Object.freeze({ completion: 'observable', critical: true, timeoutMs: 5_000 }),
+  metronome: Object.freeze({ completion: 'observable', timeoutMs: 3_000 }),
+  set_quantization: Object.freeze({ completion: 'observable', timeoutMs: 3_000 }),
   refresh: DEFAULT_LOCAL_POLICY,
-  reorder: { completion: 'local', timeoutMs: 5_000 },
-  save_lyrics: { completion: 'local', timeoutMs: 5_000 },
-  click_preview: { completion: 'local', timeoutMs: 5_000 },
-  export_csv: { completion: 'local', timeoutMs: 5_000 },
-  create_test_session: { completion: 'local', timeoutMs: 30_000 },
-  set_panic: { completion: 'local', safetyLane: true, timeoutMs: 5_000 },
+  reorder: Object.freeze({ completion: 'local', timeoutMs: 5_000 }),
+  save_lyrics: Object.freeze({ completion: 'local', timeoutMs: 5_000 }),
+  click_preview: Object.freeze({ completion: 'local', timeoutMs: 5_000 }),
+  export_csv: Object.freeze({ completion: 'local', timeoutMs: 5_000 }),
+  create_test_session: Object.freeze({ completion: 'local', timeoutMs: 30_000 }),
+  set_panic: Object.freeze({ completion: 'local', safetyLane: true, timeoutMs: 5_000 }),
   set_critical_lock: DEFAULT_LOCAL_POLICY,
   set_mode: DEFAULT_LOCAL_POLICY,
   profiles_get: DEFAULT_LOCAL_POLICY,
   preflight_check: DEFAULT_LOCAL_POLICY,
-  profile_create: { completion: 'local', timeoutMs: 10_000 },
-  profile_select: { completion: 'local', timeoutMs: 10_000 },
-  profile_rename: { completion: 'local', timeoutMs: 10_000 },
-  profile_delete: { completion: 'local', timeoutMs: 10_000 },
-  profile_restore: { completion: 'local', timeoutMs: 10_000 },
+  profile_create: Object.freeze({ completion: 'local', timeoutMs: 10_000 }),
+  profile_select: Object.freeze({ completion: 'local', timeoutMs: 10_000 }),
+  profile_rename: Object.freeze({ completion: 'local', timeoutMs: 10_000 }),
+  profile_delete: Object.freeze({ completion: 'local', timeoutMs: 10_000 }),
+  profile_restore: Object.freeze({ completion: 'local', timeoutMs: 10_000 }),
 });
 
 type QueuedCommand = {
@@ -46,27 +50,38 @@ type QueuedCommand = {
   executeFn: () => void | Promise<void>;
 };
 
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null && !Array.isArray(value);
-}
+type CommandRetentionPhase = 'registered' | 'queued' | 'in_flight' | 'settled';
+
+type CommandRetention = {
+  command: ShowCommand<unknown>;
+  phase: CommandRetentionPhase;
+  timestamp: number;
+};
+
+const COMMAND_RETENTION_MS = 60_000;
 
 function policyFor(type: string): CommandPolicy {
   return COMMAND_POLICIES[type] ?? DEFAULT_LOCAL_POLICY;
 }
 
-function terminal(status: CommandStatus): boolean {
+function isTerminal(status: CommandStatus): boolean {
   return status === 'confirmed'
     || status === 'failed'
     || status === 'expired'
     || status === 'cancelled';
 }
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
 export class CommandBus extends EventEmitter {
-  private processedIds = new Map<string, number>();
-  private commandHistory = new Map<string, ShowCommand<unknown>>();
+  private readonly processedIds = new Map<string, CommandRetention>();
+  private readonly commandHistory = new Map<string, ShowCommand<unknown>>();
   private pendingCommands: ShowCommand<unknown>[] = [];
-  private commandQueue: QueuedCommand[] = [];
+  private readonly commandQueue: QueuedCommand[] = [];
   private isProcessingQueue = false;
+  private readonly maxQueueSize = 100;
   private timeoutInterval: NodeJS.Timeout | null = null;
 
   constructor(
@@ -93,14 +108,34 @@ export class CommandBus extends EventEmitter {
 
   private cleanHistory(): void {
     const now = Date.now();
-    for (const [id, time] of this.processedIds) {
-      if (now - time > 60_000) this.processedIds.delete(id);
+    for (const [id, retention] of this.processedIds) {
+      const command = this.commandHistory.get(id);
+      if (command !== retention.command) continue;
+
+      const canExpire = retention.phase === 'registered'
+        || (retention.phase === 'settled' && isTerminal(command.status));
+      if (!canExpire || now - retention.timestamp <= COMMAND_RETENTION_MS) continue;
+
+      this.processedIds.delete(id);
+      this.commandHistory.delete(id);
     }
-    for (const [id, command] of this.commandHistory) {
-      if (terminal(command.status) && now - command.createdAt > 60_000) {
-        this.commandHistory.delete(id);
-      }
-    }
+  }
+
+  private updateRetentionPhase(
+    command: ShowCommand<unknown>,
+    phase: CommandRetentionPhase,
+  ): void {
+    const retention = this.processedIds.get(command.commandId);
+    if (!retention || retention.command !== command) return;
+    retention.phase = phase;
+    retention.timestamp = Date.now();
+  }
+
+  private markExecutionSettled(command: ShowCommand<unknown>): void {
+    const retention = this.processedIds.get(command.commandId);
+    if (!retention || retention.command !== command || retention.phase === 'settled') return;
+    retention.phase = 'settled';
+    retention.timestamp = Date.now();
   }
 
   public isDuplicate(commandId: string): boolean {
@@ -120,10 +155,16 @@ export class CommandBus extends EventEmitter {
       sourceClientId,
       createdAt: Date.now(),
       status: 'created',
+      retryCount: 0,
+      maxRetries: 0,
       timeoutMs: policyFor(type).timeoutMs,
     };
 
-    this.processedIds.set(commandId, command.createdAt);
+    this.processedIds.set(commandId, {
+      command,
+      phase: 'registered',
+      timestamp: command.createdAt,
+    });
     this.commandHistory.set(commandId, command);
     this.logger.log({
       type: 'command_created',
@@ -134,19 +175,28 @@ export class CommandBus extends EventEmitter {
     return command;
   }
 
-  public dispatch<TPayload>(command: ShowCommand<TPayload>, executeFn: () => void | Promise<void>): void {
-    const state = this.manager.getState();
-    const allowedDuringPanic = command.type === 'stop' || command.type === 'set_panic';
-    if (state.safety.panicActive && !allowedDuringPanic) {
-      this.updateStatus(command.commandId, 'failed', 'panic_active');
+  public getQueueLength(): number {
+    return this.commandQueue.length;
+  }
+
+  public dispatch<TPayload>(
+    command: ShowCommand<TPayload>,
+    executeFn: () => void | Promise<void>,
+  ): void {
+    const policy = policyFor(command.type);
+    const safetyFailure = this.safetyFailureReason(command, policy);
+
+    if (safetyFailure) {
+      this.updateCommandStatus(command, 'failed', safetyFailure);
       return;
     }
 
-    if (state.safety.criticalCommandsLocked && policyFor(command.type).critical) {
-      this.updateStatus(command.commandId, 'failed', 'critical_commands_locked');
-      return;
+    if (!policy.safetyLane && this.commandQueue.length >= this.maxQueueSize) {
+      this.updateCommandStatus(command, 'failed', 'execution_failed');
+      throw new Error('Command queue capacity exceeded');
     }
 
+    this.updateRetentionPhase(command, 'queued');
     command.status = 'sent';
     this.pendingCommands.push(command);
     this.updatePendingCommandsInManager();
@@ -157,8 +207,8 @@ export class CommandBus extends EventEmitter {
       message: `Command ${command.type} dispatched`,
     });
 
-    const item = { command, executeFn };
-    if (policyFor(command.type).safetyLane) {
+    const item: QueuedCommand = { command, executeFn };
+    if (policy.safetyLane) {
       void this.execute(item);
       return;
     }
@@ -169,26 +219,58 @@ export class CommandBus extends EventEmitter {
 
   private async execute(item: QueuedCommand): Promise<void> {
     const { command, executeFn } = item;
-    if (terminal(command.status)) return;
+    if (isTerminal(command.status)) {
+      this.markExecutionSettled(command);
+      return;
+    }
+
+    const policy = policyFor(command.type);
+    const safetyFailure = this.safetyFailureReason(command, policy);
+    if (safetyFailure) {
+      this.updateCommandStatus(command, 'failed', safetyFailure);
+      return;
+    }
+
+    this.updateRetentionPhase(command, 'in_flight');
+
     try {
       await executeFn();
-      if (policyFor(command.type).completion === 'local') {
-        this.updateStatus(command.commandId, 'confirmed');
+      if (policy.completion === 'local') {
+        this.updateCommandStatus(command, 'confirmed');
       } else {
         this.resolveObservableConfirmations();
       }
-    } catch (error) {
-      this.updateStatus(command.commandId, 'failed', 'execution_failed');
+    } catch {
+      this.updateCommandStatus(command, 'failed', 'execution_failed');
+    } finally {
+      this.markExecutionSettled(command);
     }
+  }
+
+  private safetyFailureReason(
+    command: ShowCommand<unknown>,
+    policy: CommandPolicy,
+  ): CommandFailureReason | undefined {
+    if (policy.safetyLane) return undefined;
+
+    const state = this.manager.getState();
+    if (state.safety.panicActive) return 'panic_active';
+    if (state.safety.criticalCommandsLocked && policy.critical) {
+      return 'critical_commands_locked';
+    }
+    return undefined;
   }
 
   private async processQueue(): Promise<void> {
     if (this.isProcessingQueue) return;
     this.isProcessingQueue = true;
+
     try {
       while (this.commandQueue.length > 0) {
-        const item = this.commandQueue.shift();
-        if (item) await this.execute(item);
+        const item = this.commandQueue[0];
+        if (!item) break;
+        await this.execute(item);
+        this.commandQueue.shift();
       }
     } finally {
       this.isProcessingQueue = false;
@@ -201,23 +283,46 @@ export class CommandBus extends EventEmitter {
     reason?: CommandFailureReason,
   ): void {
     const command = this.commandHistory.get(commandId);
-    if (!command || terminal(command.status)) return;
+    if (!command) return;
+    this.updateCommandStatus(command, status, reason);
+  }
+
+  private updateCommandStatus(
+    command: ShowCommand<unknown>,
+    status: CommandStatus,
+    reason?: CommandFailureReason,
+  ): void {
+    if (this.commandHistory.get(command.commandId) !== command) {
+      this.removePendingCommand(command);
+      return;
+    }
+    if (isTerminal(command.status)) return;
 
     command.status = status;
     if (reason) command.reason = reason;
     this.logger.log({
       type: `command_${status}`,
       clientId: command.sourceClientId,
-      commandId,
+      commandId: command.commandId,
       result: status,
       message: `Command ${command.type} status: ${status}${reason ? ` (${reason})` : ''}`,
     });
 
-    if (terminal(status)) {
-      this.pendingCommands = this.pendingCommands.filter((pending) => pending.commandId !== commandId);
-      this.updatePendingCommandsInManager();
+    if (isTerminal(status)) {
+      this.removePendingCommand(command);
+      const retention = this.processedIds.get(command.commandId);
+      if (retention?.command === command && retention.phase !== 'in_flight') {
+        this.markExecutionSettled(command);
+      }
       this.emit('command_settled', command);
     }
+  }
+
+  private removePendingCommand(command: ShowCommand<unknown>): void {
+    const nextPending = this.pendingCommands.filter((pending) => pending !== command);
+    if (nextPending.length === this.pendingCommands.length) return;
+    this.pendingCommands = nextPending;
+    this.updatePendingCommandsInManager();
   }
 
   private updatePendingCommandsInManager(): void {
@@ -228,7 +333,7 @@ export class CommandBus extends EventEmitter {
     const now = Date.now();
     for (const command of [...this.pendingCommands]) {
       if (now - command.createdAt > command.timeoutMs) {
-        this.updateStatus(command.commandId, 'expired', 'timeout');
+        this.updateCommandStatus(command, 'expired', 'timeout');
       }
     }
   }
@@ -239,24 +344,33 @@ export class CommandBus extends EventEmitter {
 
   public resolveObservableConfirmations(): void {
     const state = this.manager.getState();
-    const confirmed: string[] = [];
+    const confirmed: ShowCommand<unknown>[] = [];
 
     for (const command of this.pendingCommands) {
       const payload = isRecord(command.payload) ? command.payload : {};
       let matches = false;
-      if (command.type === 'play') matches = state.isPlaying;
-      else if (command.type === 'stop') matches = !state.isPlaying;
-      else if (command.type === 'metronome') matches = typeof payload?.value === 'boolean'
-        && state.metronome === payload.value;
-      else if (command.type === 'set_quantization') matches = typeof payload?.value === 'number'
-        && state.clipTriggerQuantization === payload.value;
-      else if (command.type === 'jump') matches = payload?.songIndex !== undefined
-        && state.activeSongIndex === payload.songIndex
-        && (payload.sectionIndex === undefined || payload.sectionIndex === null
-          || state.activeSectionIndex === payload.sectionIndex);
-      if (matches) confirmed.push(command.commandId);
+
+      if (command.type === 'play') {
+        matches = state.isPlaying;
+      } else if (command.type === 'stop') {
+        matches = !state.isPlaying;
+      } else if (command.type === 'metronome') {
+        matches = typeof payload.value === 'boolean' && state.metronome === payload.value;
+      } else if (command.type === 'set_quantization') {
+        matches = typeof payload.value === 'number' && state.clipTriggerQuantization === payload.value;
+      } else if (command.type === 'jump') {
+        matches = payload.songIndex !== undefined
+          && state.activeSongIndex === payload.songIndex
+          && (payload.sectionIndex === undefined
+            || payload.sectionIndex === null
+            || state.activeSectionIndex === payload.sectionIndex);
+      }
+
+      if (matches) confirmed.push(command);
     }
 
-    for (const commandId of confirmed) this.updateStatus(commandId, 'confirmed');
+    for (const command of confirmed) {
+      this.updateCommandStatus(command, 'confirmed');
+    }
   }
 }

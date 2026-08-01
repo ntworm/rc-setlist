@@ -83,13 +83,29 @@ export class SetlistManager {
       this.invalidateDerivedSongs();
       return;
     }
-    const customRank = new Map(this.customOrder.map((title, index) => [title, index]));
-    const orderedSongs = chronological
-      .filter((song) => customRank.has(song.title))
-      .sort((a, b) => {
-        const orderDifference = customRank.get(a.title)! - customRank.get(b.title)!;
-        return orderDifference || a.time - b.time;
-      });
+
+    const ranksByTitle = new Map<string, number[]>();
+    for (let rank = 0; rank < this.customOrder.length; rank++) {
+      const title = this.customOrder[rank]!;
+      const ranks = ranksByTitle.get(title) ?? [];
+      ranks.push(rank);
+      ranksByTitle.set(title, ranks);
+    }
+
+    const nextOccurrenceByTitle = new Map<string, number>();
+    const rankedSongs: Array<{ song: Song; rank: number }> = [];
+    for (const song of chronological) {
+      const ranks = ranksByTitle.get(song.title);
+      const occurrence = nextOccurrenceByTitle.get(song.title) ?? 0;
+      const rank = ranks?.[occurrence];
+      if (rank !== undefined) {
+        rankedSongs.push({ song, rank });
+        nextOccurrenceByTitle.set(song.title, occurrence + 1);
+      }
+    }
+    rankedSongs.sort((a, b) => a.rank - b.rank || a.song.time - b.song.time);
+
+    const orderedSongs = rankedSongs.map(({ song }) => song);
     const customSongs = new Set(orderedSongs);
     const leadingSongs: Song[] = [];
     const songsAfter = new Map<Song, Song[]>();
@@ -120,10 +136,10 @@ export class SetlistManager {
   }
 
   private rebuildChronologicalIndex(): void {
-    const displayIndex = new Map(this.songs.map((song, index) => [song, index]));
+    const displayIndexBySong = new Map(this.songs.map((song, index) => [song, index]));
     this.chronologicalSongs = [...this.songs]
       .sort((a, b) => a.time - b.time)
-      .map((song) => ({ song, displayIndex: displayIndex.get(song)! }));
+      .map((song) => ({ song, displayIndex: displayIndexBySong.get(song)! }));
   }
 
   private invalidateDerivedSongs(): void {

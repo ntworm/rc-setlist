@@ -4,7 +4,10 @@ const controllerRuntime = RcSetlistControllerRuntime;
 const languageSelect = document.getElementById('languageSelect');
 i18n.bindSelector(languageSelect);
 
+
+
 let ws;
+
 const port = window.location.port || '4444';
 const statusDot = document.getElementById('statusDot');
 const statusText = document.getElementById('statusText');
@@ -1359,20 +1362,34 @@ function exportCsv() {
 // header on the server side triggers a browser download).
 function handleCsvReady(url, count, fileName) {
   if (!url) return;
-  const a = document.createElement('a');
-  a.href = url;
-  if (fileName) a.download = fileName;
-  a.rel = 'noopener';
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  showToast(t('feedback.csv', { count, fileName }), 'success');
-  const btn = document.getElementById('btnExportCsv');
-  if (btn) {
-    btn.disabled = false;
-    btn.style.opacity = '1';
-  }
+  fetch(url)
+    .then((res) => {
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      return res.blob();
+    })
+    .then((blob) => {
+      const blobUrl = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = blobUrl;
+      a.download = fileName || 'tracklist.csv';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
+      showToast(t('feedback.csv', { count, fileName }), 'success');
+    })
+    .catch(() => {
+      window.location.href = url;
+    })
+    .finally(() => {
+      const btn = document.getElementById('btnExportCsv');
+      if (btn) {
+        btn.disabled = false;
+        btn.style.opacity = '1';
+      }
+    });
 }
+
 
 function toggleMetronome() {
   if (isLocked) {
@@ -1553,7 +1570,10 @@ function beginLyricsSave(kind, message, metadata) {
     return false;
   }
   const commandId = lyricsSaveCommandId(kind);
-  if (!lyricsSaveTracker.begin({ commandId, kind, metadata })) return false;
+  if (!lyricsSaveTracker.begin({ commandId, kind, metadata })) {
+    showToast(t('lyrics.savePending'), 'warn');
+    return false;
+  }
 
   if (kind === 'edit') markLyricsDirty(lyricsEditDirty);
   if (kind === 'sync') btnSaveSyncLyrics.disabled = true;
@@ -1585,7 +1605,7 @@ function handleLyricsSaveSettled(entry, status) {
   btnSaveSyncLyrics.disabled = lyricsSyncActiveIndex < lyricsLinesToSync.length;
   if (confirmed) {
     appendLog(t('lyrics.syncSaved', entry.metadata), 'info');
-    toggleLyricsModal();
+    closeManagedModal(lyricsModal);
   } else {
     showToast(t('lyrics.saveFailed'), 'error');
     appendLog(t('lyrics.saveFailed'), 'error');
@@ -1999,7 +2019,6 @@ i18n.subscribe(() => {
   updateLockVisuals();
   renderMidiMappings();
   renderProfileState();
-  lastRenderedSongsJson = '';
   if (lastState) {
     lastRenderedSongsJson = '';
     lastRenderedSetlistVersion = null;

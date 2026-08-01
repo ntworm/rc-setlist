@@ -26,6 +26,8 @@ docs/FAQ.md
 docs/INSTALL.md
 docs/README.md
 docs/RELEASE-NOTES-0.4.1.md
+docs/RELEASE-NOTES-0.4.2.md
+docs/RELEASE-NOTES-0.5.0.md
 docs/TESTER-GUIDE.md
 docs/TROUBLESHOOTING.md
 docs/USER-GUIDE.md

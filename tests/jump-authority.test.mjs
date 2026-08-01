@@ -5,7 +5,6 @@ import { JumpScheduler } from '../src/core/next-downbeat-jump.ts';
 import { SetlistManager } from '../src/core/setlist-manager.ts';
 import { CommandBus } from '../src/core/command-bus.ts';
 import {
-  assertCompleteTestSession,
   countConfirmedTestSessionMarkers,
   executeCommandAction,
   executeJumpCommand,
@@ -58,24 +57,28 @@ function installHarness(initialQuantization = 0) {
   };
 }
 
-test('test-session setup rejects incomplete locator creation', () => {
-  assert.doesNotThrow(() => assertCompleteTestSession(27, 27));
-  assert.throws(() => assertCompleteTestSession(26, 27), /1 of 27 locator/);
-});
-
-test('test-session setup counts only MCP-confirmed or Ableton-observed locators', () => {
-  const requested = [
-    { name: 'A', beats: 0 },
-    { name: 'B', beats: 8 },
-    { name: 'C', beats: 16 },
-  ];
-  const confirmedByMcp = [{ name: 'A', beats: 0 }];
-  const observed = [
+test('test-session markers require MCP confirmation or exact Ableton observation', () => {
+  const expected = [
+    { name: 'A', time: 0 },
     { name: 'B', time: 8 },
-    { name: 'C', time: 17 },
+    { name: 'C', time: 16 },
+    { name: 'D', time: 24 },
+  ];
+  const mcpResults = [
+    { name: 'A', time: 0, confirmed: true },
+    { name: 'B', time: 8, confirmed: false },
+    { name: 'wrong-name', time: 16, confirmed: true },
+  ];
+  const observedCues = [
+    { name: 'B', time: 8 },
+    { name: 'C', time: 16.000001 },
+    { name: 'D', time: 25 },
   ];
 
-  assert.equal(countConfirmedTestSessionMarkers(requested, confirmedByMcp, observed), 2);
+  assert.equal(
+    countConfirmedTestSessionMarkers(expected, mcpResults, observedCues),
+    2,
+  );
 });
 
 test('quantization request becomes local scheduler authority without an OSC reply', async () => {
@@ -84,10 +87,12 @@ test('quantization request becomes local scheduler authority without an OSC repl
     await executeCommandAction({
       commandId: 'quantization-none',
       type: 'set_quantization',
-      payload: { type: 'set_quantization', value: 0 },
+      payload: { value: 0 },
       sourceClientId: 'test',
       createdAt: Date.now(),
       status: 'sent',
+      retryCount: 0,
+      maxRetries: 3,
       timeoutMs: 3000,
     });
 
@@ -109,12 +114,7 @@ test('quantization command confirms through optimistic observable state', async 
   const bus = new CommandBus(harness.manager, { log() {} });
   bridgeState.commandBus = bus;
   try {
-    const command = bus.registerCommand(
-      'quantization-confirmed',
-      'set_quantization',
-      { type: 'set_quantization', value: 0 },
-      'test',
-    );
+    const command = bus.registerCommand('quantization-confirmed', 'set_quantization', { value: 0 }, 'test');
     const settled = new Promise((resolve) => bus.once('command_settled', resolve));
     bus.dispatch(command, () => executeCommandAction(command));
     const result = await settled;

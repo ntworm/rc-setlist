@@ -12,14 +12,15 @@ cifras são dados do show e nunca são traduzidos.
 
 ## Gramática dos localizadores
 
-Um localizador de música tem um título. Uma seção usa `Música > Seção`.
+Um localizador de música tem um título. Uma seção usa `Música > Seção` ou a sintaxe relativa `> Seção` (que se vincula à música anterior). Tags de ação isoladas como `[stop]` e localizadores de automação relativa como `> [stop]` pertencem à música cronologicamente anterior.
 
 ```text
-Sinal Fictício [bpm 122] [click]
-Sinal Fictício > Intro
-Sinal Fictício > Verso
-Sinal Fictício > Refrão [loop 2x]
-Sinal Fictício > Final [stop]
+Música A [bpm 122] [click]
+> Intro
+> Verso
+> Refrão [loop 4x]
+[stop]
+Marcador Técnico [ignore]
 ```
 
 | Tag | Efeito |
@@ -32,12 +33,14 @@ Sinal Fictício > Final [stop]
 | `[click]` / `[click off]` | Liga ou desliga o metrônomo do Live. |
 | `[skip]` | Ignora esta seção ou música. |
 | `[hidden]` | Oculta uma âncora de automação do setlist visível. |
+| `[ignore]` | Marcador técnico que oculta o localizador e tem precedência sobre qualquer tag de ação. |
 
-As tags não diferenciam maiúsculas de minúsculas e não aparecem no nome exibido.
+As tags não diferenciam maiúsculas de minúsculas e não aparecem no nome exibido. A tag `[ignore]` tem precedência sobre tags de automação, ocultando o marcador e ignorando quaisquer tags de ação no localizador sem criar músicas, seções ou automações.
 
 ## Perfis
 
-Os perfis pertencem ao Live Set atual. Um `.als` salvo pode ter vários setlists
+Os perfis pertencem ao Live Set atual. O seletor de setlist ativo e o botão
+**Gerenciar setlists** ficam no topo do Controle de Palco. Um `.als` salvo pode ter vários setlists
 para ordens, ensaios ou formações diferentes, mas **Gerenciar setlists** não
 mostra perfis de outro projeto do Ableton. Ao abrir outro Live Set, o RC Setlist
 troca para o registro separado daquele Set.
@@ -80,7 +83,7 @@ Abra `/setlist` pela URL de controle com token mostrada no painel do Live.
 - Selecione a quantização; o agendador de saltos aplica imediatamente o valor
   pedido e o reconcilia com a resposta nativa do Live quando ela estiver disponível.
 - Use a janela de letras para criar, sincronizar e editar linhas.
-- Exporte o setlist atual como CSV UTF-8.
+- Exporte o setlist atual como CSV UTF-8 (salva uma cópia na pasta `exports/` do perfil ativo e baixa na pasta de Downloads do seu navegador).
 - Use a tela cheia para uma estação compacta de palco.
 
 A interface mantém o último estado válido durante reconexões breves. O aviso de
@@ -113,8 +116,13 @@ editar timestamps e salvar. O texto fica no perfil ativo. Texto simples também
 ## Ordem e CSV
 
 A ordem personalizada é um estado de apresentação; ela não move localizadores
-dentro do Live Set. O CSV inclui os dados visíveis e usa ponto e vírgula com BOM
-UTF-8 para compatibilidade com planilhas.
+dentro do Live Set. O CSV inclui uma linha por música visível com o `setlist`
+ativo, `start_beat`, BPM declarado, duração numérica e legível,
+`sections_count`, nomes em `sections`, ações em `automations` e `lyric_lines`.
+Ele não inventa tom, fórmula de compasso por música, contagem de execuções nem
+histórico da última reprodução. O arquivo usa ponto e vírgula com BOM UTF-8 para
+compatibilidade com planilhas, é salvo no diretório do perfil ativo na pasta
+`exports/` e enviado para os Downloads do navegador.
 
 ## Início automático
 

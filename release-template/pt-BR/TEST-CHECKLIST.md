@@ -1,4 +1,4 @@
-# Checklist de lançamento — Ableton RC Setlist 0.4.1
+# Checklist de lançamento — Ableton RC Setlist 0.5.0
 
 Use uma cópia de um Live Set e uma **rede local confiável / LAN**. Não faça o
 primeiro teste durante um show real.
@@ -10,9 +10,9 @@ primeiro teste durante um show real.
   oculta `User Remote Scripts` das preferências, e
   `AbletonOSC/__init__.py` existe diretamente dentro dela.
 - [ ] AbletonOSC aparece e está selecionado como Control Surface.
-- [ ] `Ableton-RC-Setlist-0.4.1.ablx` instala sem erro.
+- [ ] `Ableton-RC-Setlist-0.5.0.ablx` instala sem erro.
 - [ ] Em dados limpos, o primeiro **Iniciar** cria o perfil padrão e sobe o servidor sem erro de persistência.
-- [ ] **Extensions > Ableton RC Setlist** abre o painel correto e mostra a versão 0.4.1.
+- [ ] **Extensions > Ableton RC Setlist** abre o painel correto e mostra a versão 0.5.0.
 
 ## Idioma
 
@@ -55,7 +55,8 @@ TESTE 02 > REFRÃO
 - [ ] **Controle de Palco** e **Tela de Performance** abrem pelo painel do Live.
 - [ ] Texto LRC autorizado ou fictício acompanha o transporte.
 - [ ] Letras antigas ausentes migram sem apagar a pasta anterior ou sobrescrever letras novas.
-- [ ] O CSV abre em UTF-8 e contém somente o set atual.
+- [ ] O CSV abre em UTF-8, identifica o setlist atual e inclui
+  `sections_count`, nomes em `sections`, ações em `automations` e `lyric_lines`.
 
 ## Persistência e falhas
 

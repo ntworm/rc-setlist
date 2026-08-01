@@ -1,35 +1,8 @@
-type BaseMessage = {
-  type: string;
-  commandId?: string;
-};
+import type { ClientMessage } from '../types.js';
 
-export type ClientMessage =
-  | (BaseMessage & { type: 'handshake'; clientId: string })
-  | (BaseMessage & { type: 'sync_confirm'; stateVersion: number })
-  | (BaseMessage & { type: 'get_lyrics'; song?: string })
-  | (BaseMessage & { type: 'profiles_get' })
-  | (BaseMessage & { type: 'preflight_check' })
-  | (BaseMessage & { type: 'play' })
-  | (BaseMessage & { type: 'stop' })
-  | (BaseMessage & { type: 'refresh' })
-  | (BaseMessage & { type: 'export_csv' })
-  | (BaseMessage & { type: 'create_test_session' })
-  | (BaseMessage & { type: 'metronome'; value: boolean })
-  | (BaseMessage & { type: 'set_quantization'; value: number })
-  | (BaseMessage & { type: 'jump'; songIndex: number; sectionIndex?: number | null })
-  | (BaseMessage & { type: 'reorder'; songTitles: string[] })
-  | (BaseMessage & { type: 'save_lyrics'; song: string; text: string })
-  | (BaseMessage & { type: 'click_preview'; bpm?: number; beats?: number })
-  | (BaseMessage & { type: 'set_panic'; active: boolean })
-  | (BaseMessage & { type: 'set_critical_lock'; locked: boolean })
-  | (BaseMessage & { type: 'set_mode'; mode: 'rehearsal' | 'show' })
-  | (BaseMessage & { type: 'profile_create'; name: string })
-  | (BaseMessage & { type: 'profile_select'; id: string })
-  | (BaseMessage & { type: 'profile_restore'; id: string })
-  | (BaseMessage & { type: 'profile_rename'; id: string; name: string })
-  | (BaseMessage & { type: 'profile_delete'; id: string; confirmationName: string });
+export type { ClientMessage } from '../types.js';
 
-export type DecodeClientMessageResult =
+export type DecodeResult =
   | { ok: true; message: ClientMessage }
   | { ok: false; code: 'invalid_message'; message: string; commandId?: string };
 
@@ -54,11 +27,11 @@ function isBoundedNumber(value: unknown, min: number, max: number): value is num
   return typeof value === 'number' && Number.isFinite(value) && value >= min && value <= max;
 }
 
-function isBoundedText(value: unknown, maxLength: number, allowEmpty = false): value is string {
+function isBoundedText(value: unknown, maxLength: number): value is string {
   return typeof value === 'string'
     && value.length <= maxLength
-    && (allowEmpty || value.trim().length > 0)
-    && !/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/.test(value);
+    && value.trim().length > 0
+    && !/[\u0000-\u001F\u007F-\u009F]/.test(value);
 }
 
 function safeCommandId(value: unknown): string | undefined {
@@ -70,13 +43,13 @@ function safeCommandId(value: unknown): string | undefined {
     : undefined;
 }
 
-function invalid(message: string, commandId?: string): DecodeClientMessageResult {
+function invalid(message: string, commandId?: string): DecodeResult {
   return commandId
     ? { ok: false, code: 'invalid_message', message, commandId }
     : { ok: false, code: 'invalid_message', message };
 }
 
-export function decodeClientMessage(input: unknown): DecodeClientMessageResult {
+export function decodeClientMessage(input: unknown): DecodeResult {
   if (!isRecord(input)) return invalid('Message must be a JSON object.');
   if (typeof input.type !== 'string' || !MESSAGE_TYPE_PATTERN.test(input.type)) {
     return invalid('Message type must use 1-64 lowercase ASCII letters, digits, or underscores.');
@@ -89,83 +62,102 @@ export function decodeClientMessage(input: unknown): DecodeClientMessageResult {
   }
 
   const fail = (message: string) => invalid(message, commandId);
-  const requireText = (field: string, max: number, allowEmpty = false): boolean => {
-    return isBoundedText(input[field], max, allowEmpty);
-  };
+  const success = (message: ClientMessage): DecodeResult => ({
+    ok: true,
+    message: commandId ? { ...message, commandId } : message,
+  });
+  const requireText = (field: string, max: number): boolean => isBoundedText(input[field], max);
 
   switch (input.type) {
     case 'handshake':
       if (!requireText('clientId', MAX_CLIENT_ID_LENGTH)) return fail('Invalid clientId.');
-      break;
+      return success({ type: 'handshake', clientId: input.clientId as string });
     case 'sync_confirm':
       if (!isFiniteInteger(input.stateVersion, 0, Number.MAX_SAFE_INTEGER)) return fail('Invalid stateVersion.');
-      break;
+      return success({ type: 'sync_confirm', stateVersion: input.stateVersion });
     case 'get_lyrics':
-      if (input.song !== undefined && !isBoundedText(input.song, MAX_SONG_TITLE_LENGTH, true)) return fail('Invalid song.');
-      break;
+      if (input.song !== undefined && !isBoundedText(input.song, MAX_SONG_TITLE_LENGTH)) return fail('Invalid song.');
+      return success(input.song === undefined
+        ? { type: 'get_lyrics' }
+        : { type: 'get_lyrics', song: input.song });
     case 'profiles_get':
+      return success({ type: 'profiles_get' });
     case 'preflight_check':
+      return success({ type: 'preflight_check' });
     case 'play':
+      return success({ type: 'play' });
     case 'stop':
+      return success({ type: 'stop' });
     case 'refresh':
+      return success({ type: 'refresh' });
     case 'export_csv':
+      return success({ type: 'export_csv' });
     case 'create_test_session':
-      break;
+      return success({ type: 'create_test_session' });
     case 'metronome':
       if (typeof input.value !== 'boolean') return fail('Invalid value for metronome.');
-      break;
+      return success({ type: 'metronome', value: input.value });
     case 'set_quantization':
       if (!isFiniteInteger(input.value, 0, 13)) return fail('Invalid value for quantization.');
-      break;
+      return success({ type: 'set_quantization', value: input.value });
     case 'jump':
       if (!isFiniteInteger(input.songIndex, 0, 100_000)) return fail('Invalid songIndex.');
       if (input.sectionIndex !== undefined && input.sectionIndex !== null
         && !isFiniteInteger(input.sectionIndex, 0, 100_000)) return fail('Invalid sectionIndex.');
-      break;
-    case 'reorder': {
+      return success(input.sectionIndex === undefined
+        ? { type: 'jump', songIndex: input.songIndex }
+        : { type: 'jump', songIndex: input.songIndex, sectionIndex: input.sectionIndex as number | null });
+    case 'reorder':
       if (!Array.isArray(input.songTitles) || input.songTitles.length > MAX_REORDER_SONGS
         || !input.songTitles.every((title) => isBoundedText(title, MAX_SONG_TITLE_LENGTH))) {
         return fail('Invalid songTitles; expected a bounded array of non-empty strings.');
       }
-      break;
-    }
+      return success({ type: 'reorder', songTitles: [...input.songTitles] as string[] });
     case 'save_lyrics':
       if (!requireText('song', MAX_SONG_TITLE_LENGTH)) return fail('Invalid song.');
       if (typeof input.text !== 'string' || input.text.length > MAX_LYRICS_LENGTH || input.text.includes('\u0000')) {
         return fail('Invalid text for lyrics.');
       }
-      break;
+      return success({ type: 'save_lyrics', song: input.song as string, text: input.text });
     case 'click_preview':
       if (input.bpm !== undefined && !isBoundedNumber(input.bpm, 1, 999)) return fail('Invalid bpm.');
       if (input.beats !== undefined && !isFiniteInteger(input.beats, 1, 64)) return fail('Invalid beats.');
-      break;
+      return success({
+        type: 'click_preview',
+        ...(input.bpm === undefined ? {} : { bpm: input.bpm }),
+        ...(input.beats === undefined ? {} : { beats: input.beats }),
+      });
     case 'set_panic':
       if (typeof input.active !== 'boolean') return fail('Invalid active flag.');
-      break;
+      return success({ type: 'set_panic', active: input.active });
     case 'set_critical_lock':
       if (typeof input.locked !== 'boolean') return fail('Invalid locked flag.');
-      break;
+      return success({ type: 'set_critical_lock', locked: input.locked });
     case 'set_mode':
       if (input.mode !== 'rehearsal' && input.mode !== 'show') return fail('Invalid mode.');
-      break;
+      return success({ type: 'set_mode', mode: input.mode });
     case 'profile_create':
       if (!requireText('name', MAX_PROFILE_FIELD_LENGTH)) return fail('Invalid profile name.');
-      break;
+      return success({ type: 'profile_create', name: input.name as string });
     case 'profile_select':
+      if (!requireText('id', MAX_COMMAND_ID_LENGTH)) return fail('Invalid profile id.');
+      return success({ type: 'profile_select', id: input.id as string });
     case 'profile_restore':
       if (!requireText('id', MAX_COMMAND_ID_LENGTH)) return fail('Invalid profile id.');
-      break;
+      return success({ type: 'profile_restore', id: input.id as string });
     case 'profile_rename':
       if (!requireText('id', MAX_COMMAND_ID_LENGTH)) return fail('Invalid profile id.');
       if (!requireText('name', MAX_PROFILE_FIELD_LENGTH)) return fail('Invalid profile name.');
-      break;
+      return success({ type: 'profile_rename', id: input.id as string, name: input.name as string });
     case 'profile_delete':
       if (!requireText('id', MAX_COMMAND_ID_LENGTH)) return fail('Invalid profile id.');
       if (!requireText('confirmationName', MAX_PROFILE_FIELD_LENGTH)) return fail('Invalid confirmationName.');
-      break;
+      return success({
+        type: 'profile_delete',
+        id: input.id as string,
+        confirmationName: input.confirmationName as string,
+      });
     default:
-      return fail(`Unsupported message type: ${input.type}.`);
+      return fail('Unsupported message type.');
   }
-
-  return { ok: true, message: input as ClientMessage };
 }

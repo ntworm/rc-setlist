@@ -13,6 +13,7 @@ export function extractTags(raw: string): {
   autoClick: boolean | null;
   skip: boolean;
   hidden: boolean;
+  ignore: boolean;
 } {
   let loopCount: number | null = null;
   let autoStop = false;
@@ -21,6 +22,7 @@ export function extractTags(raw: string): {
   let autoClick: boolean | null = null;
   let skip = false;
   let hidden = false;
+  let ignore = false;
 
   // Match all [...] blocks
   const tagPattern = /\[([^\]]+)\]/g;
@@ -49,17 +51,19 @@ export function extractTags(raw: string): {
       skip = true;
     } else if (tag === 'hidden') {
       hidden = true;
+    } else if (tag === 'ignore') {
+      ignore = true;
     }
   }
 
   // Remove all [...] blocks from display name
   const displayName = raw.replace(/\s*\[[^\]]+\]/g, '').trim();
 
-  return { displayName, loopCount, autoStop, autoNext, bpm, autoClick, skip, hidden };
+  return { displayName, loopCount, autoStop, autoNext, bpm, autoClick, skip, hidden, ignore };
 }
 
 export function parseLocator(name: string): {
-  kind: 'song' | 'section' | 'automation' | 'hidden';
+  kind: 'song' | 'section' | 'automation' | 'hidden' | 'relative-section' | 'relative-automation';
   songName?: string;
   songTags?: { loopCount: number | null; autoStop: boolean; autoNext: boolean; bpm: number | null; autoClick: boolean | null; skip: boolean };
   section?: Section;
@@ -72,10 +76,62 @@ export function parseLocator(name: string): {
     return { kind: 'hidden', hiddenName: trimmed };
   }
 
-  const { displayName, hidden } = extractTags(trimmed);
+  // Relative section/automation syntax: starts with '>'
+  if (trimmed.startsWith('>')) {
+    const relativeContent = trimmed.slice(1).trim();
+    if (relativeContent.startsWith('_')) {
+      return { kind: 'hidden', hiddenName: relativeContent };
+    }
+    const info = extractTags(relativeContent);
+    if (info.hidden || info.ignore) {
+      return { kind: 'hidden', hiddenName: info.displayName };
+    }
+    const hasAutomation = info.loopCount !== null
+      || info.autoStop
+      || info.autoNext
+      || info.bpm !== null
+      || info.autoClick !== null
+      || info.skip;
+
+    if (!info.displayName) {
+      if (!hasAutomation) {
+        return { kind: 'hidden', hiddenName: '_empty' };
+      }
+      return {
+        kind: 'relative-automation',
+        section: {
+          name: '',
+          time: 0,
+          loopCount: info.loopCount,
+          autoStop: info.autoStop,
+          autoNext: info.autoNext,
+          bpm: info.bpm,
+          autoClick: info.autoClick,
+          skip: info.skip,
+          automationOnly: true,
+        },
+      };
+    }
+
+    return {
+      kind: 'relative-section',
+      section: {
+        name: info.displayName,
+        time: 0,
+        loopCount: info.loopCount,
+        autoStop: info.autoStop,
+        autoNext: info.autoNext,
+        bpm: info.bpm,
+        autoClick: info.autoClick,
+        skip: info.skip,
+      },
+    };
+  }
+
+  const info = extractTags(trimmed);
   
-  if (hidden) {
-    return { kind: 'hidden', hiddenName: displayName };
+  if (info.hidden || info.ignore) {
+    return { kind: 'hidden', hiddenName: info.displayName };
   }
   
   const parts = trimmed.split('>').map(p => p.trim());
@@ -85,7 +141,7 @@ export function parseLocator(name: string): {
   
   if (parts.length === 1) {
     const songInfo = extractTags(parts[0]);
-    if (songInfo.hidden) {
+    if (songInfo.hidden || songInfo.ignore) {
       return { kind: 'hidden', hiddenName: songInfo.displayName };
     }
     const hasAutomation = songInfo.loopCount !== null
@@ -133,7 +189,7 @@ export function parseLocator(name: string): {
   const sectionPart = parts[parts.length - 1]!;
   const sectionInfo = extractTags(sectionPart);
   
-  if (sectionInfo.hidden) {
+  if (sectionInfo.hidden || sectionInfo.ignore) {
     return { kind: 'hidden', hiddenName: sectionInfo.displayName };
   }
   
@@ -165,6 +221,18 @@ export function parseSetlist(cues: { name: string; time: number }[]): Setlist {
     
     if (parsed.kind === 'hidden') {
       hidden.push({ name: parsed.hiddenName!, time: cue.time });
+      continue;
+    }
+
+    if (parsed.kind === 'relative-section' || parsed.kind === 'relative-automation') {
+      if (!currentSong) {
+        hidden.push({ name: cue.name, time: cue.time });
+        continue;
+      }
+      currentSong.sections.push({
+        ...parsed.section!,
+        time: cue.time,
+      });
       continue;
     }
 

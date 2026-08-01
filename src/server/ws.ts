@@ -22,6 +22,8 @@ export interface SetlistWSServerOptions {
   heartbeatIntervalMs?: number;
   logDedupeWindowMs?: number;
   now?: () => number;
+  setIntervalFn?: typeof setInterval;
+  clearIntervalFn?: typeof clearInterval;
 }
 
 export class SetlistWSServer extends EventEmitter {
@@ -39,6 +41,8 @@ export class SetlistWSServer extends EventEmitter {
   private readonly heartbeatIntervalMs: number;
   private readonly logDedupeWindowMs: number;
   private readonly now: () => number;
+  private readonly setIntervalFn: typeof setInterval;
+  private readonly clearIntervalFn: typeof clearInterval;
 
   constructor(authToken: string = '', options: SetlistWSServerOptions = {}) {
     super();
@@ -46,10 +50,12 @@ export class SetlistWSServer extends EventEmitter {
     this.heartbeatIntervalMs = options.heartbeatIntervalMs ?? 30_000;
     this.logDedupeWindowMs = options.logDedupeWindowMs ?? 1_000;
     this.now = options.now ?? Date.now;
+    this.setIntervalFn = options.setIntervalFn ?? setInterval;
+    this.clearIntervalFn = options.clearIntervalFn ?? clearInterval;
   }
 
   private heartbeatTick(): void {
-    for (const ws of this.clients) {
+    for (const ws of [...this.clients]) {
       if (ws.readyState !== WebSocket.OPEN) {
         this.clients.delete(ws);
         continue;
@@ -178,7 +184,14 @@ export class SetlistWSServer extends EventEmitter {
           }
           const decoded = decodeClientMessage(msg);
           if (!decoded.ok) {
-            ws.send(JSON.stringify({ type: 'error', ...decoded }));
+            if (ws.readyState === WebSocket.OPEN) {
+              ws.send(JSON.stringify({
+                type: 'error',
+                code: decoded.code,
+                message: decoded.message,
+                ...(decoded.commandId ? { commandId: decoded.commandId } : {}),
+              }));
+            }
             return;
           }
           this.emit('client_message', decoded.message, ws);
@@ -187,7 +200,6 @@ export class SetlistWSServer extends EventEmitter {
           if (ws.readyState === WebSocket.OPEN) {
             ws.send(JSON.stringify({
               type: 'error',
-              ok: false,
               code: 'invalid_message',
               message: 'Message must be valid JSON.',
             }));
@@ -202,8 +214,7 @@ export class SetlistWSServer extends EventEmitter {
 
       ws.on('error', (error) => {
         const codeValue = (error as Error & { code?: unknown }).code;
-        const code = typeof codeValue === 'string'
-          && /^[A-Z0-9_]{1,64}$/.test(codeValue)
+        const code = typeof codeValue === 'string' && /^[A-Z0-9_]{1,64}$/.test(codeValue)
           ? codeValue
           : 'UNKNOWN';
         console.error(`[WS] Client socket error (${code}).`);
@@ -211,7 +222,10 @@ export class SetlistWSServer extends EventEmitter {
     });
 
     if (!this.heartbeatInterval) {
-      this.heartbeatInterval = setInterval(() => this.heartbeatTick(), this.heartbeatIntervalMs);
+      this.heartbeatInterval = this.setIntervalFn(
+        () => this.heartbeatTick(),
+        this.heartbeatIntervalMs,
+      );
       this.heartbeatInterval.unref?.();
     }
 
@@ -266,6 +280,26 @@ export class SetlistWSServer extends EventEmitter {
     }
   }
 
+  private sendWithBackpressure(ws: AugmentedWebSocket, payloadJson: string): boolean {
+    if (ws.bufferedAmount > 2097152) { // 2 MB disconnect limit
+      console.warn(`[WS] Disconnecting client ${ws.remoteAddress ?? 'unknown'} due to severe backpressure (${ws.bufferedAmount} bytes buffered)`);
+      try { ws.terminate(); } catch {}
+      this.clients.delete(ws);
+      return false;
+    }
+
+    if (ws.bufferedAmount > 524288) { // 512 KB drop threshold
+      return false;
+    }
+
+    try {
+      ws.send(payloadJson);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
   public broadcastState(state: SetlistState): void {
     this.lastState = state;
     const json = JSON.stringify({ type: 'state', state });
@@ -274,26 +308,18 @@ export class SetlistWSServer extends EventEmitter {
     }
     this.lastStateJson = json;
     
-    for (const ws of this.clients) {
+    for (const ws of [...this.clients]) {
       if (ws.readyState === WebSocket.OPEN) {
-        try {
-          ws.send(json);
-        } catch {
-          console.warn('[WS] State broadcast failed for an open client.');
-        }
+        this.sendWithBackpressure(ws, json);
       }
     }
   }
 
   public broadcast(payload: any): void {
     const json = JSON.stringify(payload);
-    for (const ws of this.clients) {
+    for (const ws of [...this.clients]) {
       if (ws.readyState === WebSocket.OPEN) {
-        try {
-          ws.send(json);
-        } catch {
-          console.warn('[WS] Broadcast failed for an open client.');
-        }
+        this.sendWithBackpressure(ws, json);
       }
     }
   }
@@ -302,7 +328,7 @@ export class SetlistWSServer extends EventEmitter {
     const key = `${level}:${message}`;
     const now = this.now();
     const previous = this.lastLogTimeByKey.get(key);
-    if (previous !== undefined && now - previous < this.logDedupeWindowMs) return;
+    if (previous !== undefined && now >= previous && now - previous < this.logDedupeWindowMs) return;
     this.lastLogTimeByKey.set(key, now);
     if (this.lastLogTimeByKey.size > 100) {
       const firstKey = this.lastLogTimeByKey.keys().next().value;
@@ -311,20 +337,16 @@ export class SetlistWSServer extends EventEmitter {
       }
     }
     const json = JSON.stringify({ type: 'log', message, level, timestamp: now });
-    for (const ws of this.clients) {
+    for (const ws of [...this.clients]) {
       if (ws.readyState === WebSocket.OPEN) {
-        try {
-          ws.send(json);
-        } catch {
-          console.warn('[WS] Log broadcast failed for an open client.');
-        }
+        this.sendWithBackpressure(ws, json);
       }
     }
   }
 
   public stop(): void {
     if (this.heartbeatInterval) {
-      clearInterval(this.heartbeatInterval);
+      this.clearIntervalFn(this.heartbeatInterval);
       this.heartbeatInterval = null;
     }
     for (const ws of this.clients) {

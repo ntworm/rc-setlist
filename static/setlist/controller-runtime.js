@@ -66,7 +66,7 @@
       try {
         storageRef?.setItem?.(storageKey, candidate);
       } catch {
-        // A private/incognito storage failure must not prevent this connection.
+        // Storage failures must not prevent the connection attempt.
       }
     }
 
@@ -76,7 +76,7 @@
       try {
         historyRef?.replaceState?.(null, '', visibleUrl);
       } catch {
-        // History replacement is a privacy improvement, not a connection prerequisite.
+        // Removing credentials from the address bar is best-effort.
       }
     }
     return storedToken;
@@ -138,11 +138,7 @@
         revision++;
       },
       matches(snapshot) {
-        return Boolean(
-          snapshot
-          && snapshot.song === song
-          && snapshot.revision === revision
-        );
+        return Boolean(snapshot && snapshot.song === song && snapshot.revision === revision);
       },
       selectSong(nextSong) {
         song = typeof nextSong === 'string' ? nextSong : '';

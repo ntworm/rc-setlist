@@ -5,6 +5,7 @@ dist/
 .setlist/
 .env
 *.tsbuildinfo
+*.tmp
 
 # Ableton developer archives are licensed separately and must stay local.
 vendor/*.tgz

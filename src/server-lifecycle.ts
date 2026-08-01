@@ -38,6 +38,7 @@ import { syncFromSdkContext } from './sync/sdk-sync.js';
 import { syncFromMcpInfo } from './sync/mcp-sync.js';
 import { registerOscListeners } from './osc/registration.js';
 import { executeCommandAction } from './commands/handlers.js';
+import type { ClientMessage } from './types.js';
 import {
   resolveProjectIdentity,
   projectIdentityFromMetadata,
@@ -54,8 +55,8 @@ export async function closeHttpServer(server: http.Server | https.Server): Promi
   });
   try {
     server.closeAllConnections?.();
-  } catch (err) {
-    console.warn('[HTTP] Failed to close all connections:', err);
+  } catch {
+    console.warn('[HTTP] Failed to close all connections.');
   }
   await closed;
 }
@@ -215,7 +216,7 @@ export async function startServer(options: StartServerOptions = {}): Promise<voi
       currentSongHandleId(context),
       fallbackSessionId,
     );
-    bridgeState.mcpClient = new McpTcpClient();
+    bridgeState.mcpClient = options.skipProjectDetector ? null : new McpTcpClient();
     const projectIdentity = await resolveActiveProjectIdentity(options);
     await activateProjectProfileScope(projectIdentity);
 
@@ -361,7 +362,7 @@ export async function startServer(options: StartServerOptions = {}): Promise<voi
       srv.listen(listenPort);
     });
 
-    bridgeState.wsServer.on('client_message', async (msg, ws) => {
+    bridgeState.wsServer.on('client_message', async (msg: ClientMessage, ws) => {
       if (!bridgeState.manager) return;
 
       const isController = ws.isController === true;
@@ -575,7 +576,15 @@ export async function stopServer(): Promise<void> {
     bridgeState.commandBus.stop();
     bridgeState.commandBus = null;
   }
-  bridgeState.eventLogger = null;
+  if (bridgeState.eventLogger) {
+    const eventLogger = bridgeState.eventLogger;
+    bridgeState.eventLogger = null;
+    try {
+      await eventLogger.flush();
+    } catch {
+      console.error('[EventLogger] Failed to flush during shutdown.');
+    }
+  }
 
   bridgeState.manager = null;
   bridgeState.scheduler = null;
