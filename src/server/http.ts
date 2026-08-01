@@ -70,6 +70,45 @@ export function setAudioResolver(fn: AudioResolver): void {
   audioResolver = fn;
 }
 
+export type AsyncHttpHandler = (
+  req: http.IncomingMessage,
+  res: http.ServerResponse,
+) => void | Promise<void>;
+
+export function createHttpRequestListener(
+  handler: AsyncHttpHandler = handleHttp,
+): http.RequestListener {
+  return (req, res) => {
+    void Promise.resolve().then(() => handler(req, res)).catch(() => {
+      console.error('[HTTP] Request failed.');
+      if (res.writableEnded) return;
+      if (res.headersSent) {
+        res.destroy();
+        return;
+      }
+      res.writeHead(500, { 'Content-Type': 'text/plain; charset=utf-8' });
+      res.end('internal server error\n');
+    });
+  };
+}
+
+function debugSnapshotEnabled(): boolean {
+  if (process.env.NODE_ENV !== 'production') return true;
+  return /^(?:1|true)$/i.test(process.env.ENABLE_DEBUG_SNAPSHOT?.trim() ?? '');
+}
+
+async function loadResponseFile(
+  filePath: string,
+  isHead: boolean,
+): Promise<{ length: number; data: Buffer | null }> {
+  if (isHead) {
+    const stat = await fs.stat(filePath);
+    return { length: stat.size, data: null };
+  }
+  const data = await fs.readFile(filePath);
+  return { length: data.length, data };
+}
+
 async function serveStaticFile(reqUrl: string, res: http.ServerResponse, isHead: boolean = false): Promise<void> {
   const staticDir = path.join(__dirnameResolved, 'static');
   const rawPath = reqUrl.split('?')[0] ?? '/';
@@ -113,24 +152,24 @@ async function serveStaticFile(reqUrl: string, res: http.ServerResponse, isHead:
     return;
   }
 
-  let data: Buffer;
-  try {
-    data = await fs.readFile(filePath);
-  } catch (err) {
-    res.writeHead(404, { 'Content-Type': 'text/plain' });
-    res.end(isHead ? undefined : 'not found\n');
+  const ext = path.extname(filePath).toLowerCase();
+  if (isHead) {
+    res.setHeader('Cache-Control', 'no-store');
+    res.setHeader('Content-Type', MIME_TYPES[ext] ?? 'application/octet-stream');
+    res.setHeader('Content-Length', String(size));
+    res.end();
     return;
   }
 
-  const ext = path.extname(filePath).toLowerCase();
-  res.setHeader('Cache-Control', 'no-store');
-  res.setHeader('Content-Type', MIME_TYPES[ext] ?? 'application/octet-stream');
-  res.setHeader('Content-Length', String(size));
-
-  if (isHead) {
-    res.end();
-  } else {
+  try {
+    const data = await fs.readFile(filePath);
+    res.setHeader('Cache-Control', 'no-store');
+    res.setHeader('Content-Type', MIME_TYPES[ext] ?? 'application/octet-stream');
+    res.setHeader('Content-Length', String(data.length));
     res.end(data);
+  } catch {
+    res.writeHead(404, { 'Content-Type': 'text/plain' });
+    res.end('not found\n');
   }
 }
 
@@ -159,7 +198,7 @@ export async function handleHttp(req: http.IncomingMessage, res: http.ServerResp
   }
 
   if (rawPath === '/debug/snapshot') {
-    if (process.env.NODE_ENV === 'production' && !process.env.ENABLE_DEBUG_SNAPSHOT) {
+    if (!debugSnapshotEnabled()) {
       res.writeHead(404, { 'Content-Type': 'text/plain' });
       res.end('Not Found\n');
       return;
@@ -232,19 +271,15 @@ export async function handleHttp(req: http.IncomingMessage, res: http.ServerResp
       return;
     }
     try {
-      const data = await fs.readFile(resolved.absolutePath);
+      const file = await loadResponseFile(resolved.absolutePath, isHead);
       res.setHeader('Cache-Control', 'no-store');
       res.setHeader('Content-Type', 'text/csv; charset=utf-8');
-      res.setHeader('Content-Length', String(data.length));
+      res.setHeader('Content-Length', String(file.length));
       res.setHeader(
         'Content-Disposition',
-        `attachment; filename="${resolved.friendlyName}"`
+        `attachment; filename="${resolved.friendlyName.replace(/["\r\n]/g, '_')}"`
       );
-      if (isHead) {
-        res.end();
-      } else {
-        res.end(data);
-      }
+      res.end(file.data ?? undefined);
     } catch {
       res.writeHead(404, { 'Content-Type': 'text/plain' });
       res.end(isHead ? undefined : 'not found\n');
@@ -273,15 +308,11 @@ export async function handleHttp(req: http.IncomingMessage, res: http.ServerResp
       return;
     }
     try {
-      const data = await fs.readFile(resolved.absolutePath);
+      const file = await loadResponseFile(resolved.absolutePath, isHead);
       res.setHeader('Cache-Control', 'public, max-age=86400');
       res.setHeader('Content-Type', resolved.mimeType);
-      res.setHeader('Content-Length', String(data.length));
-      if (isHead) {
-        res.end();
-      } else {
-        res.end(data);
-      }
+      res.setHeader('Content-Length', String(file.length));
+      res.end(file.data ?? undefined);
     } catch {
       res.writeHead(404, { 'Content-Type': 'text/plain' });
       res.end(isHead ? undefined : 'not found\n');

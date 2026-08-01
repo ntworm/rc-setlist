@@ -1,15 +1,19 @@
 import { test } from 'node:test';
 import assert from 'node:assert';
 import * as http from 'node:http';
-import { handleHttp, setHttpAuthToken, setDebugSnapshotProvider, sanitizeUrl } from '../src/server/http.ts';
+import {
+  createHttpRequestListener,
+  handleHttp,
+  setHttpAuthToken,
+  setDebugSnapshotProvider,
+  sanitizeUrl,
+} from '../src/server/http.ts';
 
 function createServer(authToken) {
   setHttpAuthToken(authToken);
   setDebugSnapshotProvider(() => ({ dummy: 'data' }));
 
-  const server = http.createServer((req, res) => {
-    handleHttp(req, res);
-  });
+  const server = http.createServer(createHttpRequestListener());
   return server;
 }
 
@@ -84,6 +88,51 @@ test('HTTP Security: /debug/snapshot authentication', async () => {
     const jsonValidToken = JSON.parse(resValidToken.body);
     assert.strictEqual(jsonValidToken.dummy, 'data');
 
+  } finally {
+    await stopServer(server);
+  }
+});
+
+test('HTTP Security: production debug snapshot requires an explicit true flag', async () => {
+  const previousNodeEnv = process.env.NODE_ENV;
+  const previousDebugFlag = process.env.ENABLE_DEBUG_SNAPSHOT;
+  process.env.NODE_ENV = 'production';
+  process.env.ENABLE_DEBUG_SNAPSHOT = '0';
+
+  const server = createServer('debug-token');
+  const port = await startServer(server);
+  try {
+    const hidden = await makeRequest({
+      hostname: '127.0.0.1',
+      port,
+      path: '/debug/snapshot?token=debug-token',
+      method: 'GET',
+    });
+    assert.strictEqual(hidden.status, 404);
+  } finally {
+    await stopServer(server);
+    if (previousNodeEnv === undefined) delete process.env.NODE_ENV;
+    else process.env.NODE_ENV = previousNodeEnv;
+    if (previousDebugFlag === undefined) delete process.env.ENABLE_DEBUG_SNAPSHOT;
+    else process.env.ENABLE_DEBUG_SNAPSHOT = previousDebugFlag;
+  }
+});
+
+test('HTTP Security: rejected async handlers return a controlled 500', async () => {
+  const server = http.createServer(createHttpRequestListener(async () => {
+    throw new Error('sensitive resolver detail');
+  }));
+  const port = await startServer(server);
+  try {
+    const response = await makeRequest({
+      hostname: '127.0.0.1',
+      port,
+      path: '/exports/failure.csv',
+      method: 'GET',
+    });
+    assert.strictEqual(response.status, 500);
+    assert.strictEqual(response.body, 'internal server error\n');
+    assert.doesNotMatch(response.body, /sensitive resolver detail/);
   } finally {
     await stopServer(server);
   }

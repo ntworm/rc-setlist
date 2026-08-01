@@ -1,5 +1,6 @@
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
+import { createPrivateKey, createPublicKey, X509Certificate } from 'node:crypto';
 // @ts-ignore
 import selfsigned from 'selfsigned';
 import { getExtensionContext } from '../context.js';
@@ -41,88 +42,45 @@ function isLikelyIpv4(s: string): boolean {
   return true;
 }
 
-export function certCoversRequiredAltNames(certPem: Buffer | string, lanIps: string[]): boolean {
-  const der = pemToDer(certPem);
-  if (!der) return false;
-  const presentIps = extractIpv4Sans(der);
-  for (const raw of lanIps) {
-    if (typeof raw !== 'string') continue;
-    const ip = raw.trim();
-    if (!isLikelyIpv4(ip)) continue;
-    if (!presentIps.includes(ip)) return false;
-  }
-  return true;
-}
-
-function pemToDer(pem: Buffer | string): Uint8Array | null {
-  const text = typeof pem === 'string' ? pem : pem.toString('utf8');
-  const b64 = text
-    .replace(/-----BEGIN [^-]+-----/g, '')
-    .replace(/-----END [^-]+-----/g, '')
-    .replace(/\s+/g, '');
-  if (!b64) return null;
+export function certCoversRequiredAltNames(
+  certPem: Buffer | string,
+  lanIps: string[],
+  now: Date = new Date(),
+): boolean {
   try {
-    return new Uint8Array(Buffer.from(b64, 'base64'));
+    const cert = new X509Certificate(certPem);
+    const nowMs = now.getTime();
+    if (!Number.isFinite(nowMs)) return false;
+    if (nowMs < Date.parse(cert.validFrom) || nowMs > Date.parse(cert.validTo)) return false;
+    if (!cert.checkHost('localhost') || !cert.checkIP('127.0.0.1')) return false;
+    for (const raw of lanIps) {
+      if (typeof raw !== 'string') continue;
+      const ip = raw.trim();
+      if (isLikelyIpv4(ip) && !cert.checkIP(ip)) return false;
+    }
+    return true;
   } catch {
-    return null;
+    return false;
   }
 }
 
-function findPattern(haystack: Uint8Array, needle: readonly number[]): number {
-  outer: for (let i = 0; i <= haystack.length - needle.length; i++) {
-    for (let j = 0; j < needle.length; j++) {
-      if (haystack[i + j] !== needle[j]) continue outer;
-    }
-    return i;
+export function privateKeyMatchesCertificate(
+  privateKeyPem: Buffer | string,
+  certPem: Buffer | string,
+): boolean {
+  try {
+    const privatePublicKey = createPublicKey(createPrivateKey(privateKeyPem)).export({
+      type: 'spki',
+      format: 'der',
+    });
+    const certificatePublicKey = new X509Certificate(certPem).publicKey.export({
+      type: 'spki',
+      format: 'der',
+    });
+    return privatePublicKey.equals(certificatePublicKey);
+  } catch {
+    return false;
   }
-  return -1;
-}
-
-function readDerLength(der: Uint8Array, pos: number): { length: number; headerSize: number } | null {
-  if (pos >= der.length) return null;
-  const first = der[pos]!;
-  if (first < 0x80) return { length: first, headerSize: 1 };
-  const n = first & 0x7f;
-  if (n === 0 || n > 4 || pos + 1 + n > der.length) return null;
-  let length = 0;
-  for (let i = 0; i < n; i++) length = (length << 8) | der[pos + 1 + i]!;
-  return { length, headerSize: 1 + n };
-}
-
-function extractIpv4Sans(der: Uint8Array): string[] {
-  const oidPos = findPattern(der, [0x06, 0x03, 0x55, 0x1d, 0x11]);
-  if (oidPos === -1) return [];
-
-  let pos = oidPos + 5;
-
-  if (
-    pos + 3 <= der.length &&
-    der[pos] === 0x01 &&
-    der[pos + 1] === 0x01 &&
-    (der[pos + 2] === 0xff || der[pos + 2] === 0x00)
-  ) {
-    pos += 3;
-  }
-
-  if (pos >= der.length || der[pos] !== 0x04) return [];
-  pos++;
-  const lenInfo = readDerLength(der, pos);
-  if (!lenInfo) return [];
-  pos += lenInfo.headerSize;
-  const valueEnd = pos + lenInfo.length;
-  if (valueEnd > der.length) return [];
-
-  const ips: string[] = [];
-  for (let i = pos; i + 6 <= valueEnd; i++) {
-    if (der[i] === 0x87 && der[i + 1] === 0x04) {
-      const b1 = der[i + 2]!;
-      const b2 = der[i + 3]!;
-      const b3 = der[i + 4]!;
-      const b4 = der[i + 5]!;
-      ips.push(`${b1}.${b2}.${b3}.${b4}`);
-    }
-  }
-  return ips;
 }
 
 export async function loadCerts(): Promise<void> {
@@ -147,9 +105,9 @@ export async function loadCerts(): Promise<void> {
       fs.readFile(keyPath),
       fs.readFile(certPath),
     ]);
-    if (!certCoversRequiredAltNames(cert, lanIps)) {
-      console.log(`[rc-setlist] persisted cert missing LAN SAN; regenerating`);
-      throw new Error('cert_san_stale');
+    if (!certCoversRequiredAltNames(cert, lanIps) || !privateKeyMatchesCertificate(key, cert)) {
+      console.log('[rc-setlist] persisted certificate is stale or invalid; regenerating');
+      throw new Error('cert_invalid');
     }
     httpsOptions = { key, cert };
     useHttps = true;

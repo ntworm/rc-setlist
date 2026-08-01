@@ -148,3 +148,28 @@ test('OSC encoding works when Ableton embedded runtime has no global TextEncoder
     globalThis.TextDecoder = originalTextDecoder;
   }
 });
+
+test('OSC shared socket reuse reports the actual bound listen port', async () => {
+  const runtime = globalThis;
+  const previousSocket = runtime.abletonOSCSocket;
+  const previousListeners = runtime.abletonOSCListeners;
+  let closed = false;
+  runtime.abletonOSCSocket = {
+    address: () => ({ address: '127.0.0.1', family: 'IPv4', port: 11101 }),
+    close: () => { closed = true; },
+  };
+  runtime.abletonOSCListeners = new Set();
+
+  const client = new OSCClient();
+  try {
+    await client.start();
+    assert.equal(client.getDebugSnapshot().oscListenPort, 11101);
+  } finally {
+    await client.stop();
+    assert.equal(closed, true);
+    if (previousSocket === undefined) delete runtime.abletonOSCSocket;
+    else runtime.abletonOSCSocket = previousSocket;
+    if (previousListeners === undefined) delete runtime.abletonOSCListeners;
+    else runtime.abletonOSCListeners = previousListeners;
+  }
+});

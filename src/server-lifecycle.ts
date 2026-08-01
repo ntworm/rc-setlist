@@ -26,7 +26,7 @@ import { OSCClient } from './integration/osc-client.js';
 import { SetlistWSServer } from './server/ws.js';
 import { loadCerts, useHttps, httpsOptions } from './server/cert.js';
 import {
-  handleHttp,
+  createHttpRequestListener,
   setCsvExportResolver,
   setAudioResolver,
   setDebugSnapshotProvider,
@@ -47,6 +47,18 @@ import {
 
 const PORT = 4444;
 let projectRefreshPending = false;
+
+export async function closeHttpServer(server: http.Server | https.Server): Promise<void> {
+  const closed = new Promise<void>((resolve) => {
+    server.close(() => resolve());
+  });
+  try {
+    server.closeAllConnections?.();
+  } catch (err) {
+    console.warn('[HTTP] Failed to close all connections:', err);
+  }
+  await closed;
+}
 
 function newProjectSessionId(): string {
   return randomBytes(16).toString('hex');
@@ -319,8 +331,8 @@ export async function startServer(options: StartServerOptions = {}): Promise<voi
     }
 
     const srv = (useHttps && httpsOptions && !options.skipCerts)
-      ? https.createServer(httpsOptions, handleHttp)
-      : http.createServer(handleHttp);
+      ? https.createServer(httpsOptions, createHttpRequestListener())
+      : http.createServer(createHttpRequestListener());
     bridgeState.server = srv;
 
     srv.on('upgrade', (req, socket, head) => {
@@ -553,17 +565,9 @@ export async function stopServer(): Promise<void> {
   }
 
   if (bridgeState.server) {
-    try {
-      if (typeof (bridgeState.server as any).closeAllConnections === 'function') {
-        (bridgeState.server as any).closeAllConnections();
-      }
-    } catch (err) {
-      console.warn('[HTTP] Failed to close all connections:', err);
-    }
-    await new Promise<void>((resolve) => {
-      bridgeState.server!.close(() => resolve());
-    });
+    const server = bridgeState.server;
     bridgeState.server = null;
+    await closeHttpServer(server);
   }
 
   if (bridgeState.commandBus) {
