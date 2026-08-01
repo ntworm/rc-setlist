@@ -153,6 +153,12 @@ test('Static UI Setlist: uses guarded controller storage and confirmed lyrics sa
   assert.match(setlistJs, /consumeControllerToken\(/);
   assert.match(setlistJs, /lyricsSaveTracker\.settle\(payload\)/);
   assert.match(setlistJs, /status === 'confirmed'[\s\S]*markLyricsDirty\(false\)/);
+  assert.match(setlistJs, /state\.setlistVersion/);
+  assert.match(setlistJs, /createActiveClassController\(songListDiv\)/);
+  assert.doesNotMatch(setlistJs, /querySelectorAll\(['"]\.song-item['"]\)/);
+  const tickBody = setlistJs.match(/function tick\(\)\s*\{([\s\S]*?)\n\}\nrequestAnimationFrame\(tick\);/)?.[1] || '';
+  assert.doesNotMatch(tickBody, /document\.getElementById\(/, 'animation frames reuse stable DOM references');
+  assert.match(tickBody, /setTextIfChanged\(/);
   assert.doesNotMatch(
     setlistJs,
     /JSON\.parse\(localStorage\.getItem\(['"]bridge_midi_mappings['"]\)\)/,

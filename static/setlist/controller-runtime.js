@@ -129,8 +129,51 @@
     };
   }
 
+  function createActiveClassController(root) {
+    let songIndex = -1;
+    let sectionIndex = -1;
+    let songElement = null;
+    let sectionElement = null;
+
+    function clearElements() {
+      songElement?.classList?.remove('active');
+      sectionElement?.classList?.remove('active');
+      songElement = null;
+      sectionElement = null;
+    }
+
+    function reset() {
+      clearElements();
+      songIndex = -1;
+      sectionIndex = -1;
+    }
+
+    function update(nextSongIndex, nextSectionIndex) {
+      const normalizedSong = Number.isInteger(nextSongIndex) ? nextSongIndex : -1;
+      const normalizedSection = Number.isInteger(nextSectionIndex) ? nextSectionIndex : -1;
+      if (normalizedSong === songIndex && normalizedSection === sectionIndex) return;
+
+      clearElements();
+      songIndex = normalizedSong;
+      sectionIndex = normalizedSection;
+      if (songIndex < 0) return;
+
+      songElement = root?.querySelector?.(`.song-item[data-song="${songIndex}"]`) || null;
+      songElement?.classList?.add('active');
+      if (sectionIndex >= 0) {
+        sectionElement = root?.querySelector?.(
+          `.section-btn[data-song="${songIndex}"][data-section="${sectionIndex}"]`,
+        ) || null;
+        sectionElement?.classList?.add('active');
+      }
+    }
+
+    return { reset, update };
+  }
+
   globalScope.RcSetlistControllerRuntime = Object.freeze({
     consumeControllerToken,
+    createActiveClassController,
     createPendingCommandTracker,
     readMidiMappings,
   });

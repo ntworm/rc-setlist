@@ -30,6 +30,7 @@ export interface Setlist {
 
 export interface SetlistState {
   protocolVersion?: 2;
+  setlistVersion?: number;
   songs: Song[];
   hidden: { name: string; time: number }[];
   activeSongIndex: number;

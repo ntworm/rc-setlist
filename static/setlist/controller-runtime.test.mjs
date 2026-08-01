@@ -129,3 +129,50 @@ test('disconnect and timeout settle pending commands as failures', () => {
   ]);
   assert.equal(tracker.size(), 0);
 });
+
+test('active class controller toggles only the previous and next elements', () => {
+  const runtime = loadRuntime();
+  const elements = new Map();
+  const makeElement = (selector) => {
+    const classes = new Set();
+    const element = {
+      classList: {
+        add: (name) => classes.add(name),
+        contains: (name) => classes.has(name),
+        remove: (name) => classes.delete(name),
+      },
+      classes,
+      selector,
+    };
+    elements.set(selector, element);
+    return element;
+  };
+  const song0 = makeElement('.song-item[data-song="0"]');
+  const song1 = makeElement('.song-item[data-song="1"]');
+  const section00 = makeElement('.section-btn[data-song="0"][data-section="0"]');
+  const section11 = makeElement('.section-btn[data-song="1"][data-section="1"]');
+  const queries = [];
+  const root = {
+    querySelector: (selector) => {
+      queries.push(selector);
+      return elements.get(selector) || null;
+    },
+  };
+  const controller = runtime.createActiveClassController(root);
+
+  controller.update(0, 0);
+  assert.equal(song0.classes.has('active'), true);
+  assert.equal(section00.classes.has('active'), true);
+  controller.update(1, 1);
+  assert.equal(song0.classes.has('active'), false);
+  assert.equal(section00.classes.has('active'), false);
+  assert.equal(song1.classes.has('active'), true);
+  assert.equal(section11.classes.has('active'), true);
+  assert.equal(queries.length, 4, 'each transition queries only its target song and section');
+
+  controller.update(1, 1);
+  assert.equal(queries.length, 4, 'unchanged active state performs no DOM query');
+  controller.reset();
+  controller.update(0, -1);
+  assert.equal(song0.classes.has('active'), true);
+});

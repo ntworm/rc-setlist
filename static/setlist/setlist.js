@@ -9,6 +9,7 @@ const port = window.location.port || '4444';
 const statusDot = document.getElementById('statusDot');
 const statusText = document.getElementById('statusText');
 const songListDiv = document.getElementById('songList');
+const activeClassController = controllerRuntime.createActiveClassController(songListDiv);
 const profileSelect = document.getElementById('profileSelect');
 const profileManageModal = document.getElementById('profileManageModal');
 const profileCreateName = document.getElementById('profileCreateName');
@@ -37,15 +38,19 @@ const quantizationSelect = document.getElementById('quantizationSelect');
 const hudLoopIter = document.getElementById('hudLoopIter');
 const hudNextSong = document.getElementById('hudNextSong');
 const hudNextSection = document.getElementById('hudNextSection');
+const hudSongTime = document.getElementById('hudSongTime');
+const bpmCard = document.getElementById('bpmCard');
 
 let lastState = null;
 let lastReceivedTime = 0;
 let lastRenderedSongsJson = '';
+let lastRenderedSetlistVersion = null;
 let lastJumpTime = 0;
 let lastJumpTarget = { song: -1, section: -1 };
 let draggedSongIdx = null;
 let isLocked = localStorage.getItem('bridge_locked') === 'true';
 let lastFlashBeat = -1;
+let lastRenderedMetronome = null;
 let currentLyrics = { song: '', format: 'none', lines: [] };
 let currentLyricsIdx = -1;
 let isController = false;
@@ -1009,24 +1014,32 @@ function getEstimatedBeats() {
   return lastState.currentSongTime + elapsedBeats;
 }
 
+function setTextIfChanged(element, value) {
+  if (element && element.textContent !== value) element.textContent = value;
+}
+
+function setDisplayIfChanged(element, value) {
+  if (element && element.style.display !== value) element.style.display = value;
+}
+
 function tick() {
   if (lastState) {
     // 1. Update HUD values
     const activeSong = lastState.songs[lastState.activeSongIndex];
     const activeSection = activeSong ? activeSong.sections[lastState.activeSectionIndex] : null;
 
-    hudSong.textContent = activeSong ? activeSong.title : t('common.none');
-    hudSection.textContent = sectionDisplayName(activeSection);
-    hudBpm.textContent = lastState.tempo ? lastState.tempo.toFixed(1) : '120.0';
+    setTextIfChanged(hudSong, activeSong ? activeSong.title : t('common.none'));
+    setTextIfChanged(hudSection, sectionDisplayName(activeSection));
+    setTextIfChanged(hudBpm, lastState.tempo ? lastState.tempo.toFixed(1) : '120.0');
 
     // Drift: compare live tempo with the cue-derived BPM expectation.
     updateDriftBadge(lastState, activeSong);
 
     // Update Next Song / Section
     const nextSongObj = lastState.songs[lastState.activeSongIndex + 1];
-    hudNextSong.textContent = nextSongObj
+    setTextIfChanged(hudNextSong, nextSongObj
       ? t('setlist.nextValue', { name: nextSongObj.title })
-      : t('setlist.nextEndSet');
+      : t('setlist.nextEndSet'));
 
     let nextSectionObj = null;
     let nextIsCurrent = false;
@@ -1049,26 +1062,26 @@ function tick() {
     }
 
     if (nextIsCurrent && nextSectionObj) {
-      hudNextSection.textContent = t('setlist.nextRepeat', { name: sectionDisplayName(nextSectionObj) });
+      setTextIfChanged(hudNextSection, t('setlist.nextRepeat', { name: sectionDisplayName(nextSectionObj) }));
     } else {
-      hudNextSection.textContent = nextSectionObj
+      setTextIfChanged(hudNextSection, nextSectionObj
         ? t('setlist.nextValue', { name: sectionDisplayName(nextSectionObj) })
-        : t('setlist.nextEnd');
+        : t('setlist.nextEnd'));
     }
 
     const estimatedBeats = getEstimatedBeats();
     const songElapsedBeats = calculateSongElapsedBeats(estimatedBeats, activeSong);
-    hudTime.textContent = formatBeatsAsTime(estimatedBeats, lastState.tempo);
+    const formattedTime = formatBeatsAsTime(estimatedBeats, lastState.tempo);
+    setTextIfChanged(hudTime, formattedTime);
 
-    const hudSongTimeEl = document.getElementById('hudSongTime');
-    if (hudSongTimeEl) {
+    if (hudSongTime) {
       if (activeSong) {
-        hudSongTimeEl.textContent = t('setlist.songTime', {
+        setTextIfChanged(hudSongTime, t('setlist.songTime', {
           time: formatBeatsAsTime(songElapsedBeats, lastState.tempo),
-        });
-        hudSongTimeEl.style.display = 'inline-block';
+        }));
+        setDisplayIfChanged(hudSongTime, 'inline-block');
       } else {
-        hudSongTimeEl.style.display = 'none';
+        setDisplayIfChanged(hudSongTime, 'none');
       }
     }
 
@@ -1094,15 +1107,12 @@ function tick() {
       const remainingBeats = barDisplayBeats % num;
       const beat = Math.floor(remainingBeats) + 1;
       const sixteenths = Math.floor((remainingBeats % 1) * 4) + 1;
-      hudBar.textContent = `${bar}.${beat}.${sixteenths}`;
+      setTextIfChanged(hudBar, `${bar}.${beat}.${sixteenths}`);
     }
 
     // Update Lyrics Sync Timer display
     if (typeof isLyricsSyncing !== 'undefined' && isLyricsSyncing) {
-      const syncTimecodeEl = document.getElementById('lyricsSyncTimecode');
-      if (syncTimecodeEl) {
-        syncTimecodeEl.textContent = hudTime.textContent;
-      }
+      setTextIfChanged(lyricsSyncTimecode, formattedTime);
     }
 
     // Metronome Visual Beat Flash
@@ -1111,7 +1121,6 @@ function tick() {
       lastFlashBeat = currentIntBeat;
     } else if (currentIntBeat > lastFlashBeat && lastState.isPlaying) {
       lastFlashBeat = currentIntBeat;
-      const bpmCard = document.getElementById('bpmCard');
       if (bpmCard) {
         const isDownbeat = currentIntBeat % num === 0;
         bpmCard.classList.remove('beat-flash-accent', 'beat-flash-normal');
@@ -1125,18 +1134,17 @@ function tick() {
     }
 
     // Update Metronome Button active state class
-    if (lastState.metronome) {
-      btnMetronome.classList.add('btn-click-active');
-    } else {
-      btnMetronome.classList.remove('btn-click-active');
+    if (lastState.metronome !== lastRenderedMetronome) {
+      lastRenderedMetronome = lastState.metronome;
+      btnMetronome.classList.toggle('btn-click-active', lastState.metronome);
     }
 
     // Update Loop Iteration display
     if (lastState.loopIteration) {
-      hudLoopIter.textContent = `LOOP: ${lastState.loopIteration.current}/${lastState.loopIteration.total}`;
-      hudLoopIter.style.display = 'inline-block';
+      setTextIfChanged(hudLoopIter, `LOOP: ${lastState.loopIteration.current}/${lastState.loopIteration.total}`);
+      setDisplayIfChanged(hudLoopIter, 'inline-block');
     } else {
-      hudLoopIter.style.display = 'none';
+      setDisplayIfChanged(hudLoopIter, 'none');
     }
   }
   requestAnimationFrame(tick);
@@ -1197,26 +1205,30 @@ function renderSongList(state) {
   if (!state.songs || state.songs.length === 0) {
     songListDiv.innerHTML = `<div style="text-align: center; color: var(--text-muted); padding: 2rem;">${escapeLyricsEditorText(t('setlist.noSongs'))}</div>`;
     lastRenderedSongsJson = '';
+    lastRenderedSetlistVersion = null;
+    activeClassController.reset();
     return;
   }
 
-  const currentJson = JSON.stringify({
-    songs: state.songs,
-    hidden: state.hidden
-  });
+  const hasSetlistVersion = Number.isInteger(state.setlistVersion);
+  const currentJson = hasSetlistVersion ? '' : JSON.stringify({ songs: state.songs, hidden: state.hidden });
+  const structureUnchanged = hasSetlistVersion
+    ? state.setlistVersion === lastRenderedSetlistVersion
+    : currentJson === lastRenderedSongsJson;
 
-  if (currentJson === lastRenderedSongsJson) {
+  if (structureUnchanged) {
     updateActiveClasses(state.activeSongIndex, state.activeSectionIndex);
     return;
   }
 
   lastRenderedSongsJson = currentJson;
+  lastRenderedSetlistVersion = hasSetlistVersion ? state.setlistVersion : null;
 
   let html = '';
   state.songs.forEach((song, songIdx) => {
     const isActiveSong = songIdx === state.activeSongIndex;
     html += `
-      <div class="song-item ${isActiveSong ? 'active' : ''}" draggable="true" ondragstart="handleDragStart(event, ${songIdx})" ondragover="handleDragOver(event)" ondrop="handleDrop(event, ${songIdx})" ondragend="handleDragEnd(event)">
+      <div class="song-item ${isActiveSong ? 'active' : ''}" data-song="${songIdx}" draggable="true" ondragstart="handleDragStart(event, ${songIdx})" ondragover="handleDragOver(event)" ondrop="handleDrop(event, ${songIdx})" ondragend="handleDragEnd(event)">
         <div class="song-header" data-song="${songIdx}" onclick="jumpTo(${songIdx}, null)">
           <div class="song-info">
             <span class="song-index">${songIdx + 1}</span>
@@ -1249,37 +1261,12 @@ function renderSongList(state) {
     `;
   });
   songListDiv.innerHTML = html;
+  activeClassController.reset();
+  activeClassController.update(state.activeSongIndex, state.activeSectionIndex);
 }
 
 function updateActiveClasses(activeSongIdx, activeSectionIdx) {
-  const songItems = songListDiv.querySelectorAll('.song-item');
-  songItems.forEach((item, songIdx) => {
-    const shouldBeActiveSong = (songIdx === activeSongIdx);
-    if (shouldBeActiveSong) {
-      if (!item.classList.contains('active')) {
-        item.classList.add('active');
-      }
-    } else {
-      if (item.classList.contains('active')) {
-        item.classList.remove('active');
-      }
-    }
-
-    const sectionBtns = item.querySelectorAll('.section-btn');
-    sectionBtns.forEach((btn) => {
-      const sectionIdx = parseInt(btn.getAttribute('data-section'), 10);
-      const shouldBeActiveSec = shouldBeActiveSong && (sectionIdx === activeSectionIdx);
-      if (shouldBeActiveSec) {
-        if (!btn.classList.contains('active')) {
-          btn.classList.add('active');
-        }
-      } else {
-        if (btn.classList.contains('active')) {
-          btn.classList.remove('active');
-        }
-      }
-    });
-  });
+  activeClassController.update(activeSongIdx, activeSectionIdx);
 }
 
 function jumpTargetElement(target) {
@@ -2005,7 +1992,11 @@ i18n.subscribe(() => {
   renderMidiMappings();
   renderProfileState();
   lastRenderedSongsJson = '';
-  if (lastState) renderSongList(lastState);
+  if (lastState) {
+    lastRenderedSongsJson = '';
+    lastRenderedSetlistVersion = null;
+    renderSongList(lastState);
+  }
   renderActiveLyric();
   if (isLyricsSyncing) updateLyricsSyncUI();
   if (document.getElementById('networkErrorOverlay').classList.contains('visible')) {

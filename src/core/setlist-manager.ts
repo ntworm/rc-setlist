@@ -29,6 +29,7 @@ export class SetlistManager {
   private chronologicalSongs: Array<{ song: Song; displayIndex: number }> = [];
   private derivedSongs: Song[] | null = null;
   private derivedTotalDurationSeconds: number | null = null;
+  private setlistVersion: number = 1;
 
   private customOrder: string[] = [];
 
@@ -132,6 +133,7 @@ export class SetlistManager {
   private invalidateDerivedSongs(): void {
     this.derivedSongs = null;
     this.derivedTotalDurationSeconds = null;
+    this.setlistVersion++;
   }
 
   private getDerivedSongs(): { songs: Song[]; totalDurationSeconds: number | null } {
@@ -388,6 +390,7 @@ export class SetlistManager {
 
     const state: any = {
       protocolVersion: 2,
+      setlistVersion: this.setlistVersion,
       songs: derived.songs,
       hidden: this.hidden,
       activeSongIndex: this.activeSongIndex,
