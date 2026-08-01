@@ -7,39 +7,65 @@ import {
   buildTracklistCsv,
   calculateSongDurationSec,
   csvFilenameTimestamp,
+  formatDuration,
+  formatSongAutomations,
+  formatSongSections,
   UTF8_BOM,
 } from '../src/core/csv-export.ts';
 
 const sampleRows = [
   {
     index: 1,
+    setlist: 'Tour; "A"',
     title: 'Sunrise Loop',
+    startBeat: 16,
     bpm: 120,
-    signature: '4/4',
-    key: 'C',
     durationSec: 195,
-    plays: 12,
+    duration: '3:15',
+    sectionsCount: 3,
+    sections: 'Intro | Verse | Chorus',
+    automations: 'song [bpm 120] | Chorus [loop 2x] [next]',
     lyricLines: 8,
-    customOrder: 2,
-    inSetlist: true,
-    cuesCount: 3,
-    lastPlayedAt: '2026-06-30T22:14:00Z',
   },
   {
     index: 2,
+    setlist: 'Tour; "A"',
     title: 'Tarde, com; poeira',
+    startBeat: 240,
     bpm: null,
-    signature: '3/4',
-    key: '',
     durationSec: null,
-    plays: 0,
+    duration: '',
+    sectionsCount: 2,
+    sections: 'Intro; Rise | Chorus "Finale"',
+    automations: '',
     lyricLines: 0,
-    customOrder: null,
-    inSetlist: false,
-    cuesCount: 0,
-    lastPlayedAt: null,
   },
 ];
+
+const automationSong = {
+  title: 'EM SEU COLO',
+  time: 0,
+  sections: [
+    {
+      name: 'Intro', time: 8, loopCount: 2, autoStop: false, autoNext: false,
+      bpm: null, autoClick: null, skip: false,
+    },
+    {
+      name: '', time: 32, automationOnly: true, loopCount: null, autoStop: true,
+      autoNext: false, bpm: null, autoClick: null, skip: false,
+    },
+    {
+      name: 'Finale', time: 48, loopCount: null, autoStop: false, autoNext: true,
+      bpm: null, autoClick: false, skip: true,
+    },
+  ],
+  loopCount: null,
+  autoStop: false,
+  autoNext: false,
+  bpm: 111.11,
+  autoClick: true,
+  skip: false,
+};
 
 test('buildTracklistCsv: header + rows count', () => {
   const csv = buildTracklistCsv(sampleRows);
@@ -55,14 +81,23 @@ test('buildTracklistCsv: BOM present', () => {
 test('buildTracklistCsv: uses ; delim', () => {
   const csv = buildTracklistCsv(sampleRows);
   const header = csv.replace(UTF8_BOM, '').split('\r\n')[0];
-  assert.ok(header.includes(';'), 'header uses ;');
-  assert.equal(header.split(';')[0], '#');
+  assert.equal(
+    header,
+    '#;setlist;title;start_beat;bpm;duration_sec;duration;sections_count;sections;automations;lyric_lines',
+  );
+  for (const removed of [
+    'signature', 'key', 'plays', 'custom_order', 'in_setlist', 'cues_count', 'last_played_at',
+  ]) {
+    assert.equal(header.includes(removed), false, `${removed} placeholder must not be exported`);
+  }
 });
 
 test('buildTracklistCsv: fields with ; or " or newline are quoted', () => {
   const csv = buildTracklistCsv(sampleRows);
+  assert.ok(csv.includes('"Tour; ""A"""'), 'quoted setlist field');
   // Row 2 contains "Tarde, com; poeira" — must be quoted, ; inside quoted.
   assert.ok(csv.includes('"Tarde, com; poeira"'), 'quoted semicolon field');
+  assert.ok(csv.includes('"Intro; Rise | Chorus ""Finale"""'), 'quoted sections field');
 });
 
 test('buildTracklistCsv: null bpm renders as empty', () => {
@@ -90,13 +125,34 @@ test('buildTracklistCsv: null bpm renders as empty', () => {
   };
   // header is line 0, rows start line 1.
   const cols = parseRow(lines[2]);
-  assert.equal(cols[2], '', `null bpm -> empty (got "${cols[2]}")`);
+  assert.equal(cols[4], '', `null bpm -> empty (got "${cols[4]}")`);
 });
 
-test('buildTracklistCsv: in_setlist yes/no', () => {
-  const csv = buildTracklistCsv(sampleRows);
-  assert.ok(csv.includes(';yes;'), 'first row in_setlist=yes');
-  assert.ok(csv.includes(';no;'), 'second row in_setlist=no');
+test('formatDuration: renders whole nonnegative seconds and leaves unavailable values blank', () => {
+  assert.equal(formatDuration(0), '0:00');
+  assert.equal(formatDuration(195), '3:15');
+  assert.equal(formatDuration(59.6), '1:00');
+  assert.equal(formatDuration(null), '');
+  assert.equal(formatDuration(Number.NaN), '');
+  assert.equal(formatDuration(-1), '');
+});
+
+test('formatSongSections: lists only named sections in chronological order', () => {
+  assert.deepEqual(formatSongSections(automationSong), {
+    count: 2,
+    names: 'Intro | Finale',
+  });
+});
+
+test('formatSongAutomations: preserves song, section and automation-only actions', () => {
+  assert.equal(
+    formatSongAutomations(automationSong),
+    'song [bpm 111.11] [click] | Intro [loop 2x] | @32 [stop] | Finale [next] [click off] [skip]',
+  );
+  assert.equal(
+    formatSongAutomations({ ...automationSong, sections: [], loopCount: -1, bpm: null, autoClick: null }),
+    'song [loop]',
+  );
 });
 
 test('buildTracklistCsv: ends with CRLF', () => {

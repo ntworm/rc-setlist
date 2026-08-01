@@ -2,6 +2,7 @@ import * as esbuild from 'esbuild';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { strictBinpackPlugin } from './scripts/build/binpack-strict.ts';
+import { copyStaticTree, nodeEnvDefine } from './scripts/build/build-helpers.ts';
 
 const manifest = JSON.parse(fs.readFileSync('manifest.json', 'utf8'));
 const production = process.argv.includes('--production');
@@ -26,11 +27,14 @@ function copyDir(src: string, dst: string): void {
   }
 }
 
-function copyStatic() {
+function copyStatic(): void {
+  copyStaticTree('static', staticDst);
+  console.log(`copied static/* → ${staticDst}`);
+}
+
+function copyStaticWhileWatching(): void {
   try {
-    fs.rmSync(staticDst, { recursive: true, force: true });
-    copyDir('static', staticDst);
-    console.log(`copied static/* → ${staticDst}`);
+    copyStatic();
   } catch (err) {
     console.error('Error copying static:', err);
   }
@@ -68,11 +72,12 @@ if (watch) {
     logLevel: 'info',
     minify: false,
     sourcemap: true,
+    define: nodeEnvDefine(false),
     plugins: [strictBinpackPlugin(), {
       name: 'copy-static-on-end',
       setup(build) {
         build.onEnd(() => {
-          copyStatic();
+          copyStaticWhileWatching();
           syncToAppData();
         });
       }
@@ -87,7 +92,7 @@ if (watch) {
       if (debounceTimeout) clearTimeout(debounceTimeout);
       debounceTimeout = setTimeout(() => {
         console.log(`static change detected: ${filename}, rebuilding...`);
-        copyStatic();
+        copyStaticWhileWatching();
         syncToAppData();
       }, 100);
     }
@@ -105,6 +110,7 @@ if (watch) {
     logLevel: production ? 'silent' : 'info',
     minify: production,
     sourcemap: !production,
+    define: nodeEnvDefine(production),
     plugins: [strictBinpackPlugin()],
   });
   copyStatic();

@@ -1,11 +1,30 @@
 param(
-    [string]$Version = "0.4.1",
+    [string]$Version = "0.5.0",
     [string]$AblxPath,
     [string]$OutputRoot
 )
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
+
+function Get-FileSha256 {
+    param([Parameter(Mandatory = $true)][string]$LiteralPath)
+
+    $stream = [IO.File]::OpenRead($LiteralPath)
+    try {
+        $sha256 = [Security.Cryptography.SHA256]::Create()
+        try {
+            $bytes = $sha256.ComputeHash($stream)
+            return ([BitConverter]::ToString($bytes)).Replace("-", "")
+        }
+        finally {
+            $sha256.Dispose()
+        }
+    }
+    finally {
+        $stream.Dispose()
+    }
+}
 
 $repoRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
 if ($Version -notmatch '^\d+\.\d+\.\d+$') {
@@ -58,12 +77,12 @@ $copies = @(
     @{ Source = (Join-Path $repoRoot "docs/USER-GUIDE.md"); Target = "en/USER-GUIDE.md" },
     @{ Source = (Join-Path $repoRoot "docs/TROUBLESHOOTING.md"); Target = "en/TROUBLESHOOTING.md" },
     @{ Source = (Join-Path $repoRoot "docs/FAQ.md"); Target = "en/FAQ.md" },
-    @{ Source = (Join-Path $repoRoot "docs/RELEASE-NOTES-0.4.1.md"); Target = "en/RELEASE-NOTES.md" },
+    @{ Source = (Join-Path $repoRoot "docs/RELEASE-NOTES-0.5.0.md"); Target = "en/RELEASE-NOTES.md" },
     @{ Source = (Join-Path $repoRoot "docs/pt-BR/INSTALL.md"); Target = "pt-BR/INSTALL.md" },
     @{ Source = (Join-Path $repoRoot "docs/pt-BR/USER-GUIDE.md"); Target = "pt-BR/USER-GUIDE.md" },
     @{ Source = (Join-Path $repoRoot "docs/pt-BR/TROUBLESHOOTING.md"); Target = "pt-BR/TROUBLESHOOTING.md" },
     @{ Source = (Join-Path $repoRoot "docs/pt-BR/FAQ.md"); Target = "pt-BR/FAQ.md" },
-    @{ Source = (Join-Path $repoRoot "docs/pt-BR/NOTAS-DA-VERSAO-0.4.1.md"); Target = "pt-BR/NOTAS-DA-VERSAO.md" },
+    @{ Source = (Join-Path $repoRoot "docs/pt-BR/NOTAS-DA-VERSAO-0.5.0.md"); Target = "pt-BR/NOTAS-DA-VERSAO.md" },
     @{ Source = (Join-Path $repoRoot "CHANGELOG.md"); Target = "CHANGELOG.md" },
     @{ Source = (Join-Path $repoRoot "LICENSE"); Target = "LEGAL/LICENSE.txt" },
     @{ Source = (Join-Path $repoRoot "NOTICE"); Target = "LEGAL/NOTICE.txt" },
@@ -81,7 +100,7 @@ foreach ($exampleEntry in Get-ChildItem -LiteralPath $exampleSource) {
     Copy-Item -LiteralPath $exampleEntry.FullName -Destination (Join-Path $kitRoot "examples") -Recurse
 }
 
-$ablxHash = (Get-FileHash -LiteralPath $ablxFull -Algorithm SHA256).Hash
+$ablxHash = Get-FileSha256 -LiteralPath $ablxFull
 $ablxSize = (Get-Item -LiteralPath $ablxFull).Length
 $buildInfo = @(
     "Ableton RC Setlist $Version public release",
@@ -98,7 +117,7 @@ $hashLines = Get-ChildItem -LiteralPath $kitRoot -Recurse -File |
     Sort-Object FullName |
     ForEach-Object {
         $relative = $_.FullName.Substring($kitRoot.Length + 1).Replace("\", "/")
-        "{0}  {1}" -f (Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256).Hash.ToLowerInvariant(), $relative
+        "{0}  {1}" -f (Get-FileSha256 -LiteralPath $_.FullName).ToLowerInvariant(), $relative
     }
 [IO.File]::WriteAllLines((Join-Path $kitRoot "SHA256SUMS.txt"), $hashLines, [Text.UTF8Encoding]::new($false))
 

@@ -37,7 +37,7 @@ demonstração usam texto fictício; o Ableton RC Setlist não fornece letras co
 
 ## O macOS funciona?
 
-O código foi projetado para ser portátil, mas a versão 0.4.1 mantém o macOS como
+O código foi projetado para ser portátil, mas a versão 0.5.0 mantém o macOS como
 experimental até existir uma matriz completa em hardware real.
 
 ## Posso expor o Ableton RC Setlist na internet?

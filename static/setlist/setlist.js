@@ -1,13 +1,18 @@
 const i18n = RcSetlistI18n;
 const t = (key, params) => i18n.t(key, params);
+const controllerRuntime = RcSetlistControllerRuntime;
 const languageSelect = document.getElementById('languageSelect');
 i18n.bindSelector(languageSelect);
 
+
+
 let ws;
+
 const port = window.location.port || '4444';
 const statusDot = document.getElementById('statusDot');
 const statusText = document.getElementById('statusText');
 const songListDiv = document.getElementById('songList');
+const activeClassController = controllerRuntime.createActiveClassController(songListDiv);
 const profileSelect = document.getElementById('profileSelect');
 const profileManageModal = document.getElementById('profileManageModal');
 const profileCreateName = document.getElementById('profileCreateName');
@@ -17,6 +22,8 @@ const deletedProfileList = document.getElementById('deletedProfileList');
 const deletedProfileSection = document.getElementById('deletedProfileSection');
 const profileMutationNotice = document.getElementById('profileMutationNotice');
 const totalSetlistDuration = document.getElementById('totalSetlistDuration');
+const operationToast = document.getElementById('operationToast');
+let operationToastTimer = null;
 
 const hudSong = document.getElementById('hudSong');
 const hudSection = document.getElementById('hudSection');
@@ -34,15 +41,19 @@ const quantizationSelect = document.getElementById('quantizationSelect');
 const hudLoopIter = document.getElementById('hudLoopIter');
 const hudNextSong = document.getElementById('hudNextSong');
 const hudNextSection = document.getElementById('hudNextSection');
+const hudSongTime = document.getElementById('hudSongTime');
+const bpmCard = document.getElementById('bpmCard');
 
 let lastState = null;
 let lastReceivedTime = 0;
 let lastRenderedSongsJson = '';
+let lastRenderedSetlistVersion = null;
 let lastJumpTime = 0;
 let lastJumpTarget = { song: -1, section: -1 };
 let draggedSongIdx = null;
 let isLocked = localStorage.getItem('bridge_locked') === 'true';
 let lastFlashBeat = -1;
+let lastRenderedMetronome = null;
 let currentLyrics = { song: '', format: 'none', lines: [] };
 let currentLyricsIdx = -1;
 let isController = false;
@@ -71,9 +82,21 @@ function showConnectionFailure() {
   overlay.classList.add('visible');
 }
 
+function showToast(message, level = 'info') {
+  if (!operationToast) return;
+  if (operationToastTimer) clearTimeout(operationToastTimer);
+  operationToast.textContent = message;
+  operationToast.dataset.level = level;
+  operationToast.hidden = false;
+  operationToastTimer = setTimeout(() => {
+    operationToast.hidden = true;
+    operationToastTimer = null;
+  }, 5000);
+}
+
 // MIDI Mapping State
 let midiAccess = null;
-let midiMappings = Object.assign({
+const midiMappingDefaults = {
   'play': null,
   'stop': null,
   'next_song': null,
@@ -82,7 +105,12 @@ let midiMappings = Object.assign({
   'prev_section': null,
   'toggle_click': null,
   'toggle_lock': null
-}, JSON.parse(localStorage.getItem('bridge_midi_mappings')) || {});
+};
+let midiMappings = controllerRuntime.readMidiMappings(
+  localStorage,
+  'bridge_midi_mappings',
+  midiMappingDefaults,
+);
 let activeMidiMappingKey = null; // Key currently being mapped
 let currentMidiInputId = localStorage.getItem('bridge_midi_input_id') || '';
 
@@ -690,13 +718,11 @@ function mountTransportControls() {
 
 function connect() {
   const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-  const urlParams = new URLSearchParams(window.location.search);
-  let token = urlParams.get('token');
-  if (token && token !== 'null' && token !== 'undefined') {
-    localStorage.setItem('setlist_token', token);
-  } else {
-    token = localStorage.getItem('setlist_token') || '';
-  }
+  const token = controllerRuntime.consumeControllerToken({
+    historyRef: window.history,
+    locationRef: window.location,
+    storageRef: localStorage,
+  });
   const url = `${protocol}//${window.location.hostname}:${port}/ws?token=${encodeURIComponent(token)}`;
   const loggedUrl = url.replace(/token=[^&]+/g, 'token=***');
   console.log('[WS] connecting to', loggedUrl);
@@ -739,6 +765,7 @@ function connect() {
     nextHoldController?.reset();
     jumpConfirmation.clear();
     quantizationConfirmation.reset();
+    lyricsSaveTracker.failAll('disconnected');
     updateTransportAvailability();
     renderProfileState();
     showConnectionFailure();
@@ -826,6 +853,7 @@ function connect() {
         jumpConfirmation.executed(payload);
       } else if (payload.type === 'auth_status') {
         isController = Boolean(payload.isController);
+        if (!isController) lyricsSaveTracker.failAll('unauthorized');
         if (!payload.isController) {
           appendLog(t('feedback.readOnly'), 'warn');
           const statusTextEl = document.getElementById('statusText');
@@ -851,6 +879,7 @@ function connect() {
         if (registryChanged) renderProfileState();
         else updateProfileMutationAvailability();
       } else if (payload.type === 'command_status') {
+        lyricsSaveTracker.settle(payload);
         quantizationConfirmation.settle(payload);
         const profileCommand = pendingProfileCommands.get(payload.commandId);
         if (profileCommand && ['confirmed', 'failed', 'expired', 'cancelled'].includes(payload.status)) {
@@ -861,6 +890,7 @@ function connect() {
           requestProfiles();
         }
       } else if (payload.type === 'error') {
+        lyricsSaveTracker.failAll('server_error');
         const message = t('feedback.serverError', { detail: payload.message });
         appendLog(`⚠ ${message}`, 'error');
         alert(message);
@@ -987,24 +1017,32 @@ function getEstimatedBeats() {
   return lastState.currentSongTime + elapsedBeats;
 }
 
+function setTextIfChanged(element, value) {
+  if (element && element.textContent !== value) element.textContent = value;
+}
+
+function setDisplayIfChanged(element, value) {
+  if (element && element.style.display !== value) element.style.display = value;
+}
+
 function tick() {
   if (lastState) {
     // 1. Update HUD values
     const activeSong = lastState.songs[lastState.activeSongIndex];
     const activeSection = activeSong ? activeSong.sections[lastState.activeSectionIndex] : null;
 
-    hudSong.textContent = activeSong ? activeSong.title : t('common.none');
-    hudSection.textContent = sectionDisplayName(activeSection);
-    hudBpm.textContent = lastState.tempo ? lastState.tempo.toFixed(1) : '120.0';
+    setTextIfChanged(hudSong, activeSong ? activeSong.title : t('common.none'));
+    setTextIfChanged(hudSection, sectionDisplayName(activeSection));
+    setTextIfChanged(hudBpm, lastState.tempo ? lastState.tempo.toFixed(1) : '120.0');
 
     // Drift: compare live tempo with the cue-derived BPM expectation.
     updateDriftBadge(lastState, activeSong);
 
     // Update Next Song / Section
     const nextSongObj = lastState.songs[lastState.activeSongIndex + 1];
-    hudNextSong.textContent = nextSongObj
+    setTextIfChanged(hudNextSong, nextSongObj
       ? t('setlist.nextValue', { name: nextSongObj.title })
-      : t('setlist.nextEndSet');
+      : t('setlist.nextEndSet'));
 
     let nextSectionObj = null;
     let nextIsCurrent = false;
@@ -1027,26 +1065,26 @@ function tick() {
     }
 
     if (nextIsCurrent && nextSectionObj) {
-      hudNextSection.textContent = t('setlist.nextRepeat', { name: sectionDisplayName(nextSectionObj) });
+      setTextIfChanged(hudNextSection, t('setlist.nextRepeat', { name: sectionDisplayName(nextSectionObj) }));
     } else {
-      hudNextSection.textContent = nextSectionObj
+      setTextIfChanged(hudNextSection, nextSectionObj
         ? t('setlist.nextValue', { name: sectionDisplayName(nextSectionObj) })
-        : t('setlist.nextEnd');
+        : t('setlist.nextEnd'));
     }
 
     const estimatedBeats = getEstimatedBeats();
     const songElapsedBeats = calculateSongElapsedBeats(estimatedBeats, activeSong);
-    hudTime.textContent = formatBeatsAsTime(estimatedBeats, lastState.tempo);
+    const formattedTime = formatBeatsAsTime(estimatedBeats, lastState.tempo);
+    setTextIfChanged(hudTime, formattedTime);
 
-    const hudSongTimeEl = document.getElementById('hudSongTime');
-    if (hudSongTimeEl) {
+    if (hudSongTime) {
       if (activeSong) {
-        hudSongTimeEl.textContent = t('setlist.songTime', {
+        setTextIfChanged(hudSongTime, t('setlist.songTime', {
           time: formatBeatsAsTime(songElapsedBeats, lastState.tempo),
-        });
-        hudSongTimeEl.style.display = 'inline-block';
+        }));
+        setDisplayIfChanged(hudSongTime, 'inline-block');
       } else {
-        hudSongTimeEl.style.display = 'none';
+        setDisplayIfChanged(hudSongTime, 'none');
       }
     }
 
@@ -1072,15 +1110,12 @@ function tick() {
       const remainingBeats = barDisplayBeats % num;
       const beat = Math.floor(remainingBeats) + 1;
       const sixteenths = Math.floor((remainingBeats % 1) * 4) + 1;
-      hudBar.textContent = `${bar}.${beat}.${sixteenths}`;
+      setTextIfChanged(hudBar, `${bar}.${beat}.${sixteenths}`);
     }
 
     // Update Lyrics Sync Timer display
     if (typeof isLyricsSyncing !== 'undefined' && isLyricsSyncing) {
-      const syncTimecodeEl = document.getElementById('lyricsSyncTimecode');
-      if (syncTimecodeEl) {
-        syncTimecodeEl.textContent = hudTime.textContent;
-      }
+      setTextIfChanged(lyricsSyncTimecode, formattedTime);
     }
 
     // Metronome Visual Beat Flash
@@ -1089,7 +1124,6 @@ function tick() {
       lastFlashBeat = currentIntBeat;
     } else if (currentIntBeat > lastFlashBeat && lastState.isPlaying) {
       lastFlashBeat = currentIntBeat;
-      const bpmCard = document.getElementById('bpmCard');
       if (bpmCard) {
         const isDownbeat = currentIntBeat % num === 0;
         bpmCard.classList.remove('beat-flash-accent', 'beat-flash-normal');
@@ -1103,18 +1137,17 @@ function tick() {
     }
 
     // Update Metronome Button active state class
-    if (lastState.metronome) {
-      btnMetronome.classList.add('btn-click-active');
-    } else {
-      btnMetronome.classList.remove('btn-click-active');
+    if (lastState.metronome !== lastRenderedMetronome) {
+      lastRenderedMetronome = lastState.metronome;
+      btnMetronome.classList.toggle('btn-click-active', lastState.metronome);
     }
 
     // Update Loop Iteration display
     if (lastState.loopIteration) {
-      hudLoopIter.textContent = `LOOP: ${lastState.loopIteration.current}/${lastState.loopIteration.total}`;
-      hudLoopIter.style.display = 'inline-block';
+      setTextIfChanged(hudLoopIter, `LOOP: ${lastState.loopIteration.current}/${lastState.loopIteration.total}`);
+      setDisplayIfChanged(hudLoopIter, 'inline-block');
     } else {
-      hudLoopIter.style.display = 'none';
+      setDisplayIfChanged(hudLoopIter, 'none');
     }
   }
   requestAnimationFrame(tick);
@@ -1175,26 +1208,30 @@ function renderSongList(state) {
   if (!state.songs || state.songs.length === 0) {
     songListDiv.innerHTML = `<div style="text-align: center; color: var(--text-muted); padding: 2rem;">${escapeLyricsEditorText(t('setlist.noSongs'))}</div>`;
     lastRenderedSongsJson = '';
+    lastRenderedSetlistVersion = null;
+    activeClassController.reset();
     return;
   }
 
-  const currentJson = JSON.stringify({
-    songs: state.songs,
-    hidden: state.hidden
-  });
+  const hasSetlistVersion = Number.isInteger(state.setlistVersion);
+  const currentJson = hasSetlistVersion ? '' : JSON.stringify({ songs: state.songs, hidden: state.hidden });
+  const structureUnchanged = hasSetlistVersion
+    ? state.setlistVersion === lastRenderedSetlistVersion
+    : currentJson === lastRenderedSongsJson;
 
-  if (currentJson === lastRenderedSongsJson) {
+  if (structureUnchanged) {
     updateActiveClasses(state.activeSongIndex, state.activeSectionIndex);
     return;
   }
 
   lastRenderedSongsJson = currentJson;
+  lastRenderedSetlistVersion = hasSetlistVersion ? state.setlistVersion : null;
 
   let html = '';
   state.songs.forEach((song, songIdx) => {
     const isActiveSong = songIdx === state.activeSongIndex;
     html += `
-      <div class="song-item ${isActiveSong ? 'active' : ''}" draggable="true" ondragstart="handleDragStart(event, ${songIdx})" ondragover="handleDragOver(event)" ondrop="handleDrop(event, ${songIdx})" ondragend="handleDragEnd(event)">
+      <div class="song-item ${isActiveSong ? 'active' : ''}" data-song="${songIdx}" draggable="true" ondragstart="handleDragStart(event, ${songIdx})" ondragover="handleDragOver(event)" ondrop="handleDrop(event, ${songIdx})" ondragend="handleDragEnd(event)">
         <div class="song-header" data-song="${songIdx}" onclick="jumpTo(${songIdx}, null)">
           <div class="song-info">
             <span class="song-index">${songIdx + 1}</span>
@@ -1227,37 +1264,12 @@ function renderSongList(state) {
     `;
   });
   songListDiv.innerHTML = html;
+  activeClassController.reset();
+  activeClassController.update(state.activeSongIndex, state.activeSectionIndex);
 }
 
 function updateActiveClasses(activeSongIdx, activeSectionIdx) {
-  const songItems = songListDiv.querySelectorAll('.song-item');
-  songItems.forEach((item, songIdx) => {
-    const shouldBeActiveSong = (songIdx === activeSongIdx);
-    if (shouldBeActiveSong) {
-      if (!item.classList.contains('active')) {
-        item.classList.add('active');
-      }
-    } else {
-      if (item.classList.contains('active')) {
-        item.classList.remove('active');
-      }
-    }
-
-    const sectionBtns = item.querySelectorAll('.section-btn');
-    sectionBtns.forEach((btn) => {
-      const sectionIdx = parseInt(btn.getAttribute('data-section'), 10);
-      const shouldBeActiveSec = shouldBeActiveSong && (sectionIdx === activeSectionIdx);
-      if (shouldBeActiveSec) {
-        if (!btn.classList.contains('active')) {
-          btn.classList.add('active');
-        }
-      } else {
-        if (btn.classList.contains('active')) {
-          btn.classList.remove('active');
-        }
-      }
-    });
-  });
+  activeClassController.update(activeSongIdx, activeSectionIdx);
 }
 
 function jumpTargetElement(target) {
@@ -1350,20 +1362,34 @@ function exportCsv() {
 // header on the server side triggers a browser download).
 function handleCsvReady(url, count, fileName) {
   if (!url) return;
-  const a = document.createElement('a');
-  a.href = url;
-  if (fileName) a.download = fileName;
-  a.rel = 'noopener';
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  showToast(t('feedback.csv', { count, fileName }), 'success');
-  const btn = document.getElementById('btnExportCsv');
-  if (btn) {
-    btn.disabled = false;
-    btn.style.opacity = '1';
-  }
+  fetch(url)
+    .then((res) => {
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      return res.blob();
+    })
+    .then((blob) => {
+      const blobUrl = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = blobUrl;
+      a.download = fileName || 'tracklist.csv';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
+      showToast(t('feedback.csv', { count, fileName }), 'success');
+    })
+    .catch(() => {
+      window.location.href = url;
+    })
+    .finally(() => {
+      const btn = document.getElementById('btnExportCsv');
+      if (btn) {
+        btn.disabled = false;
+        btn.style.opacity = '1';
+      }
+    });
 }
+
 
 function toggleMetronome() {
   if (isLocked) {
@@ -1463,6 +1489,11 @@ let lyricsEditLastLoadedSong = '';
 let lyricsEditActiveTab = 'create';
 let lyricsSelectedSong = '';
 const lyricsCreateDrafts = new Map();
+const lyricsEditRevisionGuard = controllerRuntime.createEditRevisionGuard();
+const lyricsSaveTracker = controllerRuntime.createPendingCommandTracker({
+  timeoutMs: 8_000,
+  onSettled: handleLyricsSaveSettled,
+});
 const TAB_BUTTONS = {
   create: document.getElementById('lyricsTabCreate'),
   sync: document.getElementById('lyricsTabSync'),
@@ -1511,7 +1542,73 @@ function markLyricsDirty(dirty) {
     lyricsDirtyBadge.style.display = dirty ? 'inline-block' : 'none';
   }
   if (btnSaveEditedLyrics) {
-    btnSaveEditedLyrics.disabled = !dirty;
+    btnSaveEditedLyrics.disabled = !dirty || lyricsSaveTracker.hasKind('edit');
+  }
+}
+
+function markLyricsChanged() {
+  lyricsEditRevisionGuard.changed();
+  markLyricsDirty(true);
+}
+
+function lyricsSaveCommandId(kind) {
+  return `lyrics-${kind}-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+}
+
+function canPersistLyrics() {
+  return Boolean(
+    isController
+    && isSynchronized
+    && ws
+    && ws.readyState === WebSocket.OPEN
+  );
+}
+
+function beginLyricsSave(kind, message, metadata) {
+  if (!canPersistLyrics()) {
+    showToast(t(isController ? 'lyrics.notConnected' : 'lyrics.readOnlySave'), 'error');
+    return false;
+  }
+  const commandId = lyricsSaveCommandId(kind);
+  if (!lyricsSaveTracker.begin({ commandId, kind, metadata })) {
+    showToast(t('lyrics.savePending'), 'warn');
+    return false;
+  }
+
+  if (kind === 'edit') markLyricsDirty(lyricsEditDirty);
+  if (kind === 'sync') btnSaveSyncLyrics.disabled = true;
+  try {
+    ws.send(JSON.stringify({ ...message, commandId }));
+    return true;
+  } catch {
+    lyricsSaveTracker.settle({ commandId, status: 'failed' });
+    return false;
+  }
+}
+
+function handleLyricsSaveSettled(entry, status) {
+  const confirmed = status === 'confirmed';
+  if (entry.kind === 'edit') {
+    const matchesSavedRevision = lyricsEditRevisionGuard.matches(entry.metadata?.editState);
+    if (confirmed && matchesSavedRevision) {
+      lyricsEditDirty = false;
+      appendLog(t('lyrics.saved', entry.metadata), 'info');
+    } else if (!confirmed) {
+      if (matchesSavedRevision) lyricsEditDirty = true;
+      showToast(t('lyrics.saveFailed'), 'error');
+      appendLog(t('lyrics.saveFailed'), 'error');
+    }
+    markLyricsDirty(lyricsEditDirty);
+    return;
+  }
+
+  btnSaveSyncLyrics.disabled = lyricsSyncActiveIndex < lyricsLinesToSync.length;
+  if (confirmed) {
+    appendLog(t('lyrics.syncSaved', entry.metadata), 'info');
+    closeManagedModal(lyricsModal);
+  } else {
+    showToast(t('lyrics.saveFailed'), 'error');
+    appendLog(t('lyrics.saveFailed'), 'error');
   }
 }
 
@@ -1528,6 +1625,7 @@ function refreshLyricsEditor() {
 
 function loadLyricsEditFromServer(song) {
   lyricsSelectedSong = song || '';
+  lyricsEditRevisionGuard.selectSong(lyricsSelectedSong);
   lyricsSyncSongTitle.textContent = lyricsSelectedSong || '—';
   lyricsEditSongTitle.textContent = lyricsSelectedSong || '—';
   const draft = lyricsCreateDrafts.get(lyricsSelectedSong);
@@ -1631,7 +1729,7 @@ function beginInlineLyricEdit(idx, el) {
   const commit = () => {
     const newText = input.value;
     lyricsEditLines[idx] = { ...original, text: newText };
-    markLyricsDirty(true);
+    markLyricsChanged();
     renderLyricsEditList();
   };
   const cancel = () => {
@@ -1670,7 +1768,7 @@ function beginInlineLyricTsEdit(idx, el) {
       }
     }
     lyricsEditLines[idx] = { ...original, timestamp: val };
-    markLyricsDirty(true);
+    markLyricsChanged();
     renderLyricsEditList();
   };
   const cancel = () => {
@@ -1685,7 +1783,7 @@ function beginInlineLyricTsEdit(idx, el) {
 
 function addLyricLine() {
   lyricsEditLines.push({ timestamp: NO_TIMESTAMP, text: '' });
-  markLyricsDirty(true);
+  markLyricsChanged();
   renderLyricsEditList();
   // Scroll to bottom and start editing the new line
   setTimeout(() => {
@@ -1699,35 +1797,30 @@ function addLyricLine() {
 function removeLyricLine(idx) {
   if (idx < 0 || idx >= lyricsEditLines.length) return;
   lyricsEditLines.splice(idx, 1);
-  markLyricsDirty(true);
+  markLyricsChanged();
   renderLyricsEditList();
 }
 
 function saveLyricsEdit() {
   if (!lyricsEditDirty) return;
   const song = lyricsSongSelect.value;
-  // Build LRC body: only timestamped lines; editor allows no-ts lines but
-  // we still emit them with [00:00.00] (silent lines) so the LRC remains
-  // complete. Actually NO — we skip no-ts lines, since the lyrics-parser
-  // expects well-formed timestamps. The HUD already filters them out.
+  if (lyricsEditLines.some((line) => line.timestamp === NO_TIMESTAMP)) {
+    showToast(t('lyrics.missingTimecodes'), 'error');
+    return;
+  }
   const lrcBody = lyricsEditLines
-    .filter((l) => l.timestamp && l.timestamp !== NO_TIMESTAMP)
     .map((l) => `${l.timestamp} ${l.text}`)
     .join('\n');
-  if (ws && ws.readyState === WebSocket.OPEN) {
-    ws.send(JSON.stringify({
+  const count = lyricsEditLines.length;
+  beginLyricsSave(
+    'edit',
+    {
       type: 'save_lyrics',
       song,
       text: lrcBody,
-    }));
-    appendLog(t('lyrics.saved', {
-      song,
-      count: lyricsEditLines.filter(l => l.timestamp !== NO_TIMESTAMP).length,
-    }), 'info');
-    markLyricsDirty(false);
-  } else {
-    showToast(t('lyrics.notConnected'), 'error');
-  }
+    },
+    { song, count, editState: lyricsEditRevisionGuard.snapshot() },
+  );
 }
 
 function onLyricsSongChange() {
@@ -1818,6 +1911,10 @@ function startLyricsSyncWorkflow() {
 }
 
 function resetLyricsSyncWorkflow() {
+  if (lyricsSaveTracker.hasKind('sync')) {
+    showToast(t('lyrics.savePending'), 'warn');
+    return;
+  }
   isLyricsSyncing = false;
   lyricsLinesToSync = [];
   lyricsSyncedLines = [];
@@ -1887,16 +1984,15 @@ function saveSyncLyrics() {
   const selectedSong = lyricsSongSelect.value;
   const fileContent = lyricsSyncedLines.map(l => `${l.timestamp} ${l.text}`).join('\n');
 
-  if (ws && ws.readyState === WebSocket.OPEN) {
-    ws.send(JSON.stringify({
+  beginLyricsSave(
+    'sync',
+    {
       type: 'save_lyrics',
       song: selectedSong,
       text: fileContent
-    }));
-  }
-
-  appendLog(t('lyrics.syncSaved', { song: selectedSong }), 'info');
-  toggleLyricsModal();
+    },
+    { song: selectedSong },
+  );
 }
 
 // Bind spacebar key for tapping
@@ -1923,8 +2019,11 @@ i18n.subscribe(() => {
   updateLockVisuals();
   renderMidiMappings();
   renderProfileState();
-  lastRenderedSongsJson = '';
-  if (lastState) renderSongList(lastState);
+  if (lastState) {
+    lastRenderedSongsJson = '';
+    lastRenderedSetlistVersion = null;
+    renderSongList(lastState);
+  }
   renderActiveLyric();
   if (isLyricsSyncing) updateLyricsSyncUI();
   if (document.getElementById('networkErrorOverlay').classList.contains('visible')) {

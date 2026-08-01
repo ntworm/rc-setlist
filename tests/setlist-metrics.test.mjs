@@ -38,3 +38,34 @@ test('metrics reject non-positive spans and invalid fallback tempo', () => {
   assert.equal(calculateSongDurationSec(first, [first, second], 0, 40), null);
   assert.equal(calculateSongDurationSec(second, [first, second], 120, 20), null);
 });
+
+test('setlist metrics sort once regardless of song count', () => {
+  const songs = Array.from({ length: 100 }, (_, index) => ({
+    title: `Song ${index}`,
+    time: (99 - index) * 32,
+    bpm: 120,
+  }));
+  const originalSort = Array.prototype.sort;
+  let sortCalls = 0;
+  Array.prototype.sort = function countedSort(...args) {
+    sortCalls++;
+    return originalSort.apply(this, args);
+  };
+  try {
+    calculateSetlistMetrics(songs, 3_200, 120);
+  } finally {
+    Array.prototype.sort = originalSort;
+  }
+  assert.equal(sortCalls, 1);
+});
+
+test('metrics keep distinct identities for songs that start on the same beat', () => {
+  const first = { title: 'First', time: 0, bpm: 120 };
+  const second = { title: 'Second', time: 0, bpm: 120 };
+  const third = { title: 'Third', time: 120, bpm: 120 };
+  const result = calculateSetlistMetrics([first, second, third], 240, 120);
+
+  assert.equal(result.songDurationSecondsBySong.get(first), null);
+  assert.equal(result.songDurationSecondsBySong.get(second), 60);
+  assert.equal(result.songDurationSecondsBySong.get(third), 60);
+});

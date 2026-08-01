@@ -8,6 +8,7 @@ import { WebSocket } from 'ws';
 import { setExtensionContext, clearExtensionContext } from '../src/context.ts';
 import { startServer, stopServer, getAuthToken, isServerRunning } from '../src/index.ts';
 import { bridgeState } from '../src/core/bridge-state.ts';
+import { executeCommandAction } from '../src/commands/handlers.ts';
 
 function getFreePort() {
   return new Promise((resolve, reject) => {
@@ -53,6 +54,7 @@ test('WebSocket profile and reliability core protocol', async () => {
       skipProjectDetector: true
     });
     assert.strictEqual(isServerRunning(), true);
+    assert.strictEqual(bridgeState.mcpClient, null, 'isolated test mode must not connect to the live MCP bridge');
 
     const token = getAuthToken();
 
@@ -105,6 +107,79 @@ test('WebSocket profile and reliability core protocol', async () => {
     ws.send(JSON.stringify({ type: 'set_panic', active: true, commandId }));
 
     await new Promise((resolve) => setTimeout(resolve, 100));
+
+    // Invalid or failed reorder persistence must not mutate or publish the active order.
+    bridgeState.manager.updateCues([
+      { name: 'Song A', time: 0 },
+      { name: 'Song B', time: 32 },
+    ]);
+    const stateMessages = [];
+    const captureStateMessages = (data) => {
+      const message = JSON.parse(data.toString());
+      if (message.type === 'state') stateMessages.push(message);
+    };
+    ws.on('message', captureStateMessages);
+
+    const invalidReorderStatus = waitForMessage(
+      ws,
+      (msg) => msg.type === 'command_status' && msg.commandId === 'invalid-reorder'
+    );
+    ws.send(JSON.stringify({
+      type: 'reorder',
+      songTitles: ['Song A'],
+      commandId: 'invalid-reorder',
+    }));
+    assert.deepEqual(await invalidReorderStatus, {
+      type: 'command_status',
+      commandId: 'invalid-reorder',
+      status: 'failed',
+      reason: 'execution_failed',
+    });
+    assert.deepEqual(bridgeState.manager.getState().songs.map(({ title }) => title), ['Song A', 'Song B']);
+    assert.equal(stateMessages.length, 0);
+
+    const orderPath = bridgeState.profileManager.getActivePaths().customOrder;
+    fs.mkdirSync(orderPath, { recursive: true });
+    const failedReorderStatus = waitForMessage(
+      ws,
+      (msg) => msg.type === 'command_status' && msg.commandId === 'failed-reorder'
+    );
+    ws.send(JSON.stringify({
+      type: 'reorder',
+      songTitles: ['Song B', 'Song A'],
+      commandId: 'failed-reorder',
+    }));
+    assert.deepEqual(await failedReorderStatus, {
+      type: 'command_status',
+      commandId: 'failed-reorder',
+      status: 'failed',
+      reason: 'execution_failed',
+    });
+    assert.deepEqual(bridgeState.manager.getState().songs.map(({ title }) => title), ['Song A', 'Song B']);
+    assert.equal(stateMessages.length, 0);
+    fs.rmSync(orderPath, { recursive: true, force: true });
+
+    // A lyrics command remains pending until persistence settles, then fails safely.
+    const lyricsPath = path.join(bridgeState.profileManager.getActivePaths().lyrics, 'Song A.lrc');
+    fs.mkdirSync(lyricsPath, { recursive: true });
+    const lyricsStatus = waitForMessage(
+      ws,
+      (msg) => msg.type === 'command_status' && msg.commandId === 'failed-lyrics-write'
+    );
+    ws.send(JSON.stringify({
+      type: 'save_lyrics',
+      song: 'Song A',
+      text: '[00:00.00]must not be confirmed',
+      commandId: 'failed-lyrics-write',
+    }));
+    assert.deepEqual(await lyricsStatus, {
+      type: 'command_status',
+      commandId: 'failed-lyrics-write',
+      status: 'failed',
+      reason: 'execution_failed',
+    });
+    fs.rmSync(lyricsPath, { recursive: true, force: true });
+    ws.off('message', captureStateMessages);
 
     // 4. Mutation tests: Profiles API over WS
     // Fetch profiles state
@@ -300,5 +375,184 @@ test('WebSocket profile and reliability core protocol', async () => {
     try {
       fs.rmSync(testStorageDir, { recursive: true, force: true });
     } catch {}
+  }
+});
+
+function command(type, payload, commandId) {
+  return {
+    commandId,
+    type,
+    payload,
+    sourceClientId: 'scope-race-test',
+    createdAt: Date.now(),
+    status: 'created',
+    retryCount: 0,
+    maxRetries: 0,
+    timeoutMs: 5_000,
+  };
+}
+
+function deferredPersistence() {
+  let release;
+  let startedResolve;
+  const started = new Promise((resolve) => { startedResolve = resolve; });
+  const blocked = new Promise((resolve) => { release = resolve; });
+  return {
+    started,
+    release,
+    dependencies: {
+      writeFile: async (file) => {
+        startedResolve(file);
+        await blocked;
+      },
+    },
+  };
+}
+
+async function waitForPersistenceStart(started) {
+  return Promise.race([
+    started,
+    new Promise((_, reject) => setTimeout(
+      () => reject(new Error('command did not use the delayed persistence dependency')),
+      500,
+    )),
+  ]);
+}
+
+test('persisted commands reject stale completion after an active profile scope change', async () => {
+  const testStorageDir = path.join(tmpdir(), `setlist-scope-race-${Math.random().toString(36).slice(2)}`);
+  fs.mkdirSync(testStorageDir, { recursive: true });
+  setExtensionContext({ environment: { storageDirectory: testStorageDir } });
+  const port = await getFreePort();
+  let realWsServer;
+
+  try {
+    await startServer({ port, skipOsc: true, skipCerts: true, skipProjectDetector: true });
+    const profileManager = bridgeState.profileManager;
+    const manager = bridgeState.manager;
+    const originalProfileId = profileManager.getActive().id;
+    const originalPaths = profileManager.getActivePaths();
+    const otherProfile = await profileManager.create('Concurrent Scope');
+    manager.updateCues([
+      { name: 'Song A', time: 0 },
+      { name: 'Song B', time: 32 },
+    ]);
+
+    const events = [];
+    realWsServer = bridgeState.wsServer;
+    bridgeState.wsServer = {
+      broadcastState: (state) => events.push({ type: 'state', state }),
+      broadcast: (message) => events.push(message),
+      broadcastLog: (message, level) => events.push({ type: 'log', message, level }),
+    };
+
+    const reorderPersistence = deferredPersistence();
+    const reorderPromise = executeCommandAction(
+      command('reorder', { songTitles: ['Song B', 'Song A'] }, 'stale-reorder'),
+      undefined,
+      reorderPersistence.dependencies,
+    );
+    assert.equal(await waitForPersistenceStart(reorderPersistence.started), originalPaths.customOrder);
+    await profileManager.select(otherProfile.id);
+    reorderPersistence.release();
+    await assert.rejects(reorderPromise, /profile scope changed/i);
+    assert.deepEqual(manager.getState().songs.map(({ title }) => title), ['Song A', 'Song B']);
+    assert.deepEqual(manager.getCustomOrder(), []);
+    assert.equal(events.some(({ type }) => type === 'state'), false);
+    assert.equal(events.some(({ message }) => /saved/i.test(message ?? '')), false);
+
+    await profileManager.select(originalProfileId);
+    events.length = 0;
+    const previewPersistence = deferredPersistence();
+    const sent = [];
+    const client = { readyState: WebSocket.OPEN, send: (value) => sent.push(JSON.parse(value)) };
+    const previewPromise = executeCommandAction(
+      command('click_preview', { bpm: 120, beats: 1 }, 'stale-preview'),
+      client,
+      previewPersistence.dependencies,
+    );
+    assert.ok((await waitForPersistenceStart(previewPersistence.started)).startsWith(originalPaths.audio));
+    await profileManager.select(otherProfile.id);
+    previewPersistence.release();
+    await assert.rejects(previewPromise, /profile scope changed/i);
+    assert.deepEqual(sent, []);
+    assert.equal(events.some(({ message }) => /wrote preview|preview ready/i.test(message ?? '')), false);
+
+    await profileManager.select(originalProfileId);
+  } finally {
+    if (realWsServer) bridgeState.wsServer = realWsServer;
+    await stopServer();
+    clearExtensionContext();
+    fs.rmSync(testStorageDir, { recursive: true, force: true });
+  }
+});
+
+test('tracklist CSV exports active setlist, sections, automations and lyrics without placeholders', async () => {
+  const testStorageDir = path.join(tmpdir(), `setlist-csv-details-${Math.random().toString(36).slice(2)}`);
+  fs.mkdirSync(testStorageDir, { recursive: true });
+  setExtensionContext({ environment: { storageDirectory: testStorageDir } });
+  const port = await getFreePort();
+
+  try {
+    await startServer({ port, skipOsc: true, skipCerts: true, skipProjectDetector: true });
+    const profileManager = bridgeState.profileManager;
+    const manager = bridgeState.manager;
+    const active = profileManager.getActive();
+    await profileManager.rename(active.id, 'Tour Set');
+
+    manager.updateCues([
+      { name: 'EM SEU COLO [bpm 111.11] [click]', time: 0 },
+      { name: '> Intro [loop 2x]', time: 8 },
+      { name: '> [stop]', time: 32 },
+      { name: '> Finale [next] [click off] [skip]', time: 48 },
+      { name: 'ELA', time: 64 },
+      { name: '> Verse', time: 80 },
+    ]);
+
+    const lyricsPath = path.join(profileManager.getActivePaths().lyrics, 'EM SEU COLO.lrc');
+    fs.mkdirSync(path.dirname(lyricsPath), { recursive: true });
+    fs.writeFileSync(lyricsPath, '[00:01.00]Line one\n[00:02.00]Line two\n', 'utf8');
+
+    const events = [];
+    const writes = [];
+    const sent = [];
+    await executeCommandAction(
+      command('export_csv', {}, 'csv-details'),
+      {
+        readyState: WebSocket.OPEN,
+        send: (value) => {
+          events.push('send');
+          sent.push(JSON.parse(value));
+        },
+      },
+      {
+        writeFile: async (file, value) => {
+          events.push('write');
+          writes.push({ file, value: String(value) });
+        },
+      },
+    );
+
+    assert.deepEqual(events, ['write', 'send']);
+    assert.equal(writes.length, 1);
+    assert.match(writes[0].file, /tracklist-\d{8}-\d{6}\.csv$/);
+    assert.match(
+      writes[0].value,
+      /^﻿#;setlist;title;start_beat;bpm;duration_sec;duration;sections_count;sections;automations;lyric_lines\r\n/,
+    );
+    assert.match(writes[0].value, /Tour Set;EM SEU COLO;0;111\.11;35;0:35;2;Intro \| Finale;/);
+    assert.match(
+      writes[0].value,
+      /song \[bpm 111\.11\] \[click\] \| Intro \[loop 2x\] \| @32 \[stop\] \| Finale \[next\] \[click off\] \[skip\];2/,
+    );
+    assert.doesNotMatch(writes[0].value, /last_played_at|;plays;/);
+    assert.equal(sent.length, 1);
+    assert.equal(sent[0].type, 'csv_ready');
+    assert.equal(sent[0].count, 2);
+    assert.equal(sent[0].fileName, path.basename(writes[0].file));
+  } finally {
+    await stopServer();
+    clearExtensionContext();
+    fs.rmSync(testStorageDir, { recursive: true, force: true });
   }
 });

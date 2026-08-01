@@ -15,7 +15,7 @@ export default defineConfig({
   webServer: {
     command: 'node tests/ui/mock-stage-server.mjs',
     url: 'http://127.0.0.1:4173/setlist/',
-    reuseExistingServer: false,
+    reuseExistingServer: !process.env.CI,
     timeout: 10_000,
   },
 });

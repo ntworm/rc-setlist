@@ -120,6 +120,53 @@ test('parseLocator: song-level tag [hidden] sets kind to hidden', () => {
   assert.deepStrictEqual(r, { kind: 'hidden', hiddenName: 'Ensaio' });
 });
 
+// --- TASK 2: [ignore] TAG TESTS ---
+
+test('parseLocator: [ignore] alone sets kind to hidden', () => {
+  const r = parseLocator('[ignore]');
+  assert.deepStrictEqual(r, { kind: 'hidden', hiddenName: '' });
+});
+
+test('parseLocator: Technical cue [ignore] sets kind to hidden with hiddenName', () => {
+  const r = parseLocator('Technical cue [ignore]');
+  assert.deepStrictEqual(r, { kind: 'hidden', hiddenName: 'Technical cue' });
+});
+
+test('parseLocator: > Technical cue [ignore] relative section sets kind to hidden', () => {
+  const r = parseLocator('> Technical cue [ignore]');
+  assert.deepStrictEqual(r, { kind: 'hidden', hiddenName: 'Technical cue' });
+});
+
+test('parseLocator: [stop] [ignore] sets kind to hidden and ignores autoStop', () => {
+  const r = parseLocator('[stop] [ignore]');
+  assert.deepStrictEqual(r, { kind: 'hidden', hiddenName: '' });
+});
+
+test('parseLocator: [loop] [ignore] sets kind to hidden and ignores loop', () => {
+  const r = parseLocator('[loop] [ignore]');
+  assert.deepStrictEqual(r, { kind: 'hidden', hiddenName: '' });
+});
+
+test('parseLocator: > Cue [next] [ignore] relative section sets kind to hidden and ignores next', () => {
+  const r = parseLocator('> Cue [next] [ignore]');
+  assert.deepStrictEqual(r, { kind: 'hidden', hiddenName: 'Cue' });
+});
+
+test('parseLocator: compatibility - _pre-roll continues working as hidden', () => {
+  const r = parseLocator('_pre-roll');
+  assert.deepStrictEqual(r, { kind: 'hidden', hiddenName: '_pre-roll' });
+});
+
+test('parseLocator: compatibility - [hidden] tag continues working as hidden', () => {
+  const r = parseLocator('Ensaio [hidden]');
+  assert.deepStrictEqual(r, { kind: 'hidden', hiddenName: 'Ensaio' });
+});
+
+test('parseLocator: [IGNORE] is case-insensitive and works identically to [ignore]', () => {
+  const r = parseLocator('[IGNORE]');
+  assert.deepStrictEqual(r, { kind: 'hidden', hiddenName: '' });
+});
+
 // --- SECTION-LEVEL TAG TESTS ---
 
 test('parseLocator: section with [stop] tag', () => {
@@ -875,4 +922,379 @@ test('SetlistManager: correctly tracks and updates global quantization level', (
   manager.updateQuantization(7); // 1/4 Note
   state = manager.getState();
   assert.strictEqual(state.clipTriggerQuantization, 7);
+});
+
+// --- TASK 1: RELATIVE SECTION SYNTAX TESTS ---
+
+test('Relative syntax: Song A, > Intro, > Verse generates a song with two sections', () => {
+  const parsed = parseSetlist([
+    { name: 'Song A', time: 0 },
+    { name: '> Intro', time: 10 },
+    { name: '> Verse', time: 30 },
+  ]);
+
+  assert.strictEqual(parsed.songs.length, 1);
+  assert.strictEqual(parsed.songs[0].title, 'Song A');
+  assert.deepStrictEqual(
+    parsed.songs[0].sections.map(s => ({ name: s.name, time: s.time })),
+    [
+      { name: 'Intro', time: 10 },
+      { name: 'Verse', time: 30 },
+    ]
+  );
+});
+
+test('Relative syntax: > Chorus [loop 4x] preserves section name and loop', () => {
+  const parsed = parseSetlist([
+    { name: 'Song A', time: 0 },
+    { name: '> Chorus [loop 4x]', time: 20 },
+  ]);
+
+  assert.strictEqual(parsed.songs.length, 1);
+  assert.strictEqual(parsed.songs[0].sections.length, 1);
+  assert.strictEqual(parsed.songs[0].sections[0].name, 'Chorus');
+  assert.strictEqual(parsed.songs[0].sections[0].loopCount, 4);
+});
+
+test('Relative syntax: [stop] after a relative section remains on the current song', () => {
+  const parsed = parseSetlist([
+    { name: 'Song A', time: 0 },
+    { name: '> Verse', time: 10 },
+    { name: '[stop]', time: 40 },
+  ]);
+
+  assert.strictEqual(parsed.songs.length, 1);
+  assert.strictEqual(parsed.songs[0].title, 'Song A');
+  assert.strictEqual(parsed.songs[0].sections.length, 2);
+  assert.strictEqual(parsed.songs[0].sections[0].name, 'Verse');
+  assert.strictEqual(parsed.songs[0].sections[1].autoStop, true);
+  assert.strictEqual(parsed.songs[0].sections[1].automationOnly, true);
+});
+
+test('Relative syntax: > Intro before the first song does not create an empty song (goes to hidden)', () => {
+  const parsed = parseSetlist([
+    { name: '> Intro', time: 0 },
+    { name: 'Song A', time: 10 },
+  ]);
+
+  assert.strictEqual(parsed.songs.length, 1);
+  assert.strictEqual(parsed.songs[0].title, 'Song A');
+  assert.strictEqual(parsed.hidden.length, 1);
+  assert.strictEqual(parsed.hidden[0].name, '> Intro');
+  assert.strictEqual(parsed.hidden[0].time, 0);
+});
+
+test('Relative syntax: Song A > Intro legacy syntax continues working', () => {
+  const parsed = parseSetlist([
+    { name: 'Song A > Intro', time: 0 },
+    { name: 'Song A > Verse', time: 20 },
+  ]);
+
+  assert.strictEqual(parsed.songs.length, 1);
+  assert.strictEqual(parsed.songs[0].title, 'Song A');
+  assert.deepStrictEqual(
+    parsed.songs[0].sections.map(s => ({ name: s.name, time: s.time })),
+    [
+      { name: 'Intro', time: 0 },
+      { name: 'Verse', time: 20 },
+    ]
+  );
+});
+
+test('Relative syntax: Plain text after Song A continues starting another song', () => {
+  const parsed = parseSetlist([
+    { name: 'Song A', time: 0 },
+    { name: '> Intro', time: 10 },
+    { name: 'Song B', time: 50 },
+    { name: '> Chorus', time: 60 },
+  ]);
+
+  assert.strictEqual(parsed.songs.length, 2);
+  assert.strictEqual(parsed.songs[0].title, 'Song A');
+  assert.strictEqual(parsed.songs[0].sections.length, 1);
+  assert.strictEqual(parsed.songs[0].sections[0].name, 'Intro');
+  assert.strictEqual(parsed.songs[1].title, 'Song B');
+  assert.strictEqual(parsed.songs[1].sections.length, 1);
+  assert.strictEqual(parsed.songs[1].sections[0].name, 'Chorus');
+});
+
+test('Relative syntax: Cues provided out of order are sorted by time', () => {
+  const parsed = parseSetlist([
+    { name: '> Verse', time: 20 },
+    { name: 'Song A', time: 0 },
+    { name: '> Intro', time: 10 },
+  ]);
+
+  assert.strictEqual(parsed.songs.length, 1);
+  assert.strictEqual(parsed.songs[0].title, 'Song A');
+  assert.deepStrictEqual(
+    parsed.songs[0].sections.map(s => ({ name: s.name, time: s.time })),
+    [
+      { name: 'Intro', time: 10 },
+      { name: 'Verse', time: 20 },
+    ]
+  );
+});
+
+test('Relative syntax: Relative sections inserted later appear in chronological position', () => {
+  const manager = new SetlistManager();
+  manager.updateCues([
+    { name: 'Song A', time: 0 },
+    { name: '> Verse', time: 30 },
+  ]);
+
+  let state = manager.getState();
+  assert.strictEqual(state.songs[0].sections.length, 1);
+
+  // Insert > Intro at time 15 later
+  manager.updateCues([
+    { name: 'Song A', time: 0 },
+    { name: '> Intro', time: 15 },
+    { name: '> Verse', time: 30 },
+  ]);
+
+  state = manager.getState();
+  assert.deepStrictEqual(
+    state.songs[0].sections.map(s => ({ name: s.name, time: s.time })),
+    [
+      { name: 'Intro', time: 15 },
+      { name: 'Verse', time: 30 },
+    ]
+  );
+});
+
+test('Relative syntax: Duplicate songs preserve chronological identity', () => {
+  const parsed = parseSetlist([
+    { name: 'Song A', time: 0 },
+    { name: '> Intro', time: 10 },
+    { name: 'Song A', time: 100 },
+    { name: '> Chorus', time: 110 },
+  ]);
+
+  assert.strictEqual(parsed.songs.length, 2);
+  assert.strictEqual(parsed.songs[0].title, 'Song A');
+  assert.strictEqual(parsed.songs[0].time, 0);
+  assert.strictEqual(parsed.songs[0].sections[0].name, 'Intro');
+  assert.strictEqual(parsed.songs[1].title, 'Song A');
+  assert.strictEqual(parsed.songs[1].time, 100);
+  assert.strictEqual(parsed.songs[1].sections[0].name, 'Chorus');
+});
+
+test('Relative syntax: Duration metrics continue using Arrangement limits', () => {
+  const manager = new SetlistManager();
+  manager.updateCues([
+    { name: 'Song A [bpm 120]', time: 0 },
+    { name: '> Verse', time: 30 },
+    { name: 'Song B [bpm 60]', time: 120 },
+    { name: '> Chorus', time: 150 },
+  ]);
+  manager.updateArrangementEndTime(240);
+
+  const state = manager.getState();
+  assert.strictEqual(state.songs.length, 2);
+  assert.strictEqual(state.songs[0].durationSeconds, 60);
+  assert.strictEqual(state.songs[1].durationSeconds, 120);
+  assert.strictEqual(state.totalDurationSeconds, 180);
+  assert.strictEqual(state.arrangementEndTime, 240);
+});
+
+test('Relative syntax: Custom display order does not alter chronological parsing', () => {
+  const manager = new SetlistManager();
+  manager.updateCues([
+    { name: 'Song A', time: 0 },
+    { name: '> Intro', time: 10 },
+    { name: 'Song B', time: 100 },
+    { name: '> Verse', time: 110 },
+  ]);
+
+  manager.setCustomOrder(['Song B', 'Song A']);
+  const state = manager.getState();
+
+  assert.strictEqual(state.songs[0].title, 'Song B');
+  assert.strictEqual(state.songs[0].sections[0].name, 'Verse');
+  assert.strictEqual(state.songs[1].title, 'Song A');
+  assert.strictEqual(state.songs[1].sections[0].name, 'Intro');
+});
+
+test('SetlistManager caches derived songs and invalidates only duration/list inputs', () => {
+  const manager = new SetlistManager();
+  manager.updateCues([
+    { name: 'Song A', time: 0 },
+    { name: 'Song B', time: 120 },
+  ]);
+  manager.updateArrangementEndTime(240);
+
+  const initialState = manager.getState();
+  const initialSongs = initialState.songs;
+  assert.strictEqual(manager.getState().songs, initialSongs);
+  assert.equal(manager.getState().setlistVersion, initialState.setlistVersion);
+
+  manager.updateTransport(32, true, 120);
+  assert.strictEqual(manager.getState().songs, initialSongs);
+  assert.equal(manager.getState().setlistVersion, initialState.setlistVersion);
+
+  manager.updateTransport(33, true, 90);
+  const tempoState = manager.getState();
+  assert.notStrictEqual(tempoState.songs, initialSongs);
+  assert.ok(tempoState.setlistVersion > initialState.setlistVersion);
+  assert.strictEqual(manager.getState().songs, tempoState.songs);
+
+  manager.updateArrangementEndTime(300);
+  const endState = manager.getState();
+  assert.notStrictEqual(endState.songs, tempoState.songs);
+  assert.ok(endState.setlistVersion > tempoState.setlistVersion);
+
+  manager.setCustomOrder(['Song B', 'Song A']);
+  const orderState = manager.getState();
+  assert.notStrictEqual(orderState.songs, endState.songs);
+  assert.deepEqual(orderState.songs.map(({ title }) => title), ['Song B', 'Song A']);
+
+  manager.updateCues([
+    { name: 'Song A', time: 0 },
+    { name: 'Song B', time: 120 },
+    { name: 'Song C', time: 240 },
+  ]);
+  assert.notStrictEqual(manager.getState().songs, orderState.songs);
+});
+
+test('SetlistManager resolves active identity chronologically under custom display order', () => {
+  const manager = new SetlistManager();
+  manager.updateCues([
+    { name: 'Song A', time: 0 },
+    { name: 'Song B', time: 100 },
+    { name: 'Song C', time: 200 },
+  ]);
+  manager.setCustomOrder(['Song C', 'Song A', 'Song B']);
+  manager.updateTransport(150, true, 120);
+
+  const state = manager.getState();
+  assert.deepEqual(state.songs.map(({ title }) => title), ['Song C', 'Song A', 'Song B']);
+  assert.equal(state.activeSongIndex, 2);
+  assert.equal(state.songs[state.activeSongIndex].title, 'Song B');
+});
+
+test('SetlistManager inserts new songs without repeated linear rank lookup', () => {
+  const manager = new SetlistManager();
+  manager.updateCues([
+    { name: 'Song A', time: 0 },
+    { name: 'Song D', time: 150 },
+  ]);
+  manager.setCustomOrder(['Song D', 'Song A']);
+
+  const originalIndexOf = Array.prototype.indexOf;
+  let indexOfCalls = 0;
+  Array.prototype.indexOf = function countedIndexOf(...args) {
+    indexOfCalls++;
+    return originalIndexOf.apply(this, args);
+  };
+  try {
+    manager.updateCues([
+      { name: 'Prefix', time: -50 },
+      { name: 'Song A', time: 0 },
+      { name: 'Song B', time: 50 },
+      { name: 'Song C', time: 100 },
+      { name: 'Song D', time: 150 },
+    ]);
+  } finally {
+    Array.prototype.indexOf = originalIndexOf;
+  }
+
+  assert.equal(indexOfCalls, 0);
+  assert.deepEqual(
+    manager.getState().songs.map(({ title }) => title),
+    ['Song D', 'Prefix', 'Song A', 'Song B', 'Song C'],
+  );
+});
+
+test('SetlistManager clearing custom order restores chronological display order', () => {
+  const manager = new SetlistManager();
+  manager.updateCues([
+    { name: 'Song A', time: 0 },
+    { name: 'Song B', time: 100 },
+  ]);
+  manager.setCustomOrder(['Song B', 'Song A']);
+  assert.deepEqual(manager.getState().songs.map(({ title }) => title), ['Song B', 'Song A']);
+
+  manager.setCustomOrder([]);
+  assert.deepEqual(manager.getState().songs.map(({ title }) => title), ['Song A', 'Song B']);
+});
+
+test('SetlistManager consumes duplicate saved-order title ranks by chronological occurrence', () => {
+  const manager = new SetlistManager();
+  manager.updateCues([
+    { name: 'Repeated', time: 0 },
+    { name: 'Song B', time: 50 },
+    { name: 'Repeated', time: 100 },
+  ]);
+
+  manager.setCustomOrder(['Repeated', 'Song B', 'Repeated']);
+  assert.deepEqual(
+    manager.getState().songs.map(({ title, time }) => ({ title, time })),
+    [
+      { title: 'Repeated', time: 0 },
+      { title: 'Song B', time: 50 },
+      { title: 'Repeated', time: 100 },
+    ],
+  );
+});
+
+test('Relative syntax: Song A followed by > [stop] creates automation section under Song A', () => {
+  const parsed = parseSetlist([
+    { name: 'Song A', time: 0 },
+    { name: '> [stop]', time: 10 },
+  ]);
+  assert.strictEqual(parsed.songs.length, 1);
+  assert.strictEqual(parsed.songs[0].title, 'Song A');
+  assert.strictEqual(parsed.songs[0].sections.length, 1);
+  assert.strictEqual(parsed.songs[0].sections[0].automationOnly, true);
+  assert.strictEqual(parsed.songs[0].sections[0].autoStop, true);
+});
+
+test('Relative syntax: Song A followed by > [loop 4x] creates loop automation under Song A without empty song', () => {
+  const parsed = parseSetlist([
+    { name: 'Song A', time: 0 },
+    { name: '> [loop 4x]', time: 10 },
+  ]);
+  assert.strictEqual(parsed.songs.length, 1);
+  assert.strictEqual(parsed.songs[0].title, 'Song A');
+  assert.strictEqual(parsed.songs[0].sections.length, 1);
+  assert.strictEqual(parsed.songs[0].sections[0].automationOnly, true);
+  assert.strictEqual(parsed.songs[0].sections[0].loopCount, 4);
+});
+
+test('parseLocator: Song A > Verse [stop] [ignore] is hidden and autoStop is ignored', () => {
+  const r = parseLocator('Song A > Verse [stop] [ignore]');
+  assert.deepStrictEqual(r, { kind: 'hidden', hiddenName: 'Song A > Verse' });
+  const parsed = parseSetlist([
+    { name: 'Song A', time: 0 },
+    { name: 'Song A > Verse [stop] [ignore]', time: 10 },
+  ]);
+  assert.strictEqual(parsed.songs[0].sections.length, 0);
+  assert.strictEqual(parsed.hidden.length, 1);
+});
+
+test('parseLocator: > Cue [next] [ignore] is hidden and autoNext is ignored', () => {
+  const r = parseLocator('> Cue [next] [ignore]');
+  assert.deepStrictEqual(r, { kind: 'hidden', hiddenName: 'Cue' });
+});
+
+test('parseSetlist: Technical cue [ignore] between Song A and > Verse does not erase currentSong', () => {
+  const parsed = parseSetlist([
+    { name: 'Song A', time: 0 },
+    { name: 'Technical cue [ignore]', time: 5 },
+    { name: '> Verse', time: 10 },
+  ]);
+  assert.strictEqual(parsed.songs.length, 1);
+  assert.strictEqual(parsed.songs[0].title, 'Song A');
+  assert.strictEqual(parsed.songs[0].sections.length, 1);
+  assert.strictEqual(parsed.songs[0].sections[0].name, 'Verse');
+  assert.strictEqual(parsed.hidden.length, 1);
+  assert.strictEqual(parsed.hidden[0].name, 'Technical cue');
+});
+
+test('parseLocator: [IGNORE] tag continues working case-insensitively across relative locators and sections', () => {
+  const r1 = parseLocator('> Cue [IGNORE]');
+  assert.deepStrictEqual(r1, { kind: 'hidden', hiddenName: 'Cue' });
+  const r2 = parseLocator('Song B > Verse [IGNORE]');
+  assert.deepStrictEqual(r2, { kind: 'hidden', hiddenName: 'Song B > Verse' });
 });

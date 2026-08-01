@@ -38,6 +38,104 @@ function stopServerAndWS(server, wsServer) {
   });
 }
 
+function nextMessage(ws, predicate) {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error('Timed out waiting for WebSocket message')), 1000);
+    ws.on('message', (data) => {
+      const message = JSON.parse(data.toString());
+      if (!predicate(message)) return;
+      clearTimeout(timer);
+      resolve(message);
+    });
+  });
+}
+
+test('WebSocket Hardening: malformed JSON receives a sanitized structured error', async () => {
+  const { wsServer, server } = createServerAndWS('token123');
+  const port = await startServer(server);
+
+  try {
+    const ws = new WebSocket(`ws://127.0.0.1:${port}/ws`);
+    await new Promise((resolve, reject) => {
+      ws.once('open', resolve);
+      ws.once('error', reject);
+    });
+
+    const errorPromise = nextMessage(ws, (message) => message.code === 'invalid_message');
+    ws.send('{"type":"play",BROKEN');
+
+    assert.deepStrictEqual(await errorPromise, {
+      type: 'error',
+      code: 'invalid_message',
+      message: 'Message must be valid JSON.',
+    });
+    ws.close();
+  } finally {
+    await stopServerAndWS(server, wsServer);
+  }
+});
+
+test('WebSocket Hardening: invalid decoded messages are sanitized and never emitted', async () => {
+  const { wsServer, server } = createServerAndWS('token123');
+  const port = await startServer(server);
+  let emitted = false;
+  wsServer.on('client_message', () => { emitted = true; });
+
+  try {
+    const ws = new WebSocket(`ws://127.0.0.1:${port}/ws`);
+    await new Promise((resolve, reject) => {
+      ws.once('open', resolve);
+      ws.once('error', reject);
+    });
+
+    const errorPromise = nextMessage(ws, (message) => message.code === 'invalid_message');
+    ws.send(JSON.stringify({
+      type: 'destroy_everything',
+      commandId: 'unsafe-command-1',
+      raw: 'do-not-reflect',
+    }));
+
+    assert.deepStrictEqual(await errorPromise, {
+      type: 'error',
+      code: 'invalid_message',
+      message: 'Unsupported message type.',
+      commandId: 'unsafe-command-1',
+    });
+    assert.equal(emitted, false);
+    ws.close();
+  } finally {
+    await stopServerAndWS(server, wsServer);
+  }
+});
+
+test('WebSocket Hardening: emitted commands omit unexpected hostile properties', async () => {
+  const { wsServer, server } = createServerAndWS('token123');
+  const port = await startServer(server);
+
+  try {
+    const ws = new WebSocket(`ws://127.0.0.1:${port}/ws`);
+    await new Promise((resolve, reject) => {
+      ws.once('open', resolve);
+      ws.once('error', reject);
+    });
+
+    const emittedPromise = new Promise((resolve) => wsServer.once('client_message', resolve));
+    ws.send(JSON.stringify({
+      type: 'play',
+      commandId: 'play-canonical-1',
+      raw: 'hostile\nvalue',
+    }));
+
+    assert.deepStrictEqual(await emittedPromise, {
+      type: 'play',
+      commandId: 'play-canonical-1',
+    });
+    ws.close();
+  } finally {
+    await stopServerAndWS(server, wsServer);
+  }
+});
+
 test('WebSocket Hardening: isValidOrigin same-origin helper checks', () => {
   // Same host and port matching
   assert.strictEqual(isValidOrigin('https://192.168.1.42:4444', '192.168.1.42:4444'), true);
@@ -394,6 +492,38 @@ test('WebSocket Hardening: console.log/console.warn sentinel token leakage preve
   } finally {
     console.log = originalLog;
     console.warn = originalWarn;
+    await stopServerAndWS(server, wsServer);
+  }
+});
+
+test('WebSocket backpressure: healthy clients remain connected during ordinary telemetry', async () => {
+  const { wsServer, server } = createServerAndWS('test_token');
+  const port = await startServer(server);
+
+  try {
+    const ws = new WebSocket(`ws://127.0.0.1:${port}/ws`);
+
+    await new Promise((resolve, reject) => {
+      ws.on('open', resolve);
+      ws.on('error', reject);
+    });
+
+    const clientSocket = Array.from(wsServer['clients'])[0];
+    assert.ok(clientSocket, 'Client socket should be registered in wsServer');
+
+    const iterations = 50;
+    for (let i = 0; i < iterations; i++) {
+      wsServer.broadcast({ type: 'telemetry_ping', index: i, payload: 'x'.repeat(1024) });
+    }
+
+    assert.strictEqual(
+      wsServer['clients'].has(clientSocket),
+      true,
+      'A healthy client must not be disconnected below the backpressure thresholds'
+    );
+
+    ws.close();
+  } finally {
     await stopServerAndWS(server, wsServer);
   }
 });

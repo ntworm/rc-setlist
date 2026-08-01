@@ -192,10 +192,10 @@ export class OSCClient extends EventEmitter {
     }
   }
 
-  public send(address: string, args: any[] = []): void {
+  public send(address: string, args: any[] = []): boolean {
     if (typeof address !== 'string' || !address.startsWith('/')) {
       this.emit('error', new Error(`[OSC] send: invalid address ${JSON.stringify(address)}`));
-      return;
+      return false;
     }
     const safeArgs = Array.isArray(args) ? args : [];
     const oscMsg = {
@@ -210,10 +210,10 @@ export class OSCClient extends EventEmitter {
       buffer = Buffer.from(encoded.buffer, encoded.byteOffset, encoded.byteLength);
     } catch (err) {
       this.emit('error', err);
-      return;
+      return false;
     }
     const socket = this.server;
-    if (!socket) return;
+    if (!socket) return false;
     this.txCount++;
     dbg('TX', `#${this.txCount} ${address} args=${JSON.stringify(safeArgs)} → ${this.targetHost}:${this.targetPort} via socket listenPort=${this.listenPort}`);
     socket.send(buffer, this.targetPort, this.targetHost, (err) => {
@@ -222,6 +222,7 @@ export class OSCClient extends EventEmitter {
         this.emit('error', err);
       }
     });
+    return true;
   }
 
   public start(): Promise<void> {
@@ -244,10 +245,16 @@ export class OSCClient extends EventEmitter {
 
       if (g.abletonOSCSocket) {
         this.server = g.abletonOSCSocket;
+        if (!(g.abletonOSCListeners instanceof Set)) {
+          g.abletonOSCListeners = new Set();
+        }
         g.abletonOSCListeners.add(this.onMessageCallback);
         const addr = (g.abletonOSCSocket.address && typeof g.abletonOSCSocket.address === 'function') ? g.abletonOSCSocket.address() : null;
+        if (addr && typeof addr === 'object' && Number.isInteger(addr.port) && addr.port > 0) {
+          this.listenPort = addr.port;
+        }
         dbg('START', `reused shared socket addr=${JSON.stringify(addr)} listenersCount=${g.abletonOSCListeners.size}`);
-        console.log('[OSC] Shared OSC listening socket reused on port 11001');
+        console.log(`[OSC] Shared OSC listening socket reused on port ${this.listenPort || 'unknown'}`);
         resolve();
         return;
       }

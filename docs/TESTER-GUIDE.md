@@ -1,4 +1,4 @@
-# Ableton RC Setlist 0.4.1 tester guide
+# Ableton RC Setlist 0.5.0 tester guide
 
 Use only the release-candidate directory supplied by the maintainer. Start with
 `START-HERE.html` and record every result in its PT-BR checklist.
@@ -16,7 +16,7 @@ Use only the release-candidate directory supplied by the maintainer. Start with
 
 1. Verify the SHA-256 listed in `SHA256SUMS.txt`.
 2. Install AbletonOSC from upstream.
-3. Install `Ableton-RC-Setlist-0.4.1.ablx`.
+3. Install `Ableton-RC-Setlist-0.5.0.ablx`.
 4. Open **Extensions > Ableton RC Setlist** and start the server.
 5. Confirm no private path, SDK archive or real song content appears in the kit.
 6. With a fresh extension-data directory, confirm the first Start creates the
@@ -41,7 +41,9 @@ Use only the release-candidate directory supplied by the maintainer. Start with
 - Confirm performance-view lyric progression.
 - If previous extension data exists, confirm its missing lyrics migrate into the
   default profile and its project-specific lyrics appear as separate profiles.
-- Export CSV and open it in a spreadsheet.
+- Export CSV and open it in a spreadsheet. Confirm it identifies the active
+  setlist and includes named `sections`, `sections_count`, `automations` and
+  `lyric_lines` without placeholder play-history columns.
 - Confirm controller/read-only behavior with and without the token.
 - Confirm empty set, malformed locator and missing AbletonOSC states are explained.
 - Confirm fullscreen and Wake Lock fallback remain usable.

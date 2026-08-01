@@ -1,4 +1,4 @@
-# Release checklist — Ableton RC Setlist 0.4.1
+# Release checklist — Ableton RC Setlist 0.5.0
 
 Use a copy of a Live Set and a **trusted local network / LAN**. Do not perform
 the first test during a real show.
@@ -10,9 +10,9 @@ the first test during a real show.
   `User Remote Scripts` preferences folder, and `AbletonOSC/__init__.py` exists
   directly inside it.
 - [ ] AbletonOSC appears and is selected as a Control Surface.
-- [ ] `Ableton-RC-Setlist-0.4.1.ablx` installs without errors.
+- [ ] `Ableton-RC-Setlist-0.5.0.ablx` installs without errors.
 - [ ] With clean data, the first **Start** creates the default profile and starts the server without a persistence error.
-- [ ] **Extensions > Ableton RC Setlist** opens the correct panel and shows version 0.4.1.
+- [ ] **Extensions > Ableton RC Setlist** opens the correct panel and shows version 0.5.0.
 
 ## Language
 
@@ -55,7 +55,8 @@ TEST 02 > CHORUS
 - [ ] Both **Stage Control** and **Performance Display** open from the Live panel.
 - [ ] Authorized or fictional LRC text follows transport.
 - [ ] Missing legacy lyrics migrate without deleting the old folder or overwriting new lyrics.
-- [ ] CSV opens as UTF-8 and contains only the current set.
+- [ ] CSV opens as UTF-8, identifies the current setlist and includes
+  `sections_count`, named `sections`, locator `automations` and `lyric_lines`.
 
 ## Persistence and failure states
 

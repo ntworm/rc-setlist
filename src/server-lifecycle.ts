@@ -26,7 +26,7 @@ import { OSCClient } from './integration/osc-client.js';
 import { SetlistWSServer } from './server/ws.js';
 import { loadCerts, useHttps, httpsOptions } from './server/cert.js';
 import {
-  handleHttp,
+  createHttpRequestListener,
   setCsvExportResolver,
   setAudioResolver,
   setDebugSnapshotProvider,
@@ -38,6 +38,7 @@ import { syncFromSdkContext } from './sync/sdk-sync.js';
 import { syncFromMcpInfo } from './sync/mcp-sync.js';
 import { registerOscListeners } from './osc/registration.js';
 import { executeCommandAction } from './commands/handlers.js';
+import type { ClientMessage } from './types.js';
 import {
   resolveProjectIdentity,
   projectIdentityFromMetadata,
@@ -47,6 +48,18 @@ import {
 
 const PORT = 4444;
 let projectRefreshPending = false;
+
+export async function closeHttpServer(server: http.Server | https.Server): Promise<void> {
+  const closed = new Promise<void>((resolve) => {
+    server.close(() => resolve());
+  });
+  try {
+    server.closeAllConnections?.();
+  } catch {
+    console.warn('[HTTP] Failed to close all connections.');
+  }
+  await closed;
+}
 
 function newProjectSessionId(): string {
   return randomBytes(16).toString('hex');
@@ -98,8 +111,8 @@ async function refreshProjectScope(options: StartServerOptions): Promise<void> {
       console.log(`[Persistence] Live Set scope changed to: ${identity.displayName}`);
       await activateProjectProfileScope(identity);
     }
-  } catch (error) {
-    console.error(`[Persistence] Failed to switch Live Set scope: ${error instanceof Error ? error.message : String(error)}`);
+  } catch {
+    console.error('[Persistence] Failed to switch Live Set scope.');
   } finally {
     bridgeState.profileScopeSwitching = false;
     broadcastProfileState();
@@ -190,7 +203,7 @@ export async function startServer(options: StartServerOptions = {}): Promise<voi
     const context = getExtensionContext();
     if (context && context.environment.storageDirectory) {
       bridgeState.globalPersistenceDir = context.environment.storageDirectory;
-      console.log(`[Persistence] Storage directory resolved to: ${bridgeState.globalPersistenceDir}`);
+      console.log('[Persistence] Storage directory available.');
     } else {
       bridgeState.globalPersistenceDir = typeof __dirname !== 'undefined' ? path.join(__dirname, '../.setlist') : './.setlist';
     }
@@ -203,18 +216,19 @@ export async function startServer(options: StartServerOptions = {}): Promise<voi
       currentSongHandleId(context),
       fallbackSessionId,
     );
-    bridgeState.mcpClient = new McpTcpClient();
+    bridgeState.mcpClient = options.skipProjectDetector ? null : new McpTcpClient();
     const projectIdentity = await resolveActiveProjectIdentity(options);
     await activateProjectProfileScope(projectIdentity);
 
     bridgeState.eventLogger = new EventLogger(bridgeState.globalPersistenceDir);
-    bridgeState.commandBus = new CommandBus(bridgeState.manager, bridgeState.oscClient, bridgeState.eventLogger);
+    bridgeState.commandBus = new CommandBus(bridgeState.manager, bridgeState.eventLogger);
 
     bridgeState.commandBus.on('command_settled', (cmd) => {
       bridgeState.wsServer?.broadcast({
         type: 'command_status',
         commandId: cmd.commandId,
         status: cmd.status,
+        ...(cmd.reason ? { reason: cmd.reason } : {}),
       });
     });
 
@@ -230,10 +244,10 @@ export async function startServer(options: StartServerOptions = {}): Promise<voi
         const raw = fs.readFileSync(orderFilePath, 'utf-8');
         const order = JSON.parse(raw) as string[];
         bridgeState.manager.setCustomOrder(order);
-        console.log(`[Persistence] Custom song order loaded from ${orderFilePath}`);
+        console.log('[Persistence] Custom song order loaded.');
       }
-    } catch (err) {
-      console.error(`[Persistence] Failed to load custom order: ${err}`);
+    } catch {
+      console.error('[Persistence] Failed to load custom song order.');
     }
 
     setCsvExportResolver(async (rawName: string) => {
@@ -319,8 +333,8 @@ export async function startServer(options: StartServerOptions = {}): Promise<voi
     }
 
     const srv = (useHttps && httpsOptions && !options.skipCerts)
-      ? https.createServer(httpsOptions, handleHttp)
-      : http.createServer(handleHttp);
+      ? https.createServer(httpsOptions, createHttpRequestListener())
+      : http.createServer(createHttpRequestListener());
     bridgeState.server = srv;
 
     srv.on('upgrade', (req, socket, head) => {
@@ -348,7 +362,7 @@ export async function startServer(options: StartServerOptions = {}): Promise<voi
       srv.listen(listenPort);
     });
 
-    bridgeState.wsServer.on('client_message', async (msg, ws) => {
+    bridgeState.wsServer.on('client_message', async (msg: ClientMessage, ws) => {
       if (!bridgeState.manager) return;
 
       const isController = ws.isController === true;
@@ -507,7 +521,7 @@ export async function startServer(options: StartServerOptions = {}): Promise<voi
 
     bridgeState.serverRunning = true;
   } catch (err) {
-    console.error(`[rc-setlist] startServer failed, cleaning up: ${err}`);
+    console.error('[rc-setlist] server startup failed; cleaning up.');
     await stopServer();
     throw err;
   }
@@ -553,24 +567,24 @@ export async function stopServer(): Promise<void> {
   }
 
   if (bridgeState.server) {
-    try {
-      if (typeof (bridgeState.server as any).closeAllConnections === 'function') {
-        (bridgeState.server as any).closeAllConnections();
-      }
-    } catch (err) {
-      console.warn('[HTTP] Failed to close all connections:', err);
-    }
-    await new Promise<void>((resolve) => {
-      bridgeState.server!.close(() => resolve());
-    });
+    const server = bridgeState.server;
     bridgeState.server = null;
+    await closeHttpServer(server);
   }
 
   if (bridgeState.commandBus) {
     bridgeState.commandBus.stop();
     bridgeState.commandBus = null;
   }
-  bridgeState.eventLogger = null;
+  if (bridgeState.eventLogger) {
+    const eventLogger = bridgeState.eventLogger;
+    bridgeState.eventLogger = null;
+    try {
+      await eventLogger.flush();
+    } catch {
+      console.error('[EventLogger] Failed to flush during shutdown.');
+    }
+  }
 
   bridgeState.manager = null;
   bridgeState.scheduler = null;

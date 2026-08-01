@@ -31,7 +31,7 @@ at that location, without another nested `AbletonOSC` folder.
 
 ## 2. Install Ableton RC Setlist
 
-1. Download `Ableton-RC-Setlist-0.4.1.ablx` from the
+1. Download `Ableton-RC-Setlist-0.5.0.ablx` from the
    [latest GitHub release](https://github.com/ntworm/rc-setlist/releases/latest).
 2. Open the `.ablx` and follow the Ableton Live installation prompt.
 3. Restart Live if the extension does not appear immediately.

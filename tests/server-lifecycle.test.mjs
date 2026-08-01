@@ -7,6 +7,7 @@ import { tmpdir } from 'node:os';
 import { setExtensionContext, clearExtensionContext } from '../src/context.ts';
 import { startServer, stopServer, isServerRunning } from '../src/index.ts';
 import { bridgeState } from '../src/core/bridge-state.ts';
+import { closeHttpServer } from '../src/server-lifecycle.ts';
 
 // Helper to find a free port
 function getFreePort() {
@@ -19,6 +20,34 @@ function getFreePort() {
     s.on('error', reject);
   });
 }
+
+test('Server Lifecycle: starts graceful close before forcing lingering connections closed', async () => {
+  const calls = [];
+  const server = {
+    close(callback) {
+      calls.push('close');
+      callback();
+    },
+    closeAllConnections() {
+      calls.push('closeAllConnections');
+    },
+  };
+
+  await closeHttpServer(server);
+  assert.deepStrictEqual(calls, ['close', 'closeAllConnections']);
+});
+
+test('Server Lifecycle: drains the event log after stopping command intake', async () => {
+  const calls = [];
+  bridgeState.commandBus = { stop() { calls.push('commandBus.stop'); } };
+  bridgeState.eventLogger = { async flush() { calls.push('eventLogger.flush'); } };
+
+  await stopServer();
+
+  assert.deepStrictEqual(calls, ['commandBus.stop', 'eventLogger.flush']);
+  assert.strictEqual(bridgeState.commandBus, null);
+  assert.strictEqual(bridgeState.eventLogger, null);
+});
 
 test('Server Lifecycle: start, stop, port collision handling', async () => {
   // Set up a clean storage directory to prevent polluting local config

@@ -3,6 +3,7 @@ import { WebSocketServer, WebSocket } from 'ws';
 import { EventEmitter } from 'node:events';
 import { URL as NodeURL } from 'node:url';
 import { SetlistState, AugmentedWebSocket } from '../types.js';
+import { decodeClientMessage } from './client-message.js';
 
 export function isValidOrigin(origin: string, reqHost: string): boolean {
   const expected = reqHost.toLowerCase();
@@ -17,20 +18,61 @@ export function isValidOrigin(origin: string, reqHost: string): boolean {
   return false;
 }
 
+export interface SetlistWSServerOptions {
+  heartbeatIntervalMs?: number;
+  logDedupeWindowMs?: number;
+  now?: () => number;
+  setIntervalFn?: typeof setInterval;
+  clearIntervalFn?: typeof clearInterval;
+}
+
 export class SetlistWSServer extends EventEmitter {
   private wss: WebSocketServer | null = null;
   private clients: Set<AugmentedWebSocket> = new Set();
   private lastState: SetlistState | null = null;
 
   private lastStateJson: string = '';
-  private lastLogJsonByKey = new Map<string, string>();
+  private lastLogTimeByKey = new Map<string, number>();
+  private heartbeatInterval: NodeJS.Timeout | null = null;
 
   private authToken: string;
   private authFailures = new Map<string, { count: number; windowStart: number }>();
 
-  constructor(authToken: string = '') {
+  private readonly heartbeatIntervalMs: number;
+  private readonly logDedupeWindowMs: number;
+  private readonly now: () => number;
+  private readonly setIntervalFn: typeof setInterval;
+  private readonly clearIntervalFn: typeof clearInterval;
+
+  constructor(authToken: string = '', options: SetlistWSServerOptions = {}) {
     super();
     this.authToken = authToken;
+    this.heartbeatIntervalMs = options.heartbeatIntervalMs ?? 30_000;
+    this.logDedupeWindowMs = options.logDedupeWindowMs ?? 1_000;
+    this.now = options.now ?? Date.now;
+    this.setIntervalFn = options.setIntervalFn ?? setInterval;
+    this.clearIntervalFn = options.clearIntervalFn ?? clearInterval;
+  }
+
+  private heartbeatTick(): void {
+    for (const ws of [...this.clients]) {
+      if (ws.readyState !== WebSocket.OPEN) {
+        this.clients.delete(ws);
+        continue;
+      }
+      if (ws.isAlive === false) {
+        this.clients.delete(ws);
+        try { ws.terminate(); } catch { /* already closing */ }
+        continue;
+      }
+      ws.isAlive = false;
+      try {
+        ws.ping();
+      } catch {
+        this.clients.delete(ws);
+        try { ws.terminate(); } catch { /* already closing */ }
+      }
+    }
   }
 
   private cleanExpiredFailures(): void {
@@ -75,6 +117,8 @@ export class SetlistWSServer extends EventEmitter {
     
     this.wss.on('connection', (ws: AugmentedWebSocket, req) => {
       this.clients.add(ws);
+      ws.isAlive = true;
+      ws.on('pong', () => { ws.isAlive = true; });
       const remote = req.socket.remoteAddress ?? 'unknown';
       ws.remoteAddress = remote;
       // Parse token from connection URL query parameter
@@ -86,8 +130,8 @@ export class SetlistWSServer extends EventEmitter {
         const url = new NodeURL(req.url ?? '', `http://${host}`);
         tokenParsed = url.searchParams.get('token');
         isController = tokenParsed === this.authToken && this.authToken !== '';
-      } catch (err) {
-        console.warn('[WS] Could not extract the token from the URL:', err);
+      } catch {
+        console.warn('[WS] Could not parse the connection URL.');
       }
 
       ws.isController = isController;
@@ -138,9 +182,28 @@ export class SetlistWSServer extends EventEmitter {
             }
             return;
           }
-          this.emit('client_message', msg, ws);
-        } catch (err) {
-          console.warn('[WS] Could not decode the JSON message:', err);
+          const decoded = decodeClientMessage(msg);
+          if (!decoded.ok) {
+            if (ws.readyState === WebSocket.OPEN) {
+              ws.send(JSON.stringify({
+                type: 'error',
+                code: decoded.code,
+                message: decoded.message,
+                ...(decoded.commandId ? { commandId: decoded.commandId } : {}),
+              }));
+            }
+            return;
+          }
+          this.emit('client_message', decoded.message, ws);
+        } catch {
+          console.warn('[WS] Rejected malformed JSON message.');
+          if (ws.readyState === WebSocket.OPEN) {
+            ws.send(JSON.stringify({
+              type: 'error',
+              code: 'invalid_message',
+              message: 'Message must be valid JSON.',
+            }));
+          }
         }
       });
 
@@ -149,10 +212,22 @@ export class SetlistWSServer extends EventEmitter {
         console.log('[WS] Client disconnected');
       });
 
-      ws.on('error', (err) => {
-        console.error('[WS] Client socket error:', err);
+      ws.on('error', (error) => {
+        const codeValue = (error as Error & { code?: unknown }).code;
+        const code = typeof codeValue === 'string' && /^[A-Z0-9_]{1,64}$/.test(codeValue)
+          ? codeValue
+          : 'UNKNOWN';
+        console.error(`[WS] Client socket error (${code}).`);
       });
     });
+
+    if (!this.heartbeatInterval) {
+      this.heartbeatInterval = this.setIntervalFn(
+        () => this.heartbeatTick(),
+        this.heartbeatIntervalMs,
+      );
+      this.heartbeatInterval.unref?.();
+    }
 
     return this.wss;
   }
@@ -205,6 +280,26 @@ export class SetlistWSServer extends EventEmitter {
     }
   }
 
+  private sendWithBackpressure(ws: AugmentedWebSocket, payloadJson: string): boolean {
+    if (ws.bufferedAmount > 2097152) { // 2 MB disconnect limit
+      console.warn(`[WS] Disconnecting client ${ws.remoteAddress ?? 'unknown'} due to severe backpressure (${ws.bufferedAmount} bytes buffered)`);
+      try { ws.terminate(); } catch {}
+      this.clients.delete(ws);
+      return false;
+    }
+
+    if (ws.bufferedAmount > 524288) { // 512 KB drop threshold
+      return false;
+    }
+
+    try {
+      ws.send(payloadJson);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
   public broadcastState(state: SetlistState): void {
     this.lastState = state;
     const json = JSON.stringify({ type: 'state', state });
@@ -213,53 +308,47 @@ export class SetlistWSServer extends EventEmitter {
     }
     this.lastStateJson = json;
     
-    for (const ws of this.clients) {
+    for (const ws of [...this.clients]) {
       if (ws.readyState === WebSocket.OPEN) {
-        try {
-          ws.send(json);
-        } catch (err) {
-          // ignore
-        }
+        this.sendWithBackpressure(ws, json);
       }
     }
   }
 
   public broadcast(payload: any): void {
     const json = JSON.stringify(payload);
-    for (const ws of this.clients) {
+    for (const ws of [...this.clients]) {
       if (ws.readyState === WebSocket.OPEN) {
-        try {
-          ws.send(json);
-        } catch (err) {
-          // ignore
-        }
+        this.sendWithBackpressure(ws, json);
       }
     }
   }
 
   public broadcastLog(message: string, level: 'info' | 'warn' | 'error' | 'automation' = 'info'): void {
-    const json = JSON.stringify({ type: 'log', message, level, timestamp: Date.now() });
     const key = `${level}:${message}`;
-    if (this.lastLogJsonByKey.get(key) === json) return;
-    this.lastLogJsonByKey.set(key, json);
-    if (this.lastLogJsonByKey.size > 100) {
-      const firstKey = this.lastLogJsonByKey.keys().next().value;
+    const now = this.now();
+    const previous = this.lastLogTimeByKey.get(key);
+    if (previous !== undefined && now >= previous && now - previous < this.logDedupeWindowMs) return;
+    this.lastLogTimeByKey.set(key, now);
+    if (this.lastLogTimeByKey.size > 100) {
+      const firstKey = this.lastLogTimeByKey.keys().next().value;
       if (firstKey !== undefined) {
-        this.lastLogJsonByKey.delete(firstKey);
+        this.lastLogTimeByKey.delete(firstKey);
       }
     }
-    for (const ws of this.clients) {
+    const json = JSON.stringify({ type: 'log', message, level, timestamp: now });
+    for (const ws of [...this.clients]) {
       if (ws.readyState === WebSocket.OPEN) {
-        try {
-          ws.send(json);
-        } catch (err) {
-          // ignore
-        }
+        this.sendWithBackpressure(ws, json);
       }
     }
   }
 
   public stop(): void {
+    if (this.heartbeatInterval) {
+      this.clearIntervalFn(this.heartbeatInterval);
+      this.heartbeatInterval = null;
+    }
     for (const ws of this.clients) {
       try {
         ws.removeAllListeners();
@@ -269,7 +358,7 @@ export class SetlistWSServer extends EventEmitter {
       }
     }
     this.clients.clear();
-    this.lastLogJsonByKey.clear();
+    this.lastLogTimeByKey.clear();
     this.authFailures.clear();
     this.lastState = null;
     this.lastStateJson = '';

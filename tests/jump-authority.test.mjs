@@ -4,7 +4,11 @@ import { bridgeState } from '../src/core/bridge-state.ts';
 import { JumpScheduler } from '../src/core/next-downbeat-jump.ts';
 import { SetlistManager } from '../src/core/setlist-manager.ts';
 import { CommandBus } from '../src/core/command-bus.ts';
-import { executeCommandAction, executeJumpCommand } from '../src/commands/handlers.ts';
+import {
+  countConfirmedTestSessionMarkers,
+  executeCommandAction,
+  executeJumpCommand,
+} from '../src/commands/handlers.ts';
 import { handleJumpSchedulerEvent } from '../src/server-lifecycle.ts';
 
 function installHarness(initialQuantization = 0) {
@@ -53,6 +57,30 @@ function installHarness(initialQuantization = 0) {
   };
 }
 
+test('test-session markers require MCP confirmation or exact Ableton observation', () => {
+  const expected = [
+    { name: 'A', time: 0 },
+    { name: 'B', time: 8 },
+    { name: 'C', time: 16 },
+    { name: 'D', time: 24 },
+  ];
+  const mcpResults = [
+    { name: 'A', time: 0, confirmed: true },
+    { name: 'B', time: 8, confirmed: false },
+    { name: 'wrong-name', time: 16, confirmed: true },
+  ];
+  const observedCues = [
+    { name: 'B', time: 8 },
+    { name: 'C', time: 16.000001 },
+    { name: 'D', time: 25 },
+  ];
+
+  assert.equal(
+    countConfirmedTestSessionMarkers(expected, mcpResults, observedCues),
+    2,
+  );
+});
+
 test('quantization request becomes local scheduler authority without an OSC reply', async () => {
   const harness = installHarness(4);
   try {
@@ -83,7 +111,7 @@ test('quantization request becomes local scheduler authority without an OSC repl
 
 test('quantization command confirms through optimistic observable state', async () => {
   const harness = installHarness(4);
-  const bus = new CommandBus(harness.manager, bridgeState.oscClient, { log() {} });
+  const bus = new CommandBus(harness.manager, { log() {} });
   bridgeState.commandBus = bus;
   try {
     const command = bus.registerCommand('quantization-confirmed', 'set_quantization', { value: 0 }, 'test');

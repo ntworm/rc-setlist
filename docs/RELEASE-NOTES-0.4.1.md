@@ -1,5 +1,7 @@
 # Ableton RC Setlist 0.4.1 release notes
 
+[Português (Brasil)](pt-BR/NOTAS-DA-VERSAO-0.4.1.md)
+
 Released on July 29, 2026. Version 0.4.1 is a backward-compatible update for
 the existing Arrangement-based workflow.
 

@@ -35,7 +35,7 @@ fictional text; Ableton RC Setlist does not provide commercial lyrics.
 
 ## Does macOS work?
 
-The code is designed to be portable, but 0.4.1 marks macOS experimental until a
+The code is designed to be portable, but 0.5.0 marks macOS experimental until a
 complete real-device matrix is recorded.
 
 ## Can I put Ableton RC Setlist on the public internet?

@@ -5,8 +5,9 @@
   const SUPPORTED_LOCALES = Object.freeze(['en', 'pt-BR']);
   const catalog = Object.freeze({
     'common.language': { en: 'Language', 'pt-BR': 'Idioma' },
-    'common.english': { en: 'English', 'pt-BR': 'English' },
-    'common.portuguese': { en: 'Português (Brasil)', 'pt-BR': 'Português (Brasil)' },
+    'common.english': { en: 'EN', 'pt-BR': 'EN' },
+    'common.portuguese': { en: 'PT', 'pt-BR': 'PT' },
+
     'common.close': { en: 'Close', 'pt-BR': 'Fechar' },
     'common.none': { en: 'None', 'pt-BR': 'Nenhum' },
     'common.cancel': { en: 'Cancel', 'pt-BR': 'Cancelar' },
@@ -39,7 +40,8 @@
       'pt-BR': 'O painel perdeu a conexão com o Bridge. O último estado válido permanece visível enquanto tentamos reconectar.',
     },
 
-    'fullscreen.enter': { en: 'Full screen', 'pt-BR': 'Tela cheia' },
+    'fullscreen.enter': { en: '⛶ Full screen', 'pt-BR': '⛶ Tela cheia' },
+
     'fullscreen.enterAria': { en: 'Enter full screen', 'pt-BR': 'Entrar em tela cheia' },
     'fullscreen.enterTitle': { en: 'Enter full screen (F)', 'pt-BR': 'Entrar em tela cheia (F)' },
     'fullscreen.exit': { en: 'Exit full screen', 'pt-BR': 'Sair da tela cheia' },
@@ -150,7 +152,9 @@
       en: '🔒 PANEL LOCKED. Unlock it at the top to perform this action.',
       'pt-BR': '🔒 PAINEL BLOQUEADO. Desbloqueie-o na parte superior para executar esta ação.',
     },
-    'setlist.tools': { en: 'Tools', 'pt-BR': 'Ferramentas' },
+    'setlist.tools': { en: '🛠️ Tools', 'pt-BR': '🛠️ Ferramentas' },
+    'setlist.manageSetlists': { en: '⚙️ Manage setlists', 'pt-BR': '⚙️ Gerenciar setlists' },
+
     'setlist.exportCsv': { en: 'Export CSV', 'pt-BR': 'Exportar CSV' },
     'setlist.exportCsvTitle': { en: 'Export tracklist as CSV', 'pt-BR': 'Exportar repertório como CSV' },
     'setlist.lyrics': { en: 'Lyrics', 'pt-BR': 'Letras' },
@@ -283,8 +287,8 @@
     'lyrics.editing': { en: 'Editing:', 'pt-BR': 'Editando:' },
     'lyrics.addLine': { en: '+ Line', 'pt-BR': '+ Linha' },
     'lyrics.editHelp': {
-      en: 'Double-click any line to edit it. Lines without timestamps use [--:--.--] and are ignored by the HUD until marked in the Sync tab.',
-      'pt-BR': 'Clique duas vezes em uma linha para editá-la. Linhas sem marcação usam [--:--.--] e são ignoradas pelo HUD até serem marcadas na aba Sincronizar.',
+      en: 'Double-click any line to edit it. Lines without timestamps use [--:--.--] and must be marked before the LRC can be saved.',
+      'pt-BR': 'Clique duas vezes em uma linha para editá-la. Linhas sem marcação usam [--:--.--] e precisam ser marcadas antes de salvar o LRC.',
     },
     'lyrics.emptyEditor': {
       en: 'No lines yet. Select "+ Line" to begin, or use Create to generate the base text.',
@@ -302,9 +306,25 @@
     },
     'lyrics.noValidLines': { en: 'No valid lyric lines were found.', 'pt-BR': 'Nenhuma linha de letra válida foi encontrada.' },
     'lyrics.notConnected': { en: 'Not connected to the server.', 'pt-BR': 'Sem conexão com o servidor.' },
+    'lyrics.readOnlySave': {
+      en: 'Lyrics can only be saved by a synchronized controller.',
+      'pt-BR': 'As letras só podem ser salvas por um controlador sincronizado.',
+    },
+    'lyrics.saveFailed': {
+      en: 'Lyrics were not saved. Your edits are still available; check the connection and try again.',
+      'pt-BR': 'A letra não foi salva. Suas edições continuam disponíveis; verifique a conexão e tente novamente.',
+    },
+    'lyrics.savePending': {
+      en: 'Wait for the current lyrics save to finish.',
+      'pt-BR': 'Aguarde o salvamento atual da letra terminar.',
+    },
     'lyrics.invalidTimecode': {
       en: 'Invalid timecode. Use [mm:ss.xx] or leave it empty.',
       'pt-BR': 'Timecode inválido. Use [mm:ss.xx] ou deixe vazio.',
+    },
+    'lyrics.missingTimecodes': {
+      en: 'Every line needs a timestamp before the LRC can be saved.',
+      'pt-BR': 'Todas as linhas precisam de uma marcação de tempo antes de salvar o LRC.',
     },
     'lyrics.discardTab': {
       en: 'There are unsaved changes in the Edit tab. Discard them?',
@@ -338,9 +358,17 @@
     },
     'feedback.serverError': { en: 'Server error: {detail}', 'pt-BR': 'Erro do servidor: {detail}' },
     'feedback.processError': { en: 'Could not process server message:', 'pt-BR': 'Não foi possível processar a mensagem do servidor:' },
+    'setlist.exportCsvTitle': {
+      en: 'Export tracklist as CSV (saves a copy in active profile and downloads to your browser)',
+      'pt-BR': 'Exportar repertório como CSV (salva uma cópia no perfil ativo e baixa no navegador)',
+    },
+    'setlist.manageSetlistsTitle': {
+      en: 'Manage setlists and profiles (creating, renaming, deleting, and restoring setlists require Live stopped)',
+      'pt-BR': 'Gerenciar setlists e perfis (criar, renomear, excluir e restaurar setlists exigem o Live parado)',
+    },
     'feedback.csv': {
-      en: 'Tracklist exported ({count} songs). Downloading {fileName}…',
-      'pt-BR': 'Repertório exportado ({count} músicas). Baixando {fileName}…',
+      en: 'Tracklist exported ({count} songs). Downloaded {fileName}. Check your browser’s Downloads.',
+      'pt-BR': 'Repertório exportado ({count} músicas). {fileName} baixado. Confira os Downloads do navegador.',
     },
     'feedback.jumpTimeout': {
       en: '⚠ Ableton Live did not confirm the jump within 3 seconds.',
@@ -395,6 +423,14 @@
     'help.hidden': {
       en: '[hidden] or the _ prefix: hides the locator from the visual setlist.',
       'pt-BR': '[hidden] ou o prefixo _: oculta o localizador do setlist visual.',
+    },
+    'help.ignore': {
+      en: '[ignore]: hides technical markers or overrides action tags without creating songs, sections or automations.',
+      'pt-BR': '[ignore]: oculta marcadores técnicos ou anula tags de ação sem criar músicas, seções ou automações.',
+    },
+    'help.relativeSyntax': {
+      en: '> Section: relative locator attached to the preceding song (e.g. > Intro).',
+      'pt-BR': '> Seção: localizador relativo vinculado à música anterior (ex.: > Intro).',
     },
     'help.lock': {
       en: '🔒 Lock Mode: blocks taps and drags on phones or tablets to prevent accidental stage input.',

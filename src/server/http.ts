@@ -13,9 +13,16 @@ export function sanitizeUrl(urlStr: string): string {
   if (!query) return urlStr;
   const parts = query.split('&');
   const sanitizedParts = parts.map(part => {
-    const [key] = part.split('=');
-    if (key === 'token') {
-      return 'token=***';
+    const separator = part.indexOf('=');
+    const rawKey = separator === -1 ? part : part.slice(0, separator);
+    let decodedKey = '';
+    try {
+      decodedKey = decodeURIComponent(rawKey.replace(/\+/g, ' '));
+    } catch {
+      return part;
+    }
+    if (decodedKey === 'token') {
+      return `${rawKey}=***`;
     }
     return part;
   });
@@ -70,6 +77,58 @@ export function setAudioResolver(fn: AudioResolver): void {
   audioResolver = fn;
 }
 
+export type AsyncHttpHandler = (
+  req: http.IncomingMessage,
+  res: http.ServerResponse,
+) => void | Promise<void>;
+
+export function createHttpRequestListener(
+  handler: AsyncHttpHandler = handleHttp,
+): http.RequestListener {
+  return (req, res) => {
+    void Promise.resolve().then(() => handler(req, res)).catch(() => {
+      console.error('[HTTP] Request failed.');
+      if (res.writableEnded) return;
+      if (res.headersSent) {
+        res.destroy();
+        return;
+      }
+      res.writeHead(500, { 'Content-Type': 'text/plain; charset=utf-8' });
+      res.end('internal server error\n');
+    });
+  };
+}
+
+function debugSnapshotEnabled(): boolean {
+  if (process.env.NODE_ENV !== 'production') return true;
+  return /^(?:1|true)$/i.test(process.env.ENABLE_DEBUG_SNAPSHOT?.trim() ?? '');
+}
+
+export interface ResponseFileSystem {
+  stat(filePath: string): Promise<{ size: number; isFile(): boolean }>;
+  readFile(filePath: string): Promise<Buffer>;
+}
+
+export async function loadResponseFile(
+  filePath: string,
+  isHead: boolean,
+  fileSystem: ResponseFileSystem = fs,
+): Promise<{ length: number; data: Buffer | null }> {
+  if (isHead) {
+    const stat = await fileSystem.stat(filePath);
+    if (!stat.isFile()) throw new Error('response path is not a regular file');
+    return { length: stat.size, data: null };
+  }
+  const data = await fileSystem.readFile(filePath);
+  return { length: data.length, data };
+}
+
+export function safeAttachmentName(value: string): string {
+  const baseName = path.posix.basename(String(value).replace(/\\/g, '/'));
+  const sanitized = baseName.replace(/[^A-Za-z0-9 ._()\-]/g, '_').slice(0, 180);
+  return sanitized || 'setlist.csv';
+}
+
 async function serveStaticFile(reqUrl: string, res: http.ServerResponse, isHead: boolean = false): Promise<void> {
   const staticDir = path.join(__dirnameResolved, 'static');
   const rawPath = reqUrl.split('?')[0] ?? '/';
@@ -113,24 +172,24 @@ async function serveStaticFile(reqUrl: string, res: http.ServerResponse, isHead:
     return;
   }
 
-  let data: Buffer;
-  try {
-    data = await fs.readFile(filePath);
-  } catch (err) {
-    res.writeHead(404, { 'Content-Type': 'text/plain' });
-    res.end(isHead ? undefined : 'not found\n');
+  const ext = path.extname(filePath).toLowerCase();
+  if (isHead) {
+    res.setHeader('Cache-Control', 'no-store');
+    res.setHeader('Content-Type', MIME_TYPES[ext] ?? 'application/octet-stream');
+    res.setHeader('Content-Length', String(size));
+    res.end();
     return;
   }
 
-  const ext = path.extname(filePath).toLowerCase();
-  res.setHeader('Cache-Control', 'no-store');
-  res.setHeader('Content-Type', MIME_TYPES[ext] ?? 'application/octet-stream');
-  res.setHeader('Content-Length', String(size));
-
-  if (isHead) {
-    res.end();
-  } else {
+  try {
+    const data = await fs.readFile(filePath);
+    res.setHeader('Cache-Control', 'no-store');
+    res.setHeader('Content-Type', MIME_TYPES[ext] ?? 'application/octet-stream');
+    res.setHeader('Content-Length', String(data.length));
     res.end(data);
+  } catch {
+    res.writeHead(404, { 'Content-Type': 'text/plain' });
+    res.end('not found\n');
   }
 }
 
@@ -159,7 +218,7 @@ export async function handleHttp(req: http.IncomingMessage, res: http.ServerResp
   }
 
   if (rawPath === '/debug/snapshot') {
-    if (process.env.NODE_ENV === 'production' && !process.env.ENABLE_DEBUG_SNAPSHOT) {
+    if (!debugSnapshotEnabled()) {
       res.writeHead(404, { 'Content-Type': 'text/plain' });
       res.end('Not Found\n');
       return;
@@ -232,19 +291,15 @@ export async function handleHttp(req: http.IncomingMessage, res: http.ServerResp
       return;
     }
     try {
-      const data = await fs.readFile(resolved.absolutePath);
+      const file = await loadResponseFile(resolved.absolutePath, isHead);
       res.setHeader('Cache-Control', 'no-store');
       res.setHeader('Content-Type', 'text/csv; charset=utf-8');
-      res.setHeader('Content-Length', String(data.length));
+      res.setHeader('Content-Length', String(file.length));
       res.setHeader(
         'Content-Disposition',
-        `attachment; filename="${resolved.friendlyName}"`
+        `attachment; filename="${safeAttachmentName(resolved.friendlyName)}"`
       );
-      if (isHead) {
-        res.end();
-      } else {
-        res.end(data);
-      }
+      res.end(file.data ?? undefined);
     } catch {
       res.writeHead(404, { 'Content-Type': 'text/plain' });
       res.end(isHead ? undefined : 'not found\n');
@@ -273,15 +328,11 @@ export async function handleHttp(req: http.IncomingMessage, res: http.ServerResp
       return;
     }
     try {
-      const data = await fs.readFile(resolved.absolutePath);
+      const file = await loadResponseFile(resolved.absolutePath, isHead);
       res.setHeader('Cache-Control', 'public, max-age=86400');
       res.setHeader('Content-Type', resolved.mimeType);
-      res.setHeader('Content-Length', String(data.length));
-      if (isHead) {
-        res.end();
-      } else {
-        res.end(data);
-      }
+      res.setHeader('Content-Length', String(file.length));
+      res.end(file.data ?? undefined);
     } catch {
       res.writeHead(404, { 'Content-Type': 'text/plain' });
       res.end(isHead ? undefined : 'not found\n');

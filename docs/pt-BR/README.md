@@ -2,7 +2,7 @@
 
 - [English](../README.md)
 - [Instalação](INSTALL.md)
-- [O que há de novo na versão 0.4.1](NOTAS-DA-VERSAO-0.4.1.md)
+- [O que há de novo na versão 0.5.0](NOTAS-DA-VERSAO-0.5.0.md)
 - [Como usar o Ableton RC Setlist](USER-GUIDE.md)
 - [Solução de problemas](TROUBLESHOOTING.md)
 - [Perguntas frequentes](FAQ.md)

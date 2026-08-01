@@ -1,3 +1,5 @@
+import type { Section, Song } from '../types.js';
+
 /**
  * CSV export helper for setlist tracklist.
  *
@@ -14,17 +16,66 @@ export const UTF8_BOM = '\uFEFF';
 
 export interface CsvTracklistRow {
   index: number;
+  setlist: string;
   title: string;
+  startBeat: number;
   bpm: number | null;
-  signature: string;
-  key: string;
   durationSec: number | null;
-  plays: number;
+  duration: string;
+  sectionsCount: number;
+  sections: string;
+  automations: string;
   lyricLines: number;
-  customOrder: number | null;
-  inSetlist: boolean;
-  cuesCount: number;
-  lastPlayedAt: string | null;
+}
+
+type AutomationTarget = Pick<
+  Song | Section,
+  'loopCount' | 'autoStop' | 'autoNext' | 'bpm' | 'autoClick' | 'skip'
+>;
+
+function formatAutomationTags(target: AutomationTarget): string[] {
+  const tags: string[] = [];
+  if (target.loopCount === -1) tags.push('[loop]');
+  else if (target.loopCount !== null && target.loopCount > 0) tags.push(`[loop ${target.loopCount}x]`);
+  if (target.autoStop) tags.push('[stop]');
+  if (target.autoNext) tags.push('[next]');
+  if (target.bpm !== null && Number.isFinite(target.bpm) && target.bpm > 0) {
+    tags.push(`[bpm ${target.bpm}]`);
+  }
+  if (target.autoClick === true) tags.push('[click]');
+  else if (target.autoClick === false) tags.push('[click off]');
+  if (target.skip) tags.push('[skip]');
+  return tags;
+}
+
+export function formatDuration(seconds: number | null): string {
+  if (seconds === null || !Number.isFinite(seconds) || seconds < 0) return '';
+  const wholeSeconds = Math.round(seconds);
+  const minutes = Math.floor(wholeSeconds / 60);
+  return `${minutes}:${String(wholeSeconds % 60).padStart(2, '0')}`;
+}
+
+export function formatSongSections(song: Pick<Song, 'sections'>): { count: number; names: string } {
+  const names = [...song.sections]
+    .sort((a, b) => a.time - b.time)
+    .map((section) => section.name.trim())
+    .filter(Boolean);
+  return { count: names.length, names: names.join(' | ') };
+}
+
+export function formatSongAutomations(song: Song): string {
+  const entries: string[] = [];
+  const songTags = formatAutomationTags(song);
+  if (songTags.length > 0) entries.push(`song ${songTags.join(' ')}`);
+
+  for (const section of [...song.sections].sort((a, b) => a.time - b.time)) {
+    const tags = formatAutomationTags(section);
+    if (tags.length === 0) continue;
+    const label = section.name.trim() || `@${section.time}`;
+    entries.push(`${label} ${tags.join(' ')}`);
+  }
+
+  return entries.join(' | ');
 }
 
 function escapeField(value: string | number | null | boolean | undefined): string {
@@ -41,17 +92,16 @@ function escapeField(value: string | number | null | boolean | undefined): strin
 export function buildTracklistCsv(rows: CsvTracklistRow[]): string {
   const header = [
     '#',
+    'setlist',
     'title',
+    'start_beat',
     'bpm',
-    'signature',
-    'key',
     'duration_sec',
-    'plays',
+    'duration',
+    'sections_count',
+    'sections',
+    'automations',
     'lyric_lines',
-    'custom_order',
-    'in_setlist',
-    'cues_count',
-    'last_played_at',
   ];
 
   const lines: string[] = [];
@@ -61,17 +111,16 @@ export function buildTracklistCsv(rows: CsvTracklistRow[]): string {
     lines.push(
       [
         escapeField(r.index),
+        escapeField(r.setlist),
         escapeField(r.title),
+        escapeField(r.startBeat),
         escapeField(r.bpm),
-        escapeField(r.signature),
-        escapeField(r.key),
         escapeField(r.durationSec),
-        escapeField(r.plays),
+        escapeField(r.duration),
+        escapeField(r.sectionsCount),
+        escapeField(r.sections),
+        escapeField(r.automations),
         escapeField(r.lyricLines),
-        escapeField(r.customOrder),
-        escapeField(r.inSetlist ? 'yes' : 'no'),
-        escapeField(r.cuesCount),
-        escapeField(r.lastPlayedAt),
       ].join(CSV_DELIM)
     );
   }

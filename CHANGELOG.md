@@ -2,6 +2,87 @@
 
 All notable public changes to Ableton RC Setlist are recorded here.
 
+## [Unreleased]
+
+No changes are currently staged after the 0.5.0 release.
+
+## [0.5.0] - 2026-08-01
+
+### Added
+
+- Field-tested compatibility between explicit `Song > Section`, relative
+  `> Section`, legacy song/tag-only locators and `[ignore]` technical markers.
+- A truthful one-row-per-song CSV with active `setlist`, `start_beat`, declared
+  BPM, numeric/readable duration, `sections_count`, named sections,
+  `automations` and saved lyric-line count.
+- Bilingual final release notes and a complete 0.5.0 installation kit.
+
+### Changed
+
+- Promoted the compact responsive Stage Control, profiles, lyrics, transport,
+  duration and automation behavior from the rehearsed 0.4.2 local candidate.
+- Removed CSV placeholders for signature, key, plays, custom order, setlist
+  membership, cue count and last-played history because the runtime did not own
+  reliable values for those fields.
+- Isolated project-detector test mode from the live MCP bridge so an open
+  Ableton project cannot change a test's profile scope.
+
+### Fixed
+
+- CSV exports now identify their active setlist and include actual named
+  sections, automation-only locators and locator actions instead of empty
+  columns.
+- A delayed lyrics confirmation closes an open editor but never reopens an
+  editor the operator already dismissed.
+
+## [0.4.2] - 2026-08-01
+
+> Local test candidate for Ableton verification; this is not a published release.
+
+### Added
+
+- Relative section locator syntax `> Section` attached to the preceding song
+  (for example `> Intro` and `> Chorus [loop 4x]`) plus relative automation
+  markers that remain inside the active song.
+- Explicit `[ignore]` locator tags for technical Arrangement markers that must
+  not become songs, sections or automation actions.
+- Clearer discovery tooltips and documentation for Manage Setlists at the top of Stage Control (explaining that profile mutations require Live stopped).
+- Detailed CSV export toast and tooltips clarifying that tracklists download to browser Downloads and save a copy in active profile `exports/`.
+
+### Changed
+
+- Preserved the complete 0.4.1 Stage Control visual layout while narrowing
+  transport-only DOM updates and caching chronological setlist derivations.
+- Added bounded WebSocket heartbeat monitoring and stable-content log
+  deduplication without changing the existing 512 KiB drop and 2 MiB disconnect
+  backpressure limits.
+- Made production builds fail on missing static assets, define production mode
+  explicitly and self-host the Inter webfont used by the landing page.
+- Replaced ad-hoc certificate scanning with validity, SAN and private-key checks
+  using Node's X.509 APIs.
+
+### Fixed
+
+- Lyrics edits and synchronized buffers now remain available until the matching
+  persistence command is confirmed; failures, disconnects and timeouts no longer
+  report a false save.
+- WebSocket messages are decoded into canonical commands before dispatch, with
+  bounded priority handling and safety revalidation immediately before execution.
+- Reorder, lyrics, CSV and click-preview writes now use project-scope snapshots
+  and atomic replacement so a late profile switch cannot receive stale output.
+- Test-session locator checks now distinguish a sent OSC packet from a locator
+  actually observed in Ableton Live.
+- Removed invalid classic loading of helper modules while retaining every module
+  asset in the package.
+- Shutdown now drains the command bus and pending event log before local test
+  storage can be removed.
+
+### Security
+
+- Controller tokens are removed from the visible URL after safe local storage,
+  encoded token keys are redacted in HTTP logs, and async request failures return
+  a controlled response without exposing resolver details.
+
 ## [0.4.1] - 2026-07-29
 
 ### Added

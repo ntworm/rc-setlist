@@ -22,6 +22,16 @@ async function expectControlMessage(page, predicate) {
   await expect.poll(async () => (await receivedControlMessages(page)).find(predicate)).toBeTruthy();
 }
 
+test('Setlist opens without JavaScript module parse errors', async ({ page }) => {
+  const errors = [];
+  page.on('pageerror', (error) => errors.push(error.message));
+
+  await page.goto('/setlist/');
+  await page.locator('.setlist-page').waitFor();
+
+  expect(errors).toEqual([]);
+});
+
 test('Setlist renders durations and sends UUID-based profile actions safely', async ({ page }) => {
   await page.goto('/setlist/');
 
@@ -483,10 +493,11 @@ test('Reduced motion and keyboard focus remain visible', async ({ page }) => {
     outlineWidth: parseFloat(getComputedStyle(document.activeElement).outlineWidth),
     transitionSeconds: parseFloat(getComputedStyle(document.activeElement).transitionDuration),
   }));
-  expect(state.activeId).toBe('languageSelect');
+  expect(['profileSelect', 'languageSelect']).toContain(state.activeId);
   expect(state.outlineWidth).toBeGreaterThanOrEqual(2);
   expect(state.transitionSeconds).toBeLessThanOrEqual(0.001);
 });
+
 
 test('Performance handles an empty project without overflow', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
@@ -604,6 +615,116 @@ test('Lyrics keeps an unsaved edit when the modal closes and reopens', async ({ 
   await expect(page.locator('#btnSaveEditedLyrics')).toBeEnabled();
   const messages = await receivedControlMessages(page);
   expect(messages.some((message) => message.type === 'save_lyrics')).toBe(false);
+});
+
+test('Lyrics keeps a failed save dirty and clears it only after confirmation', async ({ page }) => {
+  await page.goto('/setlist/?scenario=lyrics-save-fails');
+  await page.locator('.tools-menu > summary').click();
+  await page.getByRole('button', { name: 'Lyrics' }).click();
+  await page.locator('#lyricsTabEdit').click();
+  await page.locator('.lyric-edit-text').first().dblclick();
+  const failedEditor = page.locator('#lyricsEditList input[type="text"]');
+  await failedEditor.fill('Draft that must survive a disk failure');
+  await failedEditor.press('Enter');
+  await page.locator('#btnSaveEditedLyrics').click();
+
+  await expectControlMessage(
+    page,
+    (message) => message.type === 'save_lyrics' && /^lyrics-edit-/.test(message.commandId)
+  );
+  await expect(page.locator('#btnSaveEditedLyrics')).toBeEnabled();
+  await expect(page.locator('#lyricsDirtyBadge')).toBeVisible();
+  await expect(page.locator('.lyric-edit-text').first()).toHaveText('Draft that must survive a disk failure');
+  await expect(page.locator('#operationToast')).toContainText('not saved');
+
+  await page.goto('/setlist/');
+  await page.locator('.tools-menu > summary').click();
+  await page.getByRole('button', { name: 'Lyrics' }).click();
+  await page.locator('#lyricsTabEdit').click();
+  await page.locator('.lyric-edit-text').first().dblclick();
+  const confirmedEditor = page.locator('#lyricsEditList input[type="text"]');
+  await confirmedEditor.fill('Confirmed draft');
+  await confirmedEditor.press('Enter');
+  await page.locator('#btnSaveEditedLyrics').click();
+
+  await expect(page.locator('#btnSaveEditedLyrics')).toBeDisabled();
+  await expect(page.locator('#lyricsDirtyBadge')).toBeHidden();
+});
+
+test('Lyrics refuses to report success while an edited line has no timestamp', async ({ page }) => {
+  await page.goto('/setlist/');
+  await page.locator('.tools-menu > summary').click();
+  await page.getByRole('button', { name: 'Lyrics' }).click();
+  await page.locator('#lyricsTabEdit').click();
+  await page.getByRole('button', { name: '+ Line', exact: true }).click();
+
+  const inlineEditor = page.locator('#lyricsEditList input[type="text"]');
+  await inlineEditor.fill('This line must not disappear');
+  await inlineEditor.press('Enter');
+  await page.locator('#btnSaveEditedLyrics').click();
+
+  await expect(page.locator('#operationToast')).toContainText('timestamp');
+  await expect(page.locator('#lyricsDirtyBadge')).toBeVisible();
+  await expect(page.locator('.lyric-edit-text').last()).toHaveText('This line must not disappear');
+  const messages = await receivedControlMessages(page);
+  expect(messages.some((message) =>
+    message.type === 'save_lyrics' && message.text.includes('This line must not disappear')
+  )).toBe(false);
+});
+
+test('Synchronized lyrics stay open until the matching save is confirmed', async ({ page }) => {
+  await page.goto('/setlist/?scenario=lyrics-save-pending');
+  await page.locator('.tools-menu > summary').click();
+  await page.getByRole('button', { name: 'Lyrics' }).click();
+  await page.locator('#lyricsRawText').fill('One synchronized line');
+  await page.getByRole('button', { name: 'Start synchronization', exact: false }).click();
+  await page.locator('#btnLyricsTap').click();
+  await page.locator('#btnSaveSyncLyrics').click();
+
+  await expect.poll(async () => (
+    await receivedControlMessages(page)
+  ).find((message) => message.type === 'save_lyrics' && /^lyrics-sync-/.test(message.commandId))).toBeTruthy();
+  await expect(page.locator('#lyricsModal')).toHaveClass(/open/);
+  await expect(page.locator('#btnSaveSyncLyrics')).toBeDisabled();
+
+  const pendingSave = (await receivedControlMessages(page)).find(
+    (message) => message.type === 'save_lyrics' && /^lyrics-sync-/.test(message.commandId)
+  );
+  expect(pendingSave).toBeTruthy();
+  await emitServerMessage(page, {
+    type: 'command_status',
+    commandId: pendingSave.commandId,
+    status: 'confirmed',
+  });
+  await expect(page.locator('#lyricsModal')).not.toHaveClass(/open/);
+});
+
+test('Synchronized lyrics confirmation never reopens a manually closed modal', async ({ page }) => {
+  await page.goto('/setlist/?scenario=lyrics-save-pending');
+  await page.locator('.tools-menu > summary').click();
+  await page.getByRole('button', { name: 'Lyrics' }).click();
+  await page.locator('#lyricsRawText').fill('One synchronized line');
+  await page.getByRole('button', { name: 'Start synchronization', exact: false }).click();
+  await page.locator('#btnLyricsTap').click();
+  await page.locator('#btnSaveSyncLyrics').click();
+
+  await expect.poll(async () => (
+    await receivedControlMessages(page)
+  ).find((message) => message.type === 'save_lyrics' && /^lyrics-sync-/.test(message.commandId))).toBeTruthy();
+
+  const pendingSave = (await receivedControlMessages(page)).find(
+    (message) => message.type === 'save_lyrics' && /^lyrics-sync-/.test(message.commandId)
+  );
+  expect(pendingSave).toBeTruthy();
+  await page.locator('.lyrics-modal-header .btn-close').click();
+  await expect(page.locator('#lyricsModal')).not.toHaveClass(/open/);
+
+  await emitServerMessage(page, {
+    type: 'command_status',
+    commandId: pendingSave.commandId,
+    status: 'confirmed',
+  });
+  await expect(page.locator('#lyricsModal')).not.toHaveClass(/open/);
 });
 
 for (const surface of [

@@ -336,3 +336,347 @@ test('Lyrics header keeps its shared song selector contained on a phone', async 
   expect(geometry.selectorRight).toBeLessThanOrEqual(geometry.headerRight);
   expect(geometry.documentWidth).toBeLessThanOrEqual(geometry.viewportWidth);
 });
+test('Setlist compact notebook header does not overlap controls when switched to Portuguese', async ({ page }) => {
+  await page.setViewportSize({ width: 1024, height: 768 });
+  await page.goto('/setlist/');
+  await page.evaluate(() => {
+    const sel = document.querySelector('#languageSelect');
+    if (sel) {
+      sel.value = 'pt-BR';
+      sel.dispatchEvent(new Event('change'));
+    }
+  });
+
+  const layoutState = await page.evaluate(() => {
+    const langSelect = document.querySelector('#languageSelect');
+    const lockBtn = document.querySelector('#btnLock');
+    const lockText = document.querySelector('#lockText');
+    const actionsContainer = document.querySelector('.app-bar-actions');
+    const header = document.querySelector('header');
+
+    if (!langSelect || !lockBtn || !actionsContainer || !header) {
+      return { missing: true };
+    }
+
+    const langRect = langSelect.getBoundingClientRect();
+    const lockRect = lockBtn.getBoundingClientRect();
+    const actionsRect = actionsContainer.getBoundingClientRect();
+    const headerRect = header.getBoundingClientRect();
+
+    const overlapsLangLock = !(
+      langRect.right <= lockRect.left ||
+      langRect.left >= lockRect.right ||
+      langRect.bottom <= lockRect.top ||
+      langRect.top >= lockRect.bottom
+    );
+
+    const langSelectStyle = window.getComputedStyle(langSelect);
+    const hasTruncatingMaxWidth = langSelectStyle.maxWidth === '96px' || langSelectStyle.maxWidth === '6rem';
+
+    return {
+      overlapsLangLock,
+      hasTruncatingMaxWidth,
+      actionsBottom: actionsRect.bottom,
+      headerBottom: headerRect.bottom,
+      lockText: lockText ? lockText.textContent : '',
+      scrollWidth: document.documentElement.scrollWidth,
+      clientWidth: document.documentElement.clientWidth,
+    };
+  });
+
+  expect(layoutState.missing).toBeUndefined();
+  expect(layoutState.overlapsLangLock, 'languageSelect must not overlap btnLock').toBe(false);
+  expect(layoutState.hasTruncatingMaxWidth, 'languageSelect should not be restricted to 6rem max-width').toBe(false);
+  expect(layoutState.actionsBottom, 'actions container must stay within header bounds').toBeLessThanOrEqual(layoutState.headerBottom + 1);
+  expect(layoutState.scrollWidth, 'no horizontal scroll').toBeLessThanOrEqual(layoutState.clientWidth);
+});
+
+test('Setlist on large desktop (1920x1080) centers main shell with max-width and 2 columns', async ({ page }) => {
+  await page.setViewportSize({ width: 1920, height: 1080 });
+  await page.goto('/setlist/');
+
+  const info = await page.evaluate(() => {
+    const shell = document.querySelector('.setlist-page');
+    const setlistPane = document.querySelector('.setlist-pane');
+    const controlPane = document.querySelector('.control-pane');
+    if (!shell || !setlistPane || !controlPane) return { missing: true };
+
+    const rect = shell.getBoundingClientRect();
+    const setlistRect = setlistPane.getBoundingClientRect();
+    const controlRect = controlPane.getBoundingClientRect();
+
+    return {
+      shellWidth: rect.width,
+      leftMargin: rect.left,
+      rightMargin: document.documentElement.clientWidth - rect.right,
+      isTwoColumns: Math.abs(setlistRect.top - controlRect.top) < 20 && setlistRect.left < controlRect.left,
+      scrollWidth: document.documentElement.scrollWidth,
+      clientWidth: document.documentElement.clientWidth,
+    };
+  });
+
+  expect(info.missing).toBeUndefined();
+  expect(info.isTwoColumns, 'desktop must preserve 2-column layout').toBe(true);
+  expect(info.shellWidth, 'shell width should be bounded on large desktop (<= 1440px)').toBeLessThanOrEqual(1441);
+  expect(Math.abs(info.leftMargin - info.rightMargin), 'shell should be horizontally centered').toBeLessThanOrEqual(12);
+  expect(info.scrollWidth, 'no horizontal scroll').toBeLessThanOrEqual(info.clientWidth);
+});
+
+test('Setlist on narrow panel (360x900) maintains compact vertical flow without huge gap between lyrics and controls', async ({ page }) => {
+  await page.setViewportSize({ width: 360, height: 900 });
+  await page.goto('/setlist/');
+
+  const gapInfo = await page.evaluate(() => {
+    const lyricsCard = document.querySelector('.hud-lyric-card');
+    const secondaryControls = document.querySelector('.secondary-controls');
+    const dock = document.querySelector('.transport-dock');
+
+    if (!lyricsCard || !secondaryControls || !dock) return { missing: true };
+
+    const lyricsRect = lyricsCard.getBoundingClientRect();
+    const secondaryRect = secondaryControls.getBoundingClientRect();
+    const dockRect = dock.getBoundingClientRect();
+
+    const gapBetweenLyricsAndControls = secondaryRect.top - lyricsRect.bottom;
+    const dockOverlapsControls = dockRect.top < secondaryRect.bottom;
+
+    return {
+      gapBetweenLyricsAndControls,
+      dockOverlapsControls,
+      scrollWidth: document.documentElement.scrollWidth,
+      clientWidth: document.documentElement.clientWidth,
+    };
+  });
+
+  expect(gapInfo.missing).toBeUndefined();
+  expect(gapInfo.gapBetweenLyricsAndControls, 'gap between lyrics card and controls should be compact (<= 96px)').toBeLessThanOrEqual(96);
+  expect(gapInfo.dockOverlapsControls, 'transport dock must not overlap secondary controls').toBe(false);
+  expect(gapInfo.scrollWidth, 'no horizontal scroll on narrow panel').toBeLessThanOrEqual(gapInfo.clientWidth);
+});
+
+test('Setlist with small song list maintains compact vertical flow without stretching controls', async ({ page }) => {
+  await page.setViewportSize({ width: 360, height: 900 });
+  await page.goto('/setlist/?scenario=empty');
+
+  const gapInfo = await page.evaluate(() => {
+    const lyricsCard = document.querySelector('.hud-lyric-card');
+    const secondaryControls = document.querySelector('.secondary-controls');
+
+    if (!lyricsCard || !secondaryControls) return { missing: true };
+
+    const lyricsRect = lyricsCard.getBoundingClientRect();
+    const secondaryRect = secondaryControls.getBoundingClientRect();
+
+    return {
+      gapBetweenLyricsAndControls: secondaryRect.top - lyricsRect.bottom,
+    };
+  });
+
+  expect(gapInfo.missing).toBeUndefined();
+  expect(gapInfo.gapBetweenLyricsAndControls, 'gap on small setlist must remain compact (<= 96px)').toBeLessThanOrEqual(96);
+});
+
+test('Setlist on 1280x900 desktop maintains compact vertical flow in control pane without stretching flex gap', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await page.goto('/setlist/?scenario=empty');
+
+  const gapInfo = await page.evaluate(() => {
+    const lyricsCard = document.querySelector('.hud-lyric-card');
+    const secondaryControls = document.querySelector('.secondary-controls');
+
+    if (!lyricsCard || !secondaryControls) return { missing: true };
+
+    const lyricsRect = lyricsCard.getBoundingClientRect();
+    const secondaryRect = secondaryControls.getBoundingClientRect();
+
+    return {
+      gapBetweenLyricsAndControls: secondaryRect.top - lyricsRect.bottom,
+    };
+  });
+
+  expect(gapInfo.missing).toBeUndefined();
+  expect(gapInfo.gapBetweenLyricsAndControls, 'gap on desktop control pane must remain compact (<= 48px)').toBeLessThanOrEqual(48);
+});
+
+test('Total duration is located in Songs in Project pane and omitted from main app bar', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await page.goto('/setlist/');
+
+  const durationPlacement = await page.evaluate(() => {
+    const header = document.querySelector('header.app-bar');
+    const setlistPane = document.querySelector('.setlist-pane');
+    const totalDurationEl = document.querySelector('#totalSetlistDuration');
+
+    if (!header || !setlistPane || !totalDurationEl) return { missing: true };
+
+    const inHeader = header.contains(totalDurationEl);
+    const inSetlistPane = setlistPane.contains(totalDurationEl);
+
+    return { inHeader, inSetlistPane };
+  });
+
+  expect(durationPlacement.missing).toBeUndefined();
+  expect(durationPlacement.inHeader, 'total duration must be removed from main header').toBe(false);
+  expect(durationPlacement.inSetlistPane, 'total duration must be inside Songs in Project pane').toBe(true);
+});
+
+test('Quantization control supports pt-BR text without clipping or colliding with Click and Refresh', async ({ page }) => {
+  await page.setViewportSize({ width: 360, height: 900 });
+  await page.goto('/setlist/');
+  await page.evaluate(() => {
+    const sel = document.querySelector('#languageSelect');
+    if (sel) {
+      sel.value = 'pt-BR';
+      sel.dispatchEvent(new Event('change'));
+    }
+  });
+
+  const quantInfo = await page.evaluate(() => {
+    const quantCtrl = document.querySelector('.quantization-control');
+    const quantSelect = document.querySelector('#quantizationSelect');
+    const btnMetro = document.querySelector('#btnMetronome');
+    const btnRef = document.querySelector('#btnRefresh');
+
+    if (!quantCtrl || !quantSelect || !btnMetro || !btnRef) return { missing: true };
+
+    const ctrlRect = quantCtrl.getBoundingClientRect();
+    const metroRect = btnMetro.getBoundingClientRect();
+    const refRect = btnRef.getBoundingClientRect();
+
+    // Check if quantCtrl occupies full width line above btnMetro/btnRef
+    const isFullLineAbove = ctrlRect.bottom <= metroRect.top + 2;
+
+    const selectStyle = window.getComputedStyle(quantSelect);
+
+    return {
+      isFullLineAbove,
+      selectWidth: ctrlRect.width,
+      scrollWidth: document.documentElement.scrollWidth,
+      clientWidth: document.documentElement.clientWidth,
+    };
+  });
+
+  expect(quantInfo.missing).toBeUndefined();
+  expect(quantInfo.isFullLineAbove, 'quantization control should occupy full line on 360px width').toBe(true);
+  expect(quantInfo.scrollWidth, 'no horizontal scroll in pt-BR').toBeLessThanOrEqual(quantInfo.clientWidth);
+});
+
+test('Song duration displays with increased contrast and tabular nums', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await page.goto('/setlist/');
+
+  const durationStyle = await page.evaluate(() => {
+    const el = document.querySelector('.song-duration');
+    if (!el) return null;
+    const style = window.getComputedStyle(el);
+    return {
+      fontSizePx: parseFloat(style.fontSize),
+      tabularNums: style.fontVariantNumeric.includes('tabular-nums'),
+    };
+  });
+
+  if (durationStyle) {
+    expect(durationStyle.fontSizePx, 'song duration font size should be >= 13px').toBeGreaterThanOrEqual(13);
+    expect(durationStyle.tabularNums, 'song duration must use tabular nums').toBe(true);
+  }
+});
+
+test('Language selector uses compact width footprint and flag labels', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await page.goto('/setlist/');
+
+  const langState = await page.evaluate(() => {
+    const sel = document.querySelector('#languageSelect');
+    if (!sel) return { missing: true };
+    const rect = sel.getBoundingClientRect();
+    const optionsText = Array.from(sel.options).map((o) => o.textContent);
+    return {
+      width: rect.width,
+      optionsText,
+    };
+  });
+
+  expect(langState.missing).toBeUndefined();
+  expect(langState.width, 'language selector should be compact (<= 110px)').toBeLessThanOrEqual(110);
+  expect(langState.optionsText.some((t) => t.includes('🇧🇷') || t.includes('PT')), 'language options should include flag or compact label').toBe(true);
+});
+
+test('Quantization select inherits site font family and avoids clipping', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await page.goto('/setlist/');
+
+  const quantState = await page.evaluate(() => {
+    const quantSelect = document.querySelector('#quantizationSelect');
+    const body = document.body;
+    if (!quantSelect || !body) return { missing: true };
+
+    const selectFont = window.getComputedStyle(quantSelect).fontFamily.toLowerCase();
+    const bodyFont = window.getComputedStyle(body).fontFamily.toLowerCase();
+
+    const rect = quantSelect.getBoundingClientRect();
+
+    return {
+      selectFont,
+      bodyFont,
+      fontMatches: selectFont.includes(bodyFont.split(',')[0].trim().replace(/['"]/g, '')),
+      width: rect.width,
+    };
+  });
+
+  expect(quantState.missing).toBeUndefined();
+  expect(quantState.fontMatches, 'quantization select should inherit site font family').toBe(true);
+});
+
+test('Control pane outer box does not create a huge empty dark void below logs on desktop', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await page.goto('/setlist/');
+
+  const heightInfo = await page.evaluate(() => {
+    const pane = document.querySelector('.control-pane');
+    const hud = document.querySelector('.hud');
+    const sec = document.querySelector('.secondary-controls');
+    const diag = document.querySelector('#diagnosticsPanel') || document.querySelector('.diagnostics-panel');
+
+    if (!pane || !hud || !sec) return { missing: true };
+
+    const paneRect = pane.getBoundingClientRect();
+    const hudRect = hud.getBoundingClientRect();
+    const secRect = sec.getBoundingClientRect();
+    const diagRect = diag ? diag.getBoundingClientRect() : { bottom: secRect.bottom };
+
+    const contentBottom = Math.max(hudRect.bottom, secRect.bottom, diagRect.bottom);
+    const unusedEmptyGap = paneRect.bottom - contentBottom;
+
+    return {
+      unusedEmptyGap,
+      paneHeight: paneRect.height,
+    };
+  });
+
+  expect(heightInfo.missing).toBeUndefined();
+  expect(heightInfo.unusedEmptyGap, 'unused empty gap inside control pane box should be <= 75px').toBeLessThanOrEqual(75);
+});
+
+
+test('Language selector shows compact text-only labels without flag images', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await page.goto('/setlist/');
+
+  const langState = await page.evaluate(() => {
+    const sel = document.querySelector('#languageSelect');
+    const flagIcon = document.querySelector('#languageFlagIcon');
+    if (!sel) return { missing: true };
+    const optionsText = Array.from(sel.options).map((o) => o.textContent.trim());
+    return {
+      optionsText,
+      flagIconExists: Boolean(flagIcon),
+    };
+  });
+
+  expect(langState.missing).toBeUndefined();
+  // Flag icon must NOT be present
+  expect(langState.flagIconExists, 'flag icon element must not exist').toBe(false);
+  // Options must show compact abbreviations only
+  expect(langState.optionsText.some((t) => t === 'EN' || t.startsWith('EN')), 'English option must be compact "EN"').toBe(true);
+  expect(langState.optionsText.some((t) => t === 'PT' || t.startsWith('PT')), 'Portuguese option must be compact "PT"').toBe(true);
+});
