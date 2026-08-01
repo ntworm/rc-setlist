@@ -18,20 +18,55 @@ export function isValidOrigin(origin: string, reqHost: string): boolean {
   return false;
 }
 
+export interface SetlistWSServerOptions {
+  heartbeatIntervalMs?: number;
+  logDedupeWindowMs?: number;
+  now?: () => number;
+}
+
 export class SetlistWSServer extends EventEmitter {
   private wss: WebSocketServer | null = null;
   private clients: Set<AugmentedWebSocket> = new Set();
   private lastState: SetlistState | null = null;
 
   private lastStateJson: string = '';
-  private lastLogJsonByKey = new Map<string, string>();
+  private lastLogTimeByKey = new Map<string, number>();
+  private heartbeatInterval: NodeJS.Timeout | null = null;
 
   private authToken: string;
   private authFailures = new Map<string, { count: number; windowStart: number }>();
 
-  constructor(authToken: string = '') {
+  private readonly heartbeatIntervalMs: number;
+  private readonly logDedupeWindowMs: number;
+  private readonly now: () => number;
+
+  constructor(authToken: string = '', options: SetlistWSServerOptions = {}) {
     super();
     this.authToken = authToken;
+    this.heartbeatIntervalMs = options.heartbeatIntervalMs ?? 30_000;
+    this.logDedupeWindowMs = options.logDedupeWindowMs ?? 1_000;
+    this.now = options.now ?? Date.now;
+  }
+
+  private heartbeatTick(): void {
+    for (const ws of this.clients) {
+      if (ws.readyState !== WebSocket.OPEN) {
+        this.clients.delete(ws);
+        continue;
+      }
+      if (ws.isAlive === false) {
+        this.clients.delete(ws);
+        try { ws.terminate(); } catch { /* already closing */ }
+        continue;
+      }
+      ws.isAlive = false;
+      try {
+        ws.ping();
+      } catch {
+        this.clients.delete(ws);
+        try { ws.terminate(); } catch { /* already closing */ }
+      }
+    }
   }
 
   private cleanExpiredFailures(): void {
@@ -76,6 +111,8 @@ export class SetlistWSServer extends EventEmitter {
     
     this.wss.on('connection', (ws: AugmentedWebSocket, req) => {
       this.clients.add(ws);
+      ws.isAlive = true;
+      ws.on('pong', () => { ws.isAlive = true; });
       const remote = req.socket.remoteAddress ?? 'unknown';
       ws.remoteAddress = remote;
       // Parse token from connection URL query parameter
@@ -160,6 +197,11 @@ export class SetlistWSServer extends EventEmitter {
       });
     });
 
+    if (!this.heartbeatInterval) {
+      this.heartbeatInterval = setInterval(() => this.heartbeatTick(), this.heartbeatIntervalMs);
+      this.heartbeatInterval.unref?.();
+    }
+
     return this.wss;
   }
 
@@ -223,8 +265,8 @@ export class SetlistWSServer extends EventEmitter {
       if (ws.readyState === WebSocket.OPEN) {
         try {
           ws.send(json);
-        } catch (err) {
-          // ignore
+        } catch {
+          console.warn('[WS] State broadcast failed for an open client.');
         }
       }
     }
@@ -236,36 +278,42 @@ export class SetlistWSServer extends EventEmitter {
       if (ws.readyState === WebSocket.OPEN) {
         try {
           ws.send(json);
-        } catch (err) {
-          // ignore
+        } catch {
+          console.warn('[WS] Broadcast failed for an open client.');
         }
       }
     }
   }
 
   public broadcastLog(message: string, level: 'info' | 'warn' | 'error' | 'automation' = 'info'): void {
-    const json = JSON.stringify({ type: 'log', message, level, timestamp: Date.now() });
     const key = `${level}:${message}`;
-    if (this.lastLogJsonByKey.get(key) === json) return;
-    this.lastLogJsonByKey.set(key, json);
-    if (this.lastLogJsonByKey.size > 100) {
-      const firstKey = this.lastLogJsonByKey.keys().next().value;
+    const now = this.now();
+    const previous = this.lastLogTimeByKey.get(key);
+    if (previous !== undefined && now - previous < this.logDedupeWindowMs) return;
+    this.lastLogTimeByKey.set(key, now);
+    if (this.lastLogTimeByKey.size > 100) {
+      const firstKey = this.lastLogTimeByKey.keys().next().value;
       if (firstKey !== undefined) {
-        this.lastLogJsonByKey.delete(firstKey);
+        this.lastLogTimeByKey.delete(firstKey);
       }
     }
+    const json = JSON.stringify({ type: 'log', message, level, timestamp: now });
     for (const ws of this.clients) {
       if (ws.readyState === WebSocket.OPEN) {
         try {
           ws.send(json);
-        } catch (err) {
-          // ignore
+        } catch {
+          console.warn('[WS] Log broadcast failed for an open client.');
         }
       }
     }
   }
 
   public stop(): void {
+    if (this.heartbeatInterval) {
+      clearInterval(this.heartbeatInterval);
+      this.heartbeatInterval = null;
+    }
     for (const ws of this.clients) {
       try {
         ws.removeAllListeners();
@@ -275,7 +323,7 @@ export class SetlistWSServer extends EventEmitter {
       }
     }
     this.clients.clear();
-    this.lastLogJsonByKey.clear();
+    this.lastLogTimeByKey.clear();
     this.authFailures.clear();
     this.lastState = null;
     this.lastStateJson = '';

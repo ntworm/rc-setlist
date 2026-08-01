@@ -92,6 +92,7 @@ import { WebSocket } from 'ws';
 
 export interface AugmentedWebSocket extends WebSocket {
   isController?: boolean;
+  isAlive?: boolean;
   clientId?: string;
   synchronized?: boolean;
   handshakeStateVersion?: number;
