@@ -16,6 +16,14 @@ test('decoder rejects values without a supported message type', () => {
   }
 });
 
+test('decoder bounds message types without reflecting unsafe input', () => {
+  const sentinel = `unsupported-${'x'.repeat(256)}\nsecret`;
+  const result = decodeClientMessage({ type: sentinel });
+
+  assert.equal(result.ok, false);
+  assert.doesNotMatch(result.message, /secret/);
+});
+
 test('decoder validates command identifiers without echoing unsafe values', () => {
   const safe = decodeClientMessage({ type: 'play', commandId: 'play-123_A' });
   assert.equal(safe.ok, true);

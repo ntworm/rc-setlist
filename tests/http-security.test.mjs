@@ -47,6 +47,7 @@ function makeRequest(options, body) {
 test('HTTP Security: sanitizeUrl query token redaction', () => {
   assert.strictEqual(sanitizeUrl('/debug/snapshot?token=secret123'), '/debug/snapshot?token=***');
   assert.strictEqual(sanitizeUrl('/setlist?param=abc&token=xyz&other=123'), '/setlist?param=abc&token=***&other=123');
+  assert.strictEqual(sanitizeUrl('/debug/snapshot?%74oken=encoded-secret'), '/debug/snapshot?%74oken=***');
   assert.strictEqual(sanitizeUrl('/health'), '/health');
   assert.strictEqual(sanitizeUrl(''), '');
 });

@@ -83,42 +83,37 @@ export class SetlistManager {
       return;
     }
     const customRank = new Map(this.customOrder.map((title, index) => [title, index]));
-    const ordered = chronological
+    const orderedSongs = chronological
       .filter((song) => customRank.has(song.title))
       .sort((a, b) => {
         const orderDifference = customRank.get(a.title)! - customRank.get(b.title)!;
         return orderDifference || a.time - b.time;
       });
-    const orderedSongs = new Set(ordered);
+    const customSongs = new Set(orderedSongs);
+    const leadingSongs: Song[] = [];
+    const songsAfter = new Map<Song, Song[]>();
+    let chronologicalAnchor: Song | null = null;
+    let firstCustomSong: Song | null = null;
 
-    for (let chronologicalIndex = 0; chronologicalIndex < chronological.length; chronologicalIndex++) {
-      const song = chronological[chronologicalIndex]!;
-      if (orderedSongs.has(song)) continue;
-
-      let insertAt = -1;
-      for (let previousIndex = chronologicalIndex - 1; previousIndex >= 0; previousIndex--) {
-        const previousPosition = ordered.indexOf(chronological[previousIndex]!);
-        if (previousPosition !== -1) {
-          insertAt = previousPosition + 1;
-          break;
-        }
+    for (const song of chronological) {
+      if (customSongs.has(song)) {
+        chronologicalAnchor = song;
+        firstCustomSong ??= song;
+      } else if (chronologicalAnchor) {
+        const group = songsAfter.get(chronologicalAnchor) ?? [];
+        group.push(song);
+        songsAfter.set(chronologicalAnchor, group);
+      } else {
+        leadingSongs.push(song);
       }
-
-      if (insertAt === -1) {
-        for (let nextIndex = chronologicalIndex + 1; nextIndex < chronological.length; nextIndex++) {
-          const nextPosition = ordered.indexOf(chronological[nextIndex]!);
-          if (nextPosition !== -1) {
-            insertAt = nextPosition;
-            break;
-          }
-        }
-      }
-
-      ordered.splice(insertAt === -1 ? ordered.length : insertAt, 0, song);
-      orderedSongs.add(song);
     }
 
-    this.songs = ordered;
+    const ordered: Song[] = [];
+    for (const song of orderedSongs) {
+      if (song === firstCustomSong) ordered.push(...leadingSongs);
+      ordered.push(song, ...(songsAfter.get(song) ?? []));
+    }
+    this.songs = ordered.length > 0 ? ordered : chronological;
     this.rebuildChronologicalIndex();
     this.invalidateDerivedSongs();
   }
@@ -141,7 +136,7 @@ export class SetlistManager {
       const metrics = calculateSetlistMetrics(this.songs, this.arrangementEndTime, this.tempo);
       this.derivedSongs = this.songs.map((song) => ({
         ...song,
-        durationSeconds: metrics.songDurationSecondsByStart.get(song.time) ?? null,
+        durationSeconds: metrics.songDurationSecondsBySong.get(song) ?? null,
       }));
       this.derivedTotalDurationSeconds = metrics.totalDurationSeconds;
     }

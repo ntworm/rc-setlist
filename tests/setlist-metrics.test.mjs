@@ -58,3 +58,14 @@ test('setlist metrics sort once regardless of song count', () => {
   }
   assert.equal(sortCalls, 1);
 });
+
+test('metrics keep distinct identities for songs that start on the same beat', () => {
+  const first = { title: 'First', time: 0, bpm: 120 };
+  const second = { title: 'Second', time: 0, bpm: 120 };
+  const third = { title: 'Third', time: 120, bpm: 120 };
+  const result = calculateSetlistMetrics([first, second, third], 240, 120);
+
+  assert.equal(result.songDurationSecondsBySong.get(first), null);
+  assert.equal(result.songDurationSecondsBySong.get(second), 60);
+  assert.equal(result.songDurationSecondsBySong.get(third), 60);
+});

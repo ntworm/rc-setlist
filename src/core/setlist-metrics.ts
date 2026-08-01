@@ -1,9 +1,10 @@
 import type { Song } from '../types.js';
 
-type TimedSong = Pick<Song, 'title' | 'time' | 'bpm'>;
+export type TimedSong = Pick<Song, 'title' | 'time' | 'bpm'>;
 
 export interface SetlistMetrics {
   songDurationSecondsByStart: Map<number, number | null>;
+  songDurationSecondsBySong: Map<TimedSong, number | null>;
   totalDurationSeconds: number | null;
 }
 
@@ -47,6 +48,7 @@ export function calculateSetlistMetrics(
 ): SetlistMetrics {
   const chronological = [...songs].sort((a, b) => a.time - b.time);
   const songDurationSecondsByStart = new Map<number, number | null>();
+  const songDurationSecondsBySong = new Map<TimedSong, number | null>();
   let total = 0;
   let complete = chronological.length > 0;
 
@@ -57,12 +59,14 @@ export function calculateSetlistMetrics(
       : arrangementEndTime;
     const duration = durationFromBoundary(song, nextStart, fallbackBpm);
     songDurationSecondsByStart.set(song.time, duration);
+    songDurationSecondsBySong.set(song, duration);
     if (duration === null) complete = false;
     else total += duration;
   }
 
   return {
     songDurationSecondsByStart,
+    songDurationSecondsBySong,
     totalDurationSeconds: complete ? total : null,
   };
 }

@@ -49,6 +49,8 @@ type QueuedCommand = {
   executeFn: () => void | Promise<void>;
 };
 
+class CommandDeadlineError extends Error {}
+
 function policyFor(type: string): CommandPolicy {
   return COMMAND_POLICIES[type] ?? DEFAULT_LOCAL_POLICY;
 }
@@ -172,15 +174,35 @@ export class CommandBus extends EventEmitter {
 
   private async execute(item: QueuedCommand): Promise<void> {
     const { command, executeFn } = item;
+    if (terminal(command.status)) return;
+    const remainingMs = command.timeoutMs - (Date.now() - command.createdAt);
+    if (remainingMs <= 0) {
+      this.updateStatus(command.commandId, 'expired', 'Timeout exceeded before execution');
+      return;
+    }
+
+    let deadline: NodeJS.Timeout | null = null;
     try {
-      await executeFn();
+      await Promise.race([
+        Promise.resolve().then(executeFn),
+        new Promise<never>((_, reject) => {
+          deadline = setTimeout(() => reject(new CommandDeadlineError()), remainingMs);
+          deadline.unref?.();
+        }),
+      ]);
       if (policyFor(command.type).completion === 'local') {
         this.updateStatus(command.commandId, 'confirmed');
       } else {
         this.resolveObservableConfirmations();
       }
     } catch (error) {
-      this.updateStatus(command.commandId, 'failed', failureMessage(error));
+      if (error instanceof CommandDeadlineError) {
+        this.updateStatus(command.commandId, 'expired', 'Execution deadline exceeded');
+      } else {
+        this.updateStatus(command.commandId, 'failed', failureMessage(error));
+      }
+    } finally {
+      if (deadline) clearTimeout(deadline);
     }
   }
 

@@ -13,9 +13,16 @@ export function sanitizeUrl(urlStr: string): string {
   if (!query) return urlStr;
   const parts = query.split('&');
   const sanitizedParts = parts.map(part => {
-    const [key] = part.split('=');
-    if (key === 'token') {
-      return 'token=***';
+    const separator = part.indexOf('=');
+    const rawKey = separator === -1 ? part : part.slice(0, separator);
+    let decodedKey = '';
+    try {
+      decodedKey = decodeURIComponent(rawKey.replace(/\+/g, ' '));
+    } catch {
+      return part;
+    }
+    if (decodedKey === 'token') {
+      return `${rawKey}=***`;
     }
     return part;
   });

@@ -341,6 +341,39 @@ test('SetlistManager: new songs do not erase an intentional manual order', () =>
   );
 });
 
+test('SetlistManager inserts new songs without repeated linear index searches', () => {
+  const manager = new SetlistManager();
+  manager.updateCues([
+    { name: 'Song A', time: 0 },
+    { name: 'Song D', time: 150 },
+  ]);
+  manager.setCustomOrder(['Song D', 'Song A']);
+
+  const originalIndexOf = Array.prototype.indexOf;
+  let indexOfCalls = 0;
+  Array.prototype.indexOf = function countedIndexOf(...args) {
+    indexOfCalls++;
+    return originalIndexOf.apply(this, args);
+  };
+  try {
+    manager.updateCues([
+      { name: 'Prefix', time: -50 },
+      { name: 'Song A', time: 0 },
+      { name: 'Song B', time: 50 },
+      { name: 'Song C', time: 100 },
+      { name: 'Song D', time: 150 },
+    ]);
+  } finally {
+    Array.prototype.indexOf = originalIndexOf;
+  }
+
+  assert.equal(indexOfCalls, 0);
+  assert.deepStrictEqual(
+    manager.getState().songs.map((song) => song.title),
+    ['Song D', 'Prefix', 'Song A', 'Song B', 'Song C'],
+  );
+});
+
 test('SetlistManager: publishes song and total durations from Arrangement end', () => {
   const manager = new SetlistManager();
   manager.updateCues([

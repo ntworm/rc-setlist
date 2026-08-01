@@ -133,3 +133,20 @@ test('panic can be released and stop remains available while critical commands a
   assert.equal(executed, true);
   bus.stop();
 });
+
+test('an expired local handler cannot block the ordered queue forever', async () => {
+  const { bus } = createBus();
+  const first = bus.registerCommand('hung-refresh', 'refresh', {}, 'test');
+  first.createdAt -= first.timeoutMs;
+  const second = bus.registerCommand('next-refresh', 'refresh', {}, 'test');
+  let secondExecuted = false;
+
+  bus.dispatch(first, () => new Promise(() => {}));
+  bus.dispatch(second, () => { secondExecuted = true; });
+  await new Promise((resolve) => setTimeout(resolve, 25));
+
+  assert.equal(first.status, 'expired');
+  assert.equal(second.status, 'confirmed');
+  assert.equal(secondExecuted, true);
+  bus.stop();
+});

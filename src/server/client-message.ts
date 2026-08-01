@@ -28,6 +28,7 @@ export type DecodeClientMessageResult =
   | { ok: false; code: 'invalid_message'; message: string; commandId?: string };
 
 const COMMAND_ID_PATTERN = /^[A-Za-z0-9._:-]+$/;
+const MESSAGE_TYPE_PATTERN = /^[a-z][a-z0-9_]{0,63}$/;
 const MAX_COMMAND_ID_LENGTH = 128;
 const MAX_CLIENT_ID_LENGTH = 128;
 const MAX_PROFILE_FIELD_LENGTH = 80;
@@ -71,8 +72,8 @@ function invalid(message: string, commandId?: string): DecodeClientMessageResult
 
 export function decodeClientMessage(input: unknown): DecodeClientMessageResult {
   if (!isRecord(input)) return invalid('Message must be a JSON object.');
-  if (typeof input.type !== 'string' || input.type.length === 0) {
-    return invalid('Message type must be a non-empty string.');
+  if (typeof input.type !== 'string' || !MESSAGE_TYPE_PATTERN.test(input.type)) {
+    return invalid('Message type must use 1-64 lowercase ASCII letters, digits, or underscores.');
   }
 
   const hasCommandId = Object.prototype.hasOwnProperty.call(input, 'commandId');
