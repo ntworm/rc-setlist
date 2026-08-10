@@ -54,6 +54,26 @@ test('public documentation describes external AbletonOSC without bundling it', (
   }
 });
 
+test('user guides define the stopped-play one-bar count-in safety contract', () => {
+  const english = readRequired('docs/USER-GUIDE.md');
+  const portuguese = readRequired('docs/pt-BR/USER-GUIDE.md');
+  const tester = readRequired('docs/TESTER-GUIDE.md');
+  const changelog = readRequired('CHANGELOG.md');
+
+  assert.match(english, /COUNT-IN 1 BAR[\s\S]*one bar[\s\S]*transport is stopped/i);
+  assert.match(english, /Live(?:'s)? native metronome[\s\S]*does not (?:enter )?Record[\s\S]*arm tracks/i);
+  assert.match(english, /does not change[\s\S]*jump quantization/i);
+
+  assert.match(portuguese, /CONTAGEM 1 COMP[\s\S]*um compasso[\s\S]*transporte est[aá] parado/i);
+  assert.match(portuguese, /metr[oô]nomo nativo do Live[\s\S]*n[aã]o entra em Record[\s\S]*n[aã]o arma pistas/i);
+  assert.match(portuguese, /n[aã]o\s+altera[\s\S]*quantiza[cç][aã]o dos saltos/i);
+
+  for (const marker of ['Click off', 'Click on', 'beat zero', 'Stop', 'manual Click', 'already playing']) {
+    assert.match(tester, new RegExp(marker, 'i'), `tester guide must cover ${marker}`);
+  }
+  assert.match(changelog, /\[ws\][^\n]*preRollEnabled[^\n]*protocolVersion 3/i);
+});
+
 test('installation and troubleshooting guides prevent the AbletonOSC folder mix-up', () => {
   for (const path of [
     'docs/INSTALL.md',

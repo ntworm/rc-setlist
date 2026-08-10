@@ -36,6 +36,7 @@ const btnPlay = document.getElementById('btnPlay');
 const btnStop = document.getElementById('btnStop');
 const btnNext = document.getElementById('btnNext');
 const btnMetronome = document.getElementById('btnMetronome');
+const btnPreRoll = document.getElementById('btnPreRoll');
 const btnRefresh = document.getElementById('btnRefresh');
 const quantizationSelect = document.getElementById('quantizationSelect');
 const hudLoopIter = document.getElementById('hudLoopIter');
@@ -54,6 +55,7 @@ let draggedSongIdx = null;
 let isLocked = localStorage.getItem('bridge_locked') === 'true';
 let lastFlashBeat = -1;
 let lastRenderedMetronome = null;
+let lastRenderedPreRoll = null;
 let currentLyrics = { song: '', format: 'none', lines: [] };
 let currentLyricsIdx = -1;
 let isController = false;
@@ -689,10 +691,33 @@ function updateTransportAvailability() {
   btnPlay.disabled = !available;
   btnStop.disabled = !available;
   btnMetronome.disabled = !available;
+  btnPreRoll.disabled = !available;
   btnRefresh.disabled = !available;
   quantizationSelect.disabled = !available;
   previousHoldController?.update();
   nextHoldController?.update();
+}
+
+function renderPreRoll() {
+  const enabled = lastState?.preRollEnabled === true;
+  if (enabled === lastRenderedPreRoll) return;
+  lastRenderedPreRoll = enabled;
+  btnPreRoll.classList.toggle('btn-preroll-active', enabled);
+  btnPreRoll.setAttribute('aria-pressed', String(enabled));
+}
+
+function requestPlay() {
+  if (
+    canUseTransport()
+    && lastState?.preRollEnabled === true
+    && lastState.isPlaying === false
+    && Number.isFinite(lastState.currentSongTime)
+    && Number.isFinite(lastState.signatureNumerator)
+    && lastState.currentSongTime < lastState.signatureNumerator
+  ) {
+    showToast(t('feedback.preRollShortened'), 'warn');
+  }
+  sendControl('play');
 }
 
 function mountTransportControls() {
@@ -711,7 +736,7 @@ function mountTransportControls() {
     button: btnNext,
     direction: 'next',
   });
-  btnPlay.addEventListener('click', () => sendControl('play'));
+  btnPlay.addEventListener('click', requestPlay);
   btnStop.addEventListener('click', () => sendControl('stop'));
   updateTransportAvailability();
 }
@@ -789,6 +814,7 @@ function connect() {
         if (payload.state) {
           barDisplayStabilizer.observeState(lastState, payload.state);
           lastState = payload.state;
+          renderPreRoll();
           quantizationConfirmation.observe(lastState.clipTriggerQuantization);
           jumpConfirmation.observeState(lastState);
           renderSongList(lastState);
@@ -801,6 +827,7 @@ function connect() {
         const prevActiveIdx = lastState ? lastState.activeSongIndex : -1;
         barDisplayStabilizer.observeState(lastState, payload.state);
         lastState = payload.state;
+        renderPreRoll();
         if (profileState.profiles.length > 0) {
           profileState = { ...profileState, canMutate: !lastState.isPlaying };
           updateProfileMutationAvailability();
@@ -1400,6 +1427,18 @@ function toggleMetronome() {
   ws.send(JSON.stringify({
     type: 'metronome',
     value: !lastState.metronome
+  }));
+}
+
+function togglePreRoll() {
+  if (isLocked) {
+    showLockWarning();
+    return;
+  }
+  if (!canUseTransport()) return;
+  ws.send(JSON.stringify({
+    type: 'set_pre_roll',
+    value: lastState.preRollEnabled !== true,
   }));
 }
 

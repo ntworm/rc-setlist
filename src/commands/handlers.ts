@@ -9,6 +9,7 @@ import {
   checkAndBroadcastLyrics,
   selectProfile,
   loadLyricsForSong,
+  cancelActivePreRoll,
 } from '../core/bridge-state.js';
 import {
   buildTracklistCsv,
@@ -133,15 +134,48 @@ export async function executeCommandAction(
   const osc = bridgeState.oscClient!;
 
   switch (msg.type) {
-    case 'play':
+    case 'play': {
+      const state = bridgeState.manager!.getState();
+      const coordinator = bridgeState.preRollCoordinator;
+
+      if (state.isPlaying) {
+        osc.startPlaying();
+        break;
+      }
+
+      const cancelled = coordinator?.hasPending() ? cancelActivePreRoll() : null;
+      const decision = coordinator?.start({
+        enabled: state.preRollEnabled,
+        isPlaying: state.isPlaying,
+        targetBeat: state.currentSongTime,
+        signatureNumerator: state.signatureNumerator,
+        metronome: cancelled?.restoreMetronome ? false : state.metronome,
+      });
+      if (!decision || decision.kind === 'passthrough') {
+        if (decision?.reason === 'invalid') {
+          bridgeState.wsServer?.broadcastLog('Count-in could not determine a safe pre-roll position. Starting normally.', 'warn');
+        }
+        osc.startPlaying();
+        break;
+      }
+
+      if (decision.enableMetronome) osc.setMetronome(true);
+      osc.setCurrentSongTime(decision.startBeat);
       osc.startPlaying();
       break;
+    }
     case 'stop':
+      cancelActivePreRoll();
       osc.stopPlaying();
       break;
     case 'metronome':
+      bridgeState.preRollCoordinator?.markMetronomeOverridden();
       osc.setMetronome(msg.value);
       bridgeState.manager?.updateMetronome(msg.value);
+      broadcastState();
+      break;
+    case 'set_pre_roll':
+      bridgeState.manager!.setPreRollEnabled(msg.value);
       broadcastState();
       break;
     case 'refresh':
@@ -179,6 +213,7 @@ export async function executeCommandAction(
     case 'set_panic':
       bridgeState.manager!.setPanic(msg.active);
       if (msg.active) {
+        cancelActivePreRoll();
         osc.stopPlaying();
         bridgeState.manager!.clearLoop();
       }

@@ -29,7 +29,7 @@ export interface Setlist {
 }
 
 export interface SetlistState {
-  protocolVersion?: 2;
+  protocolVersion?: 3;
   setlistVersion?: number;
   songs: Song[];
   hidden: { name: string; time: number }[];
@@ -39,6 +39,7 @@ export interface SetlistState {
   tempo: number;
   currentSongTime: number;
   metronome: boolean;
+  preRollEnabled: boolean;
   signatureNumerator: number;
   signatureDenominator: number;
   loopIteration?: { current: number; total: number } | null;
@@ -102,6 +103,7 @@ export type ClientMessage =
   | (ClientMessageBase & { type: 'export_csv' })
   | (ClientMessageBase & { type: 'create_test_session' })
   | (ClientMessageBase & { type: 'metronome'; value: boolean })
+  | (ClientMessageBase & { type: 'set_pre_roll'; value: boolean })
   | (ClientMessageBase & { type: 'set_quantization'; value: number })
   | (ClientMessageBase & { type: 'jump'; songIndex: number; sectionIndex?: number | null })
   | (ClientMessageBase & { type: 'reorder'; songTitles: string[] })

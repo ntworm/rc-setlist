@@ -142,6 +142,7 @@ test('Static UI Setlist: does not load helper modules as classic scripts', () =>
 
 test('Static UI Setlist: loads the safe transport runtime and dock controls', () => {
   const setlistHtml = fs.readFileSync(path.join(__dirname, 'setlist', 'index.html'), 'utf8');
+  const setlistCss = fs.readFileSync(path.join(__dirname, 'setlist', 'setlist.css'), 'utf8');
   assert.match(setlistHtml, /src="\.\/transport-runtime\.js"/);
   assert.match(setlistHtml, /class="transport-dock"/);
   for (const id of ['btnPrevious', 'btnPlay', 'btnStop', 'btnNext']) {
@@ -153,6 +154,20 @@ test('Static UI Setlist: loads the safe transport runtime and dock controls', ()
   }
   assert.match(setlistHtml, /class="secondary-controls"/);
   assert.match(setlistHtml, /id="quantizationSelect"/);
+  assert.match(
+    setlistHtml,
+    /id="btnMetronome"[\s\S]*?id="btnPreRoll"/,
+    'count-in control follows Click in the secondary controls',
+  );
+  const preRollButton = setlistHtml.match(/<button[^>]*id="btnPreRoll"[\s\S]*?<\/button>/)?.[0];
+  assert.ok(preRollButton, 'count-in control exists');
+  assert.match(preRollButton, /aria-pressed="false"/);
+  assert.match(preRollButton, /data-i18n="setlist\.preRollLabel"/);
+  assert.match(
+    setlistCss,
+    /\.secondary-controls\s*\{\s*grid-template-columns:\s*repeat\(3,\s*minmax\(0,\s*1fr\)\)/,
+    'Click, count-in, and Refresh use three equal columns',
+  );
 });
 
 test('Static UI Setlist: uses guarded controller storage and confirmed lyrics saves', () => {

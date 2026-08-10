@@ -60,6 +60,7 @@ test('decoder accepts every current browser and server command, including legacy
     { type: 'export_csv' },
     { type: 'create_test_session' },
     { type: 'metronome', value: true },
+    { type: 'set_pre_roll', value: true },
     { type: 'set_quantization', value: 11 },
     { type: 'jump', songIndex: 2 },
     { type: 'jump', songIndex: 2, sectionIndex: null },
@@ -95,6 +96,7 @@ test('decoder rejects invalid scalar command fields', () => {
     [{ type: 'get_lyrics', song: '' }, /song/],
     [{ type: 'get_lyrics', song: 7 }, /song/],
     [{ type: 'metronome', value: 'yes' }, /value/],
+    [{ type: 'set_pre_roll', value: 1 }, /value/],
     [{ type: 'set_quantization', value: 6.5 }, /value/],
     [{ type: 'set_quantization', value: 99 }, /value/],
     [{ type: 'jump', songIndex: -1 }, /songIndex/],
@@ -107,6 +109,13 @@ test('decoder rejects invalid scalar command fields', () => {
   ];
 
   for (const [message, pattern] of invalid) expectInvalid(message, pattern);
+});
+
+test('decoder canonicalizes the pre-roll toggle and drops unexpected fields', () => {
+  const result = decodeClientMessage({ type: 'set_pre_roll', value: true, ignored: 'drop-me' });
+
+  assert.equal(result.ok, true);
+  assert.deepEqual(result.message, { type: 'set_pre_roll', value: true });
 });
 
 test('decoder rejects C0 and C1 controls in every structured text field', () => {

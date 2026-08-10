@@ -397,11 +397,24 @@ test('SetlistManager: publishes song and total durations from Arrangement end', 
   manager.updateArrangementEndTime(240);
 
   const state = manager.getState();
-  assert.equal(state.protocolVersion, 2);
+  assert.equal(state.protocolVersion, 3);
   assert.equal(state.songs[0].durationSeconds, 60);
   assert.equal(state.songs[1].durationSeconds, 120);
   assert.equal(state.totalDurationSeconds, 180);
   assert.equal(state.arrangementEndTime, 240);
+});
+
+test('SetlistManager: shares a non-persisted pre-roll toggle in public state', () => {
+  const manager = new SetlistManager();
+  const initialVersion = manager.getState().stateVersion;
+
+  assert.equal(manager.getState().preRollEnabled, false);
+  manager.setPreRollEnabled(true);
+  assert.equal(manager.getState().preRollEnabled, true);
+  assert.equal(manager.getState().stateVersion, initialVersion + 1);
+
+  manager.setPreRollEnabled(true);
+  assert.equal(manager.getState().stateVersion, initialVersion + 1);
 });
 
 test('SetlistManager: keeps final and total durations unknown without a valid end', () => {

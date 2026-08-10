@@ -16,10 +16,12 @@ import {
   selectProfile,
   loadLyricsForSong,
   runPreflightCheck,
+  cancelActivePreRoll,
 } from './core/bridge-state.js';
 import { getExtensionContext } from './context.js';
 import { SetlistManager } from './core/setlist-manager.js';
 import { JumpScheduler, type PendingJump } from './core/next-downbeat-jump.js';
+import { PreRollCoordinator } from './core/pre-roll-coordinator.js';
 import { EventLogger } from './core/event-log.js';
 import { CommandBus } from './core/command-bus.js';
 import { OSCClient } from './integration/osc-client.js';
@@ -196,6 +198,7 @@ export async function startServer(options: StartServerOptions = {}): Promise<voi
 
   try {
     bridgeState.manager = new SetlistManager();
+    bridgeState.preRollCoordinator = new PreRollCoordinator();
     bridgeState.lastCuesFingerprint = '__init__';
     bridgeState.scheduler = new JumpScheduler();
     bridgeState.scheduler.on(handleJumpSchedulerEvent);
@@ -551,6 +554,8 @@ export async function stopServer(): Promise<void> {
     bridgeState.mcpClient = null;
   }
 
+  cancelActivePreRoll();
+
   if (bridgeState.wsServer) {
     bridgeState.wsServer.stop();
     bridgeState.wsServer = null;
@@ -588,6 +593,7 @@ export async function stopServer(): Promise<void> {
 
   bridgeState.manager = null;
   bridgeState.scheduler = null;
+  bridgeState.preRollCoordinator = null;
   bridgeState.profileManager = null;
   bridgeState.projectIdentity = null;
   bridgeState.profileScopeSwitching = false;

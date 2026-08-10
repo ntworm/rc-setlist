@@ -22,6 +22,7 @@ export class SetlistManager {
   private rawCues: { name: string; time: number; cueIndex?: number }[] = [];
   private appliedCuesFingerprint: string | null = null;
   private metronome: boolean = false;
+  private preRollEnabled: boolean = false;
   private signatureNumerator: number = 4;
   private signatureDenominator: number = 4;
   private clipTriggerQuantization: number = 4; // Default to 1 Bar (4)
@@ -202,6 +203,12 @@ export class SetlistManager {
 
   public updateMetronome(metronome: boolean): void {
     this.metronome = metronome;
+    this.stateVersion++;
+  }
+
+  public setPreRollEnabled(value: boolean): void {
+    if (this.preRollEnabled === value) return;
+    this.preRollEnabled = value;
     this.stateVersion++;
   }
 
@@ -401,7 +408,7 @@ export class SetlistManager {
     const derived = this.getDerivedSongs();
 
     const state: any = {
-      protocolVersion: 2,
+      protocolVersion: 3,
       setlistVersion: this.setlistVersion,
       songs: derived.songs,
       hidden: this.hidden,
@@ -411,6 +418,7 @@ export class SetlistManager {
       tempo: this.tempo,
       currentSongTime: this.currentSongTime,
       metronome: this.metronome,
+      preRollEnabled: this.preRollEnabled,
       signatureNumerator: this.signatureNumerator,
       signatureDenominator: this.signatureDenominator,
       loopIteration: this.loopActive && this.loopCount !== null && this.loopCount > 0

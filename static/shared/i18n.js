@@ -177,6 +177,11 @@
     'setlist.timecode': { en: 'Timecode', 'pt-BR': 'Timecode' },
     'setlist.lyricLine': { en: 'Lyric line', 'pt-BR': 'Linha da letra' },
     'setlist.quantization': { en: 'Quantization', 'pt-BR': 'Quantização' },
+    'setlist.preRollLabel': { en: 'COUNT-IN 1 BAR', 'pt-BR': 'CONTAGEM 1 COMP.' },
+    'setlist.preRollTitle': {
+      en: "Use Ableton Live's Click for a one-bar pre-roll when Play starts from stopped",
+      'pt-BR': 'Usar o Click do Ableton Live para uma contagem de um compasso ao iniciar Play com o transporte parado',
+    },
     'setlist.refresh': { en: 'Refresh', 'pt-BR': 'Atualizar' },
     'setlist.refreshTitle': { en: 'Reload the setlist from Ableton Live', 'pt-BR': 'Recarregar o setlist do Ableton Live' },
     'setlist.previous': { en: 'Previous', 'pt-BR': 'Anterior' },
@@ -377,6 +382,10 @@
     'feedback.quantizationFailed': {
       en: '⚠ Ableton Live did not confirm the new quantization.',
       'pt-BR': '⚠ O Ableton Live não confirmou a nova quantização.',
+    },
+    'feedback.preRollShortened': {
+      en: 'Count-in shortened because the selected point is less than one bar from the start of the Live Set.',
+      'pt-BR': 'Contagem encurtada porque o ponto selecionado está a menos de um compasso do início do Live Set.',
     },
     'feedback.tokenPrompt': {
       en: 'Enter the security token for control (shown in the Ableton Live panel):',

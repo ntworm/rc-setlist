@@ -1,5 +1,12 @@
 import { StartServerOptions } from '../index.js';
-import { bridgeState, broadcastState, checkAndBroadcastLyrics } from '../core/bridge-state.js';
+import {
+  bridgeState,
+  broadcastState,
+  checkAndBroadcastLyrics,
+  observePreRollMetronome,
+  observePreRollPosition,
+  observePreRollTransport,
+} from '../core/bridge-state.js';
 import { executeAutomationActions } from '../automation/executor.js';
 
 const MCP_TRANSPORT_FRESHNESS_MS = 500;
@@ -19,6 +26,10 @@ export function registerOscListeners(options: StartServerOptions = {}) {
       bpm
     );
     broadcastState();
+  });
+
+  bridgeState.oscClient.on('is_playing_sample', (isPlaying) => {
+    observePreRollTransport(isPlaying);
   });
 
   bridgeState.oscClient.on('is_playing', (isPlaying) => {
@@ -43,6 +54,7 @@ export function registerOscListeners(options: StartServerOptions = {}) {
     }
     const prevState = bridgeState.manager?.getState();
     bridgeState.manager?.updateTransport(time, bridgeState.manager.getState().isPlaying);
+    observePreRollPosition(time);
     const newState = bridgeState.manager?.getState();
 
     if (newState) {
@@ -100,6 +112,7 @@ export function registerOscListeners(options: StartServerOptions = {}) {
   });
 
   bridgeState.oscClient.on('metronome', (metronome) => {
+    observePreRollMetronome(metronome);
     bridgeState.manager?.updateMetronome(metronome);
     broadcastState();
   });

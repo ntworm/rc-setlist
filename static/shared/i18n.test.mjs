@@ -56,6 +56,9 @@ test('locale runtime translates, interpolates and exposes missing keys', () => {
   assert.equal(i18n.t('status.connected'), 'Connected');
   assert.equal(i18n.t('next.repeat', { name: 'CHORUS' }, 'pt-BR'), 'CHORUS (Repetir)');
   assert.equal(i18n.t('missing.contract.key'), 'missing.contract.key');
+  assert.equal(i18n.t('setlist.preRollLabel'), 'COUNT-IN 1 BAR');
+  assert.equal(i18n.t('setlist.preRollLabel', {}, 'pt-BR'), 'CONTAGEM 1 COMP.');
+  assert.match(i18n.t('feedback.preRollShortened', {}, 'pt-BR'), /encurtada/i);
 });
 
 test('locale selection persists and survives unavailable storage', () => {

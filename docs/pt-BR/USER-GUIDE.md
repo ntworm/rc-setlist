@@ -86,6 +86,22 @@ Abra `/setlist` pela URL de controle com token mostrada no painel do Live.
 - Exporte o setlist atual como CSV UTF-8 (salva uma cópia na pasta `exports/` do perfil ativo e baixa na pasta de Downloads do seu navegador).
 - Use a tela cheia para uma estação compacta de palco.
 
+### Contagem de um compasso
+
+`CONTAGEM 1 COMP.` ativa um pré-roll de exatamente um compasso antes do ponto
+selecionado, somente quando Play é solicitado e o transporte está parado. O
+recurso usa o metrônomo nativo do Live e o transporte: o RC Setlist recua o
+playhead em um compasso, inicia a reprodução e restaura o Click no ponto
+selecionado caso ele tenha sido ligado temporariamente. Se o ponto estiver a
+menos de um compasso do beat zero, a contagem disponível é encurtada com
+segurança.
+
+Esse controle de ensaio não entra em Record e não arma pistas. Ele também não
+altera a quantização dos saltos. Quando o Live já está tocando, Play e os saltos
+de música/seção mantêm o comportamento existente, incluindo a quantização
+atual. Uma alteração manual de Click durante a contagem tem prioridade sobre a
+restauração automática.
+
 A interface mantém o último estado válido durante reconexões breves. O aviso de
 reconexão não significa que o estado antigo acabou de ser confirmado.
 

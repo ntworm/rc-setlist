@@ -4,6 +4,7 @@ import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { SetlistManager } from './setlist-manager.js';
 import { JumpScheduler } from './next-downbeat-jump.js';
+import { PreRollCoordinator, type PreRollFinishAction } from './pre-roll-coordinator.js';
 import { OSCClient } from '../integration/osc-client.js';
 import { SetlistWSServer } from '../server/ws.js';
 import { ProfileManager, ProfileError } from './profile-manager.js';
@@ -23,6 +24,7 @@ import type { ProfileManagerOptions } from './profile-manager.js';
 export interface BridgeState {
   manager: SetlistManager | null;
   scheduler: JumpScheduler | null;
+  preRollCoordinator: PreRollCoordinator | null;
   oscClient: OSCClient | null;
   wsServer: SetlistWSServer | null;
   profileManager: ProfileManager | null;
@@ -54,6 +56,7 @@ export interface BridgeState {
 export const bridgeState: BridgeState = {
   manager: null,
   scheduler: null,
+  preRollCoordinator: null,
   oscClient: null,
   wsServer: null,
   profileManager: null,
@@ -98,6 +101,29 @@ export function broadcastState(): void {
     bridgeState.commandBus?.resolveObservableConfirmations();
     bridgeState.wsServer.broadcastState(bridgeState.manager.getState());
   }
+}
+
+function applyPreRollFinish(action: PreRollFinishAction | null): PreRollFinishAction | null {
+  if (action?.restoreMetronome) {
+    bridgeState.oscClient?.setMetronome(false);
+  }
+  return action;
+}
+
+export function observePreRollPosition(currentBeat: number): void {
+  applyPreRollFinish(bridgeState.preRollCoordinator?.observePosition(currentBeat) ?? null);
+}
+
+export function observePreRollTransport(isPlaying: boolean): void {
+  applyPreRollFinish(bridgeState.preRollCoordinator?.observeTransport(isPlaying) ?? null);
+}
+
+export function observePreRollMetronome(metronome: boolean): void {
+  bridgeState.preRollCoordinator?.observeMetronome(metronome);
+}
+
+export function cancelActivePreRoll(): PreRollFinishAction | null {
+  return applyPreRollFinish(bridgeState.preRollCoordinator?.cancel() ?? null);
 }
 
 export function profileStatePayload() {

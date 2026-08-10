@@ -4,7 +4,14 @@ All notable public changes to Ableton RC Setlist are recorded here.
 
 ## [Unreleased]
 
-No changes are currently staged after the 0.5.0 release.
+### Added
+
+- [ws] Added shared `preRollEnabled` state in `protocolVersion 3` for the
+  process-scoped one-bar count-in toggle; `profiles_state` remains version 2.
+- Added `COUNT-IN 1 BAR` beside Click in Stage Control. From stopped transport,
+  Play now optionally uses Live's native metronome and transport for a one-bar
+  pre-roll, without Record, track arm, browser audio or changes to live jump
+  quantization.
 
 ## [0.5.0] - 2026-08-01
 

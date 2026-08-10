@@ -97,6 +97,9 @@ export function decodeClientMessage(input: unknown): DecodeResult {
     case 'metronome':
       if (typeof input.value !== 'boolean') return fail('Invalid value for metronome.');
       return success({ type: 'metronome', value: input.value });
+    case 'set_pre_roll':
+      if (typeof input.value !== 'boolean') return fail('Invalid value for pre-roll.');
+      return success({ type: 'set_pre_roll', value: input.value });
     case 'set_quantization':
       if (!isFiniteInteger(input.value, 0, 13)) return fail('Invalid value for quantization.');
       return success({ type: 'set_quantization', value: input.value });

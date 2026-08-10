@@ -56,6 +56,7 @@ const songs = songNames.map((title, songIndex) => ({
 const stateMessage = {
   type: 'state',
   state: {
+    protocolVersion: 3,
     songs,
     activeSongIndex: 2,
     activeSectionIndex: 2,
@@ -64,6 +65,7 @@ const stateMessage = {
     isPlaying: true,
     signatureNumerator: 4,
     metronome: true,
+    preRollEnabled: false,
     clipTriggerQuantization: 4,
     totalDurationSeconds: 180,
   },
@@ -130,6 +132,7 @@ const marketingSongs = marketingSongNames.map((title, songIndex) => ({
 const marketingStateMessage = {
   type: 'state',
   state: {
+    protocolVersion: 3,
     songs: marketingSongs,
     totalDurationSeconds: 640,
     arrangementEndTime: 640,
@@ -140,6 +143,7 @@ const marketingStateMessage = {
     isPlaying: true,
     signatureNumerator: 4,
     metronome: true,
+    preRollEnabled: false,
     clipTriggerQuantization: 4,
   },
 };

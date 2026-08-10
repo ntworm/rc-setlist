@@ -26,6 +26,7 @@ export const COMMAND_POLICIES: Readonly<Record<string, CommandPolicy>> = Object.
   stop: Object.freeze({ completion: 'observable', safetyLane: true, timeoutMs: 5_000 }),
   jump: Object.freeze({ completion: 'observable', critical: true, timeoutMs: 5_000 }),
   metronome: Object.freeze({ completion: 'observable', timeoutMs: 3_000 }),
+  set_pre_roll: DEFAULT_LOCAL_POLICY,
   set_quantization: Object.freeze({ completion: 'observable', timeoutMs: 3_000 }),
   refresh: DEFAULT_LOCAL_POLICY,
   reorder: Object.freeze({ completion: 'local', timeoutMs: 5_000 }),

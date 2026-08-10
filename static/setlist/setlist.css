@@ -753,7 +753,14 @@ body {
 }
 
 .secondary-controls {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+#btnPreRoll {
+  padding-inline: 0.25rem;
+  line-height: 1.05;
+  text-overflow: clip;
+  white-space: normal;
 }
 
 .secondary-controls .quantization-control {
@@ -762,7 +769,11 @@ body {
 
 @media (min-width: 480px) {
   .secondary-controls {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  #btnPreRoll {
+    font-size: 0.58rem;
+    white-space: nowrap;
   }
   .secondary-controls .quantization-control {
     grid-column: 1 / -1;
@@ -848,6 +859,12 @@ body {
   border-color: rgba(66, 216, 137, 0.55) !important;
   background: var(--ui-success-soft) !important;
   color: #82eab0 !important;
+}
+
+.btn-preroll-active {
+  border-color: rgba(255, 154, 47, 0.65) !important;
+  background: rgba(255, 154, 47, 0.16) !important;
+  color: #ffc078 !important;
 }
 
 .log-drawer {

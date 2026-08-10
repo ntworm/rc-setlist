@@ -131,6 +131,38 @@ test('OSC parses and requests Arrangement last_event_time', () => {
   assert.deepStrictEqual(received, [384]);
 });
 
+test('OSC sets current song time with a float beat value', () => {
+  const client = new OSCClient();
+  const sent = [];
+  client.send = (address, args) => sent.push([address, args]);
+
+  client.setCurrentSongTime(28);
+
+  assert.deepStrictEqual(sent, [[
+    '/live/song/set/current_song_time',
+    [{ type: 'float', value: 28 }],
+  ]]);
+});
+
+test('OSC exposes every is_playing sample while deduplicating public transport changes', () => {
+  const client = new OSCClient();
+  const samples = [];
+  const changes = [];
+  client.on('is_playing_sample', (value) => samples.push(value));
+  client.on('is_playing', (value) => changes.push(value));
+
+  const stopped = {
+    oscType: 'message',
+    address: '/live/song/get/is_playing',
+    args: [{ value: 0 }],
+  };
+  client['handleIncoming'](stopped);
+  client['handleIncoming'](stopped);
+
+  assert.deepStrictEqual(samples, [false, false]);
+  assert.deepStrictEqual(changes, [false]);
+});
+
 test('OSC encoding works when Ableton embedded runtime has no global TextEncoder', () => {
   const originalTextEncoder = globalThis.TextEncoder;
   const originalTextDecoder = globalThis.TextDecoder;

@@ -143,6 +143,7 @@ export class OSCClient extends EventEmitter {
     } else if (address === '/live/song/get/is_playing') {
       const val = args[0]?.value;
       const isPlaying = val === 1 || val === true || val === 'true';
+      this.emit('is_playing_sample', isPlaying);
       if (this.shouldEmit(address, isPlaying)) {
         this.emit('is_playing', isPlaying);
       }
@@ -340,6 +341,9 @@ export class OSCClient extends EventEmitter {
   public getTempo(): void { this.send('/live/song/get/tempo'); }
   public getIsPlaying(): void { this.send('/live/song/get/is_playing'); }
   public getCurrentSongTime(): void { this.send('/live/song/get/current_song_time'); }
+  public setCurrentSongTime(value: number): void {
+    this.send('/live/song/set/current_song_time', [{ type: 'float', value }]);
+  }
   public getCuePoints(): void { this.send('/live/song/get/cue_points'); }
   public getLastEventTime(): void { this.send('/live/song/get/last_event_time'); }
   public startPlaying(): void { this.send('/live/song/start_playing'); }
