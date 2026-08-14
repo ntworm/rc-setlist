@@ -10,6 +10,29 @@ de Palco ou na Performance para escolher **English** ou **Português (Brasil)**.
 A escolha fica salva localmente. Nomes de músicas, seções e conteúdo de letras ou
 cifras são dados do show e nunca são traduzidos.
 
+## Mapeamento de Teclado e MIDI
+
+Abra o Controle de Palco pela URL de controle com token e selecione Mapeamento de
+Teclado ou Mapeamento MIDI no menu de ferramentas. Pressione Mapear ao lado de
+uma ação e use a tecla ou o controle MIDI solicitado. Os mapeamentos ficam salvos
+localmente neste navegador e permanecem depois de recarregar a página.
+
+As nove ações do Controle de Palco disponíveis nos dois mapeamentos são:
+
+- Play
+- Stop
+- Música anterior
+- Próxima música
+- Seção anterior
+- Próxima seção
+- Alternar clique
+- Alternar bloqueio do painel
+- Alternar compasso de contagem
+
+O Mapeamento MIDI aceita mensagens Note On com velocidade maior que zero e
+Control Change com valor maior que zero. Cada mapeamento guarda o canal
+configurado (1–16), e uma mensagem em outro canal não o aciona.
+
 ## Gramática dos localizadores
 
 Um localizador de música tem um título. Uma seção usa `Música > Seção` ou a sintaxe relativa `> Seção` (que se vincula à música anterior). Tags de ação isoladas como `[stop]` e localizadores de automação relativa como `> [stop]` pertencem à música cronologicamente anterior.
@@ -79,7 +102,9 @@ Abra `/setlist` pela URL de controle com token mostrada no painel do Live.
 
 - Arraste músicas para mudar a ordem exibida.
 - Use Play e Stop para ações imediatas.
-- Anterior e Próxima exigem um hold deliberado de 500 ms.
+- As setas externas de música (Música anterior e Próxima música) mudam entre
+  músicas adjacentes. As setas internas de seção (Seção anterior e Próxima
+  seção) navegam dentro da música ativa. Ambos os níveis exigem hold de 500 ms.
 - Selecione a quantização; o agendador de saltos aplica imediatamente o valor
   pedido e o reconcilia com a resposta nativa do Live quando ela estiver disponível.
 - Use a janela de letras para criar, sincronizar e editar linhas.

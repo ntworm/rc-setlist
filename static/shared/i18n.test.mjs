@@ -69,6 +69,12 @@ test('locale runtime translates, interpolates and exposes missing keys', () => {
   assert.match(i18n.t('feedback.preRollShortened', {}, 'pt-BR'), /encurtada/i);
 });
 
+test('MIDI mapped Note label is localized in English and PT-BR', () => {
+  const { i18n } = loadRuntime();
+  assert.equal(i18n.t('midi.note', {}, 'en'), 'Note');
+  assert.equal(i18n.t('midi.note', {}, 'pt-BR'), 'Nota');
+});
+
 test('locale selection persists and survives unavailable storage', () => {
   const first = loadRuntime();
   first.i18n.setLocale('pt-BR');

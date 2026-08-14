@@ -1,4 +1,4 @@
-ABLETON RC SETLIST 0.5.0 — INSTALLATION KIT / KIT DE INSTALAÇÃO
+ABLETON RC SETLIST 0.5.1 — INSTALLATION KIT / KIT DE INSTALAÇÃO
 ==============================================================
 
 START HERE / COMECE AQUI

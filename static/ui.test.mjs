@@ -311,6 +311,13 @@ test('Static UI Setlist: omits handlers for controls removed from the operator s
   assert.doesNotMatch(setlistJs, /payload\.type\s*===\s*['"]click_preview_ready['"]/);
 });
 
+test('Static UI Setlist: localizes mapped MIDI note labels', () => {
+  const setlistJs = fs.readFileSync(path.join(__dirname, 'setlist', 'setlist.js'), 'utf8');
+
+  assert.match(setlistJs, /t\(\s*['"]midi\.note['"]\s*\)/, 'mapped Note labels must use the i18n midi.note key');
+  assert.doesNotMatch(setlistJs, /['"]Nota['"]/, 'mapped Note labels must not be hardcoded in the static setlist source');
+});
+
 test('Static UI: product surfaces expose English and Brazilian Portuguese', () => {
   const panelHtml = fs.readFileSync(path.join(__dirname, 'panel', 'index.html'), 'utf8');
   const setlistHtml = fs.readFileSync(path.join(__dirname, 'setlist', 'index.html'), 'utf8');

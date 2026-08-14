@@ -29,9 +29,11 @@ click feedback, and guarded transport controls for rehearsals and live shows.
 - **Reorder and edit feedback:** desktop drag or mobile hold-and-drag shows one
   insertion target preview before committing a song reorder. Sections can be
   edited inline from the desktop Setlist view.
-- **Keyboard Mapping:** assign transport and view actions to Numpad or letter keys.
-- **MIDI Mapping:** learn MIDI note, control-change or program-change messages
-  for stage actions, with channel-specific or any-channel matching.
+- **Keyboard Mapping:** assign the nine Stage Control actions to Numpad or letter
+  keys: Play, Stop, Previous/Next Song, Previous/Next Section, Toggle Click,
+  Toggle Panel Lock and Toggle Count-In Bar.
+- **MIDI Mapping:** learn MIDI Note On or Control Change messages on the exact
+  configured channel (1–16) for those nine Stage Control actions.
 - **Setlist profiles:** multiple saved setlists are scoped to the current Ableton
   Live Set, with profile-local ordering, recoverable delete and restore.
 - **Lyrics:** create, synchronize and edit `.lrc` lyrics in the browser, then use

@@ -272,6 +272,7 @@
     'midi.device': { en: 'MIDI device:', 'pt-BR': 'Dispositivo MIDI:' },
     'midi.waitingConnection': { en: 'Waiting for a MIDI connection...', 'pt-BR': 'Aguardando uma conexão MIDI...' },
     'midi.mappings': { en: 'Mappings:', 'pt-BR': 'Mapeamentos:' },
+    'midi.note': { en: 'Note', 'pt-BR': 'Nota' },
     'midi.action': { en: 'Action', 'pt-BR': 'Ação' },
     'midi.mappedTo': { en: 'Mapped to', 'pt-BR': 'Mapeado para' },
     'midi.control': { en: 'Control', 'pt-BR': 'Controle' },

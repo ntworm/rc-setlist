@@ -40,7 +40,7 @@ test('PolyForm license keeps its canonical sections and Ableton RC Setlist notic
 
 test('project notice states copyright, source-available license and trademark independence', () => {
   const notice = readRequired('NOTICE');
-  assert.match(notice, /Ableton RC Setlist 0\.5\.0/);
+  assert.match(notice, /Ableton RC Setlist 0\.5\.1/);
   assert.match(notice, /Copyright © 2026 Gabriel Worm/);
   assert.match(notice, /PolyForm Noncommercial 1\.0\.0/);
   assert.match(notice, /Ableton and Ableton Live are trademarks of Ableton AG/);

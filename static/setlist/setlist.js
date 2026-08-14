@@ -637,7 +637,7 @@ function renderMidiMappings() {
     if (activeMidiMappingKey === key) {
       tdMap.innerHTML = `<span style="color: var(--accent); font-weight: bold; animation: pulse 1s infinite;">${escapeLyricsEditorText(t('midi.waiting'))}</span>`;
     } else if (mapping) {
-      const typeStr = mapping.type === 'cc' ? 'CC' : 'Nota';
+      const typeStr = mapping.type === 'cc' ? 'CC' : t('midi.note');
       tdMap.textContent = `${typeStr} ${mapping.number} (Ch ${mapping.channel})`;
     } else {
       tdMap.textContent = t('midi.notMapped');

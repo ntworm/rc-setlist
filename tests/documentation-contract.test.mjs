@@ -35,6 +35,19 @@ test('public landing presents Ableton RC Setlist as source-available and noncomm
   assert.ok(existsSync(new URL('../docs/fonts/OFL.txt', import.meta.url)));
 });
 
+test('current 0.5.1 notice and media-kit surfaces do not retain 0.5.0 labels', () => {
+  for (const file of [
+    'NOTICE',
+    'docs/og-image.svg',
+    'scripts/media-kit-template.html',
+    'scripts/render-media-kit.mjs',
+  ]) {
+    const content = readRequired(file);
+    assert.match(content, /0\.5\.1/, `${file} must identify the current 0.5.1 release`);
+    assert.doesNotMatch(content, /0\.5\.0/, `${file} must not retain a 0.5.0 current-release label`);
+  }
+});
+
 test('public documentation uses the official compatibility floor', () => {
   for (const path of ['README.md', 'docs/INSTALL.md', 'docs/DEVELOPMENT.md']) {
     assert.ok(existsSync(new URL(`../${path}`, import.meta.url)), `${path} must exist`);
@@ -181,6 +194,118 @@ test('0.5.1 final notes are bilingual and describe the verified release surface'
   assert.match(landing, /RELEASE-NOTES-0\.5\.1\.md/);
   assert.match(readme, /Ableton-RC-Setlist-0\.5\.1\.ablx/);
   assert.match(readme, /docs\/RELEASE-NOTES-0\.5\.1\.md/);
+});
+
+test('README and 0.5.1 notes describe only channel-specific Note On and Control Change MIDI', () => {
+  const surfaces = [
+    ['README.md', readRequired('README.md'), /channel[-\s]specific|specific channel|configured channel|same channel/i, /view actions/i],
+    ['docs/RELEASE-NOTES-0.5.1.md', readRequired('docs/RELEASE-NOTES-0.5.1.md'), /channel[-\s]specific|specific channel|configured channel|same channel/i, /view actions/i],
+    ['docs/pt-BR/NOTAS-DA-VERSAO-0.5.1.md', readRequired('docs/pt-BR/NOTAS-DA-VERSAO-0.5.1.md'), /canal\s+(?:espec[ií]fic[oa]|configurado|selecionado)|mesmo canal/i, /a[cç][oõ]es[^.\r\n]{0,40}visualiza[cç][aã]o/i],
+  ];
+
+  for (const [file, content, channelPattern, genericViewPattern] of surfaces) {
+    assert.match(content, /Note On/i, `${file} must name Note On support`);
+    assert.match(content, /Control Change/i, `${file} must name Control Change support`);
+    assert.match(content, channelPattern, `${file} must describe channel-specific matching`);
+    assert.doesNotMatch(content, /Program[-\s]Change/i, `${file} must not claim Program Change support`);
+    assert.doesNotMatch(content, /any[-\s]channel|qualquer canal/i, `${file} must not claim any-channel matching`);
+    assert.doesNotMatch(content, genericViewPattern, `${file} must not describe mappings as generic view actions`);
+  }
+});
+
+test('English and PT-BR user guides explain both mapping modals and list nine Stage Control actions', () => {
+  const guides = [
+    {
+      file: 'docs/USER-GUIDE.md',
+      content: readRequired('docs/USER-GUIDE.md'),
+      keyboardTitle: /Keyboard Mapping/i,
+      midiTitle: /MIDI Mapping/i,
+      instruction: /(?:open|select|press|click|use)\b[^\r\n]*(?:Keyboard Mapping|MIDI Mapping|Map)\b/i,
+      stageTitle: /Stage Control/i,
+      actions: [
+        /\b(?:Play|Start Playback)\b/i,
+        /\b(?:Stop|Stop Playback)\b/i,
+        /Previous Song/i,
+        /Next Song/i,
+        /Previous Section/i,
+        /Next Section/i,
+        /Toggle Click/i,
+        /Toggle Panel Lock/i,
+        /Toggle Count[- ]In(?: Bar)?/i,
+      ],
+    },
+    {
+      file: 'docs/pt-BR/USER-GUIDE.md',
+      content: readRequired('docs/pt-BR/USER-GUIDE.md'),
+      keyboardTitle: /Mapeamento de Teclado|Keyboard Mapping/i,
+      midiTitle: /Mapeamento MIDI|MIDI Mapping/i,
+      instruction: /(?:abra|selecione|pressione|clique|use)\b[^\r\n]*(?:Mapeamento|Mapear|MIDI|teclado)/i,
+      stageTitle: /Controle de Palco|Stage Control/i,
+      actions: [
+        /\b(?:Play|Iniciar reprodu[cç][aã]o)\b/i,
+        /\b(?:Stop|Parar reprodu[cç][aã]o)\b/i,
+        /M[uú]sica anterior/i,
+        /Pr[oó]xima m[uú]sica/i,
+        /Se[cç][aã]o anterior/i,
+        /Pr[oó]xima se[cç][aã]o/i,
+        /Alternar clique/i,
+        /Alternar bloqueio do painel/i,
+        /Alternar (?:compasso de )?contagem/i,
+      ],
+    },
+  ];
+
+  for (const guide of guides) {
+    assert.match(guide.content, guide.stageTitle, `${guide.file} must identify Stage Control`);
+    assert.match(guide.content, guide.keyboardTitle, `${guide.file} must explain Keyboard Mapping`);
+    assert.match(guide.content, guide.midiTitle, `${guide.file} must explain MIDI Mapping`);
+    assert.match(guide.content, guide.instruction, `${guide.file} must explain how to open or use mappings`);
+    for (const action of guide.actions) {
+      assert.match(guide.content, action, `${guide.file} must list all nine Stage Control actions`);
+    }
+  }
+});
+
+test('user guides document browser-local mapping persistence and exact MIDI channel behavior', () => {
+  const guides = [
+    ['docs/USER-GUIDE.md', readRequired('docs/USER-GUIDE.md'), /mappings?[\s\S]{0,120}(?:browser|local storage)|(?:browser|local storage)[\s\S]{0,120}mappings?|localStorage/i, /channel[-\s]specific|specific channel|configured channel|same channel/i],
+    ['docs/pt-BR/USER-GUIDE.md', readRequired('docs/pt-BR/USER-GUIDE.md'), /mapeamentos?[\s\S]{0,120}(?:navegador|armazenamento local)|(?:navegador|armazenamento local)[\s\S]{0,120}mapeamentos?|localStorage/i, /canal\s+(?:espec[ií]fic[oa]|configurado|selecionado)|mesmo canal/i],
+  ];
+
+  for (const [file, content, persistencePattern, channelPattern] of guides) {
+    assert.match(content, persistencePattern, `${file} must state that mappings persist in the browser locally`);
+    assert.match(content, /Note On/i, `${file} must document Note On`);
+    assert.match(content, /Control Change/i, `${file} must document Control Change`);
+    assert.match(content, channelPattern, `${file} must state exact MIDI channel behavior`);
+  }
+});
+
+test('user guides distinguish outer song arrows from inner section arrows and require a 500 ms hold', () => {
+  const guides = [
+    ['docs/USER-GUIDE.md', readRequired('docs/USER-GUIDE.md'), /outer[\s\S]{0,120}song|song[\s\S]{0,120}outer/i, /inner[\s\S]{0,120}section|section[\s\S]{0,120}inner/i],
+    ['docs/pt-BR/USER-GUIDE.md', readRequired('docs/pt-BR/USER-GUIDE.md'), /setas externas[\s\S]{0,120}m[uú]sic|m[uú]sic[\s\S]{0,120}setas externas/i, /setas internas[\s\S]{0,120}se[cç][aã]o|se[cç][aã]o[\s\S]{0,120}setas internas/i],
+  ];
+
+  for (const [file, content, outerSongPattern, innerSectionPattern] of guides) {
+    assert.match(content, outerSongPattern, `${file} must distinguish outer song arrows`);
+    assert.match(content, innerSectionPattern, `${file} must distinguish inner section arrows`);
+    assert.match(content, /500\s*ms/i, `${file} must state the 500 ms hold`);
+  }
+});
+
+test('current landing copy and bilingual FAQ identify release 0.5.1', () => {
+  const landing = readRequired('docs/index.html');
+  const landingTranslations = readRequired('docs/site-i18n.js');
+  assert.match(landing, /0\.5\.1/);
+  assert.doesNotMatch(landing, /0\.5\.0/, 'landing HTML must not describe the current release as 0.5.0');
+  assert.match(landingTranslations, /0\.5\.1/);
+  assert.doesNotMatch(landingTranslations, /0\.5\.0/, 'localized landing copy must not describe the current release as 0.5.0');
+
+  for (const file of ['docs/FAQ.md', 'docs/pt-BR/FAQ.md']) {
+    const content = readRequired(file);
+    assert.match(content, /0\.5\.1/, `${file} must identify the current release as 0.5.1`);
+    assert.doesNotMatch(content, /0\.5\.0/, `${file} must not identify the current release as 0.5.0`);
+  }
 });
 
 test('0.4.1 guides and changelog document durations, recoverable profiles and WebSocket compatibility', () => {

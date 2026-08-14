@@ -1,4 +1,4 @@
-# Release checklist — Ableton RC Setlist 0.5.0
+# Release checklist — Ableton RC Setlist 0.5.1
 
 Use a copy of a Live Set and a **trusted local network / LAN**. Do not perform
 the first test during a real show.
@@ -10,9 +10,9 @@ the first test during a real show.
   `User Remote Scripts` preferences folder, and `AbletonOSC/__init__.py` exists
   directly inside it.
 - [ ] AbletonOSC appears and is selected as a Control Surface.
-- [ ] `Ableton-RC-Setlist-0.5.0.ablx` installs without errors.
+- [ ] `Ableton-RC-Setlist-0.5.1.ablx` installs without errors.
 - [ ] With clean data, the first **Start** creates the default profile and starts the server without a persistence error.
-- [ ] **Extensions > Ableton RC Setlist** opens the correct panel and shows version 0.5.0.
+- [ ] **Extensions > Ableton RC Setlist** opens the correct panel and shows version 0.5.1.
 
 ## Language
 

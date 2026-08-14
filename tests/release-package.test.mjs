@@ -79,6 +79,38 @@ test('release templates prevent the AbletonOSC folder mix-up in both languages',
   }
 });
 
+test('current 0.5.1 install and release surfaces do not retain 0.5.0 references', () => {
+  const currentSurfaces = [
+    'docs/README.md',
+    'docs/pt-BR/README.md',
+    'docs/INSTALL.md',
+    'docs/pt-BR/INSTALL.md',
+    'docs/TESTER-GUIDE.md',
+    'release-template/START-HERE.html',
+    'release-template/README.txt',
+    'release-template/en/TEST-CHECKLIST.md',
+    'release-template/pt-BR/TEST-CHECKLIST.md',
+  ];
+
+  for (const file of currentSurfaces) {
+    const content = read(file);
+    assert.match(content, /0\.5\.1/, `${file} must identify the current 0.5.1 release`);
+    if (file === 'docs/pt-BR/README.md') {
+      assert.match(content, /\[O que há de novo na versão 0\.5\.1\]\(NOTAS-DA-VERSAO-0\.5\.1\.md\)/);
+    }
+    assert.doesNotMatch(
+      content,
+      /Ableton-RC-Setlist-0\.5\.0\.ablx|RELEASE-NOTES-0\.5\.0|NOTAS-DA-VERSAO-0\.5\.0/i,
+      `${file} must not point at 0.5.0 installer or release notes`,
+    );
+    assert.doesNotMatch(
+      content,
+      /(?:Ableton RC Setlist|Ableton-RC-Setlist|Release checklist|Checklist de lan[cç]amento|INSTALLATION KIT|KIT DE INSTALA[CÇ][AÃ]O)[^\r\n]*0\.5\.0/i,
+      `${file} must not label the current kit as 0.5.0`,
+    );
+  }
+});
+
 test('certificate onboarding is explicit in both languages and canonical English stays English', () => {
   const englishCombined = [
     read('release-template/START-HERE.html'),
@@ -154,4 +186,3 @@ test('verify-production-bundle.mjs rejects bundles missing relative locator sema
   assert.match(verifierScript, /relative-section/);
   assert.match(verifierScript, /relative-automation/);
 });
-

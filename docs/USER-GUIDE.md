@@ -14,6 +14,30 @@ In Stage Control, change the language only while Live is stopped and the panel
 is unlocked. The selector is disabled during playback or while the safety lock
 is active so the show surface cannot be reconfigured accidentally.
 
+## Keyboard Mapping and MIDI Mapping
+
+Open Stage Control from the tokenized controller URL, then select Keyboard
+Mapping or MIDI Mapping from the tools menu. Press Map beside an action and use
+the requested key or MIDI control. Keyboard and MIDI mappings are stored in this
+browser's local storage and survive reloads.
+
+The nine Stage Control actions available to both mapping surfaces are:
+
+- Play
+- Stop
+- Previous Song
+- Next Song
+- Previous Section
+- Next Section
+- Toggle Click
+- Toggle Panel Lock
+- Toggle Count-In Bar
+
+MIDI Mapping accepts Note On messages with velocity greater than zero and
+Control Change messages with value greater than zero. Each mapping stores the
+exact configured channel (1–16), and a message on another channel does not
+trigger it.
+
 ## Locator grammar
 
 A song locator has a title. A section uses `Song > Section` or the relative syntax `> Section` (which attaches to the preceding song). Standalone action tags like `[stop]` and relative automation locators like `> [stop]` belong to the chronologically preceding song.
@@ -80,7 +104,9 @@ Open `/setlist` from the tokenized controller URL shown in the Live panel.
 
 - Drag songs to change their displayed order.
 - Use Play and Stop for immediate transport actions.
-- Previous and Next require a deliberate 500 ms hold.
+- The outer Previous Song and Next Song arrows move between adjacent songs.
+  The inner Previous Section and Next Section arrows move within the active
+  song. Both levels require a deliberate 500 ms hold.
 - Select transport quantization; the jump scheduler applies the requested value
   immediately and reconciles it with a native Live reply when one is available.
 - Use the lyrics dialog to create, time and edit lyric lines.

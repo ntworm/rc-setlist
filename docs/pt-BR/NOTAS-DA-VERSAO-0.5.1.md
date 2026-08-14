@@ -13,9 +13,12 @@ fluxos de perfis, letras e CSV entregues nas versões 0.4.x e 0.5.0.
   por seções com o mesmo gesto protegido.
 - **Alvo de reordenação:** arrastar no desktop ou segurar e arrastar no celular
   mostra uma prévia do alvo de inserção antes de confirmar a nova ordem.
-- **Keyboard Mapping:** ações de transporte e visualização podem ser atribuídas
-  ao Numpad ou a teclas alfabéticas. O MIDI Mapping existente continua disponível
-  para mensagens MIDI de nota, control change e program change.
+- **Keyboard Mapping:** as nove ações do Controle de Palco podem ser atribuídas
+  ao Numpad ou a teclas alfabéticas: Play, Stop, Música anterior, Próxima música,
+  Seção anterior, Próxima seção, Alternar clique, Alternar bloqueio do painel e
+  Alternar compasso de contagem.
+- **MIDI Mapping:** as mesmas nove ações aceitam mensagens MIDI Note On ou
+  Control Change no canal configurado (1–16).
 - **Count-in Pre-roll:** `CONTAGEM 1 COMP` ativa uma introdução opcional de um
   compasso quando o transporte está parado, usando o metrônomo nativo do Live.
   O recurso não arma pistas, não entra em Record e não altera a quantização dos saltos.

@@ -13,9 +13,11 @@ CSV workflows introduced across the 0.4.x and 0.5.0 releases.
   navigation with the same guarded hold behavior.
 - **Song reorder target:** desktop drag and mobile hold-and-drag show one
   insertion target preview before the new order is committed.
-- **Keyboard Mapping:** transport and view actions can be assigned to Numpad or
-  letter keys. Existing MIDI Mapping remains available for MIDI note,
-  control-change and program-change messages.
+- **Keyboard Mapping:** the nine Stage Control actions can be assigned to Numpad
+  or letter keys: Play, Stop, Previous Song, Next Song, Previous Section, Next
+  Section, Toggle Click, Toggle Panel Lock and Toggle Count-In Bar.
+- **MIDI Mapping:** the same nine Stage Control actions accept MIDI Note On or
+  Control Change messages on the exact configured channel (1–16).
 - **Count-in Pre-roll:** `COUNT-IN 1 BAR` enables an optional one-bar start from
   stopped transport using Live's native metronome. It does not arm tracks or
   enter Record and does not change jump quantization.

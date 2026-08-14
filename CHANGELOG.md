@@ -4,6 +4,11 @@ All notable public changes to Ableton RC Setlist are recorded here.
 
 ## [Unreleased]
 
+### Fixed
+
+- Corrected the 0.5.1 installation, landing, FAQ and bilingual guide copy to
+  match the shipped mapping actions, MIDI behavior and release surfaces.
+
 ## [0.5.1] - 2026-08-14
 
 ### Added
