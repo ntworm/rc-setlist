@@ -189,7 +189,7 @@ test('Setlist Previous and Next require a real 500 ms pointer hold while Play an
     touchAction: getComputedStyle(button).touchAction,
     userSelect: getComputedStyle(button).userSelect,
   })));
-  expect(transportSafety).toHaveLength(4);
+  expect(transportSafety).toHaveLength(6);
   expect(transportSafety.every((button) => (
     button.svgCount === 1
       && button.text === ''

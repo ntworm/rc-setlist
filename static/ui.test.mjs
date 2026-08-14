@@ -142,17 +142,76 @@ test('Static UI Setlist: does not load helper modules as classic scripts', () =>
 
 test('Static UI Setlist: loads the safe transport runtime and dock controls', () => {
   const setlistHtml = fs.readFileSync(path.join(__dirname, 'setlist', 'index.html'), 'utf8');
+  const setlistCss = fs.readFileSync(path.join(__dirname, 'setlist', 'setlist.css'), 'utf8');
+  const setlistJs = fs.readFileSync(path.join(__dirname, 'setlist', 'setlist.js'), 'utf8');
   assert.match(setlistHtml, /src="\.\/transport-runtime\.js"/);
   assert.match(setlistHtml, /class="transport-dock"/);
-  for (const id of ['btnPrevious', 'btnPlay', 'btnStop', 'btnNext']) {
+  const transportIds = ['btnPreviousSong', 'btnPrevious', 'btnPlay', 'btnStop', 'btnNext', 'btnNextSong'];
+  const positions = transportIds.map((id) => setlistHtml.indexOf(`id="${id}"`));
+  assert.ok(positions.every((position) => position >= 0), 'all six transport controls exist');
+  assert.deepEqual([...positions].sort((a, b) => a - b), positions, 'transport controls retain the performer-facing order');
+  const labels = {
+    btnPreviousSong: 'setlist.previousSongHold',
+    btnPrevious: 'setlist.previousSectionHold',
+    btnPlay: 'setlist.play',
+    btnStop: 'setlist.stop',
+    btnNext: 'setlist.nextSectionHold',
+    btnNextSong: 'setlist.nextSongHold',
+  };
+  for (const id of transportIds) {
     const block = setlistHtml.match(new RegExp(`<button[^>]*id="${id}"[\\s\\S]*?</button>`))?.[0];
     assert.ok(block, `${id} markup exists`);
     assert.match(block, /aria-label="[^"]+"/);
+    assert.match(block, new RegExp(`data-i18n-aria-label="${labels[id]}"`));
     assert.match(block, /<svg\b[^>]*aria-hidden="true"[^>]*>/);
     assert.equal(block.replace(/<[^>]+>/g, '').trim(), '');
   }
+  for (const id of ['btnPreviousSong', 'btnPrevious', 'btnNext', 'btnNextSong']) {
+    const block = setlistHtml.match(new RegExp(`<button[^>]*id="${id}"[\\s\\S]*?</button>`))?.[0];
+    assert.match(block, /class="hold-progress"/);
+  }
+  assert.match(setlistJs, /const btnPreviousSong = document\.getElementById\('btnPreviousSong'\);/);
+  assert.match(setlistJs, /const btnNextSong = document\.getElementById\('btnNextSong'\);/);
+  assert.match(setlistJs, /let transportHoldControllers = \[\];/);
+  assert.match(setlistJs, /\{ button: btnPreviousSong, direction: 'previous', level: 'song' \}/);
+  assert.match(setlistJs, /\{ button: btnPrevious, direction: 'previous', level: 'section' \}/);
+  assert.match(setlistJs, /\{ button: btnNext, direction: 'next', level: 'section' \}/);
+  assert.match(setlistJs, /\{ button: btnNextSong, direction: 'next', level: 'song' \}/);
+  assert.doesNotMatch(setlistJs, /previousHoldController|nextHoldController/);
+  assert.match(setlistJs, /transportHoldControllers\.forEach\(\(controller\) => controller\.update\(\)\);/);
+  assert.match(setlistJs, /transportHoldControllers\.forEach\(\(controller\) => controller\.reset\(\)\);/);
+  assert.match(
+    setlistCss,
+    /\.transport-dock\s*\{\s*grid-template-columns:\s*repeat\(6,\s*minmax\(0,\s*1fr\)\);\s*\}/,
+    'six transport controls use equal grid columns',
+  );
   assert.match(setlistHtml, /class="secondary-controls"/);
   assert.match(setlistHtml, /id="quantizationSelect"/);
+  assert.match(
+    setlistHtml,
+    /id="btnMetronome"[\s\S]*?id="btnPreRoll"/,
+    'count-in control follows Click in the secondary controls',
+  );
+  const preRollButton = setlistHtml.match(/<button[^>]*id="btnPreRoll"[\s\S]*?<\/button>/)?.[0];
+  assert.ok(preRollButton, 'count-in control exists');
+  assert.match(preRollButton, /aria-pressed="false"/);
+  assert.match(preRollButton, /data-i18n="setlist\.preRollLabel"/);
+  assert.match(
+    setlistCss,
+    /\.secondary-controls\s*\{\s*grid-template-columns:\s*repeat\(3,\s*minmax\(0,\s*1fr\)\)/,
+    'Click, count-in, and Refresh use three equal columns',
+  );
+});
+
+test('Static UI Setlist: delegates mobile song and section hold without inline jump clicks', () => {
+  const setlistJs = fs.readFileSync(path.join(__dirname, 'setlist', 'setlist.js'), 'utf8');
+  const setlistCss = fs.readFileSync(path.join(__dirname, 'setlist', 'setlist.css'), 'utf8');
+
+  assert.match(setlistJs, /mountDirectTargetHold\(/);
+  assert.match(setlistJs, /function resolveSetlistJumpTarget\(/);
+  assert.doesNotMatch(setlistJs, /onclick="jumpTo\(/);
+  assert.match(setlistCss, /\.song-header\.is-touch-holding::after/);
+  assert.match(setlistCss, /touch-action:\s*pan-y/);
 });
 
 test('Static UI Setlist: uses guarded controller storage and confirmed lyrics saves', () => {
@@ -190,6 +249,24 @@ test('Static UI Setlist: exposes duration metrics and complete profile controls'
   assert.match(setlistJs, /function profileRegistryFingerprint\(/);
   assert.match(setlistJs, /renameInput\.addEventListener\(['"]keydown['"]/);
   assert.match(setlistJs, /profileState = \{ \.\.\.profileState, canMutate: !lastState\.isPlaying \};\s*updateProfileMutationAvailability\(\);/);
+});
+
+test('Static UI Setlist: presents relative show and song time without Arrangement timecode', () => {
+  const setlistHtml = fs.readFileSync(path.join(__dirname, 'setlist', 'index.html'), 'utf8');
+  const setlistJs = fs.readFileSync(path.join(__dirname, 'setlist', 'setlist.js'), 'utf8');
+  const i18nSource = fs.readFileSync(path.join(__dirname, 'shared', 'i18n.js'), 'utf8');
+
+  assert.match(setlistHtml, /data-i18n="setlist\.showTime"/);
+  assert.match(setlistHtml, /id="hudSongTime"/);
+  assert.match(setlistHtml, /id="hudSongTime"[^>]*data-i18n="setlist\.songTimeEmpty"/);
+  assert.doesNotMatch(setlistHtml, /Ableton Timecode/);
+  assert.match(i18nSource, /'setlist\.showTime': \{ en: 'Show time', 'pt-BR': 'Tempo do show' \}/);
+  assert.match(i18nSource, /'setlist\.songTime': \{ en: 'Song \{elapsed\} \/ \{duration\}', 'pt-BR': 'Música \{elapsed\} \/ \{duration\}' \}/);
+  assert.match(i18nSource, /'setlist\.songTimeEmpty': \{ en: 'Song — \/ —', 'pt-BR': 'Música — \/ —' \}/);
+  assert.doesNotMatch(setlistHtml, /hudRemaining|remaining/i);
+  assert.match(setlistJs, /SetlistTransportRuntime\.calculateSetlistProgress\(/);
+  assert.doesNotMatch(setlistJs, /setTextIfChanged\(hudTime, formattedTime\)/);
+  assert.match(setlistJs, /setTextIfChanged\(lyricsSyncTimecode, formattedInternalTime\)/);
 });
 
 test('Static UI: automation-only sections receive a localized visible label', () => {

@@ -18,10 +18,12 @@ export class SetlistManager {
   private activeSectionIndex: number = -1;
   private isPlaying: boolean = false;
   private tempo: number = 120;
+  private durationFallbackBpm: number = 120; // fixed BPM for duration calculation; never updated by live transport
   private currentSongTime: number = 0;
   private rawCues: { name: string; time: number; cueIndex?: number }[] = [];
   private appliedCuesFingerprint: string | null = null;
   private metronome: boolean = false;
+  private preRollEnabled: boolean = false;
   private signatureNumerator: number = 4;
   private signatureDenominator: number = 4;
   private clipTriggerQuantization: number = 4; // Default to 1 Bar (4)
@@ -68,11 +70,28 @@ export class SetlistManager {
     const parsed = parseSetlist(this.rawCues);
     this.songs = parsed.songs;
     this.hidden = parsed.hidden;
+    // Recalculate the duration fallback BPM from the new song list.
+    // This is the first declared BPM in chronological order, or the current
+    // live tempo if no song has a [bpm] tag — it stays fixed for the entire
+    // show so that changing tempo automations don't reshuffle durations.
+    this.durationFallbackBpm = this.computeDurationFallbackBpm();
     this.sortSongs();
     this.firedAutomations.clear();
     this.clearLoop();
     this.updateActiveIndices();
     this.stateVersion++;
+  }
+
+  private computeDurationFallbackBpm(): number {
+    // Find the first BPM tag in chronological order. If none exists, use
+    // the current live tempo as a one-time snapshot.
+    const chronological = [...this.songs].sort((a, b) => a.time - b.time);
+    for (const song of chronological) {
+      if (typeof song.bpm === 'number' && Number.isFinite(song.bpm) && song.bpm > 0) {
+        return song.bpm;
+      }
+    }
+    return this.tempo > 0 ? this.tempo : 120;
   }
 
   private sortSongs(): void {
@@ -150,7 +169,7 @@ export class SetlistManager {
 
   private getDerivedSongs(): { songs: Song[]; totalDurationSeconds: number | null } {
     if (!this.derivedSongs) {
-      const metrics = calculateSetlistMetrics(this.songs, this.arrangementEndTime, this.tempo);
+      const metrics = calculateSetlistMetrics(this.songs, this.arrangementEndTime, this.durationFallbackBpm);
       this.derivedSongs = this.songs.map((song) => ({
         ...song,
         durationSeconds: metrics.songDurationSecondsBySong.get(song) ?? null,
@@ -169,7 +188,9 @@ export class SetlistManager {
     this.isPlaying = isPlaying;
     if (tempo !== undefined && tempo !== this.tempo) {
       this.tempo = tempo;
-      this.invalidateDerivedSongs();
+      // NOTE: we deliberately do NOT invalidate derived songs here.
+      // Song durations use `durationFallbackBpm` which is frozen at cue-load
+      // time, so live BPM automation does not reshuffle the show clock.
     }
 
     if (this.loopActive) {
@@ -202,6 +223,12 @@ export class SetlistManager {
 
   public updateMetronome(metronome: boolean): void {
     this.metronome = metronome;
+    this.stateVersion++;
+  }
+
+  public setPreRollEnabled(value: boolean): void {
+    if (this.preRollEnabled === value) return;
+    this.preRollEnabled = value;
     this.stateVersion++;
   }
 
@@ -401,7 +428,7 @@ export class SetlistManager {
     const derived = this.getDerivedSongs();
 
     const state: any = {
-      protocolVersion: 2,
+      protocolVersion: 3,
       setlistVersion: this.setlistVersion,
       songs: derived.songs,
       hidden: this.hidden,
@@ -411,6 +438,7 @@ export class SetlistManager {
       tempo: this.tempo,
       currentSongTime: this.currentSongTime,
       metronome: this.metronome,
+      preRollEnabled: this.preRollEnabled,
       signatureNumerator: this.signatureNumerator,
       signatureDenominator: this.signatureDenominator,
       loopIteration: this.loopActive && this.loopCount !== null && this.loopCount > 0

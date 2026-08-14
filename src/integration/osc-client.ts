@@ -52,6 +52,10 @@ export class OSCClient extends EventEmitter {
   // from AbletonOSC (e.g. current_song_time bursts) don't fan out identical
   // events to every WS client.
   private lastEmitted: Map<string, unknown> = new Map();
+  // Count-In requests need one authoritative acknowledgement even when its
+  // value matches the last streamed sample. Keep this bounded to explicit
+  // queries so rate-prone listener traffic remains deduplicated.
+  private requestedConfirmations: Set<string> = new Set();
   public isConnected: boolean = false;
   private lastMessageTime: number = 0;
   private connectionCheckInterval: NodeJS.Timeout | null = null;
@@ -83,11 +87,23 @@ export class OSCClient extends EventEmitter {
     }
   }
 
-  private shouldEmit(address: string, value: unknown): boolean {
+  private shouldEmit(address: string, value: unknown, confirmation = false): boolean {
+    if (confirmation) {
+      this.lastEmitted.set(address, value);
+      return true;
+    }
     const prev = this.lastEmitted.get(address);
     if (Object.is(prev, value)) return false;
     this.lastEmitted.set(address, value);
     return true;
+  }
+
+  private consumeRequestedConfirmation(address: string): boolean {
+    return this.requestedConfirmations.delete(address);
+  }
+
+  private requestConfirmation(address: string): void {
+    this.requestedConfirmations.add(address);
   }
 
   private checkConnection(): void {
@@ -143,12 +159,13 @@ export class OSCClient extends EventEmitter {
     } else if (address === '/live/song/get/is_playing') {
       const val = args[0]?.value;
       const isPlaying = val === 1 || val === true || val === 'true';
+      this.emit('is_playing_sample', isPlaying);
       if (this.shouldEmit(address, isPlaying)) {
         this.emit('is_playing', isPlaying);
       }
     } else if (address === '/live/song/get/current_song_time') {
       const time = args[0]?.value;
-      if (typeof time === 'number' && this.shouldEmit(address, time)) {
+      if (typeof time === 'number' && this.shouldEmit(address, time, this.consumeRequestedConfirmation(address))) {
         this.emit('current_song_time', time);
       }
     } else if (address === '/live/song/get/cue_points') {
@@ -171,7 +188,7 @@ export class OSCClient extends EventEmitter {
       const val = args[0]?.value;
       const metronome = val === 1 || val === true || val === 'true';
       console.log(`[OSC] metronome reply: ${metronome}`);
-      if (this.shouldEmit(address, metronome)) {
+      if (this.shouldEmit(address, metronome, this.consumeRequestedConfirmation(address))) {
         this.emit('metronome', metronome);
       }
     } else if (address === '/live/song/get/signature_numerator') {
@@ -314,6 +331,7 @@ export class OSCClient extends EventEmitter {
   }
 
   public stop(): Promise<void> {
+    this.clearRequestedConfirmations();
     if (this.connectionCheckInterval) {
       clearInterval(this.connectionCheckInterval);
       this.connectionCheckInterval = null;
@@ -339,12 +357,28 @@ export class OSCClient extends EventEmitter {
 
   public getTempo(): void { this.send('/live/song/get/tempo'); }
   public getIsPlaying(): void { this.send('/live/song/get/is_playing'); }
-  public getCurrentSongTime(): void { this.send('/live/song/get/current_song_time'); }
+  public getCurrentSongTime(requireConfirmation = false): void {
+    const address = '/live/song/get/current_song_time';
+    if (this.send(address) && requireConfirmation) this.requestConfirmation(address);
+  }
+  public setCurrentSongTime(value: number): void {
+    this.send('/live/song/set/current_song_time', [{ type: 'float', value }]);
+  }
   public getCuePoints(): void { this.send('/live/song/get/cue_points'); }
   public getLastEventTime(): void { this.send('/live/song/get/last_event_time'); }
   public startPlaying(): void { this.send('/live/song/start_playing'); }
   public stopPlaying(): void { this.send('/live/song/stop_playing'); }
-  public getMetronome(): void { this.send('/live/song/get/metronome'); }
+  public getMetronome(requireConfirmation = false): void {
+    const address = '/live/song/get/metronome';
+    if (this.send(address) && requireConfirmation) this.requestConfirmation(address);
+  }
+  public clearRequestedConfirmations(addresses?: Iterable<string>): void {
+    if (!addresses) {
+      this.requestedConfirmations.clear();
+      return;
+    }
+    for (const address of addresses) this.requestedConfirmations.delete(address);
+  }
   public getSignatureNumerator(): void { this.send('/live/song/get/signature_numerator'); }
   public getSignatureDenominator(): void { this.send('/live/song/get/signature_denominator'); }
   public getClipTriggerQuantization(): void { this.send('/live/song/get/clip_trigger_quantization'); }

@@ -28,6 +28,16 @@ Use only the release-candidate directory supplied by the maintainer. Start with
 - Confirm song and section parsing.
 - Confirm `[bpm]`, `[click]`, `[click off]`, `[loop 2x]` and `[stop]`.
 - Confirm operator Play/Stop and the 500 ms Previous/Next hold.
+- With no track armed and Record off, enable `COUNT-IN 1 BAR` while stopped and
+  validate the one-bar native-Live metronome pre-roll at a song/section locator.
+- Start with Click off and confirm it is restored off at the target; repeat with
+  Click on and confirm it stays on.
+- Start less than one bar from beat zero and confirm the shortened warning and
+  safe clamp to the start of the Set.
+- Press Stop during the pre-roll and confirm the temporary Click is restored.
+- Change manual Click during the pre-roll and confirm that manual choice wins.
+- While already playing, jump with quantization enabled and confirm the count-in
+  does not run and the existing quantized jump behavior is unchanged.
 - Confirm song/section jumps, click controls and Refresh all produce an OSC
   action rather than only updating the browser display.
 - Confirm setlist reordering and persistence after restart.

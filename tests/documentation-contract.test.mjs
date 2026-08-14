@@ -21,7 +21,7 @@ test('public landing presents Ableton RC Setlist as source-available and noncomm
   assert.match(landing, /PolyForm Noncommercial 1\.0\.0/i);
   assert.match(landing, /independent project.+not affiliated with or endorsed by Ableton AG/is);
   assert.match(landing, /https:\/\/ntworm\.github\.io\/rc-setlist\//i);
-  assert.match(landing, /Release 0\.5\.0/);
+  assert.match(landing, /Release 0\.5\.1/);
   assert.match(landing, /id=["']languageSelect["']/);
   assert.doesNotMatch(landing, /Release candidate/i);
   assert.doesNotMatch(landing, /commercial distribution is in preparation|private beta|sales open/i);
@@ -52,6 +52,26 @@ test('public documentation describes external AbletonOSC without bundling it', (
     assert.match(content, /github\.com\/ideoforms\/AbletonOSC/i, `${label} must link upstream AbletonOSC`);
     assert.doesNotMatch(content, /bundled.+AbletonOSC|vendor\/AbletonOSC/i, `${label} must not claim AbletonOSC is bundled`);
   }
+});
+
+test('user guides define the stopped-play one-bar count-in safety contract', () => {
+  const english = readRequired('docs/USER-GUIDE.md');
+  const portuguese = readRequired('docs/pt-BR/USER-GUIDE.md');
+  const tester = readRequired('docs/TESTER-GUIDE.md');
+  const changelog = readRequired('CHANGELOG.md');
+
+  assert.match(english, /COUNT-IN 1 BAR[\s\S]*one bar[\s\S]*transport is stopped/i);
+  assert.match(english, /Live(?:'s)? native metronome[\s\S]*does not (?:enter )?Record[\s\S]*arm tracks/i);
+  assert.match(english, /does not change[\s\S]*jump quantization/i);
+
+  assert.match(portuguese, /CONTAGEM 1 COMP[\s\S]*um compasso[\s\S]*transporte est[aá] parado/i);
+  assert.match(portuguese, /metr[oô]nomo nativo do Live[\s\S]*n[aã]o entra em Record[\s\S]*n[aã]o arma pistas/i);
+  assert.match(portuguese, /n[aã]o\s+altera[\s\S]*quantiza[cç][aã]o dos saltos/i);
+
+  for (const marker of ['Click off', 'Click on', 'beat zero', 'Stop', 'manual Click', 'already playing']) {
+    assert.match(tester, new RegExp(marker, 'i'), `tester guide must cover ${marker}`);
+  }
+  assert.match(changelog, /\[ws\][^\n]*preRollEnabled[^\n]*protocolVersion 3/i);
 });
 
 test('installation and troubleshooting guides prevent the AbletonOSC folder mix-up', () => {
@@ -104,8 +124,8 @@ test('public docs contain the required user, contributor, privacy and security p
     'docs/pt-BR/NOTAS-DA-VERSAO-0.4.1.md',
     'docs/RELEASE-NOTES-0.4.2.md',
     'docs/pt-BR/NOTAS-DA-VERSAO-0.4.2.md',
-    'docs/RELEASE-NOTES-0.5.0.md',
-    'docs/pt-BR/NOTAS-DA-VERSAO-0.5.0.md',
+    'docs/RELEASE-NOTES-0.5.1.md',
+    'docs/pt-BR/NOTAS-DA-VERSAO-0.5.1.md',
   ];
 
   for (const path of required) {
@@ -132,10 +152,10 @@ test('0.4.2 local test notes remain preserved as the historical candidate', () =
 
 });
 
-test('0.5.0 final notes are bilingual and promote the field-tested release surface', () => {
+test('0.5.1 final notes are bilingual and describe the verified release surface', () => {
   const changelog = readRequired('CHANGELOG.md');
-  const englishNotes = readRequired('docs/RELEASE-NOTES-0.5.0.md');
-  const portugueseNotes = readRequired('docs/pt-BR/NOTAS-DA-VERSAO-0.5.0.md');
+  const englishNotes = readRequired('docs/RELEASE-NOTES-0.5.1.md');
+  const portugueseNotes = readRequired('docs/pt-BR/NOTAS-DA-VERSAO-0.5.1.md');
   const landing = readRequired('docs/index.html');
   const readme = readRequired('README.md');
 
@@ -144,17 +164,23 @@ test('0.5.0 final notes are bilingual and promote the field-tested release surfa
   assert.match(changelog, /\[ignore\]/i);
   assert.match(changelog, /sections_count[\s\S]*automations/i);
 
-  assert.match(englishNotes, /0\.5\.0[\s\S]*explicit[\s\S]*relative[\s\S]*\[ignore\]/i);
-  assert.match(englishNotes, /setlist[\s\S]*sections_count[\s\S]*automations/i);
-  assert.match(englishNotes, /pt-BR\/NOTAS-DA-VERSAO-0\.5\.0\.md/);
-  assert.match(portugueseNotes, /0\.5\.0[\s\S]*expl.cita[\s\S]*relativa[\s\S]*\[ignore\]/i);
-  assert.match(portugueseNotes, /setlist[\s\S]*sections_count[\s\S]*automations/i);
-  assert.match(portugueseNotes, /\.\.\/RELEASE-NOTES-0\.5\.0\.md/);
+  assert.match(englishNotes, /Keyboard[\s\S]*Mapping/i);
+  assert.match(englishNotes, /Count-in[\s\S]*Pre-roll/i);
+  assert.match(englishNotes, /previous[\s\S]*next[\s\S]*song/i);
+  assert.match(englishNotes, /insertion[\s\S]*(?:target|line|preview)/i);
+  assert.doesNotMatch(englishNotes, /bulletproof|guaranteed|maximum reliability/i);
+  assert.match(englishNotes, /pt-BR\/NOTAS-DA-VERSAO-0\.5\.1\.md/);
+  assert.match(portugueseNotes, /Keyboard[\s\S]*Mapping/i);
+  assert.match(portugueseNotes, /Count-in[\s\S]*pre-roll/i);
+  assert.match(portugueseNotes, /música anterior[\s\S]*próxima música/i);
+  assert.match(portugueseNotes, /inserção[\s\S]*(?:alvo|linha|prévia)/i);
+  assert.doesNotMatch(portugueseNotes, /à prova de falhas|garantid[ao]|máxima confiabilidade/i);
+  assert.match(portugueseNotes, /\.\.\/RELEASE-NOTES-0\.5\.1\.md/);
 
-  assert.match(landing, /Release 0\.5\.0/);
-  assert.match(landing, /RELEASE-NOTES-0\.5\.0\.md/);
-  assert.match(readme, /Ableton-RC-Setlist-0\.5\.0\.ablx/);
-  assert.match(readme, /docs\/RELEASE-NOTES-0\.5\.0\.md/);
+  assert.match(landing, /Release 0\.5\.1/);
+  assert.match(landing, /RELEASE-NOTES-0\.5\.1\.md/);
+  assert.match(readme, /Ableton-RC-Setlist-0\.5\.1\.ablx/);
+  assert.match(readme, /docs\/RELEASE-NOTES-0\.5\.1\.md/);
 });
 
 test('0.4.1 guides and changelog document durations, recoverable profiles and WebSocket compatibility', () => {
@@ -213,8 +239,29 @@ test('0.4.1 release notes remain preserved, bilingual and describe the tested re
   assert.match(portugueseNotes, /\.\.\/RELEASE-NOTES-0\.4\.1\.md/);
   assert.match(englishNotes, /setlist duration[\s\S]*Manage Setlists[\s\S]*lyrics[\s\S]*bar display/i);
   assert.match(portugueseNotes, /dura[cç][aã]o total[\s\S]*Gerenciar setlists[\s\S]*letras[\s\S]*compasso/i);
-  assert.match(readme, /\[Landing page and screenshots\]\(https:\/\/ntworm\.github\.io\/rc-setlist\/\)/);
-  assert.match(readme, /!\[Ableton RC Setlist Stage Control\]\(docs\/media\/en\/stage-control\.png\)/);
+  assert.match(readme, /\[Landing page\]\(https:\/\/ntworm\.github\.io\/rc-setlist\/\)/);
+  assert.doesNotMatch(readme, /!\[[^\]]*\]\(docs\/media\/[^)]+\)/i);
+});
+
+test('README is text-first and inventories the operator control surfaces', () => {
+  const readme = readRequired('README.md');
+
+  for (const feature of [
+    /Keyboard Mapping/i,
+    /MIDI Mapping/i,
+    /previous and next song|adjacent-song navigation/i,
+    /insertion (?:target|line|preview)/i,
+    /saved setlists.+current Ableton\s+Live Set/is,
+    /\.lrc.+lyrics/is,
+    /CSV export/i,
+    /Screen Wake Lock/i,
+    /No account, cloud sync, analytics or telemetry/i,
+  ]) {
+    assert.match(readme, feature);
+  }
+
+  assert.match(readme, /trusted LAN[\s\S]*port `4444`/i);
+  assert.doesNotMatch(readme, /!\[[^\]]*\]\(docs\/media\/[^)]+\)/i);
 });
 
 test('public landing contains truthful site media and keeps the owner media kit private', () => {
@@ -294,7 +341,7 @@ test('the public CI gate includes browser and release-surface regressions', () =
 });
 
 test('production build cleans generated output and enables minification', () => {
-  const build = read('build.ts');
+  const build = read('scripts/build.ts');
   assert.match(build, /rmSync\([^\n]+recursive:\s*true[^\n]+force:\s*true/);
   assert.match(build, /minify:\s*production/);
 });
@@ -322,4 +369,27 @@ test('documentation and guides explain relative locators, ignore tag, Manage Set
   assert.match(changelog, /## \[Unreleased\]/i, 'CHANGELOG.md must have Unreleased section');
   assert.match(changelog, /relative section locator syntax/i, 'CHANGELOG.md must document relative section locators');
   assert.match(changelog, /\[ignore\]/i, 'CHANGELOG.md must document ignore tag');
+});
+
+test('jump documentation preserves the destination-BPM ordering and timing limitation', () => {
+  const english = readRequired('docs/USER-GUIDE.md');
+  const portuguese = readRequired('docs/pt-BR/USER-GUIDE.md');
+  const changelog = readRequired('CHANGELOG.md');
+
+  assert.match(english, /explicit jumps[\s\S]*destination BPM[\s\S]*before[\s\S]*cue jump/i);
+  assert.match(english, /section BPM[\s\S]*overrides[\s\S]*song BPM/i);
+  assert.match(english, /SDK-first/i);
+  assert.match(english, /sequential[\s\S]*(?:not atomic|non-atomic)/i);
+  assert.match(english, /Arrangement tempo automation[\s\S]*sample-accurate/i);
+
+  assert.match(portuguese, /saltos expl.citos[\s\S]*BPM de destino[\s\S]*antes[\s\S]*salto de cue/i);
+  assert.match(portuguese, /BPM da se..o[\s\S]*substitui[\s\S]*BPM da m.sica/i);
+  assert.match(portuguese, /SDK-first/i);
+  assert.match(portuguese, /sequenciais[\s\S]*(?:n.o at.micas|n.o s.o at.micas)/i);
+  assert.match(portuguese, /automa..o de tempo.*Arrangement[\s\S]*precis.o de amostra/i);
+
+  assert.match(changelog, /destination BPM[\s\S]*before[\s\S]*cue jump/i);
+  assert.match(changelog, /section BPM[\s\S]*overrides[\s\S]*song BPM/i);
+  assert.match(changelog, /SDK-first[\s\S]*sequential[\s\S]*(?:not atomic|non-atomic)/i);
+  assert.match(changelog, /Arrangement tempo automation[\s\S]*sample-accurate/i);
 });

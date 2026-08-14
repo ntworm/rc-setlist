@@ -226,8 +226,18 @@ export function parseSetlist(cues: { name: string; time: number }[]): Setlist {
 
     if (parsed.kind === 'relative-section' || parsed.kind === 'relative-automation') {
       if (!currentSong) {
-        hidden.push({ name: cue.name, time: cue.time });
-        continue;
+        currentSong = {
+          title: '_Sem Música_',
+          time: cue.time,
+          sections: [],
+          loopCount: null,
+          autoStop: false,
+          autoNext: false,
+          bpm: null,
+          autoClick: null,
+          skip: false
+        };
+        songs.push(currentSong);
       }
       currentSong.sections.push({
         ...parsed.section!,
@@ -238,8 +248,18 @@ export function parseSetlist(cues: { name: string; time: number }[]): Setlist {
 
     if (parsed.kind === 'automation') {
       if (!currentSong) {
-        hidden.push({ name: cue.name, time: cue.time });
-        continue;
+        currentSong = {
+          title: '_Sem Música_',
+          time: cue.time,
+          sections: [],
+          loopCount: null,
+          autoStop: false,
+          autoNext: false,
+          bpm: null,
+          autoClick: null,
+          skip: false
+        };
+        songs.push(currentSong);
       }
       currentSong.sections.push({
         ...parsed.section!,

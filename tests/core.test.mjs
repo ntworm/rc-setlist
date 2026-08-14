@@ -282,14 +282,14 @@ test('parseSetlist: tag-only automations belong to the preceding song', () => {
   );
 });
 
-test('parseSetlist: tag-only automation before the first song is hidden', () => {
-  const parsed = parseSetlist([
-    { name: '[stop]', time: 0 },
-    { name: 'Song A', time: 10 },
-  ]);
-
-  assert.deepStrictEqual(parsed.songs.map((song) => song.title), ['Song A']);
-  assert.deepStrictEqual(parsed.hidden, [{ name: '[stop]', time: 0 }]);
+test('parseSetlist: tag-only automation before the first song creates an implicit _Sem Música_ song', (t) => {
+  const cues = [
+    { name: '[bpm 120]', time: 0 },
+    { name: 'Song A', time: 16 }
+  ];
+  const parsed = parseSetlist(cues);
+  assert.deepStrictEqual(parsed.songs.map(s => s.title), ['_Sem Música_', 'Song A']);
+  assert.strictEqual(parsed.hidden.length, 0);
 });
 
 // --- SETLIST MANAGER TESTS ---
@@ -397,11 +397,24 @@ test('SetlistManager: publishes song and total durations from Arrangement end', 
   manager.updateArrangementEndTime(240);
 
   const state = manager.getState();
-  assert.equal(state.protocolVersion, 2);
+  assert.equal(state.protocolVersion, 3);
   assert.equal(state.songs[0].durationSeconds, 60);
   assert.equal(state.songs[1].durationSeconds, 120);
   assert.equal(state.totalDurationSeconds, 180);
   assert.equal(state.arrangementEndTime, 240);
+});
+
+test('SetlistManager: shares a non-persisted pre-roll toggle in public state', () => {
+  const manager = new SetlistManager();
+  const initialVersion = manager.getState().stateVersion;
+
+  assert.equal(manager.getState().preRollEnabled, false);
+  manager.setPreRollEnabled(true);
+  assert.equal(manager.getState().preRollEnabled, true);
+  assert.equal(manager.getState().stateVersion, initialVersion + 1);
+
+  manager.setPreRollEnabled(true);
+  assert.equal(manager.getState().stateVersion, initialVersion + 1);
 });
 
 test('SetlistManager: keeps final and total durations unknown without a valid end', () => {
@@ -971,17 +984,17 @@ test('Relative syntax: [stop] after a relative section remains on the current so
   assert.strictEqual(parsed.songs[0].sections[1].automationOnly, true);
 });
 
-test('Relative syntax: > Intro before the first song does not create an empty song (goes to hidden)', () => {
+test('Relative syntax: > Intro before the first song creates an implicit _Sem Música_ song', () => {
   const parsed = parseSetlist([
     { name: '> Intro', time: 0 },
     { name: 'Song A', time: 10 },
   ]);
 
-  assert.strictEqual(parsed.songs.length, 1);
-  assert.strictEqual(parsed.songs[0].title, 'Song A');
-  assert.strictEqual(parsed.hidden.length, 1);
-  assert.strictEqual(parsed.hidden[0].name, '> Intro');
-  assert.strictEqual(parsed.hidden[0].time, 0);
+  assert.strictEqual(parsed.songs.length, 2);
+  assert.strictEqual(parsed.songs[0].title, '_Sem Música_');
+  assert.strictEqual(parsed.songs[0].sections[0].name, 'Intro');
+  assert.strictEqual(parsed.songs[1].title, 'Song A');
+  assert.strictEqual(parsed.hidden.length, 0);
 });
 
 test('Relative syntax: Song A > Intro legacy syntax continues working', () => {
@@ -1129,20 +1142,22 @@ test('SetlistManager caches derived songs and invalidates only duration/list inp
   assert.strictEqual(manager.getState().songs, initialSongs);
   assert.equal(manager.getState().setlistVersion, initialState.setlistVersion);
 
+  // Transport updates with the same BPM — no invalidation
   manager.updateTransport(32, true, 120);
   assert.strictEqual(manager.getState().songs, initialSongs);
   assert.equal(manager.getState().setlistVersion, initialState.setlistVersion);
 
+  // Live BPM change (e.g., automation) — must NOT invalidate song durations
+  // so that the show clock stays stable during the performance.
   manager.updateTransport(33, true, 90);
   const tempoState = manager.getState();
-  assert.notStrictEqual(tempoState.songs, initialSongs);
-  assert.ok(tempoState.setlistVersion > initialState.setlistVersion);
-  assert.strictEqual(manager.getState().songs, tempoState.songs);
+  assert.strictEqual(tempoState.songs, initialSongs, 'live BPM change must not invalidate song duration cache');
 
+  // Arrangement end change — this DOES invalidate (new boundary changes durations)
   manager.updateArrangementEndTime(300);
   const endState = manager.getState();
   assert.notStrictEqual(endState.songs, tempoState.songs);
-  assert.ok(endState.setlistVersion > tempoState.setlistVersion);
+  assert.ok(endState.setlistVersion > initialState.setlistVersion);
 
   manager.setCustomOrder(['Song B', 'Song A']);
   const orderState = manager.getState();

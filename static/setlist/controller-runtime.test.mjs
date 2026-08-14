@@ -192,3 +192,28 @@ test('active class controller toggles only the previous and next elements', () =
   controller.update(0, -1);
   assert.equal(song0.classes.has('active'), true);
 });
+
+test('readKeyMappings recovers from corrupt storage and discards malformed entries', () => {
+  const runtime = loadRuntime();
+  const defaults = { play: null, stop: null, next_song: null, toggle_count_in: null };
+  const corruptStorage = { getItem: () => '{not json' };
+  assert.deepEqual({ ...runtime.readKeyMappings(corruptStorage, 'mappings', defaults) }, defaults);
+
+  const storage = {
+    getItem: () => JSON.stringify({
+      play: { key: '1', code: 'Numpad1', ctrlKey: false, altKey: false, shiftKey: false },
+      stop: { key: 'bad' }, // missing code
+      next_song: null,
+      toggle_count_in: { key: '2', code: 'Numpad2', ctrlKey: false, altKey: false, shiftKey: false },
+      injected_action: { key: 'x', code: 'KeyX' }, // not in defaults, must be excluded
+    }),
+  };
+  const result = JSON.parse(JSON.stringify(runtime.readKeyMappings(storage, 'mappings', defaults)));
+  assert.deepEqual(result, {
+    play: { key: '1', code: 'Numpad1', ctrlKey: false, altKey: false, shiftKey: false },
+    stop: null,          // malformed (missing code) → falls back to default null
+    next_song: null,     // explicit null is preserved
+    toggle_count_in: { key: '2', code: 'Numpad2', ctrlKey: false, altKey: false, shiftKey: false },
+  });
+  assert.equal('injected_action' in result, false, 'injected action not in defaults must be excluded');
+});

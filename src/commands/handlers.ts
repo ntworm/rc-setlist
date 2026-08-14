@@ -9,6 +9,7 @@ import {
   checkAndBroadcastLyrics,
   selectProfile,
   loadLyricsForSong,
+  cancelActivePreRoll,
 } from '../core/bridge-state.js';
 import {
   buildTracklistCsv,
@@ -21,6 +22,8 @@ import {
 } from '../core/csv-export.js';
 import { buildClickPreviewWav, clickPreviewFilename } from '../core/click-preview.js';
 import { getQuantizationBeats } from '../core/next-downbeat-jump.js';
+import { applyJumpTargetTempo } from './jump-tempo.js';
+import { parseLocator } from '../core/locator-parser.js';
 import { atomicWriteFile } from '../util/atomic-write.js';
 import type { ProfilePaths } from '../core/profile-manager.js';
 
@@ -133,15 +136,53 @@ export async function executeCommandAction(
   const osc = bridgeState.oscClient!;
 
   switch (msg.type) {
-    case 'play':
+    case 'play': {
+      const state = bridgeState.manager!.getState();
+      const coordinator = bridgeState.preRollCoordinator;
+
+      if (state.isPlaying) {
+        osc.startPlaying();
+        break;
+      }
+
+      const decision = coordinator?.start({
+        enabled: state.preRollEnabled,
+        isPlaying: state.isPlaying,
+        targetBeat: state.currentSongTime,
+        signatureNumerator: state.signatureNumerator,
+        signatureDenominator: state.signatureDenominator,
+        metronome: state.metronome,
+      });
+      if (!decision || decision.kind === 'passthrough') {
+        if (decision?.reason === 'invalid') {
+          bridgeState.wsServer?.broadcastLog('Count-in could not determine a safe pre-roll position. Starting normally.', 'warn');
+        }
+        osc.startPlaying();
+        break;
+      }
+      // Send the count-in and Play in one ordered burst. AbletonOSC's reply
+      // port can be owned by another Control Surface, so waiting for a
+      // confirmation here would strand Play whenever replies never arrive.
+      if (decision.enableMetronome) {
+        osc.setMetronome(true);
+        bridgeState.manager!.updateMetronome(true);
+      }
       osc.startPlaying();
+      osc.setCurrentSongTime(decision.startBeat);
       break;
+    }
     case 'stop':
+      cancelActivePreRoll();
       osc.stopPlaying();
       break;
     case 'metronome':
+      bridgeState.preRollCoordinator?.markMetronomeOverridden();
       osc.setMetronome(msg.value);
-      bridgeState.manager?.updateMetronome(msg.value);
+      bridgeState.manager!.updateMetronome(msg.value);
+      broadcastState();
+      break;
+    case 'set_pre_roll':
+      bridgeState.manager!.setPreRollEnabled(msg.value);
       broadcastState();
       break;
     case 'refresh':
@@ -179,6 +220,7 @@ export async function executeCommandAction(
     case 'set_panic':
       bridgeState.manager!.setPanic(msg.active);
       if (msg.active) {
+        cancelActivePreRoll();
         osc.stopPlaying();
         bridgeState.manager!.clearLoop();
       }
@@ -226,6 +268,9 @@ export async function executeCommandAction(
       await bridgeState.profileManager!.restore(msg.id);
       broadcastProfileState();
       break;
+    case 'edit_locator':
+      await executeEditLocatorCommand(msg);
+      break;
   }
 }
 
@@ -260,6 +305,7 @@ export function executeJumpCommand(msg: ClientMessageOf<'jump'>): void {
 
   if (isImmediate) {
     bridgeState.scheduler.clearPending();
+    applyJumpTargetTempo(msg.songIndex, msg.sectionIndex ?? null);
     bridgeState.oscClient.jumpToCuePoint(cueIndex);
 
     if (msg.sectionIndex !== null && msg.sectionIndex !== undefined) {
@@ -486,6 +532,59 @@ async function executeExportCsvCommand(
   }
 }
 
+async function executeEditLocatorCommand(
+  msg: ClientMessageOf<'edit_locator'>,
+): Promise<void> {
+  if (!bridgeState.manager) {
+    throw new Error('Setlist manager is not initialized.');
+  }
+  if (bridgeState.manager.getState().mode === 'show' && bridgeState.manager.getState().isPlaying) {
+    throw new Error('Cannot edit locator while transport is playing in Show mode.');
+  }
+
+  const { time, name } = msg;
+
+  const parsed = parseLocator(name);
+  if (parsed.kind === 'hidden' && parsed.hiddenName === '_empty') {
+    throw new Error('Name cannot be empty.');
+  }
+
+  const rawCues = bridgeState.manager.getRawCues();
+  const matches = rawCues.filter((c) => c.time === time);
+
+  if (matches.length === 0) {
+    throw new Error(`No cue point found at time ${time}.`);
+  }
+  if (matches.length > 1) {
+    throw new Error(`Ambiguous cue point at time ${time}: ${matches.length} cues collide.`);
+  }
+
+  const existing = matches[0]!;
+  if (existing.name === name) {
+    // No-op: same name. Treat as success.
+    return;
+  }
+
+  // Gate: only MCP can perform delete + recreate. OSC has no rename/delete for cue points.
+  const deleted = await deleteCuePoint(time, true);
+  if (deleted.status !== 'confirmed') {
+    throw new Error(`Could not delete cue point before rename: ${deleted.message ?? 'unknown error'}`);
+  }
+
+  const created = await createCuePoint(name, time, true);
+  if (created.status !== 'confirmed') {
+    // Critical: cue was deleted but create failed. The arrangement has a hole at `time`.
+    // Best-effort recovery: nudge the user to refresh cues.
+    bridgeState.wsServer?.broadcastLog(
+      `Cue point at ${time} was deleted but the rename failed. Refresh the setlist.`,
+      'error',
+    );
+    throw new Error(`Could not recreate cue point after delete: ${created.status}`);
+  }
+
+  bridgeState.wsServer?.broadcastLog(`Locator edited at ${time}.`, 'info');
+}
+
 async function executeCreateTestSessionCommand(
   msg: ClientMessageOf<'create_test_session'>,
   writeFile: typeof atomicWriteFile,
@@ -671,6 +770,22 @@ async function createCuePoint(name: string, beat: number, tryMcp: boolean): Prom
     }
   }
   return createCuePointViaOsc(name, beat);
+}
+
+async function deleteCuePoint(beat: number, tryMcp: boolean): Promise<{ status: 'confirmed' | 'error'; message?: string }> {
+  if (tryMcp) {
+    try {
+      const res = await callDebuggerMcp('delete_cue_point', { time: beat });
+      if (isRecord(res) && res.status === 'ok') {
+        return { status: 'confirmed' };
+      }
+      return { status: 'error', message: 'MCP delete did not return ok' };
+    } catch (err) {
+      return { status: 'error', message: err instanceof Error ? err.message : String(err) };
+    }
+  }
+  // AbletonOSC has no cue-point delete. Without MCP, we cannot support edit_locator.
+  return { status: 'error', message: 'AbletonOSC cannot delete cue points; MCP debugger required.' };
 }
 
 function callDebuggerMcp(command: string, params: Record<string, unknown>): Promise<unknown> {

@@ -56,6 +56,7 @@ const songs = songNames.map((title, songIndex) => ({
 const stateMessage = {
   type: 'state',
   state: {
+    protocolVersion: 3,
     songs,
     activeSongIndex: 2,
     activeSectionIndex: 2,
@@ -64,10 +65,54 @@ const stateMessage = {
     isPlaying: true,
     signatureNumerator: 4,
     metronome: true,
+    preRollEnabled: false,
     clipTriggerQuantization: 4,
     totalDurationSeconds: 180,
   },
 };
+
+const relativeShowSongs = [
+  {
+    title: 'INTRO',
+    time: 0,
+    durationSeconds: 106,
+    sections: [{ name: 'INTRO', time: 0, loopCount: null, autoStop: false, autoNext: false, bpm: null }],
+    loopCount: null,
+    autoStop: false,
+    autoNext: false,
+    bpm: 120,
+  },
+  {
+    title: 'JULIA',
+    time: 840,
+    durationSeconds: 237,
+    sections: [{ name: 'INTRO', time: 840, loopCount: null, autoStop: false, autoNext: false, bpm: null }],
+    loopCount: null,
+    autoStop: false,
+    autoNext: false,
+    bpm: 120,
+  },
+];
+
+function relativeShowState(activeSongIndex) {
+  return {
+    type: 'state',
+    state: {
+      protocolVersion: 3,
+      songs: relativeShowSongs,
+      totalDurationSeconds: 343,
+      activeSongIndex,
+      activeSectionIndex: 0,
+      currentSongTime: relativeShowSongs[activeSongIndex].time,
+      tempo: 120,
+      isPlaying: false,
+      signatureNumerator: 4,
+      metronome: false,
+      preRollEnabled: false,
+      clipTriggerQuantization: 4,
+    },
+  };
+}
 
 const profilesStateMessage = {
   type: 'profiles_state',
@@ -130,6 +175,7 @@ const marketingSongs = marketingSongNames.map((title, songIndex) => ({
 const marketingStateMessage = {
   type: 'state',
   state: {
+    protocolVersion: 3,
     songs: marketingSongs,
     totalDurationSeconds: 640,
     arrangementEndTime: 640,
@@ -140,6 +186,7 @@ const marketingStateMessage = {
     isPlaying: true,
     signatureNumerator: 4,
     metronome: true,
+    preRollEnabled: false,
     clipTriggerQuantization: 4,
   },
 };
@@ -157,6 +204,12 @@ const marketingLyricsMessage = {
     { time: 75, text: 'Next line ready for the performer' },
   ],
 };
+
+function stateForScenario(scenario) {
+  if (scenario === 'relative-first') return relativeShowState(0);
+  if (scenario === 'relative-later') return relativeShowState(1);
+  return scenario === 'marketing' ? marketingStateMessage : stateMessage;
+}
 
 function readJsonBody(request) {
   return new Promise((resolve, reject) => {
@@ -195,7 +248,7 @@ const server = http.createServer((request, response) => {
   const requestUrl = new URL(request.url || '/', `http://127.0.0.1:${port}`);
   if (requestUrl.pathname === '/__test__/state') {
     response.writeHead(200, { 'content-type': 'application/json; charset=utf-8' });
-    response.end(JSON.stringify(activeScenario === 'marketing' ? marketingStateMessage : stateMessage));
+    response.end(JSON.stringify(stateForScenario(requestUrl.searchParams.get('scenario') || activeScenario)));
     return;
   }
   if (requestUrl.pathname === '/__test__/messages') {
@@ -244,9 +297,7 @@ webSockets.on('connection', (socket) => {
 
   const message = scenario === 'no-song'
     ? { ...stateMessage, state: { ...stateMessage.state, songs: [], activeSongIndex: -1, activeSectionIndex: -1 } }
-    : scenario === 'marketing'
-      ? marketingStateMessage
-      : stateMessage;
+    : stateForScenario(scenario);
   const lyrics = scenario === 'no-lyrics' || scenario === 'no-song'
     ? { ...lyricsMessage, lines: [], format: 'none' }
     : scenario === 'marketing'

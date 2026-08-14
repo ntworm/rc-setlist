@@ -69,3 +69,27 @@ test('metrics keep distinct identities for songs that start on the same beat', (
   assert.equal(result.songDurationSecondsBySong.get(second), 60);
   assert.equal(result.songDurationSecondsBySong.get(third), 60);
 });
+
+test('untagged songs inherit the tempo of the nearest preceding tagged song', () => {
+  const taggedFirst = { title: 'First', time: 0, bpm: 120 };
+  const untaggedSecond = { title: 'Second', time: 120, bpm: null };
+  const taggedThird = { title: 'Third', time: 240, bpm: 80 };
+  const untaggedFourth = { title: 'Fourth', time: 320, bpm: null };
+  const result = calculateSetlistMetrics([taggedFirst, untaggedSecond, taggedThird, untaggedFourth], 400, 200);
+
+  // Second inherits 120 from First. (240 - 120) beats @ 120 bpm = 60s
+  assert.equal(result.songDurationSecondsByStart.get(120), 60);
+  
+  // Fourth inherits 80 from Third. (400 - 320) beats @ 80 bpm = 60s
+  assert.equal(result.songDurationSecondsByStart.get(320), 60);
+});
+
+test('untagged songs fall back to live tempo only if no preceding song has a tag', () => {
+  const untaggedFirst = { title: 'First', time: 0, bpm: null };
+  const untaggedSecond = { title: 'Second', time: 120, bpm: null };
+  const result = calculateSetlistMetrics([untaggedFirst, untaggedSecond], 240, 200);
+
+  // Both fall back to 200 bpm. 120 beats @ 200 bpm = 36s
+  assert.equal(result.songDurationSecondsByStart.get(0), 36);
+  assert.equal(result.songDurationSecondsByStart.get(120), 36);
+});

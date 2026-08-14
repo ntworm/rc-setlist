@@ -1,8 +1,8 @@
 import * as esbuild from 'esbuild';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
-import { strictBinpackPlugin } from './scripts/build/binpack-strict.ts';
-import { copyStaticTree, nodeEnvDefine } from './scripts/build/build-helpers.ts';
+import { strictBinpackPlugin } from './build/binpack-strict.ts';
+import { copyStaticTree, nodeEnvDefine } from './build/build-helpers.ts';
 
 const manifest = JSON.parse(fs.readFileSync('manifest.json', 'utf8'));
 const production = process.argv.includes('--production');

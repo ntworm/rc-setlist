@@ -95,18 +95,24 @@ keep automatic start enabled for only one OSC-dependent RC extension.
 
 ## Setlists from another Live Set appear
 
-Current builds store multiple setlists inside the current Live Set's own scope.
-They do not show the global profile list from older builds. Restart the RC
-Setlist server after opening the intended saved `.als` if the project was
-changed while an older build was running.
+Current builds save every profile operation immediately inside the current Live
+Set scope. They do not show the global profile list from older builds, and a new
+unsaved Live Set never imports another temporary session automatically.
 
 Legacy global data is preserved as a backup and is not deleted. Only the former
 per-project folder that exactly matches the current saved Live Set is imported
 automatically.
 
-If project metadata arrives after startup, the temporary project scope is
-promoted to the saved `.als` scope. Profiles created during the delay, including
-`Second Setlist`, are copied without deleting the temporary source. For an
+If project metadata arrives after startup, or you use **Save As** without
+changing the Song handle, the temporary project scope may be promoted to the
+saved `.als` scope only when that delayed metadata still matches the same Live
+session and profile scope. Profiles created during that delay, including
+`Second Setlist`, are copied without deleting the temporary source.
+
+After switching Live Sets, restart RC Setlist before attaching the intended
+saved `.als`. The temporary scope created during a handle change is durable for
+manual recovery, but its profiles are blocked from automatic migration. Other
+historical temporary folders are also left untouched for manual recovery. For an
 unidentified Set, missing lyrics are recovered only when one legacy custom order
 matches the complete current song list; ambiguous matches are left untouched.
 

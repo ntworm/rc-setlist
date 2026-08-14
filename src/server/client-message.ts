@@ -11,6 +11,7 @@ const MESSAGE_TYPE_PATTERN = /^[a-z][a-z0-9_]{0,63}$/;
 const MAX_COMMAND_ID_LENGTH = 128;
 const MAX_CLIENT_ID_LENGTH = 128;
 const MAX_PROFILE_FIELD_LENGTH = 80;
+const MAX_LOCATOR_NAME_LENGTH = 255;
 const MAX_SONG_TITLE_LENGTH = 255;
 const MAX_LYRICS_LENGTH = 96 * 1024;
 const MAX_REORDER_SONGS = 4096;
@@ -97,6 +98,9 @@ export function decodeClientMessage(input: unknown): DecodeResult {
     case 'metronome':
       if (typeof input.value !== 'boolean') return fail('Invalid value for metronome.');
       return success({ type: 'metronome', value: input.value });
+    case 'set_pre_roll':
+      if (typeof input.value !== 'boolean') return fail('Invalid value for pre-roll.');
+      return success({ type: 'set_pre_roll', value: input.value });
     case 'set_quantization':
       if (!isFiniteInteger(input.value, 0, 13)) return fail('Invalid value for quantization.');
       return success({ type: 'set_quantization', value: input.value });
@@ -157,6 +161,10 @@ export function decodeClientMessage(input: unknown): DecodeResult {
         id: input.id as string,
         confirmationName: input.confirmationName as string,
       });
+    case 'edit_locator':
+      if (!isBoundedNumber(input.time, 0, 1_000_000)) return fail('Invalid time for edit_locator.');
+      if (!requireText('name', MAX_LOCATOR_NAME_LENGTH)) return fail('Invalid name for edit_locator.');
+      return success({ type: 'edit_locator', time: input.time as number, name: input.name as string });
     default:
       return fail('Unsupported message type.');
   }

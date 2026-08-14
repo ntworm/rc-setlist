@@ -7,7 +7,8 @@ import { tmpdir } from 'node:os';
 import { setExtensionContext, clearExtensionContext } from '../src/context.ts';
 import { startServer, stopServer, isServerRunning } from '../src/index.ts';
 import { bridgeState } from '../src/core/bridge-state.ts';
-import { closeHttpServer } from '../src/server-lifecycle.ts';
+import { closeHttpServer, getProjectMetadataRequestToken } from '../src/server-lifecycle.ts';
+import { PreRollCoordinator } from '../src/core/pre-roll-coordinator.ts';
 
 // Helper to find a free port
 function getFreePort() {
@@ -41,12 +42,69 @@ test('Server Lifecycle: drains the event log after stopping command intake', asy
   const calls = [];
   bridgeState.commandBus = { stop() { calls.push('commandBus.stop'); } };
   bridgeState.eventLogger = { async flush() { calls.push('eventLogger.flush'); } };
+  bridgeState.promotionBlockedProjectSessionId = 'blocked-session';
 
   await stopServer();
 
   assert.deepStrictEqual(calls, ['commandBus.stop', 'eventLogger.flush']);
   assert.strictEqual(bridgeState.commandBus, null);
   assert.strictEqual(bridgeState.eventLogger, null);
+  assert.strictEqual(bridgeState.promotionBlockedProjectSessionId, '');
+});
+
+test('Server Lifecycle: project metadata token fails closed for a blocked Song session', () => {
+  const previous = {
+    projectIdentity: bridgeState.projectIdentity,
+    projectSessionId: bridgeState.projectSessionId,
+    promotionBlockedProjectSessionId: bridgeState.promotionBlockedProjectSessionId,
+  };
+  bridgeState.projectIdentity = {
+    key: 'scope-a',
+    displayName: 'Current Live Set',
+    filePath: null,
+    source: 'session',
+    persistent: false,
+    legacyProjectKey: null,
+  };
+  bridgeState.projectSessionId = 'session-a';
+  bridgeState.promotionBlockedProjectSessionId = '';
+
+  try {
+    assert.equal(getProjectMetadataRequestToken(), 'session-a:scope-a');
+    bridgeState.promotionBlockedProjectSessionId = 'session-a';
+    assert.equal(getProjectMetadataRequestToken(), null);
+  } finally {
+    bridgeState.projectIdentity = previous.projectIdentity;
+    bridgeState.projectSessionId = previous.projectSessionId;
+    bridgeState.promotionBlockedProjectSessionId = previous.promotionBlockedProjectSessionId;
+  }
+});
+
+test('Server Lifecycle: restores a temporary pre-roll Click before OSC disposal', async () => {
+  const calls = [];
+  const coordinator = new PreRollCoordinator();
+  coordinator.start({
+    enabled: true,
+    isPlaying: false,
+    targetBeat: 32,
+    signatureNumerator: 4,
+    metronome: false,
+  });
+  bridgeState.preRollCoordinator = coordinator;
+  bridgeState.oscClient = {
+    setMetronome(value) { calls.push(['metronome', value]); },
+    stopPropertyListeners() { calls.push(['stop-listeners']); },
+    async stop() { calls.push(['stop-osc']); },
+  };
+
+  await stopServer();
+
+  assert.deepStrictEqual(calls, [
+    ['metronome', false],
+    ['stop-listeners'],
+    ['stop-osc'],
+  ]);
+  assert.strictEqual(bridgeState.preRollCoordinator, null);
 });
 
 test('Server Lifecycle: start, stop, port collision handling', async () => {
@@ -81,6 +139,7 @@ test('Server Lifecycle: start, stop, port collision handling', async () => {
       skipProjectDetector: true
     });
     assert.strictEqual(isServerRunning(), true);
+    assert.ok(bridgeState.preRollCoordinator instanceof PreRollCoordinator);
 
     // Keep server open to ensure pollInterval/timers are stable and don't crash
     await new Promise((resolve) => setTimeout(resolve, 300));
@@ -92,6 +151,7 @@ test('Server Lifecycle: start, stop, port collision handling', async () => {
     // 3. Stop successfully
     await stopServer();
     assert.strictEqual(isServerRunning(), false);
+    assert.strictEqual(bridgeState.preRollCoordinator, null);
 
     // Restarting RC Setlist inside the same Live session must reopen the same
     // temporary scope instead of hiding a profile created moments earlier.

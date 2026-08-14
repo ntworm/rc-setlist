@@ -51,6 +51,13 @@ test('toggle_play, next_cue, and prev_cue remain local actions without policies'
   assert.equal(Object.hasOwn(policies, 'prev_cue'), false);
 });
 
+test('pre-roll toggle is an explicit local command policy', () => {
+  assert.deepEqual(commandBusModule.COMMAND_POLICIES.set_pre_roll, {
+    completion: 'local',
+    timeoutMs: 2_000,
+  });
+});
+
 test('local commands confirm only after their handler promise resolves', async () => {
   const { bus } = createBus();
   let release;

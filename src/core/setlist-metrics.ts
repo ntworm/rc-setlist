@@ -35,11 +35,20 @@ export function calculateSongDurationSec(
   arrangementEndTime: number | null = null,
 ): number | null {
   const chronological = [...songs].sort((a, b) => a.time - b.time);
+  
+  let currentFallback = fallbackBpm;
+  for (const s of chronological) {
+    if (s === song) break;
+    if (s.bpm !== null && typeof s.bpm === 'number') {
+      currentFallback = s.bpm;
+    }
+  }
+
   const index = chronological.indexOf(song);
   const nextStart = index >= 0 && index < chronological.length - 1
     ? chronological[index + 1]!.time
     : arrangementEndTime;
-  return durationFromBoundary(song, nextStart, fallbackBpm);
+  return durationFromBoundary(song, nextStart, currentFallback);
 }
 
 export function calculateSetlistMetrics(
@@ -53,12 +62,19 @@ export function calculateSetlistMetrics(
   let total = 0;
   let complete = chronological.length > 0;
 
+  let currentFallback = fallbackBpm;
+
   for (let index = 0; index < chronological.length; index++) {
     const song = chronological[index]!;
+    
+    if (song.bpm !== null && typeof song.bpm === 'number') {
+      currentFallback = song.bpm;
+    }
+
     const nextStart = index < chronological.length - 1
       ? chronological[index + 1]!.time
       : arrangementEndTime;
-    const duration = durationFromBoundary(song, nextStart, fallbackBpm);
+    const duration = durationFromBoundary(song, nextStart, currentFallback);
     songDurationSecondsByStart.set(song.time, duration);
     songDurationSecondsBySong.set(song, duration);
     if (duration === null) complete = false;

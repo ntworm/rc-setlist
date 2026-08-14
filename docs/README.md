@@ -2,7 +2,7 @@
 
 - [Português (Brasil)](pt-BR/README.md)
 - [Install](INSTALL.md)
-- [What is new in 0.5.0](RELEASE-NOTES-0.5.0.md)
+- [What is new in 0.5.1](RELEASE-NOTES-0.5.1.md)
 - [Use Ableton RC Setlist](USER-GUIDE.md)
 - [Troubleshoot](TROUBLESHOOTING.md)
 - [Test a release candidate](TESTER-GUIDE.md)

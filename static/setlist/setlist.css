@@ -125,11 +125,11 @@ body {
 }
 
 .profile-select-control {
+  position: relative;
   display: flex;
-  flex-direction: column;
   flex: 1 1 minmax(10rem, 16rem);
   min-width: 0;
-  gap: 0.16rem;
+  align-items: center;
   color: var(--ui-muted);
   font-size: 0.55rem;
   font-weight: 850;
@@ -137,7 +137,19 @@ body {
   text-transform: uppercase;
 }
 
+/* Label sits absolutely above the select so the control's effective height
+ * is exactly the select's 44px. This keeps the .app-bar flex row aligned with
+ * the other 44px siblings (Manage setlists button, language select, etc.). */
+.profile-select-control > span {
+  position: absolute;
+  top: -0.92rem;
+  left: 0.05rem;
+  pointer-events: none;
+  white-space: nowrap;
+}
+
 .profile-select-control select {
+  width: 100%;
   min-width: 0;
   min-height: 44px;
   height: 44px;
@@ -453,6 +465,38 @@ body {
   background: var(--ui-accent);
 }
 
+.song-item.is-reordering {
+  z-index: 2;
+  border-color: rgba(255, 255, 255, 0.78);
+  background: rgba(47, 49, 58, 0.98);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.36), 0 0 0 1px rgba(255, 255, 255, 0.24);
+  cursor: grabbing;
+  opacity: 0.72;
+  transform: scale(1.012);
+}
+
+.song-item.drop-before::after,
+.song-item.drop-after::after {
+  position: absolute;
+  z-index: 4;
+  right: 0.45rem;
+  left: 0.45rem;
+  height: 3px;
+  border-radius: 999px;
+  background: #fff;
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.92), 0 0 3px #fff;
+  content: "";
+  pointer-events: none;
+}
+
+.song-item.drop-before::after {
+  top: -3px;
+}
+
+.song-item.drop-after::after {
+  bottom: -3px;
+}
+
 .song-header,
 .song-info {
   display: flex;
@@ -465,6 +509,26 @@ body {
   gap: 0.75rem;
   border-radius: 8px;
   cursor: pointer;
+}
+
+.song-reorder-handle {
+  display: grid;
+  width: 1.65rem;
+  min-height: 44px;
+  place-items: center;
+  flex: 0 0 auto;
+  border-radius: 6px;
+  color: var(--ui-muted);
+  font-size: 1.05rem;
+  line-height: 1;
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+
+.song-reorder-handle:active {
+  cursor: grabbing;
 }
 
 .song-info {
@@ -559,6 +623,39 @@ body {
   color: var(--ui-accent-strong);
 }
 
+.song-header,
+.section-btn {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  -webkit-touch-callout: none;
+  touch-action: pan-y;
+}
+
+.song-header::after,
+.section-btn::after {
+  position: absolute;
+  z-index: 0;
+  inset: 0 auto 0 0;
+  width: 0;
+  border-radius: inherit;
+  background: rgba(255, 154, 47, 0.28);
+  content: "";
+  pointer-events: none;
+}
+
+.song-header > *,
+.section-btn > * {
+  position: relative;
+  z-index: 1;
+}
+
+.song-header.is-touch-holding::after,
+.section-btn.is-touch-holding::after {
+  width: 100%;
+  transition: width 500ms linear;
+}
+
 .song-header.jumping {
   background: var(--ui-success-soft);
   color: #8ceeb8;
@@ -582,6 +679,40 @@ body {
   background: var(--ui-info-soft);
   color: #a7c7ff;
   box-shadow: inset 0 0 0 1px rgba(115, 169, 255, 0.25);
+}
+
+.section-edit-input {
+  width: 100%;
+  min-width: 0;
+  border: 1px solid var(--ui-accent);
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.45);
+  color: var(--ui-text);
+  font-family: inherit;
+  font-size: 0.62rem;
+  font-weight: 850;
+  padding: 0.4rem 0.5rem;
+  outline: none;
+  box-sizing: border-box;
+}
+
+.section-edit-input:focus {
+  border-color: var(--ui-accent-strong);
+  box-shadow: inset 0 0 0 1px var(--ui-accent-strong);
+}
+
+/* Saving state: the input is read-only while waiting for the server command
+ * to confirm. A subtle pulse signals "in flight" without distracting. */
+.section-edit-input.is-saving {
+  opacity: 0.7;
+  cursor: progress;
+  border-color: var(--ui-accent-strong);
+  background: rgba(255, 154, 47, 0.08);
+  animation: section-edit-pulse 1.2s ease-in-out infinite;
+}
+@keyframes section-edit-pulse {
+  0%, 100% { box-shadow: inset 0 0 0 1px var(--ui-accent-strong); }
+  50%      { box-shadow: inset 0 0 0 1px var(--ui-accent), 0 0 0 1px var(--ui-accent-strong); }
 }
 
 .loop-badge,
@@ -729,6 +860,21 @@ body {
   font-variant-numeric: tabular-nums;
 }
 
+#hudTime {
+  font-size: clamp(0.78rem, 0.9vw, 0.88rem);
+  letter-spacing: -0.04em;
+  white-space: nowrap;
+}
+
+.hud-song-time {
+  color: var(--ui-accent-strong);
+  font-size: clamp(0.72rem, 1.5vw, 0.9rem);
+  font-weight: 700;
+  line-height: 1.15;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
 .transport-dock,
 .secondary-controls {
   display: grid;
@@ -741,7 +887,7 @@ body {
 }
 
 .transport-dock {
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(6, minmax(0, 1fr));
 }
 
 .transport-dock,
@@ -753,7 +899,14 @@ body {
 }
 
 .secondary-controls {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+#btnPreRoll {
+  padding-inline: 0.25rem;
+  line-height: 1.05;
+  text-overflow: clip;
+  white-space: normal;
 }
 
 .secondary-controls .quantization-control {
@@ -762,7 +915,11 @@ body {
 
 @media (min-width: 480px) {
   .secondary-controls {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  #btnPreRoll {
+    font-size: 0.58rem;
+    white-space: nowrap;
   }
   .secondary-controls .quantization-control {
     grid-column: 1 / -1;
@@ -804,6 +961,26 @@ body {
 .hold-button.is-holding .hold-progress {
   width: 100%;
   transition: width 500ms linear;
+}
+
+/* Section-armed feedback: 500ms threshold hit, section nav fired, but the
+ * user is still holding. Color shifts to a stronger amber so the user
+ * visually distinguishes "section imminent" from "song imminent". */
+.hold-button.is-holding .hold-progress {
+  background: rgba(255, 154, 47, 0.28);
+  transition: width 500ms linear, background 120ms ease-out;
+}
+.hold-button.is-holding-section-ready .hold-progress,
+.hold-button.is-holding-section-ready {
+  background: rgba(255, 154, 47, 0.55);
+  color: #fff;
+}
+/* Song-level feedback: the fixed 500ms threshold fired for an explicit song
+ * button. The button remains highlighted until release. */
+.hold-button.is-holding-song .hold-progress,
+.hold-button.is-holding-song {
+  background: rgba(230, 50, 74, 0.85);
+  color: #fff;
 }
 
 .btn {
@@ -848,6 +1025,12 @@ body {
   border-color: rgba(66, 216, 137, 0.55) !important;
   background: var(--ui-success-soft) !important;
   color: #82eab0 !important;
+}
+
+.btn-preroll-active {
+  border-color: rgba(255, 154, 47, 0.65) !important;
+  background: rgba(255, 154, 47, 0.16) !important;
+  color: #ffc078 !important;
 }
 
 .log-drawer {
@@ -1351,6 +1534,14 @@ body {
 
   .hud {
     grid-auto-rows: minmax(5rem, auto);
+  }
+
+  .hud-time-card {
+    grid-column: 1 / -1;
+  }
+
+  #hudTime {
+    font-size: clamp(1rem, 2vw, 1.5rem);
   }
 
   .profile-row,

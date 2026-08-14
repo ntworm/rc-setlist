@@ -4,6 +4,7 @@ import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { SetlistManager } from './setlist-manager.js';
 import { JumpScheduler } from './next-downbeat-jump.js';
+import { PreRollCoordinator, type PreRollFinishAction } from './pre-roll-coordinator.js';
 import { OSCClient } from '../integration/osc-client.js';
 import { SetlistWSServer } from '../server/ws.js';
 import { ProfileManager, ProfileError } from './profile-manager.js';
@@ -15,6 +16,7 @@ import { parseLrc, parseTxt } from './lyrics-parser.js';
 import {
   initializeProjectProfileScope,
   recoverCompatibleLegacyPayload,
+  ProjectProfilePromotionCancelledError,
   type ProjectProfileScope,
 } from './project-profile-scope.js';
 import type { ProjectIdentity } from './project-identity.js';
@@ -23,6 +25,7 @@ import type { ProfileManagerOptions } from './profile-manager.js';
 export interface BridgeState {
   manager: SetlistManager | null;
   scheduler: JumpScheduler | null;
+  preRollCoordinator: PreRollCoordinator | null;
   oscClient: OSCClient | null;
   wsServer: SetlistWSServer | null;
   profileManager: ProfileManager | null;
@@ -46,6 +49,7 @@ export interface BridgeState {
   profileScopeSwitching: boolean;
   lastSongHandleId: string;
   projectSessionId: string;
+  promotionBlockedProjectSessionId: string;
   legacyRecoveryKey: string;
   legacyRecoveryPending: boolean;
   legacyRecoveryPromise: Promise<void> | null;
@@ -54,6 +58,7 @@ export interface BridgeState {
 export const bridgeState: BridgeState = {
   manager: null,
   scheduler: null,
+  preRollCoordinator: null,
   oscClient: null,
   wsServer: null,
   profileManager: null,
@@ -77,6 +82,7 @@ export const bridgeState: BridgeState = {
   profileScopeSwitching: false,
   lastSongHandleId: '',
   projectSessionId: '',
+  promotionBlockedProjectSessionId: '',
   legacyRecoveryKey: '',
   legacyRecoveryPending: false,
   legacyRecoveryPromise: null,
@@ -98,6 +104,26 @@ export function broadcastState(): void {
     bridgeState.commandBus?.resolveObservableConfirmations();
     bridgeState.wsServer.broadcastState(bridgeState.manager.getState());
   }
+}
+
+function applyPreRollFinish(action: PreRollFinishAction | null): PreRollFinishAction | null {
+  if (action?.restoreMetronome) {
+    bridgeState.oscClient?.setMetronome(false);
+    bridgeState.manager?.updateMetronome(false);
+  }
+  return action;
+}
+
+export function observePreRollPosition(currentBeat: number): void {
+  applyPreRollFinish(bridgeState.preRollCoordinator?.observePosition(currentBeat) ?? null);
+}
+
+export function observePreRollTransport(isPlaying: boolean): void {
+  applyPreRollFinish(bridgeState.preRollCoordinator?.observeTransport(isPlaying) ?? null);
+}
+
+export function cancelActivePreRoll(): PreRollFinishAction | null {
+  return applyPreRollFinish(bridgeState.preRollCoordinator?.cancel() ?? null);
 }
 
 export function profileStatePayload() {
@@ -223,9 +249,16 @@ export function loadCustomOrder(filePath: string): string[] {
   return parsed;
 }
 
+export interface ProfileScopePromotionAuthorization {
+  sourceIdentityKey: string;
+  projectSessionId: string;
+}
+
 export async function activateProjectProfileScope(
   identity: ProjectIdentity,
   managerOptions?: ProfileManagerOptions,
+  promotionAuthorization?: ProfileScopePromotionAuthorization,
+  activationGuard?: () => boolean,
 ): Promise<ProjectProfileScope> {
   const previousScope = bridgeState.profileManager && bridgeState.projectIdentity
     ? {
@@ -235,21 +268,45 @@ export async function activateProjectProfileScope(
       }
     : null;
   const promoteFrom = previousScope
-    && previousScope.identity.source !== 'mcp-path'
-    && identity.source === 'mcp-path'
+    && promotionAuthorization
+    && promotionAuthorization.sourceIdentityKey === previousScope.identity.key
+    && promotionAuthorization.projectSessionId === bridgeState.projectSessionId
     ? previousScope
     : undefined;
+  const promotionGuard = promoteFrom
+    ? () => bridgeState.projectSessionId === promotionAuthorization!.projectSessionId
+      && bridgeState.projectIdentity?.key === promotionAuthorization!.sourceIdentityKey
+      && bridgeState.profileManager === previousScope!.manager
+    : undefined;
+  const ensureActivationAllowed = () => {
+    if (activationGuard && !activationGuard()) {
+      throw new Error('Project profile scope activation was cancelled.');
+    }
+  };
+  ensureActivationAllowed();
   if (promoteFrom && bridgeState.legacyRecoveryPromise) {
     await bridgeState.legacyRecoveryPromise;
+  }
+  ensureActivationAllowed();
+  if (promotionGuard && !promotionGuard()) {
+    throw new ProjectProfilePromotionCancelledError();
   }
   const scope = await initializeProjectProfileScope({
     storageRoot: bridgeState.globalPersistenceDir,
     identity,
     ...(promoteFrom ? { promoteFrom } : {}),
-    adoptOrphanSession: previousScope === null,
+    ...(promotionGuard ? { promotionGuard } : {}),
     ...(managerOptions ? { managerOptions } : {}),
   });
+  ensureActivationAllowed();
+  if (promotionGuard && !promotionGuard()) {
+    throw new ProjectProfilePromotionCancelledError();
+  }
   const nextOrder = loadCustomOrder(scope.manager.getActivePaths().customOrder);
+  ensureActivationAllowed();
+  if (promotionGuard && !promotionGuard()) {
+    throw new Error('Project profile scope promotion was cancelled.');
+  }
 
   bridgeState.profileManager = scope.manager;
   bridgeState.projectIdentity = identity;

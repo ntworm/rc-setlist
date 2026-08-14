@@ -87,6 +87,30 @@ Open `/setlist` from the tokenized controller URL shown in the Live panel.
 - Export the current tracklist as UTF-8 CSV (saves a copy in the active profile's `exports/` folder and downloads to your browser's Downloads folder).
 - Use fullscreen for a compact stage workstation.
 
+### Jump tempo ordering
+
+Explicit jumps apply the destination BPM before the cue jump. A section BPM
+overrides its song BPM; an untagged section inherits the destination song BPM.
+At the execution boundary, RC Setlist uses an SDK-first tempo write and then
+sends the cue jump. These are sequential operations, not atomic operations, so
+they cannot guarantee sample-accurate timing. Native Arrangement tempo automation
+at the destination is recommended for sample-accurate transitions.
+
+### One-bar count-in
+
+`COUNT-IN 1 BAR` enables a pre-roll of exactly one bar before the selected
+position, only when Play is requested while the transport is stopped. It uses
+Live's native metronome and transport: RC Setlist moves the playhead back one
+bar, starts playback, and restores Click at the selected position if RC Setlist
+temporarily enabled it. If the selected position is less than one bar from beat
+zero, the available count-in is shortened safely.
+
+This rehearsal control does not enter Record and does not arm tracks. It also
+does not change live jump quantization. When Live is already playing, Play and
+song/section jumps keep their existing behavior, including the current
+quantization. A manual Click change during the count-in takes precedence over
+automatic restoration.
+
 The UI keeps the last valid state visible during brief reconnects. A reconnect
 notice does not mean the old state is newly confirmed.
 

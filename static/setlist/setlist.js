@@ -31,11 +31,14 @@ const hudBpm = document.getElementById('hudBpm');
 const hudDrift = document.getElementById('hudDrift');
 const hudTime = document.getElementById('hudTime');
 const hudBar = document.getElementById('hudBar');
+const btnPreviousSong = document.getElementById('btnPreviousSong');
 const btnPrevious = document.getElementById('btnPrevious');
 const btnPlay = document.getElementById('btnPlay');
 const btnStop = document.getElementById('btnStop');
 const btnNext = document.getElementById('btnNext');
+const btnNextSong = document.getElementById('btnNextSong');
 const btnMetronome = document.getElementById('btnMetronome');
+const btnPreRoll = document.getElementById('btnPreRoll');
 const btnRefresh = document.getElementById('btnRefresh');
 const quantizationSelect = document.getElementById('quantizationSelect');
 const hudLoopIter = document.getElementById('hudLoopIter');
@@ -51,15 +54,18 @@ let lastRenderedSetlistVersion = null;
 let lastJumpTime = 0;
 let lastJumpTarget = { song: -1, section: -1 };
 let draggedSongIdx = null;
+let draggedDropSlot = null;
+let directDragSongItem = null;
 let isLocked = localStorage.getItem('bridge_locked') === 'true';
 let lastFlashBeat = -1;
 let lastRenderedMetronome = null;
+let lastRenderedPreRoll = null;
 let currentLyrics = { song: '', format: 'none', lines: [] };
 let currentLyricsIdx = -1;
 let isController = false;
 let isSynchronized = false;
-let previousHoldController = null;
-let nextHoldController = null;
+let transportHoldControllers = [];
+let setlistTargetHoldController = null;
 let profileState = {
   version: 2,
   activeProfileId: '',
@@ -69,6 +75,7 @@ let profileState = {
   projectName: '',
 };
 const pendingProfileCommands = new Map();
+const sectionEditTracker = new Map();  // commandId -> { songIndex, sectionIndex, originalName }
 
 function showConnectionFailure() {
   const hasState = Boolean(lastState);
@@ -104,7 +111,8 @@ const midiMappingDefaults = {
   'next_section': null,
   'prev_section': null,
   'toggle_click': null,
-  'toggle_lock': null
+  'toggle_lock': null,
+  'toggle_count_in': null,
 };
 let midiMappings = controllerRuntime.readMidiMappings(
   localStorage,
@@ -113,6 +121,25 @@ let midiMappings = controllerRuntime.readMidiMappings(
 );
 let activeMidiMappingKey = null; // Key currently being mapped
 let currentMidiInputId = localStorage.getItem('bridge_midi_input_id') || '';
+
+// Keyboard Mapping State
+const keyMappingDefaults = {
+  'play': null,
+  'stop': null,
+  'next_song': null,
+  'prev_song': null,
+  'next_section': null,
+  'prev_section': null,
+  'toggle_click': null,
+  'toggle_lock': null,
+  'toggle_count_in': null,
+};
+let keyMappings = controllerRuntime.readKeyMappings(
+  localStorage,
+  'bridge_key_mappings',
+  keyMappingDefaults,
+);
+let activeKeyMappingKey = null; // Action currently awaiting key press
 
 function updateLockVisuals() {
   const btn = document.getElementById('btnLock');
@@ -174,6 +201,7 @@ function showLockWarning() {
 window.addEventListener('DOMContentLoaded', () => {
   updateLockVisuals();
   initMidi();
+  initKeyboardMapping();
   document.querySelectorAll('.modal-overlay').forEach((modal) => {
     modal.setAttribute('role', 'dialog');
     modal.setAttribute('aria-modal', 'true');
@@ -576,7 +604,20 @@ const actionLabelKeys = {
   'next_section': 'midi.nextSection',
   'prev_section': 'midi.previousSection',
   'toggle_click': 'midi.toggleClick',
-  'toggle_lock': 'midi.toggleLock'
+  'toggle_lock': 'midi.toggleLock',
+  'toggle_count_in': 'midi.toggleCountIn',
+};
+
+const keyActionLabelKeys = {
+  'play': 'keyboard.play',
+  'stop': 'keyboard.stop',
+  'next_song': 'keyboard.nextSong',
+  'prev_song': 'keyboard.previousSong',
+  'next_section': 'keyboard.nextSection',
+  'prev_section': 'keyboard.previousSection',
+  'toggle_click': 'keyboard.toggleClick',
+  'toggle_lock': 'keyboard.toggleLock',
+  'toggle_count_in': 'keyboard.toggleCountIn',
 };
 
 function renderMidiMappings() {
@@ -651,7 +692,7 @@ function renderMidiMappings() {
   });
 }
 
-function executeMidiAction(action) {
+function executeSetlistAction(action) {
   if (action === 'play') {
     sendControl('play');
   } else if (action === 'stop') {
@@ -670,8 +711,158 @@ function executeMidiAction(action) {
     toggleMetronome();
   } else if (action === 'toggle_lock') {
     toggleLock();
+  } else if (action === 'toggle_count_in') {
+    togglePreRoll();
   }
 }
+
+function executeMidiAction(action) {
+  executeSetlistAction(action);
+}
+
+// ── Keyboard Mapping ─────────────────────────────────────────────────────────
+
+const keyboardModal = document.getElementById('keyboardModal');
+
+function toggleKeyboardModal() {
+  toggleManagedModal(keyboardModal, () => {
+    renderKeyMappings();
+  });
+}
+
+function closeKeyboardModal(e) {
+  if (e.target === keyboardModal) {
+    closeManagedModal(keyboardModal);
+  }
+}
+
+function initKeyboardMapping() {
+  document.addEventListener('keydown', onGlobalKeyDown, true);
+}
+
+/**
+ * Returns a human-readable label for a KeyboardEvent-like object.
+ * Prefers the Numpad family (e.g. "Numpad 1") over generic labels.
+ */
+function keyDisplayLabel(mapping) {
+  if (!mapping) return '';
+  const code = mapping.code || '';
+  if (code.startsWith('Numpad')) {
+    const digit = code.replace('Numpad', '');
+    return `Numpad ${digit}`;
+  }
+  return mapping.key || code;
+}
+
+function onGlobalKeyDown(event) {
+  // Ignore keys while the user is typing in an input / textarea / select
+  if (StageRuntime.isEditingTarget(event.target)) return;
+
+  if (activeKeyMappingKey) {
+    // Capture this keypress as a mapping — ignore pure modifier presses
+    if (['Control', 'Alt', 'Shift', 'Meta'].includes(event.key)) return;
+    event.preventDefault();
+    event.stopPropagation();
+    keyMappings[activeKeyMappingKey] = {
+      key: event.key,
+      code: event.code,
+      ctrlKey: event.ctrlKey,
+      altKey: event.altKey,
+      shiftKey: event.shiftKey,
+    };
+    localStorage.setItem('bridge_key_mappings', JSON.stringify(keyMappings));
+    activeKeyMappingKey = null;
+    renderKeyMappings();
+    return;
+  }
+
+  // Check if this key matches any stored mapping
+  for (const [actionKey, mapping] of Object.entries(keyMappings)) {
+    if (
+      mapping
+      && mapping.code === event.code
+      && Boolean(mapping.ctrlKey) === event.ctrlKey
+      && Boolean(mapping.altKey) === event.altKey
+      && Boolean(mapping.shiftKey) === event.shiftKey
+    ) {
+      event.preventDefault();
+      executeSetlistAction(actionKey);
+      break;
+    }
+  }
+}
+
+function renderKeyMappings() {
+  const tbody = document.getElementById('keyMappingTableBody');
+  if (!tbody) return;
+  tbody.innerHTML = '';
+
+  Object.entries(keyMappings).forEach(([key, mapping]) => {
+    const tr = document.createElement('tr');
+    tr.style.borderBottom = '1px dashed rgba(255,255,255,0.05)';
+
+    const tdAction = document.createElement('td');
+    tdAction.style.padding = '0.5rem 0';
+    tdAction.textContent = keyActionLabelKeys[key] ? t(keyActionLabelKeys[key]) : key;
+
+    const tdMap = document.createElement('td');
+    tdMap.style.padding = '0.5rem 0';
+    if (activeKeyMappingKey === key) {
+      tdMap.innerHTML = `<span style="color: var(--accent); font-weight: bold; animation: pulse 1s infinite;">${escapeLyricsEditorText(t('keyboard.waiting'))}</span>`;
+    } else if (mapping) {
+      tdMap.textContent = keyDisplayLabel(mapping);
+    } else {
+      tdMap.textContent = t('keyboard.notMapped');
+      tdMap.style.color = 'var(--text-muted)';
+    }
+
+    const tdCtrl = document.createElement('td');
+    tdCtrl.style.padding = '0.5rem 0';
+    tdCtrl.style.textAlign = 'right';
+
+    const btnMap = document.createElement('button');
+    btnMap.textContent = t(activeKeyMappingKey === key ? 'common.cancel' : 'common.map');
+    btnMap.style.background = 'rgba(255,255,255,0.05)';
+    btnMap.style.border = '1px solid var(--card-border)';
+    btnMap.style.color = '#fff';
+    btnMap.style.padding = '0.2rem 0.5rem';
+    btnMap.style.borderRadius = '4px';
+    btnMap.style.cursor = 'pointer';
+    btnMap.onclick = () => {
+      if (activeKeyMappingKey === key) {
+        activeKeyMappingKey = null;
+      } else {
+        activeKeyMappingKey = key;
+      }
+      renderKeyMappings();
+    };
+    tdCtrl.appendChild(btnMap);
+
+    if (mapping && activeKeyMappingKey !== key) {
+      const btnClear = document.createElement('button');
+      btnClear.textContent = t('common.clear');
+      btnClear.style.background = 'rgba(239, 68, 68, 0.1)';
+      btnClear.style.border = '1px solid rgba(239, 68, 68, 0.3)';
+      btnClear.style.color = 'var(--danger)';
+      btnClear.style.padding = '0.2rem 0.5rem';
+      btnClear.style.borderRadius = '4px';
+      btnClear.style.marginLeft = '0.5rem';
+      btnClear.style.cursor = 'pointer';
+      btnClear.onclick = () => {
+        keyMappings[key] = null;
+        localStorage.setItem('bridge_key_mappings', JSON.stringify(keyMappings));
+        renderKeyMappings();
+      };
+      tdCtrl.appendChild(btnClear);
+    }
+
+    tr.appendChild(tdAction);
+    tr.appendChild(tdMap);
+    tr.appendChild(tdCtrl);
+    tbody.appendChild(tr);
+  });
+}
+// ─────────────────────────────────────────────────────────────────────────────
 
 function canUseTransport() {
   return Boolean(isController && ws && ws.readyState === WebSocket.OPEN && lastState && !isLocked);
@@ -689,10 +880,37 @@ function updateTransportAvailability() {
   btnPlay.disabled = !available;
   btnStop.disabled = !available;
   btnMetronome.disabled = !available;
+  btnPreRoll.disabled = !available;
   btnRefresh.disabled = !available;
   quantizationSelect.disabled = !available;
-  previousHoldController?.update();
-  nextHoldController?.update();
+  transportHoldControllers.forEach((controller) => controller.update());
+  setlistTargetHoldController?.update();
+}
+
+function renderPreRoll() {
+  const enabled = lastState?.preRollEnabled === true;
+  if (enabled === lastRenderedPreRoll) return;
+  lastRenderedPreRoll = enabled;
+  btnPreRoll.classList.toggle('btn-preroll-active', enabled);
+  btnPreRoll.setAttribute('aria-pressed', String(enabled));
+}
+
+function requestPlay() {
+  const preRollBarBeats = SetlistTransportRuntime.preRollBarBeats(
+    lastState?.signatureNumerator,
+    lastState?.signatureDenominator,
+  );
+  if (
+    canUseTransport()
+    && lastState?.preRollEnabled === true
+    && lastState.isPlaying === false
+    && Number.isFinite(lastState.currentSongTime)
+    && Number.isFinite(preRollBarBeats)
+    && lastState.currentSongTime < preRollBarBeats
+  ) {
+    showToast(t('feedback.preRollShortened'), 'warn');
+  }
+  sendControl('play');
 }
 
 function mountTransportControls() {
@@ -701,17 +919,17 @@ function mountTransportControls() {
     canNavigate: canUseTransport,
     onNavigate: (target) => jumpTo(target.songIndex, target.sectionIndex),
   };
-  previousHoldController = SetlistTransportRuntime.mountHoldButton({
+  const controls = [
+    { button: btnPreviousSong, direction: 'previous', level: 'song' },
+    { button: btnPrevious, direction: 'previous', level: 'section' },
+    { button: btnNext, direction: 'next', level: 'section' },
+    { button: btnNextSong, direction: 'next', level: 'song' },
+  ];
+  transportHoldControllers = controls.map((control) => SetlistTransportRuntime.mountHoldButton({
     ...shared,
-    button: btnPrevious,
-    direction: 'previous',
-  });
-  nextHoldController = SetlistTransportRuntime.mountHoldButton({
-    ...shared,
-    button: btnNext,
-    direction: 'next',
-  });
-  btnPlay.addEventListener('click', () => sendControl('play'));
+    ...control,
+  }));
+  btnPlay.addEventListener('click', requestPlay);
   btnStop.addEventListener('click', () => sendControl('stop'));
   updateTransportAvailability();
 }
@@ -761,8 +979,8 @@ function connect() {
     statusText.textContent = t(lastState ? 'status.reconnecting' : 'status.disconnected');
     isController = false;
     isSynchronized = false;
-    previousHoldController?.reset();
-    nextHoldController?.reset();
+    transportHoldControllers.forEach((controller) => controller.reset());
+    setlistTargetHoldController?.reset();
     jumpConfirmation.clear();
     quantizationConfirmation.reset();
     lyricsSaveTracker.failAll('disconnected');
@@ -789,6 +1007,7 @@ function connect() {
         if (payload.state) {
           barDisplayStabilizer.observeState(lastState, payload.state);
           lastState = payload.state;
+          renderPreRoll();
           quantizationConfirmation.observe(lastState.clipTriggerQuantization);
           jumpConfirmation.observeState(lastState);
           renderSongList(lastState);
@@ -801,6 +1020,7 @@ function connect() {
         const prevActiveIdx = lastState ? lastState.activeSongIndex : -1;
         barDisplayStabilizer.observeState(lastState, payload.state);
         lastState = payload.state;
+        renderPreRoll();
         if (profileState.profiles.length > 0) {
           profileState = { ...profileState, canMutate: !lastState.isPlaying };
           updateProfileMutationAvailability();
@@ -881,6 +1101,15 @@ function connect() {
       } else if (payload.type === 'command_status') {
         lyricsSaveTracker.settle(payload);
         quantizationConfirmation.settle(payload);
+        const sectionEdit = sectionEditTracker.get(payload.commandId);
+        if (sectionEdit && ['confirmed', 'failed', 'expired', 'cancelled'].includes(payload.status)) {
+          sectionEditTracker.delete(payload.commandId);
+          if (payload.status === 'confirmed') {
+            showToast(t('setlist.sectionEditSaved'), 'info');
+          } else {
+            showToast(t('setlist.sectionEditFailed'), 'error');
+          }
+        }
         const profileCommand = pendingProfileCommands.get(payload.commandId);
         if (profileCommand && ['confirmed', 'failed', 'expired', 'cancelled'].includes(payload.status)) {
           pendingProfileCommands.delete(payload.commandId);
@@ -1074,18 +1303,28 @@ function tick() {
 
     const estimatedBeats = getEstimatedBeats();
     const songElapsedBeats = calculateSongElapsedBeats(estimatedBeats, activeSong);
-    const formattedTime = formatBeatsAsTime(estimatedBeats, lastState.tempo);
-    setTextIfChanged(hudTime, formattedTime);
+    const formattedInternalTime = formatBeatsAsTime(estimatedBeats, lastState.tempo);
+    const songElapsedSeconds = activeSong
+      ? SetlistTransportRuntime.songElapsedSecondsFromBeats(songElapsedBeats, activeSong, lastState.tempo)
+      : null;
+    const setlistProgress = SetlistTransportRuntime.calculateSetlistProgress({
+      songs: lastState.songs,
+      activeSongIndex: lastState.activeSongIndex,
+      totalDurationSeconds: lastState.totalDurationSeconds,
+      songElapsedSeconds,
+    });
+    const showUsesHours = setlistProgress.showTotalSeconds !== null
+      && setlistProgress.showTotalSeconds >= 3600;
+    const songUsesHours = setlistProgress.songDurationSeconds !== null
+      && setlistProgress.songDurationSeconds >= 3600;
+    setTextIfChanged(hudTime, `${formatDuration(setlistProgress.showElapsedSeconds, showUsesHours)} / ${formatDuration(setlistProgress.showTotalSeconds, showUsesHours)}`);
 
     if (hudSongTime) {
-      if (activeSong) {
-        setTextIfChanged(hudSongTime, t('setlist.songTime', {
-          time: formatBeatsAsTime(songElapsedBeats, lastState.tempo),
-        }));
-        setDisplayIfChanged(hudSongTime, 'inline-block');
-      } else {
-        setDisplayIfChanged(hudSongTime, 'none');
-      }
+      setTextIfChanged(hudSongTime, t('setlist.songTime', {
+        elapsed: formatDuration(setlistProgress.songElapsedSeconds, songUsesHours),
+        duration: formatDuration(setlistProgress.songDurationSeconds, songUsesHours),
+      }));
+      setDisplayIfChanged(hudSongTime, 'inline-block');
     }
 
     // Lyrics: pick the active line for the current playback time and update
@@ -1115,7 +1354,7 @@ function tick() {
 
     // Update Lyrics Sync Timer display
     if (typeof isLyricsSyncing !== 'undefined' && isLyricsSyncing) {
-      setTextIfChanged(lyricsSyncTimecode, formattedTime);
+      setTextIfChanged(lyricsSyncTimecode, formattedInternalTime);
     }
 
     // Metronome Visual Beat Flash
@@ -1154,41 +1393,110 @@ function tick() {
 }
 requestAnimationFrame(tick);
 
-function handleDragStart(e, idx) {
-  if (isLocked) {
-    e.preventDefault();
-    showLockWarning();
-    return;
-  }
-  draggedSongIdx = idx;
-  e.dataTransfer.effectAllowed = 'move';
-  e.currentTarget.style.opacity = '0.5';
+function clearReorderPreview() {
+  songListDiv.querySelectorAll('.song-item.is-reordering, .song-item.drop-before, .song-item.drop-after')
+    .forEach((element) => element.classList.remove('is-reordering', 'drop-before', 'drop-after'));
+  draggedDropSlot = null;
 }
 
-function handleDragEnd(e) {
-  e.currentTarget.style.opacity = '1';
+function insertionSlotForClientY(clientY) {
+  const items = [...songListDiv.children].filter((element) => element.classList.contains('song-item'));
+  for (let index = 0; index < items.length; index += 1) {
+    const rect = items[index].getBoundingClientRect();
+    if (clientY < rect.top + rect.height / 2) return index;
+  }
+  return items.length;
+}
+
+function isNoopReorderSlot(sourceIndex, slot) {
+  return slot === sourceIndex || slot === sourceIndex + 1;
+}
+
+function updateReorderPreview(clientY) {
+  if (!Number.isInteger(draggedSongIdx)) return;
+  clearReorderPreview();
+  const items = [...songListDiv.children].filter((element) => element.classList.contains('song-item'));
+  const source = items[draggedSongIdx];
+  if (!source) return;
+  source.classList.add('is-reordering');
+  const slot = insertionSlotForClientY(clientY);
+  draggedDropSlot = slot;
+  if (isNoopReorderSlot(draggedSongIdx, slot)) return;
+  if (slot === items.length) {
+    items.at(-1)?.classList.add('drop-after');
+  } else {
+    items[slot]?.classList.add('drop-before');
+  }
+}
+
+function completeReorder() {
+  const sourceIndex = draggedSongIdx;
+  const slot = draggedDropSlot;
+  clearReorderPreview();
+  draggedSongIdx = null;
+  if (!canReorderSetlist() || !Number.isInteger(sourceIndex) || !Number.isInteger(slot) || !lastState?.songs) return;
+  if (isNoopReorderSlot(sourceIndex, slot)) return;
+  const order = [...lastState.songs];
+  const [moved] = order.splice(sourceIndex, 1);
+  const insertionIndex = slot > sourceIndex ? slot - 1 : slot;
+  order.splice(insertionIndex, 0, moved);
+  sendReorder(order.map((song) => song.title));
+}
+
+function cancelReorder() {
+  clearReorderPreview();
   draggedSongIdx = null;
 }
 
-function handleDragOver(e) {
-  e.preventDefault();
-  e.dataTransfer.dropEffect = 'move';
+function suppressNativeDirectDrag(target) {
+  const item = target?.element?.closest?.('.song-item');
+  if (!item) return;
+  directDragSongItem = item;
+  directDragSongItem.draggable = false;
 }
 
-function handleDrop(e, targetIdx) {
-  e.preventDefault();
-  if (isLocked) {
-    showLockWarning();
+function restoreNativeDirectDrag() {
+  if (!directDragSongItem) return;
+  directDragSongItem.draggable = true;
+  directDragSongItem = null;
+}
+
+function canReorderSetlist() {
+  return canUseTransport() && !(lastState?.mode === 'show' && lastState.isPlaying);
+}
+
+function handleDragStart(e, idx) {
+  if (!canReorderSetlist()) {
+    e.preventDefault();
+    if (isLocked) showLockWarning();
     return;
   }
-  if (draggedSongIdx === null || draggedSongIdx === targetIdx) return;
-  if (lastState && lastState.songs) {
-    const order = [...lastState.songs];
-    const [moved] = order.splice(draggedSongIdx, 1);
-    order.splice(targetIdx, 0, moved);
-    const titles = order.map(s => s.title);
-    sendReorder(titles);
+  draggedSongIdx = idx;
+  draggedDropSlot = null;
+  e.dataTransfer.effectAllowed = 'move';
+  e.currentTarget.classList.add('is-reordering');
+}
+
+function handleDragEnd(e) {
+  cancelReorder();
+}
+
+function handleDragOver(e) {
+  if (!canReorderSetlist() || draggedSongIdx === null) return;
+  e.preventDefault();
+  e.dataTransfer.dropEffect = 'move';
+  updateReorderPreview(e.clientY);
+}
+
+function handleDrop(e) {
+  e.preventDefault();
+  if (!canReorderSetlist()) {
+    if (isLocked) showLockWarning();
+    cancelReorder();
+    return;
   }
+  updateReorderPreview(e.clientY);
+  completeReorder();
 }
 
 function sendReorder(songTitles) {
@@ -1200,12 +1508,61 @@ function sendReorder(songTitles) {
   }
 }
 
+
+
+function resolveSetlistJumpTarget(node) {
+  const element = node?.closest?.('.song-header, .section-btn');
+  if (!element || !songListDiv.contains(element)) return null;
+  const songIndex = Number(element.dataset.song);
+  if (!Number.isInteger(songIndex)) return null;
+  if (element.classList.contains('song-header')) {
+    return { element, songIndex, sectionIndex: null };
+  }
+  const sectionIndex = Number(element.dataset.section);
+  if (!Number.isInteger(sectionIndex)) return null;
+  return { element, songIndex, sectionIndex };
+}
+
+function setlistTargetKey(target) {
+  if (!target || !Number.isInteger(target.songIndex)) return null;
+  return `${target.songIndex}:${target.sectionIndex === null ? 'song' : target.sectionIndex}`;
+}
+
+function canHoldSetlistTarget(target) {
+  if (!target?.element?.isConnected || !canUseTransport() || !lastState) return false;
+  if (target.sectionIndex === null) return lastState.activeSongIndex !== target.songIndex;
+  return lastState.activeSongIndex !== target.songIndex
+    || lastState.activeSectionIndex !== target.sectionIndex;
+}
+
+function mountSetlistTargetControls() {
+  setlistTargetHoldController = SetlistTransportRuntime.mountDirectTargetHold({
+    container: songListDiv,
+    resolveTarget: resolveSetlistJumpTarget,
+    canActivate: canHoldSetlistTarget,
+    targetKey: setlistTargetKey,
+    onActivate: (target) => jumpTo(target.songIndex, target.sectionIndex),
+    canReorder: (target) => target?.sectionIndex === null && canHoldSetlistTarget(target) && canReorderSetlist(),
+    onReorderStart: (target) => {
+      draggedSongIdx = target.songIndex;
+      draggedDropSlot = null;
+      songListDiv.querySelector(`.song-item[data-song="${target.songIndex}"]`)?.classList.add('is-reordering');
+    },
+    onReorderMove: (_target, event) => updateReorderPreview(event.clientY),
+    onReorderCommit: () => completeReorder(),
+    onReorderCancel: () => cancelReorder(),
+    onDirectGestureStart: suppressNativeDirectDrag,
+    onDirectGestureEnd: restoreNativeDirectDrag,
+  });
+}
+
 function renderSongList(state) {
   totalSetlistDuration.textContent = formatDuration(state.totalDurationSeconds);
   totalSetlistDuration.title = typeof state.totalDurationSeconds === 'number'
     ? t('setlist.totalDuration')
     : t('setlist.unknownDuration');
   if (!state.songs || state.songs.length === 0) {
+    setlistTargetHoldController?.cancelForRender();
     songListDiv.innerHTML = `<div style="text-align: center; color: var(--text-muted); padding: 2rem;">${escapeLyricsEditorText(t('setlist.noSongs'))}</div>`;
     lastRenderedSongsJson = '';
     lastRenderedSetlistVersion = null;
@@ -1231,8 +1588,8 @@ function renderSongList(state) {
   state.songs.forEach((song, songIdx) => {
     const isActiveSong = songIdx === state.activeSongIndex;
     html += `
-      <div class="song-item ${isActiveSong ? 'active' : ''}" data-song="${songIdx}" draggable="true" ondragstart="handleDragStart(event, ${songIdx})" ondragover="handleDragOver(event)" ondrop="handleDrop(event, ${songIdx})" ondragend="handleDragEnd(event)">
-        <div class="song-header" data-song="${songIdx}" onclick="jumpTo(${songIdx}, null)">
+      <div class="song-item ${isActiveSong ? 'active' : ''}" data-song="${songIdx}" draggable="true" ondragstart="handleDragStart(event, ${songIdx})" ondragover="handleDragOver(event)" ondrop="handleDrop(event)" ondragend="handleDragEnd(event)">
+        <div class="song-header" data-song="${songIdx}">
           <div class="song-info">
             <span class="song-index">${songIdx + 1}</span>
             <span class="song-title">${escapeLyricsEditorText(song.title)}</span>
@@ -1241,6 +1598,7 @@ function renderSongList(state) {
             ${song.autoNext ? `<span class="next-badge">⏭ NEXT</span>` : ''}
             ${typeof song.bpm === 'number' ? `<span class="bpm-badge">♩ ${song.bpm} BPM</span>` : ''}
           </div>
+          <span class="song-reorder-handle" role="img" aria-label="Reorder song" title="Reorder song">&#8942;</span>
           <span class="song-time">${formatDuration(song.durationSeconds)}</span>
         </div>
 
@@ -1249,7 +1607,7 @@ function renderSongList(state) {
             ${song.sections.map((sec, secIdx) => {
               const isActiveSection = isActiveSong && secIdx === state.activeSectionIndex;
               return `
-                <button class="section-btn ${isActiveSection ? 'active' : ''}" data-song="${songIdx}" data-section="${secIdx}" onclick="jumpTo(${songIdx}, ${secIdx})">
+                <button class="section-btn ${isActiveSection ? 'active' : ''}" data-song="${songIdx}" data-section="${secIdx}" ondblclick="beginInlineSectionEdit(${songIdx}, ${secIdx}, this, event)">
                   <span class="section-name">${escapeLyricsEditorText(sectionDisplayName(sec))}</span>
                   ${sec.loopCount !== null ? `<span class="loop-badge">${sec.loopCount === -1 ? '↻ LOOP' : `↻ LOOP ${sec.loopCount}x`}</span>` : ''}
                   ${sec.autoStop ? `<span class="stop-badge">■ STOP</span>` : ''}
@@ -1263,6 +1621,7 @@ function renderSongList(state) {
       </div>
     `;
   });
+  setlistTargetHoldController?.cancelForRender();
   songListDiv.innerHTML = html;
   activeClassController.reset();
   activeClassController.update(state.activeSongIndex, state.activeSectionIndex);
@@ -1400,6 +1759,18 @@ function toggleMetronome() {
   ws.send(JSON.stringify({
     type: 'metronome',
     value: !lastState.metronome
+  }));
+}
+
+function togglePreRoll() {
+  if (isLocked) {
+    showLockWarning();
+    return;
+  }
+  if (!canUseTransport()) return;
+  ws.send(JSON.stringify({
+    type: 'set_pre_roll',
+    value: lastState.preRollEnabled !== true,
   }));
 }
 
@@ -1781,6 +2152,118 @@ function beginInlineLyricTsEdit(idx, el) {
   input.addEventListener('blur', commit);
 }
 
+function sendSectionEditCommand(time, name, songIndex, sectionIndex, originalName) {
+  if (!canMutateProfiles() || lastState?.isPlaying) {
+    showToast(t('setlist.stopLiveFirst'), 'error');
+    return;
+  }
+  const commandId = profileCommandId('edit_locator');
+  sectionEditTracker.set(commandId, { songIndex, sectionIndex, originalName });
+  ws.send(JSON.stringify({ type: 'edit_locator', time, name, commandId }));
+}
+
+function beginInlineSectionEdit(songIndex, sectionIndex, btnEl, event) {
+  if (event) {
+    event.preventDefault();
+    event.stopPropagation();
+  }
+  if (!lastState || !lastState.songs) return;
+  const song = lastState.songs[songIndex];
+  if (!song || !song.sections) return;
+  const section = song.sections[sectionIndex];
+  if (!section) return;
+  if (isLocked || !canMutateProfiles() || lastState.isPlaying) {
+    showToast(t('setlist.stopLiveFirst'), 'warn');
+    return;
+  }
+
+  // Pre-populate with the SECTION portion of the cue name (the user's edit scope).
+  // The full cue name in Ableton is `${song.title} > ${section.name} [tags]`; we
+  // let the user edit only the suffix because the song title is decided by which
+  // song the section belongs to. The commit handler prepends the song prefix.
+  const sectionPart = section.name
+    + (section.loopCount === -1 ? ' [loop]' : section.loopCount != null ? ` [loop ${section.loopCount}x]` : '')
+    + (section.autoStop ? ' [stop]' : '')
+    + (section.autoNext ? ' [next]' : '')
+    + (section.bpm != null ? ` [bpm ${section.bpm}]` : '')
+    + (section.autoClick === true ? ' [click]' : section.autoClick === false ? ' [click off]' : '')
+    + (section.skip ? ' [skip]' : '')
+    + (section.automationOnly ? ' [ignore]' : '');
+
+  const input = document.createElement('input');
+  input.type = 'text';
+  input.value = sectionPart;
+  input.className = 'section-edit-input';
+  input.placeholder = 'Section name + tags';
+  input.dataset.originalValue = sectionPart;
+  btnEl.replaceWith(input);
+  input.focus();
+  input.select();
+  // Track the input so we can replace it back on cancel/error.
+  input.dataset.songIndex = String(songIndex);
+  input.dataset.sectionIndex = String(sectionIndex);
+  let committed = false;
+  const restoreButton = () => {
+    // Replace the input with the original button. The renderSongList below will
+    // re-paint anyway, but doing this immediately prevents the input from being
+    // orphaned if no state push arrives (e.g., websocket closed).
+    const current = document.querySelector('.section-edit-input');
+    if (current && current === input) {
+      current.replaceWith(btnEl);
+    }
+  };
+  const commit = () => {
+    if (committed) return;
+    const trimmed = input.value.trim();
+    // No-op: nothing changed. Restore the button without round-tripping.
+    if (trimmed === input.dataset.originalValue) {
+      committed = true;
+      restoreButton();
+      return;
+    }
+    // Empty input is invalid: the cue point would have no display name. Reject.
+    // Extract the display name portion (the part before any `[tag]`).
+    const displayName = trimmed.replace(/\s*\[[^\]]+\]/g, '').trim();
+    if (!displayName) {
+      showToast(t('setlist.sectionEditEmptyName'), 'warn');
+      input.focus();
+      input.select();
+      return;
+    }
+    committed = true;
+    // The cue point name Ableton stores is the full path: '${song.title} > ${section.name}'.
+    // Prepend the song title so the recreate preserves the song context.
+    const fullCueName = `${song.title} > ${trimmed}`;
+    const commandId = profileCommandId('edit_locator');
+    sectionEditTracker.set(commandId, { songIndex, sectionIndex, originalName: fullCueName });
+    if (ws && ws.readyState === WebSocket.OPEN) {
+      input.classList.add('is-saving');
+      input.readOnly = true;
+      ws.send(JSON.stringify({ type: 'edit_locator', time: section.time, name: fullCueName, commandId }));
+    } else {
+      showToast(t('setlist.sectionEditFailed'), 'error');
+      restoreButton();
+    }
+    // Do NOT re-render here. The next state push will overwrite the button.
+    // This avoids the "flash of stale content" race that the optimistic re-render
+    // introduced: the user saw the parsing-incomplete input value briefly before
+    // the round-trip resolved.
+  };
+  const cancel = () => {
+    if (committed) return;
+    committed = true;
+    restoreButton();
+  };
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') { e.preventDefault(); commit(); }
+    else if (e.key === 'Escape') { e.preventDefault(); cancel(); }
+  });
+  input.addEventListener('blur', () => {
+    // Blur commits unless the user just pressed Escape (which calls cancel first).
+    if (!committed) commit();
+  });
+}
+
 function addLyricLine() {
   lyricsEditLines.push({ timestamp: NO_TIMESTAMP, text: '' });
   markLyricsChanged();
@@ -2035,4 +2518,5 @@ i18n.subscribe(() => {
 
 globalThis.setlistStageRuntime = StageRuntime.mount({ i18n });
 mountTransportControls();
+mountSetlistTargetControls();
 connect();

@@ -1,6 +1,7 @@
 import * as fs from 'node:fs/promises';
+import * as fsSync from 'node:fs';
 import * as path from 'node:path';
-import { createHash } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 
 import {
   ProfileManager,
@@ -20,12 +21,25 @@ export interface ProjectProfileScope {
   manager: ProfileManager;
 }
 
+export class ProjectProfilePromotionCancelledError extends Error {
+  public constructor() {
+    super('Project profile scope promotion was cancelled.');
+    this.name = 'ProjectProfilePromotionCancelledError';
+  }
+}
+
+type PromotionGuard = (() => boolean) | undefined;
+
+function ensurePromotionAuthorized(guard: PromotionGuard): void {
+  if (guard && !guard()) throw new ProjectProfilePromotionCancelledError();
+}
+
 interface InitializeProjectProfileScopeOptions {
   storageRoot: string;
   identity: ProjectIdentity;
   managerOptions?: ProfileManagerOptions;
   promoteFrom?: ProjectProfileScope;
-  adoptOrphanSession?: boolean;
+  promotionGuard?: PromotionGuard;
 }
 
 async function copyIfMissing(source: string, destination: string): Promise<void> {
@@ -123,9 +137,21 @@ function recoveredProfileName(sourceName: string, existing: ProfileSummary[]): s
 async function mergeProjectProfiles(
   source: ProjectProfileScope,
   target: ProfileManager,
+  promotionGuard: PromotionGuard,
 ): Promise<void> {
+  ensurePromotionAuthorized(promotionGuard);
+  const sourceIsPristine = await isPristineDefaultManager(source.manager);
+  ensurePromotionAuthorized(promotionGuard);
+  const targetIsPristine = await isPristineDefaultManager(target);
+  ensurePromotionAuthorized(promotionGuard);
+  if (sourceIsPristine && !targetIsPristine) {
+    return;
+  }
+
   const sourceToTarget = new Map<string, string>();
+  let reusableTarget = targetIsPristine ? target.getActive() : null;
   for (const sourceProfile of source.manager.list()) {
+    ensurePromotionAuthorized(promotionGuard);
     const migrationSource = `provisional-scope:${source.identity.key}:${sourceProfile.id}`;
     const migratedTargetId = target.getLegacySourceProfileId(migrationSource);
     if (migratedTargetId) {
@@ -138,67 +164,41 @@ async function mergeProjectProfiles(
     let targetProfile = target.list().find(({ name }) => profileNameKey(name) === profileNameKey(sourceProfile.name));
 
     if (targetProfile) {
-      if (await payloadsConflict(sourcePaths, target.getPaths(targetProfile.id))) {
+      if (reusableTarget?.id === targetProfile.id) reusableTarget = null;
+      const hasConflict = await payloadsConflict(sourcePaths, target.getPaths(targetProfile.id));
+      ensurePromotionAuthorized(promotionGuard);
+      if (hasConflict) {
+        ensurePromotionAuthorized(promotionGuard);
         targetProfile = await target.create(recoveredProfileName(sourceProfile.name, target.list()));
+        ensurePromotionAuthorized(promotionGuard);
       }
+    } else if (reusableTarget) {
+      ensurePromotionAuthorized(promotionGuard);
+      targetProfile = await target.rename(reusableTarget.id, sourceProfile.name);
+      ensurePromotionAuthorized(promotionGuard);
+      reusableTarget = null;
     } else {
+      ensurePromotionAuthorized(promotionGuard);
       targetProfile = await target.create(sourceProfile.name);
+      ensurePromotionAuthorized(promotionGuard);
     }
 
     sourceToTarget.set(sourceProfile.id, targetProfile.id);
     if (!target.hasLegacySource(migrationSource)) {
+      ensurePromotionAuthorized(promotionGuard);
       await copyLegacyPayload(sourcePaths.root, target.getPaths(targetProfile.id));
+      ensurePromotionAuthorized(promotionGuard);
       await target.recordLegacySource(migrationSource, targetProfile.id);
+      ensurePromotionAuthorized(promotionGuard);
     }
   }
 
   const activeTargetId = sourceToTarget.get(source.manager.getActive().id);
-  if (activeTargetId) await target.select(activeTargetId);
-}
-
-async function findSingleOrphanSessionScope(
-  storageRoot: string,
-  targetIdentity: ProjectIdentity,
-  managerOptions?: ProfileManagerOptions,
-): Promise<ProjectProfileScope | null> {
-  const projectSetlistsRoot = path.resolve(storageRoot, 'project-setlists');
-  let entries: import('node:fs').Dirent[];
-  try {
-    entries = await fs.readdir(projectSetlistsRoot, { withFileTypes: true });
-  } catch (error) {
-    if ((error as NodeJS.ErrnoException).code === 'ENOENT') return null;
-    throw error;
+  if (activeTargetId) {
+    ensurePromotionAuthorized(promotionGuard);
+    await target.select(activeTargetId);
+    ensurePromotionAuthorized(promotionGuard);
   }
-
-  const candidates: Array<{ root: string; identity: ProjectIdentity }> = [];
-  for (const entry of entries) {
-    if (!entry.isDirectory() || entry.name === targetIdentity.key) continue;
-    const root = path.join(projectSetlistsRoot, entry.name);
-    try {
-      const parsed = JSON.parse(await fs.readFile(path.join(root, 'project-info.json'), 'utf8')) as Record<string, unknown>;
-      if (parsed.source !== 'session' || parsed.persistent !== false) continue;
-      candidates.push({
-        root,
-        identity: {
-          key: entry.name,
-          displayName: typeof parsed.displayName === 'string' ? parsed.displayName : 'Current Live Set',
-          filePath: null,
-          source: 'session',
-          persistent: false,
-          legacyProjectKey: null,
-        },
-      });
-    } catch {
-      // Ignore incomplete/corrupt historical session scopes. Their files stay
-      // untouched for manual recovery.
-    }
-  }
-  if (candidates.length !== 1) return null;
-
-  const candidate = candidates[0]!;
-  const manager = new ProfileManager(candidate.root, managerOptions);
-  await manager.initialize({ migrateLegacy: false });
-  return { root: candidate.root, identity: candidate.identity, manager };
 }
 
 async function isPristineDefaultManager(manager: ProfileManager): Promise<boolean> {
@@ -373,26 +373,21 @@ async function migrateExactLegacyProject(
   }
 }
 
-export async function initializeProjectProfileScope({
+async function initializeScopeAtRoot({
+  root,
   storageRoot,
   identity,
   managerOptions,
   promoteFrom,
-  adoptOrphanSession = true,
-}: InitializeProjectProfileScopeOptions): Promise<ProjectProfileScope> {
-  const root = path.resolve(storageRoot, 'project-setlists', identity.key);
+  promotionGuard,
+}: InitializeProjectProfileScopeOptions & { root: string }): Promise<ProjectProfileScope> {
   const manager = new ProfileManager(root, managerOptions);
   await manager.initialize({ migrateLegacy: false });
   await migrateExactLegacyProject(storageRoot, identity, manager);
   if (promoteFrom && promoteFrom.identity.key !== identity.key) {
-    await mergeProjectProfiles(promoteFrom, manager);
-  } else if (
-    adoptOrphanSession
-    && identity.source === 'session'
-    && await isPristineDefaultManager(manager)
-  ) {
-    const orphan = await findSingleOrphanSessionScope(storageRoot, identity, managerOptions);
-    if (orphan) await mergeProjectProfiles(orphan, manager);
+    ensurePromotionAuthorized(promotionGuard);
+    await mergeProjectProfiles(promoteFrom, manager, promotionGuard);
+    ensurePromotionAuthorized(promotionGuard);
   }
   await writeJsonAtomic(path.join(root, 'project-info.json'), {
     schemaVersion: 1,
@@ -404,4 +399,86 @@ export async function initializeProjectProfileScope({
     updatedAt: new Date().toISOString(),
   });
   return { identity, root, manager };
+}
+
+function transactionPaths(storageRoot: string, root: string): { staging: string; backup: string } {
+  const projectSetlistsRoot = path.resolve(storageRoot, 'project-setlists');
+  if (path.dirname(root) !== projectSetlistsRoot || path.resolve(projectSetlistsRoot, path.basename(root)) !== root) {
+    throw new Error('Project profile transaction target is outside project-setlists.');
+  }
+  const prefix = `.${path.basename(root)}.promotion-${randomUUID()}`;
+  return {
+    staging: path.resolve(projectSetlistsRoot, `${prefix}.staging`),
+    backup: path.resolve(projectSetlistsRoot, `${prefix}.backup`),
+  };
+}
+
+async function preparePromotionStage(
+  root: string,
+  staging: string,
+  promotionGuard: PromotionGuard,
+): Promise<void> {
+  await fs.mkdir(path.dirname(root), { recursive: true });
+  ensurePromotionAuthorized(promotionGuard);
+  try {
+    await fs.cp(root, staging, { recursive: true, force: false, errorOnExist: true });
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error;
+    await fs.mkdir(staging, { recursive: true });
+  }
+  ensurePromotionAuthorized(promotionGuard);
+}
+
+function commitPromotionStage(root: string, staging: string, backup: string): boolean {
+  const hadTarget = fsSync.existsSync(root);
+  let movedTarget = false;
+  try {
+    if (hadTarget) {
+      fsSync.renameSync(root, backup);
+      movedTarget = true;
+    }
+    fsSync.renameSync(staging, root);
+    return hadTarget;
+  } catch (error) {
+    if (movedTarget && !fsSync.existsSync(root) && fsSync.existsSync(backup)) {
+      fsSync.renameSync(backup, root);
+    }
+    throw error;
+  }
+}
+
+async function initializePromotedProjectProfileScope(
+  options: InitializeProjectProfileScopeOptions,
+  root: string,
+): Promise<ProjectProfileScope> {
+  const { staging, backup } = transactionPaths(options.storageRoot, root);
+  let committed = false;
+  let hadTarget = false;
+  try {
+    await preparePromotionStage(root, staging, options.promotionGuard);
+    await initializeScopeAtRoot({ ...options, root: staging });
+    ensurePromotionAuthorized(options.promotionGuard);
+
+    // The final guard and sibling-directory renames are synchronous: no queued
+    // Song-handle observer can interleave between authorization and commit.
+    hadTarget = commitPromotionStage(root, staging, backup);
+    committed = true;
+
+    const manager = new ProfileManager(root, options.managerOptions);
+    await manager.initialize({ migrateLegacy: false });
+    if (hadTarget) await fs.rm(backup, { recursive: true, force: true });
+    return { identity: options.identity, root, manager };
+  } finally {
+    if (!committed) {
+      await fs.rm(staging, { recursive: true, force: true }).catch(() => undefined);
+    }
+  }
+}
+
+export async function initializeProjectProfileScope(options: InitializeProjectProfileScopeOptions): Promise<ProjectProfileScope> {
+  const root = path.resolve(options.storageRoot, 'project-setlists', options.identity.key);
+  if (options.promoteFrom && options.promoteFrom.identity.key !== options.identity.key) {
+    return initializePromotedProjectProfileScope(options, root);
+  }
+  return initializeScopeAtRoot({ ...options, root });
 }

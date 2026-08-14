@@ -36,7 +36,7 @@ test('MCP fallback is single-flight and slow polls duration without a backlog', 
     now: () => now,
     onSessionInfo: (info) => sessions.push(info),
     onSongLength: (length) => lengths.push(length),
-    needsProjectMetadata: () => false,
+    getProjectMetadataRequestToken: () => null,
   });
 
   const firstTick = sync.tick();
@@ -79,7 +79,7 @@ test('MCP song length populates total duration when OSC never replies', async ()
     now: () => 20_000,
     onSessionInfo: () => {},
     onSongLength: (length) => manager.updateArrangementEndTime(length),
-    needsProjectMetadata: () => false,
+    getProjectMetadataRequestToken: () => null,
   });
 
   await sync.tick();
@@ -88,8 +88,8 @@ test('MCP song length populates total duration when OSC never replies', async ()
   assert.equal(state.totalDurationSeconds, 64);
 });
 
-test('MCP metadata retries only while project identity is unresolved', async () => {
-  let unresolved = true;
+test('MCP metadata snapshots its request token and continues polling while authorized', async () => {
+  let requestToken = 'session-a:scope-a';
   let now = 30_000;
   const calls = [];
   const metadata = [];
@@ -109,18 +109,48 @@ test('MCP metadata retries only while project identity is unresolved', async () 
     now: () => now,
     onSessionInfo: () => {},
     onSongLength: () => {},
-    needsProjectMetadata: () => unresolved,
-    onProjectMetadata: (value) => {
-      metadata.push(value);
-      unresolved = false;
+    getProjectMetadataRequestToken: () => requestToken,
+    onProjectMetadata: (value, token) => {
+      metadata.push({ value, token });
     },
   });
 
   await sync.tick();
   assert.equal(metadata.length, 1);
+  assert.equal(metadata[0].token, 'session-a:scope-a');
+  requestToken = 'session-b:scope-b';
   now += 5_000;
   await sync.tick();
-  assert.equal(calls.filter((type) => type === 'get_project_metadata').length, 1);
+  assert.equal(calls.filter((type) => type === 'get_project_metadata').length, 2);
+  assert.equal(metadata[1].token, 'session-b:scope-b');
+});
+
+test('MCP metadata callback receives the token captured before a deferred response', async () => {
+  let requestToken = 'session-a:scope-a';
+  const response = deferred();
+  let receivedToken = null;
+  const sync = new McpFallbackSync({
+    client: {
+      call(type) {
+        if (type === 'get_session_info') return Promise.resolve({ current_song_time: 0, is_playing: false, tempo: 120 });
+        if (type === 'get_song_length') return Promise.resolve({ song_length: 128 });
+        if (type === 'get_project_metadata') return response.promise;
+        throw new Error(`unexpected ${type}`);
+      },
+    },
+    now: () => 50_000,
+    onSessionInfo: () => {},
+    onSongLength: () => {},
+    getProjectMetadataRequestToken: () => requestToken,
+    onProjectMetadata: (_metadata, token) => { receivedToken = token; },
+  });
+
+  const tick = sync.tick();
+  await new Promise((resolve) => setImmediate(resolve));
+  requestToken = 'session-b:scope-b';
+  response.resolve({ song_name: 'Show', file_path: 'C:\\Shows\\Show\\Show.als' });
+  await tick;
+  assert.equal(receivedToken, 'session-a:scope-a');
 });
 
 test('slow MCP calls do not make an old transport sample look fresh', async () => {
@@ -141,7 +171,7 @@ test('slow MCP calls do not make an old transport sample look fresh', async () =
     now: () => now,
     onSessionInfo: () => {},
     onSongLength: () => {},
-    needsProjectMetadata: () => false,
+    getProjectMetadataRequestToken: () => null,
   });
 
   await sync.tick();
@@ -164,7 +194,7 @@ test('MCP fallback backs off after a connection failure instead of reconnecting 
     retryIntervalMs: 1_000,
     onSessionInfo: () => {},
     onSongLength: () => {},
-    needsProjectMetadata: () => false,
+    getProjectMetadataRequestToken: () => null,
   });
 
   await assert.rejects(sync.tick(), /bridge unavailable/);

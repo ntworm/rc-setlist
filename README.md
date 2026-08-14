@@ -1,12 +1,8 @@
 # Ableton RC Setlist
 
 [![PolyForm Noncommercial](https://img.shields.io/badge/license-PolyForm%20Noncommercial-orange)](LICENSE)
-[![Version](https://img.shields.io/badge/version-0.5.0-f97316)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-0.5.1-f97316)](CHANGELOG.md)
 [![CI](https://github.com/ntworm/rc-setlist/actions/workflows/ci.yml/badge.svg)](https://github.com/ntworm/rc-setlist/actions/workflows/ci.yml)
-
-> **[Landing page and screenshots](https://ntworm.github.io/rc-setlist/)**
->
-> ![Ableton RC Setlist Stage Control](docs/media/en/stage-control.png)
 
 Ableton RC Setlist is a source-available setlist extension for Ableton Live. It turns
 Arrangement locators into an operator setlist, synchronized lyrics, tempo and
@@ -24,18 +20,28 @@ click feedback, and guarded transport controls for rehearsals and live shows.
 
 ## Highlights
 
-- Locator-driven songs and sections with `[loop]`, `[loop Nx]`, `[stop]`,
-  `[next]`, `[bpm N]`, `[click]`, `[click off]`, `[skip]` and `[hidden]` tags.
-- Setlist and performance views for desktop, notebook, tablet and phone.
-- Synchronized `.lrc` lyrics plus an in-browser timing and editing workflow.
-- Guarded transport, quantization feedback and counted-loop handling.
-- Per-profile ordering, lyrics and CSV export stored locally.
-- Multiple saved setlists scoped to the current Ableton Live Set, with
-  recoverable delete/restore.
-- Song durations and total setlist duration calculated from the Arrangement.
-- Fullscreen stage mode with Screen Wake Lock when the browser supports it.
-- English and Brazilian Portuguese interfaces in the same `.ablx`.
-- No account, cloud sync, analytics or telemetry.
+- **Locator-driven setlists:** songs, sections and automation-only markers are
+  derived from the Arrangement. Tags cover loops, counted loops, stop/next,
+  BPM, Click, skip/hidden and ignored technical locators.
+- **Stage transport:** guarded Play and Stop, previous and next song controls,
+  previous and next section controls, jump quantization, counted-loop handling,
+  and an optional one-bar count-in using Live's native metronome.
+- **Reorder and edit feedback:** desktop drag or mobile hold-and-drag shows one
+  insertion target preview before committing a song reorder. Sections can be
+  edited inline from the desktop Setlist view.
+- **Keyboard Mapping:** assign transport and view actions to Numpad or letter keys.
+- **MIDI Mapping:** learn MIDI note, control-change or program-change messages
+  for stage actions, with channel-specific or any-channel matching.
+- **Setlist profiles:** multiple saved setlists are scoped to the current Ableton
+  Live Set, with profile-local ordering, recoverable delete and restore.
+- **Lyrics:** create, synchronize and edit `.lrc` lyrics in the browser, then use
+  the read-only Performance view for the current and upcoming lines.
+- **Timing and export:** Arrangement-derived song/total durations, setlist-relative
+  SHOW and SONG clocks, and a local one-row-per-song CSV export.
+- **Stage-ready browser views:** responsive Setlist and Performance interfaces,
+  fullscreen mode and Screen Wake Lock where the browser supports them.
+- **Local and bilingual:** English and Brazilian Portuguese ship in the same
+  `.ablx`. No account, cloud sync, analytics or telemetry is used.
 
 ## Requirements
 
@@ -51,7 +57,7 @@ until this release is exercised on real macOS hardware.
 ## Quick start
 
 1. Install AbletonOSC from its [upstream repository](https://github.com/ideoforms/AbletonOSC).
-2. Download `Ableton-RC-Setlist-0.5.0.ablx` from the latest release.
+2. Download `Ableton-RC-Setlist-0.5.1.ablx` from the latest release.
 3. Open the `.ablx` and approve installation in Live.
 4. In Live, open **Extensions > Ableton RC Setlist** and start the server.
 5. Use the panel URL or QR code to open `/setlist` or `/performance`.
@@ -103,7 +109,7 @@ Authorized developers can configure a complete build using
 ## Documentation
 
 - [Documentation index](docs/README.md)
-- [What is new in 0.5.0](docs/RELEASE-NOTES-0.5.0.md)
+- [What is new in 0.5.1](docs/RELEASE-NOTES-0.5.1.md)
 - [Installation](docs/INSTALL.md)
 - [User guide](docs/USER-GUIDE.md)
 - [Português (Brasil)](docs/pt-BR/README.md)

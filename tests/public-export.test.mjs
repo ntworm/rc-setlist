@@ -5,6 +5,18 @@ import { test } from 'node:test';
 const rootUrl = new URL('../', import.meta.url);
 const read = (file) => readFileSync(new URL(file, rootUrl), 'utf8');
 
+function publicEntries() {
+  return read('public-files.txt')
+    .split(/\r?\n/u)
+    .map((line) => line.trim())
+    .filter((line) => line && !line.startsWith('#'));
+}
+
+function isPubliclyCovered(path, entries) {
+  return entries.includes(path)
+    || entries.some((entry) => entry.endsWith('/') && path.startsWith(entry));
+}
+
 test('public export uses an explicit allowlist and reproducible verifier', () => {
   for (const file of [
     'public-files.txt',
@@ -24,7 +36,7 @@ test('public export uses an explicit allowlist and reproducible verifier', () =>
     'docs/site-i18n.js',
     'docs/RELEASE-NOTES-0.4.1.md',
     'docs/RELEASE-NOTES-0.4.2.md',
-    'docs/RELEASE-NOTES-0.5.0.md',
+    'docs/RELEASE-NOTES-0.5.1.md',
     'docs/media/en/performance.png',
     'docs/media/en/product-truth-discord.png',
     'docs/media/en/stage-control.png',
@@ -54,6 +66,28 @@ test('public export uses an explicit allowlist and reproducible verifier', () =>
 
   assert.doesNotMatch(allowlist, /AGENTS\.md|AGENT_GUIDE|\.agent-context|\.tgz|docs\/superpowers|docs\/agent|docs\/release\/BASELINE|release-kit|competitive_analysis|investigation_report/i);
   assert.match(exporter, /tests\/scratch/, 'internal scratch probes must be excluded from the public snapshot');
+});
+
+test('public export entries exist and cover the complete 0.5.1 publication surface', () => {
+  const entries = publicEntries();
+
+  for (const entry of entries) {
+    assert.ok(existsSync(new URL(entry, rootUrl)), `${entry} must exist before export`);
+  }
+
+  for (const requiredPath of [
+    'scripts/build.ts',
+    'docs/.nojekyll',
+    'docs/RELEASE-NOTES-0.5.1.md',
+    'docs/pt-BR/NOTAS-DA-VERSAO-0.5.1.md',
+  ]) {
+    assert.ok(isPubliclyCovered(requiredPath, entries), `${requiredPath} must be covered by the public allowlist`);
+  }
+
+  assert.ok(!entries.includes('build.ts'), 'the removed root build.ts path must not be exported');
+  assert.ok(!entries.includes('vendor/AbletonOSC'), 'the external AbletonOSC gitlink must not be exported');
+  assert.ok(!existsSync(new URL('vendor/AbletonOSC', rootUrl)), 'the public source tree must not track the external AbletonOSC checkout');
+  assert.ok(!existsSync(new URL('.mailmap', rootUrl)), 'the source tree must not rewrite automated-agent identities as contributors');
 });
 
 test('snapshot verifier rejects private archives, internal context and stale branding', () => {

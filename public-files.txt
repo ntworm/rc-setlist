@@ -20,14 +20,14 @@ README.md
 SECURITY.md
 SUPPORT.md
 THIRD_PARTY_NOTICES.md
-build.ts
+docs/.nojekyll
 docs/DEVELOPMENT.md
 docs/FAQ.md
 docs/INSTALL.md
 docs/README.md
 docs/RELEASE-NOTES-0.4.1.md
 docs/RELEASE-NOTES-0.4.2.md
-docs/RELEASE-NOTES-0.5.0.md
+docs/RELEASE-NOTES-0.5.1.md
 docs/TESTER-GUIDE.md
 docs/TROUBLESHOOTING.md
 docs/USER-GUIDE.md
@@ -59,6 +59,7 @@ playwright.config.mjs
 public-files.txt
 release-template/
 scripts/build/
+scripts/build.ts
 scripts/check-doc-links.mjs
 scripts/export-public-repo.ps1
 scripts/generate-third-party-notices.mjs

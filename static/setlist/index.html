@@ -42,6 +42,7 @@
         <summary class="ui-button" data-i18n="setlist.tools">🛠️ Tools</summary>
         <div class="tools-popover">
           <button class="ui-button" type="button" onclick="toggleMidiModal()">MIDI</button>
+          <button class="ui-button" type="button" onclick="toggleKeyboardModal()" data-i18n="keyboard.title">Keyboard</button>
           <button class="ui-button" type="button" onclick="toggleLyricsModal()" data-i18n="setlist.lyrics">Lyrics</button>
           <button id="btnExportCsv" class="ui-button" type="button" onclick="exportCsv()" title="Export tracklist as CSV" data-i18n="setlist.exportCsv" data-i18n-title="setlist.exportCsvTitle">Export CSV</button>
           <button class="ui-button" type="button" onclick="toggleHelp()" data-i18n="setlist.help">Help</button>
@@ -226,6 +227,36 @@
     </div>
   </div>
 
+  <!-- Keyboard Mapping Modal -->
+  <div id="keyboardModal" class="modal-overlay" onclick="closeKeyboardModal(event)">
+    <div class="modal-content" onclick="event.stopPropagation()">
+      <div class="modal-header">
+        <h2 data-i18n="keyboard.title">Keyboard Mapping</h2>
+        <button class="btn-close" onclick="toggleKeyboardModal()">&times;</button>
+      </div>
+      <div class="modal-body" style="max-height: 70vh; overflow-y: auto;">
+        <p style="margin-bottom: 1rem; color: var(--text-muted); font-size: 0.85rem; line-height: 1.4;" data-i18n="keyboard.intro">
+          Press Map beside an action, then press the key you want to assign. Numpad keys (1–9) and other keys are supported.
+        </p>
+        <div>
+          <div style="font-weight: 700; margin-bottom: 0.5rem; color: var(--accent); font-size: 0.9rem;" data-i18n="keyboard.mappings">Key bindings:</div>
+          <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.8rem; line-height: 1.4;">
+            <thead>
+              <tr style="border-bottom: 1px solid var(--card-border); color: var(--text-muted);">
+                <th style="padding: 0.4rem 0; width: 40%;" data-i18n="keyboard.action">Action</th>
+                <th style="padding: 0.4rem 0; width: 40%;" data-i18n="keyboard.mappedTo">Key</th>
+                <th style="padding: 0.4rem 0; text-align: right;" data-i18n="keyboard.control">Control</th>
+              </tr>
+            </thead>
+            <tbody id="keyMappingTableBody">
+              <!-- Dynamically populated -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Lyrics Synchronization Modal -->
   <div id="lyricsModal" class="modal-overlay" onclick="closeLyricsModal(event)">
     <div class="modal-content" onclick="event.stopPropagation()" style="max-width: 650px;">
@@ -363,10 +394,10 @@ A quiet pulse becomes our guide..." style="width: 100%; height: 180px; padding: 
             <span id="hudBar" style="font-size: 0.95rem; font-weight: 700; color: var(--ui-accent-strong); font-variant-numeric: tabular-nums; margin-top: 0.25rem;">1.1.1</span>
             <span id="hudDrift" style="display: none; font-size: 0.7rem; font-weight: 700; margin-top: 0.3rem; padding: 0.15rem 0.4rem; border-radius: 6px; transition: all 0.2s;">⚠ Δ0.0</span>
           </div>
-          <div class="hud-card" style="display: flex; flex-direction: column; justify-content: center; align-items: center; position: relative;">
-            <span class="hud-label" data-i18n="setlist.timecode">Ableton Timecode</span>
-            <span id="hudTime" class="hud-value" style="font-variant-numeric: tabular-nums; margin-bottom: 0.1rem;">0:00:00</span>
-            <span id="hudSongTime" style="font-size: 0.75rem; color: var(--accent); font-weight: 700; font-variant-numeric: tabular-nums; display: none;">Song: 0:00:00</span>
+          <div class="hud-card hud-time-card">
+            <span class="hud-label" data-i18n="setlist.showTime">Show time</span>
+            <span id="hudTime" class="hud-value">&mdash; / &mdash;</span>
+            <span id="hudSongTime" class="hud-song-time" data-i18n="setlist.songTimeEmpty">Song &mdash; / &mdash;</span>
           </div>
           <div class="hud-card hud-lyric-card">
             <span class="hud-label" data-i18n="setlist.lyricLine">Current Lyric</span>
@@ -390,6 +421,7 @@ A quiet pulse becomes our guide..." style="width: 100%; height: 180px; padding: 
             </select>
           </label>
           <button id="btnMetronome" class="btn" type="button" onclick="toggleMetronome()">CLICK</button>
+          <button id="btnPreRoll" class="btn" type="button" onclick="togglePreRoll()" aria-pressed="false" data-i18n="setlist.preRollLabel" data-i18n-title="setlist.preRollTitle" title="Use Ableton Live's Click for a one-bar pre-roll when Play starts from stopped">COUNT-IN 1 BAR</button>
           <button id="btnRefresh" class="btn" type="button" onclick="sendControl('refresh')" title="Reload the setlist from Ableton Live" data-i18n="setlist.refresh" data-i18n-title="setlist.refreshTitle">Refresh</button>
         </div>
 
@@ -406,9 +438,13 @@ A quiet pulse becomes our guide..." style="width: 100%; height: 180px; padding: 
       </aside>
 
       <nav class="transport-dock" aria-label="Main transport" data-i18n-aria-label="setlist.transportAria">
-        <button id="btnPrevious" class="btn hold-button" type="button" aria-label="Previous — press and hold" data-i18n-aria-label="setlist.previousHold">
+        <button id="btnPreviousSong" class="btn hold-button" type="button" aria-label="Previous song — press and hold" data-i18n-aria-label="setlist.previousSongHold">
           <span class="hold-progress" aria-hidden="true"></span>
-          <svg class="transport-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false" draggable="false"><path d="M6 5v14M18 5 9 12l9 7V5Z"/></svg>
+          <svg class="transport-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false" draggable="false"><path d="M11 5 4 12l7 7V5Zm9 0-7 7 7 7V5Z"/></svg>
+        </button>
+        <button id="btnPrevious" class="btn hold-button" type="button" aria-label="Previous section — press and hold" data-i18n-aria-label="setlist.previousSectionHold">
+          <span class="hold-progress" aria-hidden="true"></span>
+          <svg class="transport-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false" draggable="false"><path d="M17 5 7 12l10 7V5Z"/></svg>
         </button>
         <button id="btnPlay" class="btn btn-primary" type="button" aria-label="Play" data-i18n-aria-label="setlist.play">
           <svg class="transport-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false" draggable="false"><path d="M8 5v14l11-7L8 5Z"/></svg>
@@ -416,9 +452,13 @@ A quiet pulse becomes our guide..." style="width: 100%; height: 180px; padding: 
         <button id="btnStop" class="btn btn-danger" type="button" aria-label="Stop" data-i18n-aria-label="setlist.stop">
           <svg class="transport-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false" draggable="false"><rect x="6" y="6" width="12" height="12" rx="1"/></svg>
         </button>
-        <button id="btnNext" class="btn hold-button" type="button" aria-label="Next — press and hold" data-i18n-aria-label="setlist.nextHold">
+        <button id="btnNext" class="btn hold-button" type="button" aria-label="Next section — press and hold" data-i18n-aria-label="setlist.nextSectionHold">
           <span class="hold-progress" aria-hidden="true"></span>
-          <svg class="transport-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false" draggable="false"><path d="M18 5v14M6 5l9 7-9 7V5Z"/></svg>
+          <svg class="transport-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false" draggable="false"><path d="M7 5v14l10-7L7 5Z"/></svg>
+        </button>
+        <button id="btnNextSong" class="btn hold-button" type="button" aria-label="Next song — press and hold" data-i18n-aria-label="setlist.nextSongHold">
+          <span class="hold-progress" aria-hidden="true"></span>
+          <svg class="transport-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false" draggable="false"><path d="m4 5 7 7-7 7V5Zm9 0 7 7-7 7V5Z"/></svg>
         </button>
       </nav>
     </div>

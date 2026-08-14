@@ -10,7 +10,7 @@ As notas da versão estão em en/RELEASE-NOTES.md e pt-BR/NOTAS-DA-VERSAO.md.
 
 MAIN FILE / ARQUIVO PRINCIPAL
 -----------------------------
-Ableton-RC-Setlist-0.5.0.ablx
+Ableton-RC-Setlist-0.5.1.ablx
 
 REQUIREMENTS / REQUISITOS
 -------------------------

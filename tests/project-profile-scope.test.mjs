@@ -14,7 +14,7 @@ import {
   initializeProjectProfileScope,
   recoverCompatibleLegacyPayload,
 } from '../src/core/project-profile-scope.ts';
-import { ProfileManager } from '../src/core/profile-manager.ts';
+import { ProfileManager, writeJsonAtomic } from '../src/core/profile-manager.ts';
 import {
   activateProjectProfileScope,
   bridgeState,
@@ -34,6 +34,23 @@ function deterministicOptions() {
     randomUUID: () => `00000000-0000-4000-8000-${String(++id).padStart(12, '0')}`,
     now: () => new Date(Date.UTC(2026, 6, 29, 0, 0, tick++)).toISOString(),
   };
+}
+
+function snapshotTree(root) {
+  const entries = [];
+  const visit = (current) => {
+    for (const entry of fs.readdirSync(current, { withFileTypes: true }).sort((a, b) => a.name.localeCompare(b.name))) {
+      const relative = path.relative(root, path.join(current, entry.name)).replaceAll('\\', '/');
+      if (entry.isDirectory()) {
+        entries.push(`${relative}/`);
+        visit(path.join(current, entry.name));
+      } else {
+        entries.push([relative, fs.readFileSync(path.join(current, entry.name)).toString('base64')]);
+      }
+    }
+  };
+  visit(root);
+  return entries;
 }
 
 test('saved Live Set identity is stable across Windows path case and separators', () => {
@@ -287,41 +304,83 @@ test('repeating a conflicting promotion reuses the recovered profile instead of 
   );
 });
 
-test('one orphan temporary scope is adopted but multiple candidates are never guessed', async (t) => {
+test('fresh unsaved session never adopts a prior unsaved scope', async (t) => {
   const storageRoot = makeRoot(t);
   const oldIdentity = await resolveProjectIdentity({
     platform: 'linux', sessionId: 'old-session', getProjectMetadata: async () => null, readWindowTitle: async () => '',
   });
   const oldScope = await initializeProjectProfileScope({
-    storageRoot, identity: oldIdentity, managerOptions: deterministicOptions(), adoptOrphanSession: false,
+    storageRoot, identity: oldIdentity, managerOptions: deterministicOptions(),
   });
-  await oldScope.manager.create('Second Setlist');
+  await oldScope.manager.rename(oldScope.manager.getActive().id, 'First Setlist');
+  const second = await oldScope.manager.create('Second Setlist');
+  await oldScope.manager.select(second.id);
 
   const newIdentity = await resolveProjectIdentity({
     platform: 'linux', sessionId: 'new-session', getProjectMetadata: async () => null, readWindowTitle: async () => '',
   });
-  const adopted = await initializeProjectProfileScope({
+  const fresh = await initializeProjectProfileScope({
     storageRoot, identity: newIdentity, managerOptions: deterministicOptions(),
   });
-  assert.deepEqual(adopted.manager.list().map(({ name }) => name), ['Main Setlist', 'Second Setlist']);
+  assert.deepEqual(fresh.manager.list().map(({ name }) => name), ['Main Setlist']);
+  assert.deepEqual(oldScope.manager.list().map(({ name }) => name), ['First Setlist', 'Second Setlist']);
+  assert.equal(oldScope.manager.getActive().name, 'Second Setlist');
+});
 
-  const ambiguousRoot = makeRoot(t);
-  for (const id of ['old-a', 'old-b']) {
-    const identity = await resolveProjectIdentity({
-      platform: 'linux', sessionId: id, getProjectMetadata: async () => null, readWindowTitle: async () => '',
-    });
-    const scope = await initializeProjectProfileScope({
-      storageRoot: ambiguousRoot, identity, managerOptions: deterministicOptions(), adoptOrphanSession: false,
-    });
-    await scope.manager.create(`Setlist ${id}`);
-  }
-  const currentIdentity = await resolveProjectIdentity({
-    platform: 'linux', sessionId: 'current', getProjectMetadata: async () => null, readWindowTitle: async () => '',
+test('same-session promotion preserves profile order identity and active selection across restart', async (t) => {
+  const storageRoot = makeRoot(t);
+  const options = deterministicOptions();
+  const temporaryIdentity = await resolveProjectIdentity({
+    platform: 'linux', sessionId: 'promotion-session', getProjectMetadata: async () => null, readWindowTitle: async () => '',
   });
-  const current = await initializeProjectProfileScope({
-    storageRoot: ambiguousRoot, identity: currentIdentity, managerOptions: deterministicOptions(),
+  const source = await initializeProjectProfileScope({ storageRoot, identity: temporaryIdentity, managerOptions: options });
+  await source.manager.rename(source.manager.getActive().id, 'First Setlist');
+  const second = await source.manager.create('Second Setlist');
+  await source.manager.select(second.id);
+  const savedIdentity = projectIdentityFromMetadata({
+    song_name: 'Promotion Show', file_path: 'C:\\Shows\\Promotion Show\\Promotion Show.als',
+  }, { platform: 'win32' });
+  assert.ok(savedIdentity);
+
+  const promoted = await initializeProjectProfileScope({
+    storageRoot, identity: savedIdentity, managerOptions: options, promoteFrom: source,
   });
-  assert.deepEqual(current.manager.list().map(({ name }) => name), ['Main Setlist']);
+  const promotedIdentity = promoted.manager.list().map(({ id, name }) => ({ id, name }));
+  const promotedActiveId = promoted.manager.getActive().id;
+  assert.deepEqual(promotedIdentity.map(({ name }) => name), ['First Setlist', 'Second Setlist']);
+  assert.equal(promoted.manager.getActive().name, 'Second Setlist');
+
+  const restarted = await initializeProjectProfileScope({
+    storageRoot, identity: savedIdentity, managerOptions: options,
+  });
+  assert.deepEqual(restarted.manager.list().map(({ id, name }) => ({ id, name })), promotedIdentity);
+  assert.equal(restarted.manager.getActive().id, promotedActiveId);
+  assert.equal(restarted.manager.getActive().name, 'Second Setlist');
+  assert.deepEqual(source.manager.list().map(({ name }) => name), ['First Setlist', 'Second Setlist']);
+});
+
+test('pristine source promotion preserves a non-pristine saved target', async (t) => {
+  const storageRoot = makeRoot(t);
+  const options = deterministicOptions();
+  const sourceIdentity = await resolveProjectIdentity({
+    platform: 'linux', sessionId: 'pristine-source', getProjectMetadata: async () => null, readWindowTitle: async () => '',
+  });
+  const source = await initializeProjectProfileScope({ storageRoot, identity: sourceIdentity, managerOptions: options });
+  const targetIdentity = projectIdentityFromMetadata({
+    song_name: 'Existing Show', file_path: 'C:\\Shows\\Existing Show\\Existing Show.als',
+  }, { platform: 'win32' });
+  assert.ok(targetIdentity);
+  const target = await initializeProjectProfileScope({ storageRoot, identity: targetIdentity, managerOptions: options });
+  const second = await target.manager.create('Second Setlist');
+  await target.manager.select(second.id);
+  const before = target.manager.list().map(({ id, name }) => ({ id, name }));
+  const activeId = target.manager.getActive().id;
+
+  const promoted = await initializeProjectProfileScope({
+    storageRoot, identity: targetIdentity, managerOptions: options, promoteFrom: source,
+  });
+  assert.deepEqual(promoted.manager.list().map(({ id, name }) => ({ id, name })), before);
+  assert.equal(promoted.manager.getActive().id, activeId);
 });
 
 test('compatible legacy lyrics recover only from an exact current-song-set match', async (t) => {
@@ -512,6 +571,7 @@ test('activating another Live Set swaps registries and restores each set indepen
     manager: bridgeState.manager,
     profileManager: bridgeState.profileManager,
     projectIdentity: bridgeState.projectIdentity,
+    projectSessionId: bridgeState.projectSessionId,
   };
   bridgeState.globalPersistenceDir = storageRoot;
   bridgeState.manager = new SetlistManager();
@@ -539,7 +599,174 @@ test('activating another Live Set swaps registries and restores each set indepen
     bridgeState.manager = previous.manager;
     bridgeState.profileManager = previous.profileManager;
     bridgeState.projectIdentity = previous.projectIdentity;
+    bridgeState.projectSessionId = previous.projectSessionId;
   }
+});
+
+test('profile promotion requires matching source identity and Live session authorization', async (t) => {
+  const storageRoot = makeRoot(t);
+  const options = deterministicOptions();
+  const sourceIdentity = await resolveProjectIdentity({
+    platform: 'linux', sessionId: 'authorization-source', getProjectMetadata: async () => null, readWindowTitle: async () => '',
+  });
+  const matchingTarget = projectIdentityFromMetadata({
+    song_name: 'Matching Target', file_path: 'C:\\Shows\\Matching Target\\Matching Target.als',
+  }, { platform: 'win32' });
+  const blockedTarget = projectIdentityFromMetadata({
+    song_name: 'Blocked Target', file_path: 'C:\\Shows\\Blocked Target\\Blocked Target.als',
+  }, { platform: 'win32' });
+  assert.ok(matchingTarget);
+  assert.ok(blockedTarget);
+  const previous = {
+    globalPersistenceDir: bridgeState.globalPersistenceDir,
+    manager: bridgeState.manager,
+    profileManager: bridgeState.profileManager,
+    projectIdentity: bridgeState.projectIdentity,
+    projectSessionId: bridgeState.projectSessionId,
+  };
+  bridgeState.globalPersistenceDir = storageRoot;
+  bridgeState.manager = new SetlistManager();
+  bridgeState.profileManager = null;
+  bridgeState.projectIdentity = null;
+  bridgeState.projectSessionId = 'session-a';
+
+  try {
+    await activateProjectProfileScope(sourceIdentity, options);
+    await bridgeState.profileManager.create('Second Setlist');
+    await activateProjectProfileScope(blockedTarget, options, {
+      sourceIdentityKey: sourceIdentity.key,
+      projectSessionId: 'session-stale',
+    });
+    assert.deepEqual(bridgeState.profileManager.list().map(({ name }) => name), ['Main Setlist']);
+
+    await activateProjectProfileScope(sourceIdentity, options);
+    await activateProjectProfileScope(matchingTarget, options, {
+      sourceIdentityKey: sourceIdentity.key,
+      projectSessionId: 'session-a',
+    });
+    assert.deepEqual(bridgeState.profileManager.list().map(({ name }) => name), ['Main Setlist', 'Second Setlist']);
+  } finally {
+    bridgeState.globalPersistenceDir = previous.globalPersistenceDir;
+    bridgeState.manager = previous.manager;
+    bridgeState.profileManager = previous.profileManager;
+    bridgeState.projectIdentity = previous.projectIdentity;
+    bridgeState.projectSessionId = previous.projectSessionId;
+  }
+});
+
+test('promotion is cancelled when a new Song session invalidates it during legacy recovery', async (t) => {
+  const storageRoot = makeRoot(t);
+  const options = deterministicOptions();
+  const sourceIdentity = await resolveProjectIdentity({
+    platform: 'linux', sessionId: 'promotion-race-source', getProjectMetadata: async () => null, readWindowTitle: async () => '',
+  });
+  const savedIdentity = projectIdentityFromMetadata({
+    song_name: 'Race Target', file_path: 'C:\\Shows\\Race Target\\Race Target.als',
+  }, { platform: 'win32' });
+  assert.ok(savedIdentity);
+  const previous = {
+    globalPersistenceDir: bridgeState.globalPersistenceDir,
+    manager: bridgeState.manager,
+    profileManager: bridgeState.profileManager,
+    projectIdentity: bridgeState.projectIdentity,
+    projectSessionId: bridgeState.projectSessionId,
+    promotionBlockedProjectSessionId: bridgeState.promotionBlockedProjectSessionId,
+    legacyRecoveryPromise: bridgeState.legacyRecoveryPromise,
+  };
+  bridgeState.globalPersistenceDir = storageRoot;
+  bridgeState.manager = new SetlistManager();
+  bridgeState.profileManager = null;
+  bridgeState.projectIdentity = null;
+  bridgeState.projectSessionId = 'session-a';
+  bridgeState.promotionBlockedProjectSessionId = '';
+
+  let releaseRecovery;
+  try {
+    await activateProjectProfileScope(sourceIdentity, options);
+    await bridgeState.profileManager.create('Second Setlist');
+    bridgeState.legacyRecoveryPromise = new Promise((resolve) => { releaseRecovery = resolve; });
+    const promotion = activateProjectProfileScope(savedIdentity, options, {
+      sourceIdentityKey: sourceIdentity.key,
+      projectSessionId: 'session-a',
+    });
+    const waiting = await Promise.race([
+      promotion.then(() => 'completed', () => 'cancelled'),
+      new Promise((resolve) => setTimeout(() => resolve('waiting'), 50)),
+    ]);
+    assert.equal(waiting, 'waiting');
+
+    bridgeState.projectSessionId = 'session-b';
+    bridgeState.promotionBlockedProjectSessionId = 'session-b';
+    releaseRecovery();
+
+    await assert.rejects(promotion, /profile scope promotion was cancelled/i);
+    assert.equal(bridgeState.projectIdentity.key, sourceIdentity.key);
+    const target = await initializeProjectProfileScope({ storageRoot, identity: savedIdentity, managerOptions: options });
+    assert.deepEqual(target.manager.list().map(({ name }) => name), ['Main Setlist']);
+  } finally {
+    releaseRecovery?.();
+    bridgeState.globalPersistenceDir = previous.globalPersistenceDir;
+    bridgeState.manager = previous.manager;
+    bridgeState.profileManager = previous.profileManager;
+    bridgeState.projectIdentity = previous.projectIdentity;
+    bridgeState.projectSessionId = previous.projectSessionId;
+    bridgeState.promotionBlockedProjectSessionId = previous.promotionBlockedProjectSessionId;
+    bridgeState.legacyRecoveryPromise = previous.legacyRecoveryPromise;
+  }
+});
+
+test('promotion cancellation during staged payload persistence leaves the real saved target byte-identical', async (t) => {
+  const storageRoot = makeRoot(t);
+  const sourceIdentity = await resolveProjectIdentity({
+    platform: 'linux', sessionId: 'staged-copy-source', getProjectMetadata: async () => null, readWindowTitle: async () => '',
+  });
+  const savedIdentity = projectIdentityFromMetadata({
+    song_name: 'Staged Target', file_path: 'C:\\Shows\\Staged Target\\Staged Target.als',
+  }, { platform: 'win32' });
+  assert.ok(savedIdentity);
+  const source = await initializeProjectProfileScope({
+    storageRoot, identity: sourceIdentity, managerOptions: deterministicOptions(),
+  });
+  const sourcePaths = source.manager.getActivePaths();
+  fs.mkdirSync(sourcePaths.lyrics, { recursive: true });
+  fs.writeFileSync(path.join(sourcePaths.lyrics, 'Song A.lrc'), '[00:00.00]Staged source lyric');
+  const target = await initializeProjectProfileScope({
+    storageRoot, identity: savedIdentity, managerOptions: deterministicOptions(),
+  });
+  const targetRoot = target.root;
+  const before = snapshotTree(targetRoot);
+  let valid = true;
+  let releaseWrite;
+  let reachedWrite;
+  const reached = new Promise((resolve) => { reachedWrite = resolve; });
+  const release = new Promise((resolve) => { releaseWrite = resolve; });
+  const promotionOptions = {
+    ...deterministicOptions(),
+    writeJsonAtomic: async (filePath, value) => {
+      await writeJsonAtomic(filePath, value);
+      if (filePath.endsWith('profile.json') && filePath.includes(savedIdentity.key)) {
+        reachedWrite();
+        await release;
+      }
+    },
+  };
+
+  const promotion = initializeProjectProfileScope({
+    storageRoot,
+    identity: savedIdentity,
+    managerOptions: promotionOptions,
+    promoteFrom: source,
+    promotionGuard: () => valid,
+  });
+  await reached;
+  valid = false;
+  releaseWrite();
+
+  await assert.rejects(promotion, /profile scope promotion was cancelled/i);
+  assert.deepEqual(snapshotTree(targetRoot), before);
+  const transactionDebris = fs.readdirSync(path.join(storageRoot, 'project-setlists'))
+    .filter((name) => name.startsWith(`.${savedIdentity.key}.promotion-`));
+  assert.deepEqual(transactionDebris, []);
 });
 
 test('higher-fidelity MCP path identity promotes profiles created under a window-title scope', async (t) => {
@@ -567,11 +794,15 @@ test('higher-fidelity MCP path identity promotes profiles created under a window
   bridgeState.manager = new SetlistManager();
   bridgeState.profileManager = null;
   bridgeState.projectIdentity = null;
+  bridgeState.projectSessionId = 'window-title-session';
 
   try {
     await activateProjectProfileScope(titleIdentity, deterministicOptions());
     await bridgeState.profileManager.create('Second Setlist');
-    await activateProjectProfileScope(pathIdentity, deterministicOptions());
+    await activateProjectProfileScope(pathIdentity, deterministicOptions(), {
+      sourceIdentityKey: titleIdentity.key,
+      projectSessionId: 'window-title-session',
+    });
     assert.equal(bridgeState.projectIdentity.source, 'mcp-path');
     assert.deepEqual(
       bridgeState.profileManager.list().map(({ name }) => name),
@@ -582,6 +813,7 @@ test('higher-fidelity MCP path identity promotes profiles created under a window
     bridgeState.manager = previous.manager;
     bridgeState.profileManager = previous.profileManager;
     bridgeState.projectIdentity = previous.projectIdentity;
+    bridgeState.projectSessionId = previous.projectSessionId;
   }
 });
 
@@ -600,12 +832,14 @@ test('MCP path promotion waits for an in-flight legacy lyric recovery', async (t
     manager: bridgeState.manager,
     profileManager: bridgeState.profileManager,
     projectIdentity: bridgeState.projectIdentity,
+    projectSessionId: bridgeState.projectSessionId,
     legacyRecoveryPromise: bridgeState.legacyRecoveryPromise,
   };
   bridgeState.globalPersistenceDir = storageRoot;
   bridgeState.manager = new SetlistManager();
   bridgeState.profileManager = null;
   bridgeState.projectIdentity = null;
+  bridgeState.projectSessionId = 'recovery-session';
 
   let releaseRecovery;
   try {
@@ -619,7 +853,10 @@ test('MCP path promotion waits for an in-flight legacy lyric recovery', async (t
       };
     });
 
-    const activation = activateProjectProfileScope(pathIdentity, deterministicOptions());
+    const activation = activateProjectProfileScope(pathIdentity, deterministicOptions(), {
+      sourceIdentityKey: sessionIdentity.key,
+      projectSessionId: 'recovery-session',
+    });
     const activationState = await Promise.race([
       activation.then(() => 'activated'),
       new Promise((resolve) => setTimeout(() => resolve('waiting'), 150)),
@@ -638,6 +875,7 @@ test('MCP path promotion waits for an in-flight legacy lyric recovery', async (t
     bridgeState.manager = previous.manager;
     bridgeState.profileManager = previous.profileManager;
     bridgeState.projectIdentity = previous.projectIdentity;
+    bridgeState.projectSessionId = previous.projectSessionId;
     bridgeState.legacyRecoveryPromise = previous.legacyRecoveryPromise;
   }
 });

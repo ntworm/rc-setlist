@@ -160,24 +160,27 @@ function displayLyrics(song, lines, format) {
   lyricsContainer.scrollTop = 0;
 }
 
-function formatBeatsAsTime(beats, bpmSource) {
-  if (typeof beats !== 'number' || isNaN(beats)) return '0:00:00';
-  let bpm = 120;
-  if (typeof bpmSource === 'number') {
-    bpm = bpmSource;
-  } else if (bpmSource && typeof bpmSource.bpm === 'number') {
-    bpm = bpmSource.bpm;
-  } else if (lastState && lastState.tempo) {
-    bpm = lastState.tempo;
-  }
-  const seconds = beats * 60 / bpm;
+function formatSecondsAsTime(seconds) {
+  if (typeof seconds !== 'number' || isNaN(seconds) || seconds < 0) return '—:——';
   const m = Math.floor(seconds / 60);
   const s = Math.floor(seconds % 60);
-  const ms = Math.floor((seconds % 1) * 100);
-  return `${m}:${s.toString().padStart(2, '0')}:${ms.toString().padStart(2, '0')}`;
+  return `${m}:${s.toString().padStart(2, '0')}`;
+}
+
+function formatDuration(seconds, includeHours = false) {
+  if (typeof seconds !== 'number' || !Number.isFinite(seconds) || seconds < 0) return '—';
+  const rounded = Math.round(seconds);
+  const hours = Math.floor(rounded / 3600);
+  const minutes = Math.floor((rounded % 3600) / 60);
+  const secs = rounded % 60;
+  if (includeHours || hours > 0) {
+    return `${hours}:${String(minutes).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+  }
+  return `${minutes}:${String(secs).padStart(2, '0')}`;
 }
 
 const latencyCompensationMs = 90; // compensate for polling intervals + socket transit
+
 
 function getEstimatedBeats() {
   if (!lastState) return 0;
@@ -266,19 +269,35 @@ function tick() {
     const estimatedBeats = getEstimatedBeats();
     const activeSong = lastState.songs[lastState.activeSongIndex];
     const songElapsedBeats = calculateSongElapsedBeats(estimatedBeats, activeSong);
-    timecode.textContent = formatBeatsAsTime(estimatedBeats, lastState.tempo);
+    const activeBpm = (activeSong && typeof activeSong.bpm === 'number') ? activeSong.bpm : lastState.tempo;
+    const songElapsedSeconds = Number.isFinite(songElapsedBeats)
+      ? Math.max(0, songElapsedBeats) * 60 / (activeBpm || 120)
+      : null;
+
+    const setlistProgress = SetlistTransportRuntime.calculateSetlistProgress({
+      songs: lastState.songs,
+      activeSongIndex: lastState.activeSongIndex,
+      totalDurationSeconds: lastState.totalDurationSeconds,
+      songElapsedSeconds,
+    });
+
+    // Show elapsed / total
+    const showUsesHours = setlistProgress.showTotalSeconds !== null && setlistProgress.showTotalSeconds >= 3600;
+    timecode.textContent = `${formatSecondsAsTime(setlistProgress.showElapsedSeconds)} / ${formatDuration(setlistProgress.showTotalSeconds, showUsesHours)}`;
 
     const songTimecodeEl = document.getElementById('songTimecode');
     if (songTimecodeEl) {
       if (activeSong) {
+        const songUsesHours = setlistProgress.songDurationSeconds !== null && setlistProgress.songDurationSeconds >= 3600;
         songTimecodeEl.textContent = t('performance.songTime', {
-          time: formatBeatsAsTime(songElapsedBeats, lastState.tempo),
+          time: formatDuration(setlistProgress.songElapsedSeconds, songUsesHours),
         });
         songTimecodeEl.style.display = 'inline-block';
       } else {
         songTimecodeEl.style.display = 'none';
       }
     }
+
 
     // Bar calculation (Bars.Beats.Sixteenths)
     const num = lastState.signatureNumerator || 4;

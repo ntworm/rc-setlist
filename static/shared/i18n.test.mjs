@@ -56,6 +56,17 @@ test('locale runtime translates, interpolates and exposes missing keys', () => {
   assert.equal(i18n.t('status.connected'), 'Connected');
   assert.equal(i18n.t('next.repeat', { name: 'CHORUS' }, 'pt-BR'), 'CHORUS (Repetir)');
   assert.equal(i18n.t('missing.contract.key'), 'missing.contract.key');
+  assert.equal(i18n.t('setlist.preRollLabel'), 'COUNT-IN 1 BAR');
+  assert.equal(i18n.t('setlist.preRollLabel', {}, 'pt-BR'), 'CONTAGEM 1 COMP.');
+  assert.equal(i18n.t('setlist.previousSongHold'), 'Previous song — press and hold');
+  assert.equal(i18n.t('setlist.previousSongHold', {}, 'pt-BR'), 'Música anterior — pressione e segure');
+  assert.equal(i18n.t('setlist.previousSectionHold'), 'Previous section — press and hold');
+  assert.equal(i18n.t('setlist.previousSectionHold', {}, 'pt-BR'), 'Seção anterior — pressione e segure');
+  assert.equal(i18n.t('setlist.nextSectionHold'), 'Next section — press and hold');
+  assert.equal(i18n.t('setlist.nextSectionHold', {}, 'pt-BR'), 'Próxima seção — pressione e segure');
+  assert.equal(i18n.t('setlist.nextSongHold'), 'Next song — press and hold');
+  assert.equal(i18n.t('setlist.nextSongHold', {}, 'pt-BR'), 'Próxima música — pressione e segure');
+  assert.match(i18n.t('feedback.preRollShortened', {}, 'pt-BR'), /encurtada/i);
 });
 
 test('locale selection persists and survives unavailable storage', () => {

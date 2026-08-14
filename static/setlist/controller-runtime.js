@@ -198,5 +198,36 @@
     createEditRevisionGuard,
     createPendingCommandTracker,
     readMidiMappings,
+    readKeyMappings,
   });
+
+  function validKeyMapping(value) {
+    return Boolean(
+      value
+      && typeof value === 'object'
+      && typeof value.key === 'string'
+      && value.key.length > 0
+      && typeof value.code === 'string'
+      && value.code.length > 0
+    );
+  }
+
+  function readKeyMappings(storageRef, key, defaults) {
+    const result = { ...defaults };
+    let parsed;
+    try {
+      const raw = storageRef?.getItem?.(key);
+      if (!raw) return result;
+      parsed = JSON.parse(raw);
+    } catch {
+      return result;
+    }
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return result;
+    for (const action of Object.keys(defaults)) {
+      const mapping = parsed[action];
+      if (mapping === null || validKeyMapping(mapping)) result[action] = mapping;
+    }
+    return result;
+  }
 })(typeof globalThis !== 'undefined' ? globalThis : this);
+

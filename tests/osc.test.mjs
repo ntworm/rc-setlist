@@ -131,6 +131,92 @@ test('OSC parses and requests Arrangement last_event_time', () => {
   assert.deepStrictEqual(received, [384]);
 });
 
+test('OSC sets current song time with a float beat value', () => {
+  const client = new OSCClient();
+  const sent = [];
+  client.send = (address, args) => sent.push([address, args]);
+
+  client.setCurrentSongTime(28);
+
+  assert.deepStrictEqual(sent, [[
+    '/live/song/set/current_song_time',
+    [{ type: 'float', value: 28 }],
+  ]]);
+});
+
+test('OSC exposes every is_playing sample while deduplicating public transport changes', () => {
+  const client = new OSCClient();
+  const samples = [];
+  const changes = [];
+  client.on('is_playing_sample', (value) => samples.push(value));
+  client.on('is_playing', (value) => changes.push(value));
+
+  const stopped = {
+    oscType: 'message',
+    address: '/live/song/get/is_playing',
+    args: [{ value: 0 }],
+  };
+  client['handleIncoming'](stopped);
+  client['handleIncoming'](stopped);
+
+  assert.deepStrictEqual(samples, [false, false]);
+  assert.deepStrictEqual(changes, [false]);
+});
+
+test('explicit Count-In acknowledgement queries bypass duplicate position and Click replies once', () => {
+  const client = new OSCClient();
+  const positions = [];
+  const metronomes = [];
+  client.send = () => true;
+  client.on('current_song_time', (value) => positions.push(value));
+  client.on('metronome', (value) => metronomes.push(value));
+
+  const position = {
+    oscType: 'message',
+    address: '/live/song/get/current_song_time',
+    args: [{ value: 28 }],
+  };
+  const metronome = {
+    oscType: 'message',
+    address: '/live/song/get/metronome',
+    args: [{ value: 1 }],
+  };
+  client['handleIncoming'](position);
+  client['handleIncoming'](metronome);
+  client.getCurrentSongTime(true);
+  client.getCurrentSongTime(true);
+  client.getCurrentSongTime(true);
+  client.getMetronome(true);
+  client.getMetronome(true);
+  client.getMetronome(true);
+  client['handleIncoming'](position);
+  client['handleIncoming'](metronome);
+  client['handleIncoming'](position);
+  client['handleIncoming'](metronome);
+
+  assert.deepStrictEqual(positions, [28, 28]);
+  assert.deepStrictEqual(metronomes, [true, true]);
+});
+
+test('stopping OSC clears pending Count-In confirmation credits', async () => {
+  const client = new OSCClient();
+  const positions = [];
+  client.send = () => true;
+  client.on('current_song_time', (value) => positions.push(value));
+  const position = {
+    oscType: 'message',
+    address: '/live/song/get/current_song_time',
+    args: [{ value: 28 }],
+  };
+
+  client['handleIncoming'](position);
+  client.getCurrentSongTime(true);
+  await client.stop();
+  client['handleIncoming'](position);
+
+  assert.deepStrictEqual(positions, [28]);
+});
+
 test('OSC encoding works when Ableton embedded runtime has no global TextEncoder', () => {
   const originalTextEncoder = globalThis.TextEncoder;
   const originalTextDecoder = globalThis.TextDecoder;

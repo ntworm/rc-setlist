@@ -60,6 +60,7 @@ test('decoder accepts every current browser and server command, including legacy
     { type: 'export_csv' },
     { type: 'create_test_session' },
     { type: 'metronome', value: true },
+    { type: 'set_pre_roll', value: true },
     { type: 'set_quantization', value: 11 },
     { type: 'jump', songIndex: 2 },
     { type: 'jump', songIndex: 2, sectionIndex: null },
@@ -77,6 +78,8 @@ test('decoder accepts every current browser and server command, including legacy
     { type: 'profile_rename', id: 'profile-1', name: 'Encore' },
     { type: 'profile_delete', id: 'profile-1', confirmationName: 'Encore' },
     { type: 'profile_restore', id: 'profile-1' },
+    { type: 'edit_locator', time: 64.5, name: 'VERSE [bpm 90]' },
+    { type: 'edit_locator', time: 0, name: 'INTRO [loop 4x]' },
   ];
 
   for (const message of valid) {
@@ -95,6 +98,7 @@ test('decoder rejects invalid scalar command fields', () => {
     [{ type: 'get_lyrics', song: '' }, /song/],
     [{ type: 'get_lyrics', song: 7 }, /song/],
     [{ type: 'metronome', value: 'yes' }, /value/],
+    [{ type: 'set_pre_roll', value: 1 }, /value/],
     [{ type: 'set_quantization', value: 6.5 }, /value/],
     [{ type: 'set_quantization', value: 99 }, /value/],
     [{ type: 'jump', songIndex: -1 }, /songIndex/],
@@ -107,6 +111,13 @@ test('decoder rejects invalid scalar command fields', () => {
   ];
 
   for (const [message, pattern] of invalid) expectInvalid(message, pattern);
+});
+
+test('decoder canonicalizes the pre-roll toggle and drops unexpected fields', () => {
+  const result = decodeClientMessage({ type: 'set_pre_roll', value: true, ignored: 'drop-me' });
+
+  assert.equal(result.ok, true);
+  assert.deepEqual(result.message, { type: 'set_pre_roll', value: true });
 });
 
 test('decoder rejects C0 and C1 controls in every structured text field', () => {
@@ -190,6 +201,11 @@ test('decoder bounds lyrics and profile mutation fields', () => {
   expectInvalid({ type: 'profile_delete', id: 'p1', confirmationName: '' }, /confirmationName/);
   expectInvalid({ type: 'profile_restore', id: '' }, /id/);
   expectInvalid({ type: 'profile_restore', id: 1 }, /id/);
+  expectInvalid({ type: 'edit_locator', time: -1, name: 'x' }, /time/);
+  expectInvalid({ type: 'edit_locator', time: Number.NaN, name: 'x' }, /time/);
+  expectInvalid({ type: 'edit_locator', time: 64, name: '' }, /name/);
+  expectInvalid({ type: 'edit_locator', time: 64, name: 'x'.repeat(256) }, /name/);
+  expectInvalid({ type: 'edit_locator', time: 64, name: 'bad\nname' }, /name/);
 });
 
 test('decoder returns only a safe valid commandId on failures', () => {

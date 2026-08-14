@@ -4,7 +4,33 @@ All notable public changes to Ableton RC Setlist are recorded here.
 
 ## [Unreleased]
 
-No changes are currently staged after the 0.5.0 release.
+## [0.5.1] - 2026-08-14
+
+### Added
+
+- **Keyboard Mapping Support**: You can now map keyboard keys (like Numpad or Alphanumeric) to stage transport controls, making page turns and song navigation much easier without relying on touch or mouse.
+- **Count-in Pre-roll Toggle**: Added `COUNT-IN 1 BAR` beside Click in Stage Control. You can now toggle the 1-bar pre-roll count-in directly from the setlist HUD. From stopped transport, Play now optionally uses Live's native metronome and transport for a one-bar pre-roll.
+- **Enhanced Transport Controls**: Added explicit song and section transport controls, mobile hold-to-select and hold-to-reorder for songs and sections, and a setlist-relative `SHOW` and `SONG` time display in place of the raw Arrangement coordinate.
+- **Inline Section Edit**: Double-click section tags in the desktop setlist for fast text editing.
+- **[ws] Protocol Version 3**: Added shared `preRollEnabled` state in `protocolVersion 3` for the process-scoped one-bar count-in toggle; `profiles_state` remains version 2.
+
+### Changed
+
+- **Improved Mobile Transport Safety**: Improved mobile transport safety by requiring a firm touch hold to execute song jumps.
+- **Decoupled Show Clock**: Decoupled the show clock and absolute timeline progress from real-time Live BPM automations.
+- **Tempo Write Boundary**: Explicit jumps now apply the destination BPM before the cue jump: a section BPM overrides its song BPM, with an SDK-first tempo write and an AbletonOSC fallback at the existing execution boundary. The tempo write and cue jump are sequential, not atomic; use native Arrangement tempo automation at the destination for sample-accurate transitions.
+
+### Fixed
+
+- **Public release surface**: Corrected the source allowlist to export
+  `scripts/build.ts`, the 0.5.1 release notes and the static Pages marker; removed
+  the external AbletonOSC gitlink that prevented GitHub Pages checkout.
+- **Release documentation**: Replaced the README screenshot with a text-first
+  feature inventory and rewrote the bilingual 0.5.1 notes with supported behavior,
+  platform limits and rehearsal guidance.
+- **Pre-roll Acknowledge Barrier**: Count-In no longer waits for Live to acknowledge the pre-roll before starting playback. The count-in now sends the temporary Click, the position and Play in one ordered burst, decides Click restoration from playhead samples alone, and treats any observed stop as the end of the pre-roll.
+- **Elapsed Show Time Calculation**: Elapsed show and song time no longer move backwards when the tempo changes. Song durations are derived from each song's declared BPM.
+- **WebSocket Boundaries**: Hardened WebSocket boundaries and internal command routing to resolve dropping successive fast events.
 
 ## [0.5.0] - 2026-08-01
 

@@ -8,8 +8,8 @@ interface McpFallbackSyncOptions {
   client: McpCaller | McpTcpClient;
   onSessionInfo: (info: SessionInfo) => void | Promise<void>;
   onSongLength: (length: number) => void | Promise<void>;
-  needsProjectMetadata: () => boolean;
-  onProjectMetadata?: (metadata: ProjectMetadata) => void | Promise<void>;
+  getProjectMetadataRequestToken: () => string | null;
+  onProjectMetadata?: (metadata: ProjectMetadata, requestToken: string) => void | Promise<void>;
   now?: () => number;
   slowPollIntervalMs?: number;
   metadataPollIntervalMs?: number;
@@ -28,7 +28,7 @@ export class McpFallbackSync {
   private readonly client: McpCaller;
   private readonly onSessionInfo: McpFallbackSyncOptions['onSessionInfo'];
   private readonly onSongLength: McpFallbackSyncOptions['onSongLength'];
-  private readonly needsProjectMetadata: McpFallbackSyncOptions['needsProjectMetadata'];
+  private readonly getProjectMetadataRequestToken: McpFallbackSyncOptions['getProjectMetadataRequestToken'];
   private readonly onProjectMetadata?: McpFallbackSyncOptions['onProjectMetadata'];
   private readonly now: () => number;
   private readonly slowPollIntervalMs: number;
@@ -45,7 +45,7 @@ export class McpFallbackSync {
     this.client = options.client;
     this.onSessionInfo = options.onSessionInfo;
     this.onSongLength = options.onSongLength;
-    this.needsProjectMetadata = options.needsProjectMetadata;
+    this.getProjectMetadataRequestToken = options.getProjectMetadataRequestToken;
     this.onProjectMetadata = options.onProjectMetadata;
     this.now = options.now ?? Date.now;
     this.slowPollIntervalMs = options.slowPollIntervalMs ?? 2_000;
@@ -98,9 +98,10 @@ export class McpFallbackSync {
         }
       }
 
+      const projectMetadataRequestToken = this.getProjectMetadataRequestToken();
       if (
         this.onProjectMetadata
-        && this.needsProjectMetadata()
+        && projectMetadataRequestToken !== null
         && current - this.lastMetadataPollTime >= this.metadataPollIntervalMs
       ) {
         this.lastMetadataPollTime = current;
@@ -108,7 +109,7 @@ export class McpFallbackSync {
           const metadata = await this.client.call('get_project_metadata') as ProjectMetadata;
           this.markResponse();
           if (metadata && typeof metadata === 'object') {
-            await this.onProjectMetadata(metadata);
+            await this.onProjectMetadata(metadata, projectMetadataRequestToken);
           }
         } catch {
           // Saved-set metadata can become available after startup; retry on

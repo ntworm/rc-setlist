@@ -134,6 +134,30 @@ for (const viewport of compactSetlistViewports) {
   });
 }
 
+for (const viewport of [{ width: 360, height: 800 }, { width: 1024, height: 768 }]) {
+  test(`Setlist exposes six contained transport targets at ${viewport.width}px`, async ({ page }) => {
+    await page.setViewportSize(viewport);
+    await page.goto('/setlist/');
+    await expect(page.locator('#songList .song-item')).toHaveCount(8);
+
+    const geometry = await page.locator('.transport-dock').evaluate((dock) => ({
+      clientWidth: document.documentElement.clientWidth,
+      scrollWidth: document.documentElement.scrollWidth,
+      dock: dock.getBoundingClientRect().toJSON(),
+      buttons: Array.from(dock.querySelectorAll('button'), (button) => button.getBoundingClientRect().toJSON()),
+    }));
+
+    expect(geometry.buttons).toHaveLength(6);
+    expect(geometry.scrollWidth).toBeLessThanOrEqual(geometry.clientWidth);
+    expect(geometry.dock.left).toBeGreaterThanOrEqual(0);
+    expect(geometry.dock.right).toBeLessThanOrEqual(geometry.clientWidth + 1);
+    for (const button of geometry.buttons) {
+      expect(button.width).toBeGreaterThanOrEqual(44);
+      expect(button.height).toBeGreaterThanOrEqual(44);
+    }
+  });
+}
+
 test('Setlist HUD keeps long active titles vertically legible in a short desktop window', async ({ page }) => {
   await page.setViewportSize({ width: 1024, height: 560 });
   await page.goto('/setlist/');
@@ -560,6 +584,51 @@ test('Quantization control supports pt-BR text without clipping or colliding wit
   expect(quantInfo.isFullLineAbove, 'quantization control should occupy full line on 360px width').toBe(true);
   expect(quantInfo.scrollWidth, 'no horizontal scroll in pt-BR').toBeLessThanOrEqual(quantInfo.clientWidth);
 });
+
+for (const viewport of [
+  { width: 360, height: 900, name: 'narrow phone' },
+  { width: 1280, height: 900, name: 'desktop' },
+]) {
+  test(`Count-in stays beside Click without overlap at ${viewport.name}`, async ({ page }) => {
+    await page.setViewportSize(viewport);
+    await page.goto('/setlist/');
+    await page.evaluate(() => {
+      const selector = document.querySelector('#languageSelect');
+      selector.value = 'pt-BR';
+      selector.dispatchEvent(new Event('change'));
+    });
+
+    const geometry = await page.evaluate(() => {
+      const click = document.querySelector('#btnMetronome');
+      const preRoll = document.querySelector('#btnPreRoll');
+      const refresh = document.querySelector('#btnRefresh');
+      if (!click || !preRoll || !refresh) return { missing: true };
+      const clickRect = click.getBoundingClientRect();
+      const preRollRect = preRoll.getBoundingClientRect();
+      const refreshRect = refresh.getBoundingClientRect();
+      return {
+        sameRow: Math.abs(clickRect.top - preRollRect.top) <= 2
+          && Math.abs(preRollRect.top - refreshRect.top) <= 2,
+        ordered: clickRect.right <= preRollRect.left + 1
+          && preRollRect.right <= refreshRect.left + 1,
+        labelFits: preRoll.scrollWidth <= preRoll.clientWidth + 1,
+        labelScrollWidth: preRoll.scrollWidth,
+        labelClientWidth: preRoll.clientWidth,
+        scrollWidth: document.documentElement.scrollWidth,
+        clientWidth: document.documentElement.clientWidth,
+      };
+    });
+
+    expect(geometry.missing).toBeUndefined();
+    expect(geometry.sameRow).toBe(true);
+    expect(geometry.ordered).toBe(true);
+    expect(
+      geometry.labelFits,
+      `count-in label ${geometry.labelScrollWidth}px must fit inside ${geometry.labelClientWidth}px`,
+    ).toBe(true);
+    expect(geometry.scrollWidth).toBeLessThanOrEqual(geometry.clientWidth);
+  });
+}
 
 test('Song duration displays with increased contrast and tabular nums', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 800 });
