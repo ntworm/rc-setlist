@@ -62,7 +62,7 @@
     "@playwright/test": "^1.62.0",
     "@types/node": "^24.13.3",
     "@types/ws": "^8.5.13",
-    "esbuild": "^0.28.1",
+    "esbuild": "^0.28.2",
     "tsx": "^4.23.1",
     "typescript": "^5.9.3"
   },
