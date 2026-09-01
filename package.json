@@ -59,7 +59,7 @@
     "ws": "^8.21.1"
   },
   "devDependencies": {
-    "@playwright/test": "^1.62.0",
+    "@playwright/test": "^1.62.1",
     "@types/node": "^24.13.3",
     "@types/ws": "^8.5.13",
     "esbuild": "^0.28.1",
