@@ -56,7 +56,7 @@
   "dependencies": {
     "osc-min": "^2.1.2",
     "selfsigned": "^5.5.0",
-    "ws": "^8.21.1"
+    "ws": "^8.21.3"
   },
   "devDependencies": {
     "@playwright/test": "^1.62.0",
