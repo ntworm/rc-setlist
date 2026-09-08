@@ -4,10 +4,47 @@ All notable public changes to Ableton RC Setlist are recorded here.
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-09-08
+
+### Added
+
+- **Tempo Automation Safety**: A new **Set Live tempo on jump** panel toggle, **off by default**. Explicit jumps used to write the destination `[bpm]` into Live, which overrides tempo automation drawn in the Arrangement — Live then stops following its own envelope until you press Re-Enable Automation. RC Setlist now also detects automation on its own, by comparing the tempo Live reports against the tag declared at that point, and refuses to write the tempo when they diverge, even if the toggle is on. Tagging songs for accurate durations is now safe alongside Arrangement tempo automation.
+
+- **Duration Confidence & Estimation Indicators**: Stage Control, Performance view, and the Live panel now display an `EST.` badge whenever a setlist does not contain explicit `[bpm N]` locator tags, alerting operators that durations are uniform estimates rather than exact piecewise calculations.
+- **Dedicated Lyric Typography**: Sung lyrics now use self-hosted **Barlow Semi Condensed** (`--ui-font-lyric`), fitting ~45% more lyrics per line on phones and tablets without sacrificing legibility or clipping uppercase accents.
+- **Stage Design System Alignment**: Public landing page and documentation now share the core brutalist design tokens, zero-radius geometry, and self-hosted **Martian Mono** typography of the live performance views.
+
+### Changed
+
+- **Piecewise Multi-Tempo Duration Engine**: Setlist timing calculation has been thoroughly overhauled for precision:
+  - Untagged songs inherit tempo from the nearest preceding tagged song rather than falling back to the Live session tempo.
+  - Songs without an initial tag inherit tempo from their first tagged section.
+  - Sections with distinct `[bpm N]` tags calculate exact individual segment durations instead of projecting a single tempo across the whole song.
+  - Tempo carries across song boundaries from the *last* tempo event in the preceding song.
+  - Mid-song section tags no longer retroactively alter the tempo of earlier sections.
+  - Total show duration is summed from exact fractional seconds rather than accumulating rounded integer values.
+  - CSV exports and elapsed show clocks reference the stable `durationBpm` basis, preventing clocks from drifting or stalling when the live tempo knob moves.
+- **Stage Transport Visibility**: The Play button now uses solid block inversion and non-chromatic SVG icon swaps (play/pause) instead of diffuse glowing shadows, maintaining clear visual state under bright or saturated stage lighting.
+- **Mobile Touch Safety**: Button hover states are now guarded by `@media (hover: hover) and (pointer: fine)` to prevent mobile browsers from sticking on pressed button styles after tapping.
+- **Font Weight & Accent Clearance**: Removed low-level `wght` overrides in `font-variation-settings` to restore standard CSS `font-weight` rendering across the application. Added accent-safe line heights (`--ui-line-accent-safe`) to prevent diacritics (such as `Ç` and `Ã`) from clipping.
+
 ### Fixed
 
-- Corrected the 0.5.1 installation, landing, FAQ and bilingual guide copy to
-  match the shipped mapping actions, MIDI behavior and release surfaces.
+- **Marker Editor Replaces Raw Text Editing**: Double-clicking a song or a section now opens a form where every tag is a control, and the whole song header is the target rather than the title alone. The raw text field it replaces exposed the name and its tags together, and a `[bpm]` tag — the one that feeds the show duration — could be deleted with a stray keystroke. A tag the panel does not display is carried through untouched, tags are compared by meaning rather than by text so a save that changes nothing writes nothing, and `[hidden]` and `[ignore]`, which remove a marker from the setlist entirely, are no longer switchable from the panel.
+- **Section Prefixes Are Preserved**: Saving a section no longer rewrites its locator prefix. Live accepts both `> VERSO`, where a section belongs to the song locator above it, and `JÚLIA > VERSO`, which names the song outright; the editor used to rebuild the second form unconditionally and renamed every section it touched in a set written in the first.
+- **Locator Renames Happen In Place**: A rename used to delete the cue point and create a replacement, because that is how the raw Live API expresses one — a cue point is made by toggling one at the playhead, so a delete that silently failed turned the create into a second delete and the marker disappeared. It also left a window with no marker at the position at all. The bridge renames in place instead, and Live's own cue list is read back afterwards rather than the bridge's word being taken for it.
+- **Locator Edits Are Blocked While Playing**: A rename moves the playhead to the cue's position to act on it, so with the transport rolling Live services the write wherever playback has advanced to and the marker lands at the wrong beat. This is now refused in every mode, at the moment of the write as well as when the editor opens.
+- **Song Colours Repaint Immediately**: Assigning a colour changes no setlist structure, so the list's render fast path skipped it and the colour did not appear until the next structural change.
+- **Song Colour Is Legible From a Distance**: The colour now fills an 8px identity band down the leading edge of the card as well as the number chip. It sits inside the 4px state bar rather than replacing it, so a playing song shows both its state and its identity at once.
+- **A Way Back From a Section**: Opening a section from the song panel replaced it with no route back to the song it belongs to.
+- **Sixteen Song Colours, Arranged as a Matrix**: The palette doubled and is now laid out as eight columns by two rows. Hue climbs across each row — warm, yellow, green, cyan, blue, purple, back to red, neutral last — and tone deepens down each column, so two colours that read apart on a dark stage are two that sit apart on the strip. The lower row is not the upper row darkened: its hues fall between the ones above, giving fifteen distinct hues plus two neutrals. Every colour stays under 0.35 saturation, because desaturation is what separates identity from state. The original eight are unchanged hex for hex, so a colour already assigned to a song keeps its paint.
+- **The Marker Panel Fits Its Content**: A song with a dozen sections showed four at a time behind a scrollbar. The panel is wider, sections flow into as many columns as fit, and the short fields — tempo, loop, times, click — pair up instead of stacking, which also keeps Save on screen in a short window. Narrow viewports still get a single column.
+- **Card Washes Run In Opposite Directions**: The ACTIVE wash faded from the leading edge inward, burying the identity band and the state bar — the two hard marks the eye uses to find a card. It now enters from the trailing edge instead. A song colour lays a faint wash of its own from the leading edge, continuing out of the band and the number chip so the three read as one mark, and the two washes meet head-on rather than smearing together.
+- **The Jump Ring Clears the Title**: The song header carries no padding of its own, so the inset ring drawn while a jump is armed landed flush against the text and read as a box cutting through it.
+- **`[skip]` and `[click]` Are Visible**: Both tags changed what happens on stage while leaving no mark on the card, so setting one and seeing nothing appear read as a save that had failed. Every tag the marker panel can write now has a badge.
+- **Locator Edits Refresh Immediately**: Cue points are polled every two seconds. For up to two seconds after a rename the client still held the previous name, so reopening the marker straight away showed stale values and the next save wrote them back — the earlier edit looked randomly dropped, when it only depended on how fast the user was. The cue list is now pulled back as soon as a rename lands, the rename is verified against Live rather than assumed, and a marker whose save is still in flight cannot be reopened.
+- **Panel No Longer Closes Mid-Edit**: A click event fires on the common ancestor of the press and the release, so selecting text in a field and releasing past the panel edge counted as a click on the backdrop and dismissed the panel. Dismissal now requires the press to start on the backdrop as well.
+- **12px Stage Readout Floor**: Enforced the 12px minimum font size floor (`--t-stage-micro`) across all stage readouts and metadata cards.
 
 ## [0.5.1] - 2026-08-14
 
@@ -27,12 +64,6 @@ All notable public changes to Ableton RC Setlist are recorded here.
 
 ### Fixed
 
-- **Public release surface**: Corrected the source allowlist to export
-  `scripts/build.ts`, the 0.5.1 release notes and the static Pages marker; removed
-  the external AbletonOSC gitlink that prevented GitHub Pages checkout.
-- **Release documentation**: Replaced the README screenshot with a text-first
-  feature inventory and rewrote the bilingual 0.5.1 notes with supported behavior,
-  platform limits and rehearsal guidance.
 - **Pre-roll Acknowledge Barrier**: Count-In no longer waits for Live to acknowledge the pre-roll before starting playback. The count-in now sends the temporary Click, the position and Play in one ordered burst, decides Click restoration from playhead samples alone, and treats any observed stop as the end of the pre-roll.
 - **Elapsed Show Time Calculation**: Elapsed show and song time no longer move backwards when the tempo changes. Song durations are derived from each song's declared BPM.
 - **WebSocket Boundaries**: Hardened WebSocket boundaries and internal command routing to resolve dropping successive fast events.

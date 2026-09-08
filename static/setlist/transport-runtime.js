@@ -27,10 +27,57 @@
    */
   function songElapsedSecondsFromBeats(elapsedBeats, activeSong, fallbackTempo) {
     if (!Number.isFinite(elapsedBeats)) return null;
+    const safeElapsedBeats = Math.max(0, elapsedBeats);
     const declaredTempo = isValidSong(activeSong) ? usableTempo(activeSong.bpm) : null;
-    const tempo = declaredTempo ?? usableTempo(fallbackTempo);
-    if (tempo === null) return null;
-    return Math.max(0, elapsedBeats) * 60 / tempo;
+    let fallback = declaredTempo ?? usableTempo(fallbackTempo);
+
+    if (isValidSong(activeSong) && Array.isArray(activeSong.sections) && activeSong.sections.length > 0) {
+      const songStart = typeof activeSong.time === 'number' && Number.isFinite(activeSong.time) ? activeSong.time : 0;
+      const validSections = activeSong.sections.filter(s =>
+        s && typeof s.time === 'number' && Number.isFinite(s.time) && s.time >= songStart
+      );
+
+      if (validSections.length > 0) {
+        const sortedSections = [...validSections].sort((a, b) => a.time - b.time);
+        const firstSectionBpm = sortedSections[0].time === songStart ? usableTempo(sortedSections[0].bpm) : null;
+        if (declaredTempo === null && firstSectionBpm !== null) {
+          fallback = firstSectionBpm;
+        }
+
+        const hasSectionBpm = sortedSections.some(s => usableTempo(s.bpm) !== null);
+        if (hasSectionBpm) {
+          if (fallback === null) return null;
+          let currentBpm = fallback;
+          let currentBeat = songStart;
+          const targetBeat = songStart + safeElapsedBeats;
+          let elapsedSec = 0;
+
+          for (let i = 0; i < sortedSections.length; i++) {
+            const sec = sortedSections[i];
+            if (sec.time > currentBeat) {
+              if (targetBeat <= sec.time) {
+                elapsedSec += (targetBeat - currentBeat) * 60 / currentBpm;
+                return elapsedSec;
+              }
+              elapsedSec += (sec.time - currentBeat) * 60 / currentBpm;
+              currentBeat = sec.time;
+            }
+            const secBpm = usableTempo(sec.bpm);
+            if (secBpm !== null) {
+              currentBpm = secBpm;
+            }
+          }
+
+          if (targetBeat > currentBeat) {
+            elapsedSec += (targetBeat - currentBeat) * 60 / currentBpm;
+          }
+          return elapsedSec;
+        }
+      }
+    }
+
+    if (fallback === null) return null;
+    return safeElapsedBeats * 60 / fallback;
   }
 
   function calculateSetlistProgress({
@@ -142,12 +189,18 @@
     const setTimeoutFn = options.setTimeoutFn || globalScope.setTimeout.bind(globalScope);
     const clearTimeoutFn = options.clearTimeoutFn || globalScope.clearTimeout.bind(globalScope);
     const level = options.level === 'song' ? 'song' : 'section';
+    // Optional overrides let a non-navigation control reuse this gate. The
+    // pointer, touch, keyboard, blur and visibility handling below is the part
+    // worth reusing; the navigation target resolution is not.
+    const resolveTargetOverride = typeof options.resolveTarget === 'function' ? options.resolveTarget : null;
+    const onComplete = typeof options.onComplete === 'function' ? options.onComplete : null;
     let timer = null;
     let inputKind = null;
     let activePointerId = null;
 
     function resolveAllowedTarget(level) {
       if (!canNavigate()) return null;
+      if (resolveTargetOverride) return resolveTargetOverride();
       return resolveNavigationTarget(getState(), direction, level);
     }
 
@@ -173,6 +226,16 @@
       if (!inputKind) return;
       clearTimers();
       const target = resolveAllowedTarget(level);
+      if (onComplete) {
+        button.classList.add('is-holding-section-ready');
+        if (!target) {
+          // Authorization gate closed mid-hold: refresh disabled state.
+          update();
+          return;
+        }
+        onComplete(target);
+        return;
+      }
       if (level === 'song') {
         button.classList.remove('is-holding-section-ready');
         button.classList.add('is-holding-song');

@@ -361,6 +361,7 @@ A quiet pulse becomes our guide..." style="width: 100%; height: 180px; padding: 
             <div class="total-duration-control">
               <span class="total-duration-label" data-i18n="setlist.totalDuration">Total duration</span>
               <strong id="totalSetlistDuration" class="total-duration-value">&mdash;</strong>
+              <span id="totalDurationBadge" class="duration-est-badge" style="display: none;" title="Estimated duration" data-i18n-title="setlist.durationEstimatedTitle">EST.</span>
             </div>
           </div>
           <div id="songList" class="song-list">
@@ -396,7 +397,10 @@ A quiet pulse becomes our guide..." style="width: 100%; height: 180px; padding: 
           </div>
           <div class="hud-card hud-time-card">
             <span class="hud-label" data-i18n="setlist.showTime">Show time</span>
-            <span id="hudTime" class="hud-value">&mdash; / &mdash;</span>
+            <div style="display: flex; align-items: baseline; gap: 0.35rem; flex-wrap: wrap;">
+              <span id="hudTime" class="hud-value">&mdash; / &mdash;</span>
+              <span id="hudTimeBadge" class="duration-est-badge" style="display: none;" title="Estimated duration" data-i18n-title="setlist.durationEstimatedTitle">EST.</span>
+            </div>
             <span id="hudSongTime" class="hud-song-time" data-i18n="setlist.songTimeEmpty">Song &mdash; / &mdash;</span>
           </div>
           <div class="hud-card hud-lyric-card">
@@ -449,8 +453,9 @@ A quiet pulse becomes our guide..." style="width: 100%; height: 180px; padding: 
         <button id="btnPlay" class="btn btn-primary" type="button" aria-label="Play" data-i18n-aria-label="setlist.play">
           <svg class="transport-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false" draggable="false"><path d="M8 5v14l11-7L8 5Z"/></svg>
         </button>
-        <button id="btnStop" class="btn btn-danger" type="button" aria-label="Stop" data-i18n-aria-label="setlist.stop">
-          <svg class="transport-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false" draggable="false"><rect x="6" y="6" width="12" height="12" rx="1"/></svg>
+        <button id="btnStop" class="btn btn-danger hold-button" type="button" aria-label="Stop — press and hold" data-i18n-aria-label="setlist.stop">
+          <span class="hold-progress" aria-hidden="true"></span>
+          <svg class="transport-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false" draggable="false"><rect x="6" y="6" width="12" height="12" rx="0"/></svg>
         </button>
         <button id="btnNext" class="btn hold-button" type="button" aria-label="Next section — press and hold" data-i18n-aria-label="setlist.nextSectionHold">
           <span class="hold-progress" aria-hidden="true"></span>
@@ -475,10 +480,60 @@ A quiet pulse becomes our guide..." style="width: 100%; height: 180px; padding: 
   <div id="stageNotice" class="ui-notice" role="status" aria-live="polite" hidden></div>
   <div id="operationToast" class="operation-toast" role="status" aria-live="polite" hidden></div>
 
+  <div id="markerEditor" class="marker-editor" hidden role="dialog" aria-modal="true" aria-labelledby="markerEditorTitle">
+    <form class="marker-panel" id="markerPanel">
+      <h2 id="markerEditorTitle" data-i18n="marker.title">Edit marker</h2>
+      <button type="button" class="marker-back" id="markerBack" hidden></button>
+      <label class="marker-field">
+        <span data-i18n="marker.name">Name</span>
+        <input type="text" data-field="name" autocomplete="off" spellcheck="false">
+      </label>
+      <div class="marker-field" data-only="song">
+        <span data-i18n="marker.color">Colour</span>
+        <div id="markerSwatches"></div>
+      </div>
+      <label class="marker-field">
+        <span data-i18n="marker.bpm">Tempo</span>
+        <input type="number" data-field="bpm" min="1" step="0.01" inputmode="decimal" placeholder="—">
+      </label>
+      <label class="marker-field" data-only="section">
+        <span data-i18n="marker.loop">Loop</span>
+        <select data-field="loop-mode">
+          <option value="off" data-i18n="marker.loopOff">Off</option>
+          <option value="infinite" data-i18n="marker.loopInfinite">Forever</option>
+          <option value="count" data-i18n="marker.loopCount">A number of times</option>
+        </select>
+      </label>
+      <label class="marker-field" data-only="section" id="markerLoopTimesField" hidden>
+        <span data-i18n="marker.loopTimes">Times</span>
+        <input type="number" data-field="loop-times" min="1" step="1" value="2">
+      </label>
+      <label class="marker-field" data-only="section">
+        <span data-i18n="marker.click">Click</span>
+        <select data-field="click">
+          <option value="inherit" data-i18n="marker.clickInherit">Inherit</option>
+          <option value="on" data-i18n="marker.clickOn">On</option>
+          <option value="off" data-i18n="marker.clickOff">Off</option>
+        </select>
+      </label>
+      <div class="marker-toggles" id="markerToggles"></div>
+      <div class="marker-field" data-only="song" id="markerSectionsField">
+        <span data-i18n="marker.sections">Sections</span>
+        <div class="marker-sections" id="markerSections"></div>
+      </div>
+      <p class="marker-error" id="markerError" role="alert" hidden></p>
+      <div class="marker-actions">
+        <button type="button" class="btn" id="markerCancel" data-i18n="common.cancel">Cancel</button>
+        <button type="submit" class="btn btn-primary" id="markerSave" data-i18n="common.save">Save</button>
+      </div>
+    </form>
+  </div>
+
   <script src="../shared/lyrics-timing.js"></script>
   <script src="../shared/i18n.js"></script>
   <script src="../shared/stage-runtime.js"></script>
   <script src="./transport-runtime.js"></script>
+  <script src="./marker-editor.js"></script>
   <script src="./controller-runtime.js"></script>
   <script src="./setlist.js"></script>
 </body>

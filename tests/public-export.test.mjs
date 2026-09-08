@@ -1,21 +1,11 @@
 import assert from 'node:assert/strict';
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { test } from 'node:test';
 
 const rootUrl = new URL('../', import.meta.url);
 const read = (file) => readFileSync(new URL(file, rootUrl), 'utf8');
-
-function publicEntries() {
-  return read('public-files.txt')
-    .split(/\r?\n/u)
-    .map((line) => line.trim())
-    .filter((line) => line && !line.startsWith('#'));
-}
-
-function isPubliclyCovered(path, entries) {
-  return entries.includes(path)
-    || entries.some((entry) => entry.endsWith('/') && path.startsWith(entry));
-}
 
 test('public export uses an explicit allowlist and reproducible verifier', () => {
   for (const file of [
@@ -37,6 +27,7 @@ test('public export uses an explicit allowlist and reproducible verifier', () =>
     'docs/RELEASE-NOTES-0.4.1.md',
     'docs/RELEASE-NOTES-0.4.2.md',
     'docs/RELEASE-NOTES-0.5.1.md',
+    'scripts/build.ts',
     'docs/media/en/performance.png',
     'docs/media/en/product-truth-discord.png',
     'docs/media/en/stage-control.png',
@@ -68,28 +59,6 @@ test('public export uses an explicit allowlist and reproducible verifier', () =>
   assert.match(exporter, /tests\/scratch/, 'internal scratch probes must be excluded from the public snapshot');
 });
 
-test('public export entries exist and cover the complete 0.5.1 publication surface', () => {
-  const entries = publicEntries();
-
-  for (const entry of entries) {
-    assert.ok(existsSync(new URL(entry, rootUrl)), `${entry} must exist before export`);
-  }
-
-  for (const requiredPath of [
-    'scripts/build.ts',
-    'docs/.nojekyll',
-    'docs/RELEASE-NOTES-0.5.1.md',
-    'docs/pt-BR/NOTAS-DA-VERSAO-0.5.1.md',
-  ]) {
-    assert.ok(isPubliclyCovered(requiredPath, entries), `${requiredPath} must be covered by the public allowlist`);
-  }
-
-  assert.ok(!entries.includes('build.ts'), 'the removed root build.ts path must not be exported');
-  assert.ok(!entries.includes('vendor/AbletonOSC'), 'the external AbletonOSC gitlink must not be exported');
-  assert.ok(!existsSync(new URL('vendor/AbletonOSC', rootUrl)), 'the public source tree must not track the external AbletonOSC checkout');
-  assert.ok(!existsSync(new URL('.mailmap', rootUrl)), 'the source tree must not rewrite automated-agent identities as contributors');
-});
-
 test('snapshot verifier rejects private archives, internal context and stale branding', () => {
   const verifier = read('scripts/verify-public-snapshot.mjs');
   for (const rule of ['tgz', '.agent-context', 'internal-scratch', 'stale-product-name', 'commercial-song']) {
@@ -114,4 +83,74 @@ test('snapshot verifier scopes scanner self-references to exact files', () => {
   }
   assert.doesNotMatch(verifier, /relative\.startsWith\(['"]tests\//, 'verifier must not skip the tests tree');
   assert.match(verifier, /relative === ['"]node_modules['"]/, 'verifier may skip only the generated root dependency tree');
+});
+
+test('every local link in a public document resolves inside the public snapshot', () => {
+  // The export ships only what public-files.txt names, so a link to a file the
+  // allowlist omits is dead in the published repository while working perfectly
+  // in this one. Both USER-GUIDEs pointed at docs/architecture/, and four pages
+  // pointed at docs/RELEASE-NOTES-0.5.1.md, before either was allowlisted.
+  const root = fileURLToPath(rootUrl);
+  const entries = read('public-files.txt')
+    .split('\n')
+    .map((line) => line.trim())
+    .filter((line) => line && !line.startsWith('#'));
+
+  const isPublic = (relative) => entries.some((entry) => (
+    entry.endsWith('/') ? relative.startsWith(entry) : relative === entry
+  ));
+
+  const documents = [];
+  for (const entry of entries) {
+    const absolute = path.join(root, entry);
+    if (entry.endsWith('/')) {
+      if (!existsSync(absolute)) continue;
+      const walk = (dir) => {
+        for (const item of readdirSync(dir, { withFileTypes: true })) {
+          const child = path.join(dir, item.name);
+          if (item.isDirectory()) walk(child);
+          else if (/\.(?:md|html)$/.test(item.name)) documents.push(child);
+        }
+      };
+      walk(absolute);
+    } else if (/\.(?:md|html)$/.test(entry) && existsSync(absolute)) {
+      documents.push(absolute);
+    }
+  }
+
+  const broken = [];
+  for (const document of documents) {
+    const text = readFileSync(document, 'utf8');
+    const links = [
+      ...text.matchAll(/\]\(([^)#?\s]+)\)/g),
+      ...text.matchAll(/href="([^"#?\s]+)"/g),
+    ].map((match) => match[1]);
+
+    for (const link of links) {
+      if (/^(?:https?:|mailto:|data:|#|\/\/)/.test(link)) continue;
+      const target = path.resolve(path.dirname(document), link);
+      if (!existsSync(target) || statSync(target).isDirectory()) continue;
+      const relative = path.relative(root, target).split(path.sep).join('/');
+      if (!isPublic(relative)) {
+        broken.push(`${path.relative(root, document).split(path.sep).join('/')} -> ${link}`);
+      }
+    }
+  }
+
+  assert.deepEqual(broken, [], 'these links leave the public snapshot');
+});
+
+test('every allowlisted path exists', () => {
+  // scripts/export-public-repo.ps1 throws on the first entry it cannot find, so
+  // a stale line does not degrade the snapshot — it stops the publish outright.
+  // Both of these had been dead for a release: build.ts moved to scripts/ and
+  // the 0.5.0 notes were deleted, and the allowlist kept naming them.
+  const root = fileURLToPath(rootUrl);
+  const missing = read('public-files.txt')
+    .split('\n')
+    .map((line) => line.trim())
+    .filter((line) => line && !line.startsWith('#'))
+    .filter((entry) => !existsSync(path.join(root, entry)));
+
+  assert.deepEqual(missing, [], 'these allowlist entries would abort the export');
 });

@@ -65,12 +65,12 @@ body {
   place-items: center;
   flex: 0 0 auto;
   border: 1px solid rgba(255, 154, 47, 0.5);
-  border-radius: 9px;
+  border-radius: 0;
   background: var(--ui-accent-soft);
   color: var(--ui-accent-strong);
-  font-size: 0.72rem;
+  font-size: 0.75rem;
   font-weight: 900;
-  letter-spacing: 0.06em;
+  letter-spacing: 0;
 }
 
 .stage-brand-copy {
@@ -82,16 +82,16 @@ body {
   overflow: hidden;
   color: var(--ui-text);
   font-size: 0.82rem;
-  line-height: 1.1;
+  line-height: var(--ui-line-accent-safe);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .stage-brand-copy small {
   color: var(--ui-muted);
-  font-size: 0.65rem;
+  font-size: 0.75rem;
   font-weight: 700;
-  letter-spacing: 0.08em;
+  letter-spacing: 0;
   text-transform: uppercase;
 }
 
@@ -102,16 +102,16 @@ body {
 }
 
 .stage-status {
-  min-height: 34px;
+  min-height: 44px;
   gap: 0.45rem;
   border: 1px solid var(--ui-border);
-  border-radius: 999px;
+  border-radius: 0;
   background: rgba(17, 18, 22, 0.88);
   color: var(--ui-muted);
   padding: 0.35rem 0.65rem;
-  font-size: 0.68rem;
+  font-size: 0.75rem;
   font-weight: 850;
-  letter-spacing: 0.08em;
+  letter-spacing: 0;
 }
 
 .status-dot {
@@ -124,18 +124,18 @@ body {
 
 .status-dot.connected {
   background: var(--ui-success);
-  box-shadow: 0 0 0 4px var(--ui-success-soft);
+  box-shadow: none;
 }
 
 .status-dot.error {
   background: var(--ui-danger);
-  box-shadow: 0 0 0 4px var(--ui-danger-soft);
+  box-shadow: none;
 }
 
 .fullscreen-button {
   min-height: 44px;
   padding-block: 0.42rem;
-  font-size: 0.72rem;
+  font-size: 0.75rem;
 }
 
 .stage-grid {
@@ -179,7 +179,7 @@ body {
   border: 1px solid var(--ui-border);
   border-radius: var(--ui-radius-lg);
   background: linear-gradient(145deg, rgba(24, 25, 30, 0.96), rgba(14, 15, 18, 0.98));
-  box-shadow: var(--ui-shadow);
+  box-shadow: none;
 }
 
 .display-card {
@@ -207,10 +207,10 @@ body {
 .card-label {
   display: block;
   color: var(--ui-muted);
-  font-size: clamp(0.62rem, 0.9vw, 0.76rem);
+  font-size: clamp(0.75rem, 0.9vw, 0.76rem);
   font-weight: 850;
-  letter-spacing: 0.13em;
-  line-height: 1.1;
+  letter-spacing: 0;
+  line-height: var(--ui-line-accent-safe);
   text-transform: uppercase;
 }
 
@@ -223,7 +223,7 @@ body {
   font-size: clamp(1.55rem, 3.15vw, 3.45rem);
   font-weight: 900;
   letter-spacing: -0.035em;
-  line-height: 0.98;
+  line-height: var(--ui-line-accent-safe);
   overflow-wrap: anywhere;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 3;
@@ -243,7 +243,7 @@ body {
   border-top: 1px solid var(--ui-border);
   padding-top: clamp(0.5rem, 1.2vh, 0.75rem);
   color: var(--ui-muted);
-  font-size: clamp(0.68rem, 1vw, 0.82rem);
+  font-size: clamp(0.75rem, 1vw, 0.82rem);
   font-weight: 750;
 }
 
@@ -268,12 +268,12 @@ body {
   align-items: center;
   min-width: 0;
   border: 1px solid var(--ui-border);
-  border-radius: 7px;
+  border-radius: 0;
   padding: 0.24rem 0.42rem;
-  font-size: clamp(0.57rem, 0.85vw, 0.68rem);
+  font-size: clamp(0.75rem, 0.85vw, 0.68rem);
   font-weight: 900;
-  letter-spacing: 0.04em;
-  line-height: 1;
+  letter-spacing: 0;
+  line-height: var(--ui-line-accent-safe);
   text-transform: uppercase;
   white-space: nowrap;
 }
@@ -297,7 +297,7 @@ body {
 }
 
 .bpm-badge {
-  border-color: rgba(66, 216, 137, 0.32);
+  border-color: rgba(66, 216, 137, 0.35);
   background: var(--ui-success-soft);
   color: #82eab0;
 }
@@ -307,11 +307,11 @@ body {
   width: fit-content;
   margin-top: 0.5rem;
   border: 1px solid rgba(255, 154, 47, 0.5);
-  border-radius: 7px;
+  border-radius: 0;
   background: var(--ui-accent-soft);
   color: var(--ui-accent-strong);
   padding: 0.3rem 0.5rem;
-  font-size: 0.7rem;
+  font-size: 0.75rem;
   font-weight: 900;
 }
 
@@ -347,7 +347,7 @@ body {
   font-variant-numeric: tabular-nums;
   font-weight: 900;
   letter-spacing: -0.06em;
-  line-height: 1;
+  line-height: var(--ui-line-accent-safe);
   text-overflow: clip;
   white-space: nowrap;
 }
@@ -370,7 +370,7 @@ body {
   margin-top: 0.22rem;
   color: var(--ui-accent-strong);
   font-family: var(--ui-mono);
-  font-size: clamp(0.58rem, 0.9vw, 0.72rem);
+  font-size: clamp(0.75rem, 0.9vw, 0.72rem);
   font-weight: 800;
   font-variant-numeric: tabular-nums;
 }
@@ -378,9 +378,9 @@ body {
 .click-state {
   margin-top: 0.22rem;
   color: var(--ui-muted);
-  font-size: clamp(0.58rem, 0.9vw, 0.7rem);
+  font-size: clamp(0.75rem, 0.9vw, 0.7rem);
   font-weight: 900;
-  letter-spacing: 0.09em;
+  letter-spacing: 0;
   text-transform: uppercase;
 }
 
@@ -407,19 +407,24 @@ body {
 
 .lyric-line {
   padding: clamp(0.3rem, 0.75vh, 0.55rem) 0;
-  color: #676971;
+  color: #8a8d95;
+  /* Sung text, not interface: proportional face, no forced width axis. */
+  font-family: var(--ui-font-lyric);
+  font-variation-settings: normal;
   font-size: clamp(0.96rem, 1.8vw, 1.45rem);
-  font-weight: 650;
-  line-height: 1.25;
-  opacity: 0.62;
+  font-weight: 500;
+  line-height: var(--ui-line-accent-safe);
   overflow-wrap: anywhere;
-  transition: color 160ms ease, font-size 160ms ease, opacity 160ms ease;
+  /* font-size was in this transition and forced a reflow every frame during a
+     programmatic scroll with a composited mask. Colour alone is enough. */
+  transition: color 160ms ease;
 }
 
 .lyric-line.active {
   color: var(--ui-accent-strong);
-  font-size: clamp(1.35rem, 2.7vw, 2.45rem);
-  font-weight: 900;
+  /* The active line is the one thing read while singing. */
+  font-size: var(--t-stage-lyric);
+  font-weight: 700;
   opacity: 1;
 }
 
@@ -434,7 +439,7 @@ body {
 
 .network-overlay {
   position: fixed;
-  z-index: 40;
+  z-index: 70;
   inset: auto 1rem 1rem auto;
   width: min(26rem, calc(100vw - 2rem));
   pointer-events: none;
@@ -455,7 +460,7 @@ body {
   border: 1px solid rgba(255, 154, 47, 0.38);
   border-radius: var(--ui-radius);
   background: rgba(29, 23, 16, 0.96);
-  box-shadow: var(--ui-shadow);
+  box-shadow: none;
   padding: 0.85rem 1rem;
 }
 
@@ -477,7 +482,7 @@ body {
 
 .network-alert-box p {
   color: var(--ui-text-soft);
-  font-size: 0.7rem;
+  font-size: 0.75rem;
   line-height: 1.35;
 }
 
@@ -494,9 +499,11 @@ body {
   100% { border-color: var(--ui-border); }
 }
 
+/* The lit area is the cost, not the brightness: rods need 20-40 min to recover.
+   The pulse now rides the rule, never the card fill. */
 @keyframes flash-normal {
-  0% { border-color: rgba(255, 255, 255, 0.72); background: rgba(255, 255, 255, 0.08); }
-  100% { border-color: var(--ui-border); }
+  0% { border-color: var(--ui-text-2); }
+  100% { border-color: var(--ui-rule); }
 }
 
 @media (min-width: 901px) and (max-width: 1400px) {
@@ -535,18 +542,18 @@ body {
   }
 
   .fullscreen-button {
-    font-size: 0.66rem;
+    font-size: 0.75rem;
   }
 
   .language-select {
-    min-height: 36px;
+    min-height: 44px;
     max-width: 4.8rem;
     padding: 0.35rem 0.4rem;
-    font-size: 0.64rem;
+    font-size: 0.75rem;
   }
 
   .stage-status {
-    min-height: 32px;
+    min-height: 44px;
     padding: 0.3rem 0.5rem;
   }
 
@@ -586,26 +593,27 @@ body {
   }
 
   .display-card {
-    border-radius: 11px;
+    border-radius: 0;
     padding: 0.55rem;
   }
 
   .card-label {
-    font-size: 0.53rem;
-    letter-spacing: 0.1em;
+    font-size: 0.75rem;
+    letter-spacing: 0;
   }
 
   .card-value {
     margin-top: 0.25rem;
-    font-size: clamp(1rem, 5.3vw, 1.38rem);
-    line-height: 1;
+    /* The song outranks the clock. This is what the player reads mid-song. */
+    font-size: var(--t-stage-display);
+    line-height: var(--ui-line-accent-safe);
     -webkit-line-clamp: 2;
   }
 
   .card-footer {
     gap: 0.3rem;
     padding-top: 0.3rem;
-    font-size: 0.54rem;
+    font-size: 0.75rem;
   }
 
   .perf-badges {
@@ -615,13 +623,13 @@ body {
 
   .perf-badge {
     padding: 0.18rem 0.28rem;
-    font-size: 0.48rem;
+    font-size: 0.75rem;
   }
 
   .loop-iteration {
     margin-top: 0.25rem;
     padding: 0.18rem 0.28rem;
-    font-size: 0.5rem;
+    font-size: 0.75rem;
   }
 
   .lyrics-card {
@@ -641,7 +649,7 @@ body {
   }
 
   .telemetry-card {
-    border-radius: 10px;
+    border-radius: 0;
     padding: 0.35rem;
   }
 
@@ -651,7 +659,7 @@ body {
   }
 
   .timecode-display {
-    font-size: clamp(1.18rem, 6.8vw, 1.7rem);
+    font-size: var(--t-stage-value);
   }
 
   .bar-card .timecode-display,
@@ -661,7 +669,7 @@ body {
 
   .song-timecode,
   .click-state {
-    font-size: 0.45rem;
+    font-size: 0.75rem;
   }
 }
 
@@ -676,7 +684,7 @@ body {
   }
 
   .stage-topbar {
-    min-height: 34px;
+    min-height: 44px;
   }
 
   .stage-brand-mark {
@@ -689,7 +697,7 @@ body {
   }
 
   .stage-status {
-    min-height: 30px;
+    min-height: 44px;
     padding-block: 0.25rem;
   }
 
@@ -700,7 +708,7 @@ body {
   .language-select {
     max-width: 5rem;
     padding-inline: 0.4rem;
-    font-size: 0.64rem;
+    font-size: 0.75rem;
   }
 
   .stage-grid,
@@ -749,12 +757,12 @@ body {
   }
 
   .display-card {
-    border-radius: 10px;
+    border-radius: 0;
     padding: 0.45rem 0.55rem;
   }
 
   .card-label {
-    font-size: 0.48rem;
+    font-size: 0.75rem;
   }
 
   .card-value {
@@ -765,7 +773,7 @@ body {
 
   .card-footer {
     padding-top: 0.22rem;
-    font-size: 0.48rem;
+    font-size: 0.75rem;
   }
 
   .perf-badges {
@@ -774,7 +782,7 @@ body {
 
   .perf-badge {
     padding: 0.14rem 0.24rem;
-    font-size: 0.44rem;
+    font-size: 0.75rem;
   }
 
   .lyrics-container {
@@ -792,14 +800,14 @@ body {
   }
 
   .telemetry-card {
-    border-radius: 9px;
+    border-radius: 0;
     padding: 0.25rem;
   }
 
   .telemetry-card .card-label {
     top: 0.26rem;
     left: 0.35rem;
-    font-size: 0.42rem;
+    font-size: 0.75rem;
   }
 
   .timecode-display,
@@ -810,6 +818,53 @@ body {
 
   .song-timecode,
   .click-state {
-    font-size: 0.42rem;
+    font-size: 0.75rem;
+  }
+}
+
+/* Martian Mono runs wider than the system sans it replaced. Micro labels use
+   the narrow end of the width axis instead of dropping below the 12px stage
+   floor, and the telemetry label stops sharing a box with its own value. */
+.card-label,
+.language-control > span {
+  font-weight: var(--ui-wght-strong);
+  font-variation-settings: "wdth" 75;
+  letter-spacing: 0;
+}
+
+@media (max-width: 900px) {
+  .telemetry-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: var(--s-1);
+  }
+
+  .telemetry-card .card-label {
+    position: static;
+    top: auto;
+    left: auto;
+    white-space: nowrap;
+  }
+}
+
+/* The brand box was being squeezed by the tools row while its text stayed
+   visible, so the wordmark bled under the language select. On stage the brand
+   is not what the player reads: clip it, and drop the wordmark on narrow
+   screens so the mark alone identifies the page. */
+.stage-brand {
+  min-width: 0;
+  overflow: hidden;
+}
+
+.stage-brand-copy {
+  min-width: 0;
+  overflow: hidden;
+}
+
+@media (max-width: 900px) {
+  .stage-brand-copy {
+    display: none;
   }
 }

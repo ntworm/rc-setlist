@@ -10,10 +10,10 @@ import {
   selectProfile,
   loadLyricsForSong,
   cancelActivePreRoll,
+  setSongColorAtTime,
 } from '../core/bridge-state.js';
 import {
   buildTracklistCsv,
-  calculateSongDurationSec,
   csvFilenameTimestamp,
   formatDuration,
   formatSongAutomations,
@@ -58,6 +58,7 @@ function normalizedProfilePaths(paths: ProfilePaths): ProfilePaths {
     metadata: path.resolve(paths.metadata),
     lyrics: path.resolve(paths.lyrics),
     customOrder: path.resolve(paths.customOrder),
+    songBook: path.resolve(paths.songBook),
     exports: path.resolve(paths.exports),
     audio: path.resolve(paths.audio),
   };
@@ -271,6 +272,14 @@ export async function executeCommandAction(
     case 'edit_locator':
       await executeEditLocatorCommand(msg);
       break;
+    case 'set_song_color': {
+      // Colour is RC Setlist's own memory. It never touches the Live project,
+      // so it is allowed while playing — unlike a locator rename.
+      const applied = setSongColorAtTime(msg.time, msg.color ?? undefined);
+      if (applied) broadcastState();
+      else bridgeState.wsServer?.broadcastLog('No song is known at that position yet.', 'warn');
+      break;
+    }
   }
 }
 
@@ -476,12 +485,11 @@ async function executeExportCsvCommand(
     } else {
       const activeSetlistName = scope.profileManager.getActive().name;
       const rows: CsvTracklistRow[] = state.songs.map((song, idx) => {
-        const durationSec = calculateSongDurationSec(
-          song,
-          state.songs,
-          state.tempo ?? 120,
-          state.arrangementEndTime ?? null,
-        );
+        // The state already carries the duration the UI is showing, computed
+        // from the frozen tempo base. Recomputing here with state.tempo made
+        // the CSV scale with whatever Live happened to be playing at the moment
+        // of the export, so the file disagreed with the screen it came from.
+        const durationSec = song.durationSeconds ?? null;
 
         let lyricCount = 0;
         try {
@@ -538,8 +546,12 @@ async function executeEditLocatorCommand(
   if (!bridgeState.manager) {
     throw new Error('Setlist manager is not initialized.');
   }
-  if (bridgeState.manager.getState().mode === 'show' && bridgeState.manager.getState().isPlaying) {
-    throw new Error('Cannot edit locator while transport is playing in Show mode.');
+  // A rename moves the playhead to the cue's position to act on it. With the
+  // transport rolling, Live services that call wherever playback has advanced
+  // to by then, so the write lands at the wrong beat. Blocked in every mode,
+  // not only Show.
+  if (bridgeState.manager.getState().isPlaying) {
+    throw new Error('Cannot edit a locator while the transport is playing. Stop playback first.');
   }
 
   const { time, name } = msg;
@@ -565,24 +577,87 @@ async function executeEditLocatorCommand(
     return;
   }
 
-  // Gate: only MCP can perform delete + recreate. OSC has no rename/delete for cue points.
-  const deleted = await deleteCuePoint(time, true);
-  if (deleted.status !== 'confirmed') {
-    throw new Error(`Could not delete cue point before rename: ${deleted.message ?? 'unknown error'}`);
+  // One call, and the marker never stops existing.
+  //
+  // This used to delete the cue point and create a replacement, which is how a
+  // rename has to be expressed through the raw Live API: a cue point is made by
+  // toggling one at the playhead, so a delete that silently failed turned the
+  // create into a second delete and the marker vanished. It also left a window
+  // in which the position had no marker at all.
+  //
+  // The MCP bridge renames in place instead, reporting `renamed` rather than
+  // `created`, so neither hazard exists any more. OSC still cannot rename a cue
+  // point at all, so this path remains MCP-only and says so when it is absent.
+  const renamed = await renameCuePoint(time, name);
+  if (renamed.status !== 'confirmed') {
+    throw new Error(`Could not rename the cue point at ${time}: ${renamed.message ?? 'unknown error'}`);
   }
 
-  const created = await createCuePoint(name, time, true);
-  if (created.status !== 'confirmed') {
-    // Critical: cue was deleted but create failed. The arrangement has a hole at `time`.
-    // Best-effort recovery: nudge the user to refresh cues.
+  const verdict = await verifyLocator(time, name);
+  if (verdict === 'missing') {
     bridgeState.wsServer?.broadcastLog(
-      `Cue point at ${time} was deleted but the rename failed. Refresh the setlist.`,
+      `The locator at ${time} is gone after the rename. Check the Arrangement.`,
       'error',
     );
-    throw new Error(`Could not recreate cue point after delete: ${created.status}`);
+    requestCueRefresh();
+    throw new Error(`Rename left no cue point at ${time}.`);
+  }
+  if (verdict === 'wrong-name') {
+    bridgeState.wsServer?.broadcastLog(
+      `Live did not accept the new name for the locator at ${time}.`,
+      'error',
+    );
+    requestCueRefresh();
+    throw new Error(`Cue point at ${time} did not take the new name.`);
   }
 
   bridgeState.wsServer?.broadcastLog(`Locator edited at ${time}.`, 'info');
+  requestCueRefresh();
+}
+
+/**
+ * Read the cue list back and confirm the rename actually took.
+ *
+ * The bridge reports its own success, and that is not the same as Live having
+ * the name. Reporting a rename that did not happen is worse than the failure
+ * itself, so this asks Live directly and treats an unreadable answer as unknown
+ * rather than as success.
+ */
+async function verifyLocator(
+  time: number,
+  name: string,
+): Promise<'ok' | 'missing' | 'wrong-name' | 'unknown'> {
+  let cues: unknown;
+  try {
+    cues = await callDebuggerMcp('get_locators', {});
+  } catch {
+    return 'unknown';
+  }
+  if (!Array.isArray(cues)) return 'unknown';
+
+  const here = cues.filter((cue) => isRecord(cue) && cue.time === time);
+  if (here.length === 0) return 'missing';
+  return here.some((cue) => (cue as Record<string, unknown>).name === name) ? 'ok' : 'wrong-name';
+}
+
+/**
+ * Pull the cue list back from Live now instead of waiting for the poll.
+ *
+ * Cue points are polled every two seconds, because they rarely change and a
+ * tight loop lags a set with two hundred markers. That interval is invisible
+ * until something does change them: for up to two seconds after a rename the
+ * client still held the old name, so reopening the marker straight away showed
+ * stale values and the next save wrote them back — the edit appeared to have
+ * been silently dropped, but only when the user was quick.
+ *
+ * The request is repeated once because Live services the create and the cue
+ * query on its own schedule, and a single immediate read can beat the write.
+ * Both are free when nothing changed: the cue fingerprint suppresses a
+ * re-parse and a re-broadcast.
+ */
+function requestCueRefresh(): void {
+  bridgeState.oscClient?.getCuePoints();
+  setTimeout(() => bridgeState.oscClient?.getCuePoints(), 400).unref?.();
 }
 
 async function executeCreateTestSessionCommand(
@@ -772,20 +847,27 @@ async function createCuePoint(name: string, beat: number, tryMcp: boolean): Prom
   return createCuePointViaOsc(name, beat);
 }
 
-async function deleteCuePoint(beat: number, tryMcp: boolean): Promise<{ status: 'confirmed' | 'error'; message?: string }> {
-  if (tryMcp) {
-    try {
-      const res = await callDebuggerMcp('delete_cue_point', { time: beat });
-      if (isRecord(res) && res.status === 'ok') {
-        return { status: 'confirmed' };
-      }
-      return { status: 'error', message: 'MCP delete did not return ok' };
-    } catch (err) {
-      return { status: 'error', message: err instanceof Error ? err.message : String(err) };
+/**
+ * Rename the cue point at `beat` in place. MCP only: AbletonOSC exposes no way
+ * to rename or delete a cue point, so there is no fallback to degrade to.
+ */
+async function renameCuePoint(
+  beat: number,
+  name: string,
+): Promise<{ status: 'confirmed' | 'error'; message?: string }> {
+  try {
+    const res = await callDebuggerMcp('create_cue_point', { name, time: beat });
+    // Anything but an explicit error is provisional. verifyLocator asks Live
+    // for the cue list afterwards and that answer is the one that counts, so
+    // there is no need to guess at every success string the bridge might use.
+    if (isRecord(res) && res.status === 'error') {
+      const message = typeof res.message === 'string' ? res.message : 'the MCP bridge refused the rename';
+      return { status: 'error', message };
     }
+    return { status: 'confirmed' };
+  } catch (err) {
+    return { status: 'error', message: err instanceof Error ? err.message : String(err) };
   }
-  // AbletonOSC has no cue-point delete. Without MCP, we cannot support edit_locator.
-  return { status: 'error', message: 'AbletonOSC cannot delete cue points; MCP debugger required.' };
 }
 
 function callDebuggerMcp(command: string, params: Record<string, unknown>): Promise<unknown> {

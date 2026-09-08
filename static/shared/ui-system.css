@@ -1,31 +1,154 @@
+/* RC Setlist — shared UI system.
+   Design direction: an illuminated operator sheet. Monochrome instrument panel
+   where structure comes from rules, position and block inversion. Colour only
+   exists when it carries information. Black ground, expensive ink: every lit
+   pixel costs the player dark adaptation and has to earn its place.
+
+   Contrast targets are APCA Lc, not WCAG 2.x ratios. WCAG 2.x is symmetric in
+   polarity, ignores size and weight, and overstates contrast near black, which
+   is why the previous tokens passed on paper and failed on stage. */
+
+@font-face {
+  font-family: "Martian Mono";
+  font-style: normal;
+  font-weight: 100 800;
+  font-stretch: 75% 112.5%;
+  font-display: swap;
+  src: url("../fonts/MartianMono-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193,
+    U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: "Martian Mono";
+  font-style: normal;
+  font-weight: 100 800;
+  font-stretch: 75% 112.5%;
+  font-display: swap;
+  src: url("../fonts/MartianMono-latin-ext.woff2") format("woff2");
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7,
+    U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF,
+    U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
 :root {
   color-scheme: dark;
-  --ui-bg: #08090b;
-  --ui-surface: #111216;
-  --ui-surface-raised: #17181d;
-  --ui-surface-soft: #1d1e24;
-  --ui-border: rgba(255, 255, 255, 0.1);
-  --ui-border-strong: rgba(255, 255, 255, 0.18);
-  --ui-text: #f7f7f8;
-  --ui-text-soft: #c8c9ce;
-  --ui-muted: #858790;
-  --ui-accent: #ff9a2f;
-  --ui-accent-strong: #ffb35c;
-  --ui-accent-soft: rgba(255, 154, 47, 0.14);
-  --ui-success: #42d889;
-  --ui-success-soft: rgba(66, 216, 137, 0.13);
-  --ui-danger: #ff5d6c;
-  --ui-danger-soft: rgba(255, 93, 108, 0.13);
-  --ui-info: #73a9ff;
-  --ui-info-soft: rgba(115, 169, 255, 0.13);
-  --ui-loop: #bd91ff;
-  --ui-loop-soft: rgba(189, 145, 255, 0.14);
-  --ui-radius-sm: 8px;
-  --ui-radius: 14px;
-  --ui-radius-lg: 18px;
-  --ui-shadow: 0 18px 45px rgba(0, 0, 0, 0.28);
-  --ui-font: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  --ui-mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+
+  /* ===== Ground and ink ===== */
+  --ui-bg: #0e0e0e;
+  --ui-surface: #141414;
+  --ui-surface-raised: #1a1a1a;
+  --ui-surface-soft: #222222;
+
+  /* Opaque rules. An alpha border changes weight with whatever sits behind it
+     and disappears entirely under stage wash; on stage the line has to always
+     be the same line. */
+  --ui-rule: #333333;
+  --ui-rule-strong: #444444;
+
+  --ui-text: #f2f2f2;
+  /* Halation scales with lit area, so the ink cools as the glyph grows. */
+  --ui-text-display: #e4e4e4;
+  --ui-text-2: #a0a0a0;
+  /* PANEL ONLY. Measures APCA Lc -21.5, below the absolute floor of 30.
+     Survives a studio monitor, banned from /setlist and /performance. */
+  --ui-text-3: #636363;
+
+  /* ===== RC focus ===== */
+  --ui-accent: #ffa133;
+  --ui-accent-ink: #ffb35c;
+  --ui-accent-soft: rgba(255, 161, 51, 0.12);
+
+  /* ===== Semantic channels =====
+     fill: block fills, 3px+ borders, large glyphs. Never text below 1rem.
+     ink:  text and fine glyphs. Targets APCA Lc >= 60 on --ui-bg.
+     soft: 12% wash, never the sole carrier. */
+  --ui-success: #30d158;
+  --ui-success-ink: #5ce08b;
+  --ui-success-soft: rgba(48, 209, 88, 0.12);
+
+  --ui-danger: #ff375f;
+  --ui-danger-ink: #ff8f99;
+  --ui-danger-soft: rgba(255, 55, 95, 0.12);
+
+  --ui-info: #0a84ff;
+  --ui-info-ink: #8ab4ff;
+  --ui-info-soft: rgba(10, 132, 255, 0.12);
+
+  --ui-loop: #bf5af2;
+  --ui-loop-ink: #cdaaff;
+  --ui-loop-soft: rgba(191, 90, 242, 0.12);
+
+  /* ===== Geometry ===== */
+  --ui-radius: 0;
+  /* Round survives only where the model is round: record dot, hold ring. */
+  --ui-radius-round: 50%;
+  --ui-transition: 180ms ease;
+
+  /* ===== Type ===== */
+  --ui-font: "Martian Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  --ui-mono: var(--ui-font);
+  /* Lyrics are the one place a mono is the wrong tool, and the stage test said
+     so with a number: Martian Mono advances 0.70em per character, which is 21
+     characters on a 375px line at lyric size. A Brazilian verse averages ~36.
+     Barlow Semi Condensed advances 0.471em — the same line now holds ~31 — and
+     covers Latin-1 completely, so every accent and the cedilla are real glyphs.
+     The interface stays mono; only sung text changes face. */
+  --ui-font-lyric: "Barlow Semi Condensed", "Martian Mono", ui-sans-serif, system-ui, sans-serif;
+
+  --ui-wdth-dense: 87.5;
+  --ui-wdth-base: 100;
+  --ui-wdth-display: 112.5;
+
+  --ui-wght-body: 400;
+  --ui-wght-strong: 600;
+  --ui-wght-display: 800;
+
+  /* ---- Panel inside Live: mouse, studio monitor, controlled light ---- */
+  --t-panel-micro: 0.625rem;
+  --t-panel-label: 0.6875rem;
+  --t-panel-body: 0.75rem;
+  --t-panel-value: 0.875rem;
+  --t-panel-title: 1rem;
+  --t-panel-display: 1.5rem;
+
+  /* ---- Stage: phone or laptop, one hand, dark ----
+     Floor is --t-stage-micro and uppercase only. --t-stage-display is derived
+     from ANSI/HFS-100: 20 arcminutes at 600 mm is ~29px, at 800 mm ~39px, plus
+     margin for a dilated pupil, a glance, and wash on the screen. */
+  --t-stage-micro: 0.75rem;
+  --t-stage-label: 0.875rem;
+  --t-stage-body: 1rem;
+  --t-stage-list: 1.25rem;
+  --t-stage-value: 1.75rem;
+  --t-stage-lyric: clamp(2rem, 7vw, 2.75rem);
+  --t-stage-display: clamp(2.5rem, 11vw, 3.75rem);
+
+  /* ---- Spacing, 4px scale ---- */
+  --s-1: 0.25rem;
+  --s-2: 0.5rem;
+  --s-3: 0.75rem;
+  --s-4: 1rem;
+  --s-6: 1.5rem;
+  --s-8: 2rem;
+
+  /* Portuguese needs headroom: A-tilde reaches 1.040em and C-cedilla -0.216em
+     in Martian Mono, against a 1.000/0.200 line box. Below this, overflow
+     hidden eats the accent and "Coracao" loses its cedilla. */
+  --ui-line-accent-safe: 1.32;
+
+  /* ===== Back-compatible aliases =====
+     The alias blocks in setlist.css and performance.css consume these names.
+     Kept so the token rename does not become a rewrite. */
+  --ui-border: var(--ui-rule);
+  --ui-border-strong: var(--ui-rule-strong);
+  --ui-muted: var(--ui-text-2);
+  --ui-text-soft: var(--ui-text-2);
+  --ui-accent-strong: var(--ui-accent-ink);
+  --ui-radius-sm: var(--ui-radius);
+  --ui-radius-lg: var(--ui-radius);
+  --ui-shadow: none;
 }
 
 *,
@@ -41,13 +164,22 @@ body {
   background: var(--ui-bg);
   color: var(--ui-text);
   font-family: var(--ui-font);
+  font-weight: var(--ui-wght-body);
+  /* ONLY the width axis is forced here. font-variation-settings overrides the
+     matching axis and is inherited, so carrying "wght" on body silently made
+     every font-weight declaration in the app inert — including the weight that
+     separates the active lyric line from the inactive ones. Force what the font
+     gets wrong (its default wdth is the wide extreme) and nothing else. */
+  font-variation-settings: "wdth" var(--ui-wdth-base);
 }
 
+/* Without this every control falls back to Arial. */
 button,
 select,
 input,
 textarea {
   font: inherit;
+  font-variation-settings: inherit;
 }
 
 button,
@@ -60,20 +192,29 @@ button,
   outline-offset: 3px;
 }
 
+/* Numeric readouts must not shift the layout when a value changes. */
+.ui-tabular,
+[data-tabular] {
+  font-variant-numeric: tabular-nums;
+  font-weight: var(--ui-wght-display);
+  font-variation-settings: "wdth" var(--ui-wdth-display);
+}
+
 .ui-button {
   min-height: 44px;
-  border: 1px solid var(--ui-border);
-  border-radius: var(--ui-radius-sm);
+  border: 1px solid var(--ui-rule);
+  border-radius: var(--ui-radius);
   background: var(--ui-surface-raised);
-  color: var(--ui-text-soft);
+  color: var(--ui-text);
   padding: 0.62rem 0.85rem;
-  font-weight: 750;
+  font-weight: var(--ui-wght-strong);
+  font-variation-settings: "wdth" var(--ui-wdth-dense);
   cursor: pointer;
   transition: border-color 140ms ease, background 140ms ease, color 140ms ease, transform 140ms ease;
 }
 
 .ui-button:hover {
-  border-color: var(--ui-border-strong);
+  border-color: var(--ui-rule-strong);
   background: var(--ui-surface-soft);
   color: var(--ui-text);
 }
@@ -82,32 +223,55 @@ button,
   transform: translateY(1px);
 }
 
+/* Block inversion is the Live idiom for "this is the chosen one". */
 .ui-button[aria-pressed="true"] {
-  border-color: rgba(255, 154, 47, 0.6);
-  background: var(--ui-accent-soft);
-  color: var(--ui-accent-strong);
+  border-color: var(--ui-accent);
+  background: var(--ui-accent);
+  color: var(--ui-bg);
+  font-weight: var(--ui-wght-display);
+  font-variation-settings: "wdth" var(--ui-wdth-dense);
 }
 
 .ui-surface {
-  border: 1px solid var(--ui-border);
+  border: 1px solid var(--ui-rule);
   border-radius: var(--ui-radius);
   background: var(--ui-surface);
-  box-shadow: var(--ui-shadow);
 }
 
+/* Uppercase carries the label; tracking is a landing-page tic and breaks the
+   mono grid. */
 .ui-kicker {
-  color: var(--ui-muted);
-  font-size: 0.72rem;
-  font-weight: 800;
-  letter-spacing: 0.13em;
+  color: var(--ui-text-2);
+  font-size: var(--t-stage-micro);
+  font-weight: var(--ui-wght-strong);
+  font-variation-settings: "wdth" var(--ui-wdth-dense);
+  letter-spacing: 0;
   text-transform: uppercase;
+}
+
+/* Action A: Duration confidence indicator */
+.duration-est-badge {
+  font-family: var(--ui-mono);
+  font-size: var(--t-stage-micro);
+  font-weight: var(--ui-wght-strong);
+  font-variation-settings: "wdth" var(--ui-wdth-dense);
+  letter-spacing: 0;
+  text-transform: uppercase;
+  color: var(--ui-accent-ink);
+  background: var(--ui-accent-soft);
+  border: 1px solid var(--ui-accent);
+  padding: 0.1rem 0.35rem;
+  line-height: 1;
+  display: inline-block;
+  vertical-align: middle;
+  border-radius: var(--ui-radius);
 }
 
 .ui-status-dot {
   width: 0.55rem;
   height: 0.55rem;
   flex: 0 0 auto;
-  border-radius: 50%;
+  border-radius: var(--ui-radius-round);
   background: var(--ui-danger);
 }
 
@@ -117,13 +281,12 @@ button,
   right: max(1rem, env(safe-area-inset-right));
   bottom: max(1rem, env(safe-area-inset-bottom));
   max-width: min(26rem, calc(100vw - 2rem));
-  border: 1px solid rgba(255, 154, 47, 0.45);
-  border-radius: var(--ui-radius-sm);
-  background: #211a12;
+  border: 1px solid var(--ui-accent);
+  border-radius: var(--ui-radius);
+  background: var(--ui-surface);
   color: var(--ui-text);
   padding: 0.8rem 1rem;
-  box-shadow: var(--ui-shadow);
-  font-size: 0.85rem;
+  font-size: var(--t-stage-label);
 }
 
 .ui-notice[hidden] {
@@ -134,30 +297,31 @@ button,
   display: inline-flex;
   min-width: 0;
   align-items: center;
-  gap: 0.4rem;
+  gap: var(--s-2);
 }
 
 .language-control > span {
-  color: var(--ui-muted);
-  font-size: 0.72rem;
-  font-weight: 800;
-  letter-spacing: 0.08em;
+  color: var(--ui-text-2);
+  font-size: var(--t-stage-micro);
+  font-weight: var(--ui-wght-strong);
+  font-variation-settings: "wdth" var(--ui-wdth-dense);
+  letter-spacing: 0;
   text-transform: uppercase;
 }
 
 .language-select {
   min-height: 44px;
   max-width: 10.5rem;
-  border: 1px solid var(--ui-border);
-  border-radius: var(--ui-radius-sm);
+  border: 1px solid var(--ui-rule);
+  border-radius: var(--ui-radius);
   background: var(--ui-surface-raised);
-  color: var(--ui-text-soft);
+  color: var(--ui-text);
   padding: 0.55rem 1.8rem 0.55rem 0.65rem;
   cursor: pointer;
 }
 
 .language-select:hover {
-  border-color: var(--ui-border-strong);
+  border-color: var(--ui-rule-strong);
   color: var(--ui-text);
 }
 
@@ -180,19 +344,19 @@ button,
   height: 100vh;
   height: 100dvh;
   place-items: center;
-  background: rgba(6, 7, 9, 0.88);
+  background: rgba(14, 14, 14, 0.92);
   pointer-events: auto;
   transform: none;
 }
 
 .connection-empty .network-alert-box {
   width: min(30rem, calc(100vw - 2rem));
-  border-color: rgba(255, 93, 108, 0.45);
-  background: rgba(31, 16, 20, 0.98);
+  border-color: var(--ui-danger);
+  background: var(--ui-surface);
 }
 
 .connection-empty .network-icon {
-  color: var(--ui-danger);
+  color: var(--ui-danger-ink);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -204,4 +368,34 @@ button,
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
+}
+
+@font-face {
+  font-family: "Barlow Semi Condensed";
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("../fonts/BarlowSemiCondensed-500-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193,
+    U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: "Barlow Semi Condensed";
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("../fonts/BarlowSemiCondensed-700-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193,
+    U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+/* Badge icons replace Unicode glyphs that fall outside the shipped subsets. */
+.badge-icon {
+  width: 1em;
+  height: 1em;
+  fill: currentColor;
+  vertical-align: -0.125em;
 }

@@ -48,7 +48,10 @@ function licenseText(packagePath) {
 
 function buildNotices() {
   const packages = collectPackages(npmProductionTree());
-  const interLicense = readFileSync(path.join(root, 'docs', 'fonts', 'OFL.txt'), 'utf8')
+  const martianLicense = readFileSync(path.join(root, 'static', 'fonts', 'OFL.txt'), 'utf8')
+    .replace(/\r\n?/g, '\n')
+    .trim();
+  const barlowLicense = readFileSync(path.join(root, 'static', 'fonts', 'OFL-BarlowSemiCondensed.txt'), 'utf8')
     .replace(/\r\n?/g, '\n')
     .trim();
   const sections = packages.map(({ name, version, packagePath }) => {
@@ -63,8 +66,9 @@ function buildNotices() {
   const header = `# Third-party notices\n\nThis file covers third-party components bundled in Ableton RC Setlist 0.4.0. It is generated from the installed production dependency tree; run \`npm run notices\` after dependency changes.\n\n## Ableton Extensions SDK\n\nThe Ableton Extensions SDK and CLI are licensed separately by Ableton AG. Their development archives are not redistributed in this source repository. Authorized SDK runtime components may be included only inside the packaged Ableton RC Setlist application under the applicable Ableton terms.\n\n## QRCode for JavaScript\n\nCopyright (c) 2009 Kazuhiko Arase\n\nLicense: MIT\n\n\`\`\`text\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the "Software"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in\nall copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN\nTHE SOFTWARE.\n\`\`\``;
 
   const versionedHeader = header.replace('Ableton RC Setlist 0.4.0', `Ableton RC Setlist ${releaseVersion}`);
-  const interSection = `## Inter 4.1\n\nCopyright 2016 The Inter Project Authors\n\nLicense: SIL Open Font License 1.1\n\nSource: https://github.com/rsms/inter/releases/tag/v4.1\n\n\`\`\`text\n${interLicense}\n\`\`\``;
-  return `${versionedHeader}\n\n${interSection}\n\n${sections.join('\n\n')}\n`;
+  const martianSection = `## Martian Mono 1.0.0\n\nCopyright 2021 The Martian Mono Project Authors (https://github.com/evilmartians/mono)\n\nLicense: SIL Open Font License 1.1\n\nSource: https://github.com/evilmartians/mono\n\n\`\`\`text\n${martianLicense}\n\`\`\``;
+  const barlowSection = `## Barlow Semi Condensed\n\nCopyright 2017 The Barlow Project Authors (https://github.com/jpt/barlow)\n\nLicense: SIL Open Font License 1.1\n\nSource: https://github.com/jpt/barlow\n\n\`\`\`text\n${barlowLicense}\n\`\`\``;
+  return `${versionedHeader}\n\n${martianSection}\n\n${barlowSection}\n\n${sections.join('\n\n')}\n`;
 }
 
 const generated = buildNotices();

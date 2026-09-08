@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { mkdtempSync, rmSync } from 'node:fs';
 
-import { parseLocator, parseSetlist } from '../src/core/locator-parser.js';
+import { parseLocator, parseSetlist, computeCuesFingerprint } from '../src/core/locator-parser.js';
 import { SetlistManager } from '../src/core/setlist-manager.js';
 import { saveSetlist, loadSetlist, listSetlists, deleteSetlist } from '../src/core/persistence.js';
 import { parseLrc, parseTxt } from '../src/core/lyrics-parser.js';
@@ -1312,4 +1312,180 @@ test('parseLocator: [IGNORE] tag continues working case-insensitively across rel
   assert.deepStrictEqual(r1, { kind: 'hidden', hiddenName: 'Cue' });
   const r2 = parseLocator('Song B > Verse [IGNORE]');
   assert.deepStrictEqual(r2, { kind: 'hidden', hiddenName: 'Song B > Verse' });
+});
+
+test('parseSetlist: inherits first section BPM to song when song has no BPM tag', () => {
+  const cues = [
+    { name: 'Song A > Intro [bpm 125]', time: 0 },
+    { name: 'Song A > Chorus', time: 64 },
+  ];
+  const parsed = parseSetlist(cues);
+  assert.strictEqual(parsed.songs.length, 1);
+  assert.strictEqual(parsed.songs[0].bpm, 125);
+  assert.strictEqual(parsed.songs[0].sections[0].bpm, 125);
+});
+
+test('SetlistManager: live BPM changes across untagged songs maintain consistent song durations and total duration', () => {
+  const manager = new SetlistManager();
+  manager.updateCues([
+    { name: 'Desconforto', time: 0 },
+    { name: 'Somalia', time: 230 },
+  ]);
+  manager.updateArrangementEndTime(510);
+
+  // Neither song carries a [bpm] tag, so the whole set converts beats to
+  // seconds with ONE tempo, settled on the first transport message and frozen
+  // from then on. Durations must never depend on which tempo a given song
+  // happened to be played at.
+  manager.updateTransport(0, true, 115);
+  const state1 = manager.getState();
+  assert.strictEqual(state1.songs[0].durationSeconds, 120); // 230 beats @ 115 = 120s
+  assert.strictEqual(state1.songs[1].durationSeconds, 146); // 280 beats @ 115 = 146.09s
+  const settledTotal = state1.totalDurationSeconds;
+  assert.strictEqual(settledTotal, 266); // rounded from the exact sum, not from the parts
+
+  // Somalia is played at 140 BPM. Nothing in the set may move because of it.
+  manager.updateTransport(230, true, 140);
+  const state2 = manager.getState();
+  assert.strictEqual(state2.songs[0].durationSeconds, 120, 'prior song duration must not change on tempo shift');
+  assert.strictEqual(state2.songs[1].durationSeconds, 146, 'active song duration must not follow the live tempo');
+  assert.strictEqual(state2.totalDurationSeconds, settledTotal);
+
+  // Back to Desconforto, and again at a third tempo. Still frozen.
+  manager.updateTransport(10, true, 115);
+  manager.updateTransport(10, true, 172);
+  const state3 = manager.getState();
+  assert.strictEqual(state3.songs[0].durationSeconds, 120);
+  assert.strictEqual(state3.songs[1].durationSeconds, 146);
+  assert.strictEqual(state3.totalDurationSeconds, settledTotal, 'total duration must stay strictly constant across navigation');
+});
+
+test('SetlistManager: a declared [bpm] tag makes duration independent of any live tempo', () => {
+  const manager = new SetlistManager();
+  manager.updateCues([
+    { name: 'Aberta [bpm 100]', time: 0 },
+    { name: 'Fechada', time: 200 },
+  ]);
+  manager.updateArrangementEndTime(400);
+
+  // Cues declare 100 BPM, so the live transport is irrelevant from the start.
+  manager.updateTransport(0, true, 175);
+  const first = manager.getState();
+  assert.strictEqual(first.songs[0].durationSeconds, 120); // 200 beats @ 100 = 120s
+  assert.strictEqual(first.songs[1].durationSeconds, 120); // inherits the declared 100
+  assert.strictEqual(first.totalDurationSeconds, 240);
+
+  manager.updateTransport(200, true, 88);
+  const second = manager.getState();
+  assert.strictEqual(second.totalDurationSeconds, 240, 'declared tempo is never overridden by the transport');
+});
+
+test('computeCuesFingerprint: produces identical fingerprint regardless of raw cue arrival order', () => {
+  const cues1 = [
+    { name: 'Song C', time: 200 },
+    { name: 'Song A', time: 0 },
+    { name: 'Song B', time: 100 },
+  ];
+  const cues2 = [
+    { name: 'Song A', time: 0 },
+    { name: 'Song B', time: 100 },
+    { name: 'Song C', time: 200 },
+  ];
+  assert.strictEqual(computeCuesFingerprint(cues1), computeCuesFingerprint(cues2));
+  assert.strictEqual(computeCuesFingerprint(cues1), 'Song A@0|Song B@100|Song C@200');
+});
+
+test('computeCuesFingerprint: quantizes float micro-jitter to 1/100th beat to prevent reparse thrash', () => {
+  // Live's clock/OSC can report minute floating-point jitter around the same beat
+  const baseCues = [
+    { name: 'Song A', time: 0.0 },
+    { name: 'Song B', time: 128.0 },
+  ];
+  const jitteredCues = [
+    { name: 'Song A', time: 0.000000000000001 },
+    { name: 'Song B', time: 128.004 }, // rounds to 128
+  ];
+  assert.strictEqual(
+    computeCuesFingerprint(baseCues),
+    computeCuesFingerprint(jitteredCues),
+    'micro-jitter within 1/100th beat must produce the exact same fingerprint',
+  );
+
+  // A genuine position shift (>0.01 beat) must produce a distinct fingerprint
+  const shiftedCues = [
+    { name: 'Song A', time: 0.0 },
+    { name: 'Song B', time: 128.05 },
+  ];
+  assert.notStrictEqual(
+    computeCuesFingerprint(baseCues),
+    computeCuesFingerprint(shiftedCues),
+    'genuine beat shift must produce a distinct fingerprint',
+  );
+});
+
+test('SetlistManager: durationConfidence reports declared with tags and estimated without tags', () => {
+  const manager = new SetlistManager();
+  manager.updateCues([
+    { name: 'Song 1', time: 0 },
+    { name: 'Song 2', time: 100 },
+  ]);
+  assert.strictEqual(manager.getState().durationConfidence, 'estimated');
+
+  manager.updateCues([
+    { name: 'Song 1 [bpm 120]', time: 0 },
+    { name: 'Song 2', time: 100 },
+  ]);
+  assert.strictEqual(manager.getState().durationConfidence, 'declared');
+
+  manager.updateCues([
+    { name: 'Song 1', time: 0 },
+    { name: 'Song 1 > Verse [bpm 120]', time: 30 },
+    { name: 'Song 2', time: 100 },
+  ]);
+  assert.strictEqual(manager.getState().durationConfidence, 'declared');
+});
+
+
+
+test('SetlistManager detects tempo automation by divergence from a declared tag', () => {
+  const manager = new SetlistManager();
+  manager.updateCues([
+    { name: 'DEVANEIO [bpm 99]', time: 0 },
+    { name: 'MOINHOS [bpm 104]', time: 448 },
+  ]);
+  manager.updateArrangementEndTime(996);
+
+  // Live agrees with the tag: nothing to suspect.
+  manager.updateTransport(0, false, 99);
+  assert.equal(manager.isTempoAutomationSuspected(), false);
+
+  // Still inside DEVANEIO, but Live reports a tempo the tag does not declare.
+  // Something other than the setlist is moving the tempo.
+  manager.updateTransport(200, true, 136);
+  assert.equal(manager.isTempoAutomationSuspected(), true);
+
+  // Sticky: agreeing again later does not clear the evidence.
+  manager.updateTransport(448, true, 104);
+  assert.equal(manager.isTempoAutomationSuspected(), true, 'the observation must not be cleared mid-show');
+});
+
+test('SetlistManager tolerates float noise around a declared tempo', () => {
+  const manager = new SetlistManager();
+  manager.updateCues([{ name: 'A [bpm 120]', time: 0 }]);
+  manager.updateArrangementEndTime(240);
+  manager.updateTransport(0, false, 120.4);
+  assert.equal(manager.isTempoAutomationSuspected(), false, 'half a BPM of float noise is not automation');
+});
+
+test('SetlistManager suspects nothing when the setlist declares no tempo', () => {
+  const manager = new SetlistManager();
+  manager.updateCues([{ name: 'A', time: 0 }, { name: 'B', time: 120 }]);
+  manager.updateArrangementEndTime(240);
+  manager.updateTransport(0, true, 90);
+  manager.updateTransport(60, true, 175);
+  assert.equal(
+    manager.isTempoAutomationSuspected(),
+    false,
+    'without a declared tempo there is nothing to diverge from',
+  );
 });

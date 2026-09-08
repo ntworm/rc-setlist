@@ -10,12 +10,29 @@ const rootUrl = new URL('../', import.meta.url);
 const rootPath = fileURLToPath(rootUrl);
 const read = (file) => readFileSync(new URL(file, rootUrl), 'utf8');
 
-test('0.5.1 metadata and installation kit identify the same final release', () => {
-  assert.equal(JSON.parse(read('package.json')).version, '0.5.1');
-  assert.match(read('release-template/README.txt'), /Ableton-RC-Setlist-0\.5\.1\.ablx/);
-  assert.match(read('scripts/package-release-candidate.ps1'), /\[string\]\$Version = "0\.5\.1"/);
-  assert.match(read('scripts/package-release-candidate.ps1'), /RELEASE-NOTES-0\.5\.1\.md/);
-  assert.match(read('scripts/package-release-candidate.ps1'), /NOTAS-DA-VERSAO-0\.5\.1\.md/);
+test('every release-surface file names the version in package.json', () => {
+  // These checks used to spell the version out by hand, which is how the
+  // installation kit came to be stamped 0.5.0 two releases after that shipped,
+  // and how the packager kept pointing at the previous release's notes. Plain
+  // containment, not regex: the version is a literal, not a pattern.
+  const version = JSON.parse(read('package.json')).version;
+  const packager = read('scripts/package-release-candidate.ps1');
+  const contains = (file, needle) => assert.ok(
+    read(file).includes(needle),
+    `${file} must name "${needle}"`,
+  );
+
+  contains('release-template/README.txt', `Ableton-RC-Setlist-${version}.ablx`);
+  contains('release-template/README.txt', `ABLETON RC SETLIST ${version}`);
+  contains('release-template/START-HERE.html', `Ableton-RC-Setlist-${version}.ablx`);
+  contains('release-template/en/TEST-CHECKLIST.md', version);
+  contains('release-template/pt-BR/TEST-CHECKLIST.md', version);
+  contains('scripts/package-release-candidate.ps1', `$Version = "${version}"`);
+
+  // Derived from $Version rather than written out, so the kit can never ship
+  // the previous release's notes.
+  assert.ok(packager.includes('docs/RELEASE-NOTES-$Version.md'));
+  assert.ok(packager.includes('docs/pt-BR/NOTAS-DA-VERSAO-$Version.md'));
 });
 
 test('release installation kit has a deterministic packager and owner-facing templates', () => {
@@ -62,7 +79,7 @@ test('release templates describe the real prerequisites and safe local-network s
   assert.match(combined, /Ableton Live 12\.4\.5\+/);
   assert.match(combined, /AbletonOSC/);
   assert.match(combined, /trusted (?:local network|LAN)/i);
-  assert.match(combined, /Ableton-RC-Setlist-0\.5\.1\.ablx/);
+  assert.ok(combined.includes(`Ableton-RC-Setlist-${JSON.parse(read('package.json')).version}.ablx`));
   assert.doesNotMatch(combined, /Ableton Setlist Bridge|commercial-song|real setlist/i);
 });
 
@@ -76,38 +93,6 @@ test('release templates prevent the AbletonOSC folder mix-up in both languages',
     assert.match(content, /User Library[\\/]Remote Scripts[\\/]AbletonOSC/i, `${path} must show the exact install target`);
     assert.match(content, /User Remote Scripts/i, `${path} must distinguish Live's hidden preferences folder`);
     assert.match(content, /AbletonOSC[\\/]__init__\.py/i, `${path} must show how to detect an extra nested folder`);
-  }
-});
-
-test('current 0.5.1 install and release surfaces do not retain 0.5.0 references', () => {
-  const currentSurfaces = [
-    'docs/README.md',
-    'docs/pt-BR/README.md',
-    'docs/INSTALL.md',
-    'docs/pt-BR/INSTALL.md',
-    'docs/TESTER-GUIDE.md',
-    'release-template/START-HERE.html',
-    'release-template/README.txt',
-    'release-template/en/TEST-CHECKLIST.md',
-    'release-template/pt-BR/TEST-CHECKLIST.md',
-  ];
-
-  for (const file of currentSurfaces) {
-    const content = read(file);
-    assert.match(content, /0\.5\.1/, `${file} must identify the current 0.5.1 release`);
-    if (file === 'docs/pt-BR/README.md') {
-      assert.match(content, /\[O que há de novo na versão 0\.5\.1\]\(NOTAS-DA-VERSAO-0\.5\.1\.md\)/);
-    }
-    assert.doesNotMatch(
-      content,
-      /Ableton-RC-Setlist-0\.5\.0\.ablx|RELEASE-NOTES-0\.5\.0|NOTAS-DA-VERSAO-0\.5\.0/i,
-      `${file} must not point at 0.5.0 installer or release notes`,
-    );
-    assert.doesNotMatch(
-      content,
-      /(?:Ableton RC Setlist|Ableton-RC-Setlist|Release checklist|Checklist de lan[cç]amento|INSTALLATION KIT|KIT DE INSTALA[CÇ][AÃ]O)[^\r\n]*0\.5\.0/i,
-      `${file} must not label the current kit as 0.5.0`,
-    );
   }
 });
 
@@ -139,7 +124,7 @@ test('certificate onboarding is explicit in both languages and canonical English
 test('generated installation kit keeps English and Portuguese guides in their language folders', (t) => {
   const tempRoot = mkdtempSync(path.join(tmpdir(), 'rc-setlist-kit-contract-'));
   t.after(() => rmSync(tempRoot, { recursive: true, force: true }));
-  const ablxPath = path.join(tempRoot, 'Ableton-RC-Setlist-0.5.1.ablx');
+  const ablxPath = path.join(tempRoot, 'Ableton-RC-Setlist-0.6.0.ablx');
   const outputRoot = path.join(tempRoot, 'output');
   writeFileSync(ablxPath, '');
 
@@ -148,13 +133,13 @@ test('generated installation kit keeps English and Portuguese guides in their la
     '-NoProfile',
     '-ExecutionPolicy', 'Bypass',
     '-File', path.join(rootPath, 'scripts', 'package-release-candidate.ps1'),
-    '-Version', '0.5.1',
+    '-Version', '0.6.0',
     '-AblxPath', ablxPath,
     '-OutputRoot', outputRoot,
   ], { cwd: rootPath, encoding: 'utf8' });
   assert.equal(result.status, 0, result.error?.message || result.stderr || result.stdout);
 
-  const kitRoot = path.join(outputRoot, 'Ableton-RC-Setlist-0.5.1-Installation-Kit');
+  const kitRoot = path.join(outputRoot, 'Ableton-RC-Setlist-0.6.0-Installation-Kit');
   const expectedGuides = ['INSTALL.md', 'USER-GUIDE.md', 'TROUBLESHOOTING.md', 'FAQ.md', 'TEST-CHECKLIST.md'];
   for (const locale of ['en', 'pt-BR']) {
     for (const guide of expectedGuides) {
@@ -186,3 +171,4 @@ test('verify-production-bundle.mjs rejects bundles missing relative locator sema
   assert.match(verifierScript, /relative-section/);
   assert.match(verifierScript, /relative-automation/);
 });
+

@@ -3,7 +3,8 @@ import { setExtensionContext, clearExtensionContext } from './context.js';
 import { installRuntimeSafety } from './runtime/safety.js';
 import { registerPanelCommand } from './ui/panel.js';
 import { startServer, stopServer } from './index.js';
-import { getAutoStart } from './preferences.js';
+import { getAutoStart, getWriteTempoOnJump } from './preferences.js';
+import { bridgeState } from './core/bridge-state.js';
 
 let activated = false;
 
@@ -23,6 +24,10 @@ function activate(activation: ActivationContext): void {
   setExtensionContext(context);
 
   registerPanelCommand(context);
+
+  // Load the jump tempo-write setting once, into runtime state. Reading a file
+  // on every jump would be wrong on a stage.
+  bridgeState.writeTempoOnJump = getWriteTempoOnJump();
 
   // Auto-start is now opt-in via the panel toggle, persisted in .setlist/auto-start.
   // When the toggle is OFF, the server stays dormant and never binds OSC/WS ports —

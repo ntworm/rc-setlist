@@ -635,7 +635,7 @@ test('Song duration displays with increased contrast and tabular nums', async ({
   await page.goto('/setlist/');
 
   const durationStyle = await page.evaluate(() => {
-    const el = document.querySelector('.song-duration');
+    const el = document.querySelector('.song-time');
     if (!el) return null;
     const style = window.getComputedStyle(el);
     return {

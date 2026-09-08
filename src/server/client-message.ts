@@ -50,6 +50,27 @@ function invalid(message: string, commandId?: string): DecodeResult {
     : { ok: false, code: 'invalid_message', message };
 }
 
+/**
+ * The palette, mirrored from static/setlist/marker-editor.js. The server
+ * refuses anything else so a rogue client cannot paint a song in a state
+ * colour, which the theme contract reserves for meaning.
+ *
+ * Two copies of one list is a standing hazard, and it has already bitten: the
+ * palette grew from eight to sixteen on the client and this set was left
+ * behind, so every colour in the new row came back "Invalid colour for
+ * set_song_color". A comment promising they match is not a guarantee, so
+ * tests/client-message.test.mjs reads the client file and fails if the two
+ * ever diverge again.
+ *
+ * Row one, then row two, in the order the swatch matrix renders them.
+ */
+export const SONG_PALETTE = new Set([
+  '#d6a89a', '#d9c7a7', '#a9c4a0', '#98c4c0',
+  '#9db8d4', '#bfa8d1', '#d9a3b0', '#c9c9c9',
+  '#8a705c', '#818a5c', '#5c8a6b', '#5c818a',
+  '#5d5c8a', '#8a5c83', '#8a5c60', '#8a8a8a',
+]);
+
 export function decodeClientMessage(input: unknown): DecodeResult {
   if (!isRecord(input)) return invalid('Message must be a JSON object.');
   if (typeof input.type !== 'string' || !MESSAGE_TYPE_PATTERN.test(input.type)) {
@@ -161,6 +182,14 @@ export function decodeClientMessage(input: unknown): DecodeResult {
         id: input.id as string,
         confirmationName: input.confirmationName as string,
       });
+    case 'set_song_color': {
+      if (!isBoundedNumber(input.time, 0, 1_000_000)) return fail('Invalid time for set_song_color.');
+      const color = input.color;
+      if (color !== null && !(typeof color === 'string' && SONG_PALETTE.has(color))) {
+        return fail('Invalid colour for set_song_color.');
+      }
+      return success({ type: 'set_song_color', time: input.time as number, color: color as string | null });
+    }
     case 'edit_locator':
       if (!isBoundedNumber(input.time, 0, 1_000_000)) return fail('Invalid time for edit_locator.');
       if (!requireText('name', MAX_LOCATOR_NAME_LENGTH)) return fail('Invalid name for edit_locator.');

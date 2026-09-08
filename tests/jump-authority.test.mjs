@@ -55,6 +55,8 @@ function installHarness(initialQuantization = 0, sdkTempoSetter = null) {
     broadcast: (payload) => payloads.push(payload),
     broadcastState: (state) => stateBroadcasts.push(state),
   };
+  // These tests assert the tempo-write path itself, which ships disabled.
+  bridgeState.writeTempoOnJump = true;
   clearExtensionContext();
   if (sdkTempoSetter) {
     setExtensionContext({ application: { song: { set tempo(value) { sdkTempoSetter(value, calls); } } } });
@@ -65,6 +67,7 @@ function installHarness(initialQuantization = 0, sdkTempoSetter = null) {
     oscCalls: calls,
     payloads,
     restore() {
+      bridgeState.writeTempoOnJump = false;
       bridgeState.manager = saved.manager;
       bridgeState.scheduler = saved.scheduler;
       bridgeState.oscClient = saved.oscClient;
@@ -318,6 +321,50 @@ test('metronome command confirms through optimistic observable state', async () 
     assert.equal(harness.manager.getState().metronome, true);
   } finally {
     bus.stop();
+    harness.restore();
+  }
+});
+
+test('a jump writes no tempo by default, because writing overrides Live automation', () => {
+  const harness = installHarness(0, (value, calls) => calls.push(['sdk-tempo', value]));
+  try {
+    // installHarness opts in for the tests that exercise the write path.
+    // Ship default is off; assert that default here.
+    bridgeState.writeTempoOnJump = false;
+    bridgeState.manager.updateCues([
+      { name: 'A [bpm 120]', time: 0 },
+      { name: 'B [bpm 90]', time: 120 },
+    ]);
+    bridgeState.manager.updateArrangementEndTime(240);
+    harness.calls.length = 0;
+    executeJumpCommand({ songIndex: 1, sectionIndex: null });
+    const tempoWrites = harness.calls.filter(([kind]) => kind === 'sdk-tempo');
+    assert.deepEqual(tempoWrites, [], 'no tempo may be written while the setting is off');
+    assert.equal(harness.calls.some(([kind]) => kind === 'jump'), true, 'the jump itself must still happen');
+  } finally {
+    harness.restore();
+  }
+});
+
+test('a jump writes no tempo once tempo automation is suspected, even when opted in', () => {
+  const harness = installHarness(0, (value, calls) => calls.push(['sdk-tempo', value]));
+  try {
+    bridgeState.manager.updateCues([
+      { name: 'A [bpm 120]', time: 0 },
+      { name: 'B [bpm 90]', time: 120 },
+    ]);
+    bridgeState.manager.updateArrangementEndTime(240);
+
+    // Live reports a tempo the tag does not declare: the arrangement owns it.
+    bridgeState.manager.updateTransport(10, true, 154);
+    assert.equal(bridgeState.manager.isTempoAutomationSuspected(), true);
+
+    harness.calls.length = 0;
+    executeJumpCommand({ songIndex: 1, sectionIndex: null });
+    const tempoWrites = harness.calls.filter(([kind]) => kind === 'sdk-tempo');
+    assert.deepEqual(tempoWrites, [], 'an opted-in write must still yield to observed automation');
+    assert.equal(harness.calls.some(([kind]) => kind === 'jump'), true, 'the jump itself must still happen');
+  } finally {
     harness.restore();
   }
 });

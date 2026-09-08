@@ -14,30 +14,6 @@ In Stage Control, change the language only while Live is stopped and the panel
 is unlocked. The selector is disabled during playback or while the safety lock
 is active so the show surface cannot be reconfigured accidentally.
 
-## Keyboard Mapping and MIDI Mapping
-
-Open Stage Control from the tokenized controller URL, then select Keyboard
-Mapping or MIDI Mapping from the tools menu. Press Map beside an action and use
-the requested key or MIDI control. Keyboard and MIDI mappings are stored in this
-browser's local storage and survive reloads.
-
-The nine Stage Control actions available to both mapping surfaces are:
-
-- Play
-- Stop
-- Previous Song
-- Next Song
-- Previous Section
-- Next Section
-- Toggle Click
-- Toggle Panel Lock
-- Toggle Count-In Bar
-
-MIDI Mapping accepts Note On messages with velocity greater than zero and
-Control Change messages with value greater than zero. Each mapping stores the
-exact configured channel (1–16), and a message on another channel does not
-trigger it.
-
 ## Locator grammar
 
 A song locator has a title. A section uses `Song > Section` or the relative syntax `> Section` (which attaches to the preceding song). Standalone action tags like `[stop]` and relative automation locators like `> [stop]` belong to the chronologically preceding song.
@@ -64,6 +40,40 @@ Technical cue [ignore]
 | `[ignore]` | Technical marker that hides the locator and takes precedence over any action tags. |
 
 Tags are case-insensitive and removed from the display name. The `[ignore]` tag takes precedence over automation tags, hiding the marker and ignoring any action tags on that locator without creating songs, sections, or automations.
+
+## Editing a marker
+
+Double-click a song row or a section chip in Stage Control to open the marker
+editor. Every tag is a control there — you never type a `[tag]` by hand, and you
+cannot delete one with a stray keystroke.
+
+A **song** carries its name, its colour, its starting tempo, and the `[stop]`,
+`[next]` and `[skip]` behaviours. It also lists its sections; click one to edit
+it, and the arrow at the top of the panel brings you back to the song.
+
+A **section** carries its name, its tempo, its loop, its click, and the same
+three behaviours. Loop and click live here rather than on the song because that
+is where the music is structured.
+
+Three things the editor guarantees:
+
+- **A tag the panel does not show is never deleted.** Anything RC Setlist does
+  not recognise, and anything it recognises but does not offer for that kind of
+  marker, is carried through the save untouched.
+- **A section keeps the prefix it already had.** Live accepts both `> Verse` and
+  `Song A > Verse`; whichever spelling your set uses is preserved.
+- **Saving without changing anything writes nothing.** Tags are compared by
+  meaning, so reordering them is not a change.
+
+Editing is refused while the transport is playing. Renaming a locator means
+deleting it and creating it again, and Live can only create a cue point where
+the playhead stands — with playback running, the new marker would land wherever
+the playhead had reached. Stop the transport first.
+
+Colour is RC Setlist's own memory. It is stored beside your setlist and never
+written into the Live project, and it follows the song through renames and
+moves. The eight tones are deliberately desaturated: on the card, colour is
+identity, and the vivid hues are reserved for state.
 
 ## Profiles
 
@@ -92,11 +102,47 @@ Stage Control shows the song duration on each song card. The header shows the
 total setlist duration. A song runs from its song locator to the next song locator,
 so any transition gap is included. The final song ends at Live's Arrangement end;
 the total runs from the first song locator to that same end and also includes
-transitions.
+transitions. An em dash means Live has not supplied a valid final Arrangement boundary yet.
 
-Durations are estimates based on the song locator BPM, falling back to Live's
-current tempo. Tempo automation inside a song is not integrated into the estimate.
-An em dash means Live has not supplied a valid final Arrangement boundary yet.
+### Duration methodology and stage stability
+
+Durations are fixed schedule figures established at set load and do not fluctuate
+when Live's transport knob moves or playback starts. In a live stage environment,
+timing readouts must remain predictable targets for the crew and band rather than
+shifting with instantaneous tempo adjustments.
+
+### Arrangement tempo automation limitation
+
+Live sets often contain tempo automations drawn directly on the master track.
+However, **arrangement tempo automation envelopes cannot be inspected remotely**
+by any extension. Neither the Ableton Extensions SDK, AbletonOSC, MCP tools, nor
+the Live Object Model (LOM) expose arrangement tempo breakpoint lists without
+physically sweeping the playback cursor. The evidence behind that conclusion,
+and what RC Setlist does instead, is in
+[docs/architecture/tempo-automation-limitation.md](architecture/tempo-automation-limitation.md).
+
+### Obtaining exact durations (`[bpm N]`)
+
+To calculate exact piecewise song and set durations, declare the tempo explicitly
+in the locator name using `[bpm N]` (e.g. `Song A [bpm 122]` or `> Chorus [bpm 135]`).
+
+- **Declared confidence**: When at least one `[bpm]` tag is present, RC Setlist
+  calculates exact piecewise durations for tagged songs and sections, carrying
+  tempo forward across untagged boundaries.
+- **Estimated confidence (`EST.`)**: When no locator declares a `[bpm]` tag,
+  RC Setlist falls back to Live's initial session tempo, marks the duration
+  confidence as estimated, and displays an `EST.` badge beside the total time
+  and HUD timecards.
+
+### Empirical measurement example
+
+In a measured 21-song production set with tempo automations spanning 93 to 166 BPM:
+- **Exact piecewise duration**: **78:41** (4,721 seconds).
+- **Single-tempo fallback at 99 BPM**: 95:40 — **a 16:59 (+21.6%) distortion**.
+- **Single-tempo fallback at 136 BPM**: 69:38 — **a 9:03 (-11.5%) distortion**.
+
+Declaring `[bpm N]` tags on song locators resolves the 16:59 discrepancy, restores
+the exact 78:41 total, and clears the `EST.` warning badge.
 
 ## Operator workspace
 
@@ -104,9 +150,7 @@ Open `/setlist` from the tokenized controller URL shown in the Live panel.
 
 - Drag songs to change their displayed order.
 - Use Play and Stop for immediate transport actions.
-- The outer Previous Song and Next Song arrows move between adjacent songs.
-  The inner Previous Section and Next Section arrows move within the active
-  song. Both levels require a deliberate 500 ms hold.
+- Previous and Next require a deliberate 500 ms hold.
 - Select transport quantization; the jump scheduler applies the requested value
   immediately and reconciles it with a native Live reply when one is available.
 - Use the lyrics dialog to create, time and edit lyric lines.
@@ -197,3 +241,40 @@ during rehearsals/shows.
 
 This release reads Arrangement locators. Session View support is deferred. The
 local Stage Control and Performance links continue to use HTTPS.
+
+## Tempo automation drawn in Live
+
+If your Arrangement has its own tempo automation, keep **Set Live tempo on jump**
+switched **off** in the Live panel. It ships off, and this is why.
+
+An explicit jump can write the destination tempo into Live before it moves the
+playhead. Writing `song.tempo` overrides Live's tempo automation: the arrangement
+stops following its own envelope until you press **Re-Enable Automation** in the
+transport bar. One jump mid-show would flatten the tempo for the rest of the set.
+
+RC Setlist also watches for this on its own. When the tempo Live reports differs
+from the `[bpm N]` tag declared at that point in the setlist, the extension
+concludes that something other than the setlist owns the tempo and refuses to
+write it, even if the setting is on.
+
+A `[bpm N]` tag means "measure the duration with this". It does not mean "impose
+this on Live". Tagging your songs is safe with tempo automation, and it is what
+turns an estimated set duration into an exact one.
+
+Turn the setting on only when the tags are your source of truth for tempo and the
+Arrangement has no tempo automation.
+
+## How RC Setlist recognises your songs
+
+**The Ableton locator is the source of truth. RC Setlist never writes anything
+hidden into your project.** It recognises a song by name and position, in that
+order.
+
+- Rename a song and it stays the same song — the position did not move.
+- Drag it somewhere else and it stays the same song — the name did not change.
+- Change both at once and it is treated as a new song.
+
+Anything RC Setlist keeps on the side follows that identity. Delete a locator by
+accident and recreate it, and what it remembered comes back.
+
+The full reasoning is in [docs/architecture/song-identity.md](architecture/song-identity.md).

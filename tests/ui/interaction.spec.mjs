@@ -180,7 +180,7 @@ for (const route of ['/performance/', '/setlist/']) {
   });
 }
 
-test('Setlist Previous and Next require a real 500 ms pointer hold while Play and Stop click immediately', async ({ page }) => {
+test('Setlist Previous, Next and Stop require a real 500 ms pointer hold while Play clicks immediately', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/setlist/');
   const transportSafety = await page.locator('.transport-dock .btn').evaluateAll((buttons) => buttons.map((button) => ({
@@ -217,7 +217,19 @@ test('Setlist Previous and Next require a real 500 ms pointer hold while Play an
   expect(jumps).toEqual([{ type: 'jump', songIndex: 2, sectionIndex: 3 }]);
 
   await page.locator('#btnPlay').click();
-  await page.locator('#btnStop').click();
+  expect((await receivedControlMessages(page)).some((message) => message.type === 'play')).toBe(true);
+
+  // Stop halts the band mid-song and sits a thumb's width from Play on a fixed
+  // bottom bar. A short press must do nothing.
+  const stop = page.locator('#btnStop');
+  await stop.dispatchEvent('pointerdown', { button: 0, pointerId: 3, pointerType: 'touch', isPrimary: true });
+  await page.waitForTimeout(250);
+  await stop.dispatchEvent('pointerup', { button: 0, pointerId: 3, pointerType: 'touch', isPrimary: true });
+  expect((await receivedControlMessages(page)).some((message) => message.type === 'stop')).toBe(false);
+
+  await stop.dispatchEvent('pointerdown', { button: 0, pointerId: 4, pointerType: 'touch', isPrimary: true });
+  await page.waitForTimeout(550);
+  await stop.dispatchEvent('pointerup', { button: 0, pointerId: 4, pointerType: 'touch', isPrimary: true });
   const messages = await receivedControlMessages(page);
   expect(messages.some((message) => message.type === 'play')).toBe(true);
   expect(messages.some((message) => message.type === 'stop')).toBe(true);

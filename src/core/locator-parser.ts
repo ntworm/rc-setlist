@@ -1,5 +1,7 @@
 import { Section, Song, Setlist } from '../types.js';
 
+export { computeCuesFingerprint, type RawCue } from './cue-fingerprint.js';
+
 /**
  * Extract all [tag] or [tag value] tokens from a string and return
  * the cleaned display name plus the parsed tags.
@@ -241,6 +243,7 @@ export function parseSetlist(cues: { name: string; time: number }[]): Setlist {
       }
       currentSong.sections.push({
         ...parsed.section!,
+        rawName: cue.name,
         time: cue.time,
       });
       continue;
@@ -263,6 +266,7 @@ export function parseSetlist(cues: { name: string; time: number }[]): Setlist {
       }
       currentSong.sections.push({
         ...parsed.section!,
+        rawName: cue.name,
         time: cue.time,
       });
       continue;
@@ -271,6 +275,7 @@ export function parseSetlist(cues: { name: string; time: number }[]): Setlist {
     if (parsed.kind === 'song') {
       currentSong = {
         title: parsed.songName!,
+        rawName: cue.name,
         time: cue.time,
         sections: [],
         loopCount: parsed.songTags?.loopCount ?? null,
@@ -293,15 +298,27 @@ export function parseSetlist(cues: { name: string; time: number }[]): Setlist {
           loopCount: null,
           autoStop: false,
           autoNext: false,
-          bpm: null,
+          bpm: parsed.section?.bpm ?? null,
           autoClick: null,
           skip: false
         };
         songs.push(currentSong);
+      } else if (
+        currentSong.bpm === null
+        && typeof parsed.section?.bpm === 'number'
+        && cue.time === currentSong.time
+      ) {
+        // Only a section that starts exactly where the song starts may stand in
+        // for a missing song tag. Promoting a tag from a chorus in the middle
+        // applied that tempo backwards over the intro, inflating the song's
+        // duration and mislabelling its BPM badge. A later section tag is a
+        // tempo EVENT at its own position; the metrics timeline handles it.
+        currentSong.bpm = parsed.section.bpm;
       }
       
       currentSong.sections.push({
         name: parsed.section!.name,
+        rawName: cue.name,
         time: cue.time,
         loopCount: parsed.section!.loopCount,
         autoStop: parsed.section!.autoStop,

@@ -20,10 +20,10 @@
   max-width: min(32rem, calc(100vw - 2rem));
   padding: 0.8rem 1rem;
   border: 1px solid var(--card-border);
-  border-radius: 8px;
+  border-radius: 0;
   background: var(--card-bg);
   color: var(--text);
-  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.45);
+  box-shadow: none;
   font-weight: 700;
 }
 
@@ -63,12 +63,12 @@ body {
   justify-content: space-between;
   min-width: 0;
   min-height: 58px;
-  gap: 1.2rem;
+  gap: 0.8rem;
   border: 1px solid var(--ui-border);
   border-radius: var(--ui-radius);
   background: rgba(17, 18, 22, 0.94);
-  box-shadow: var(--ui-shadow);
-  padding: 0.55rem 0.85rem;
+  box-shadow: none;
+  padding: 0.65rem 0.85rem;
 }
 
 .app-brand,
@@ -91,10 +91,10 @@ body {
   place-items: center;
   flex: 0 0 auto;
   border: 1px solid rgba(255, 154, 47, 0.5);
-  border-radius: 9px;
+  border-radius: 0;
   background: var(--ui-accent-soft);
   color: var(--ui-accent-strong);
-  font-size: 0.72rem;
+  font-size: 0.75rem;
   font-weight: 900;
 }
 
@@ -105,14 +105,14 @@ body {
 
 .app-brand-copy strong {
   font-size: 0.84rem;
-  line-height: 1.1;
+  line-height: var(--ui-line-accent-safe);
 }
 
 .app-brand-copy small {
   color: var(--ui-muted);
-  font-size: 0.62rem;
+  font-size: 0.75rem;
   font-weight: 800;
-  letter-spacing: 0.08em;
+  letter-spacing: 0;
   text-transform: uppercase;
 }
 
@@ -127,40 +127,50 @@ body {
 .profile-select-control {
   position: relative;
   display: flex;
-  flex: 1 1 minmax(10rem, 16rem);
-  min-width: 0;
   align-items: center;
-  color: var(--ui-muted);
-  font-size: 0.55rem;
-  font-weight: 850;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
+  flex: 1 1 auto;
+  max-width: 22rem;
+  min-width: 0;
+  height: 44px;
+  border: 1px solid var(--ui-border);
+  border-radius: 0;
+  background: #101115;
+  padding: 0 0.65rem;
+  gap: 0.55rem;
+  box-sizing: border-box;
+  transition: border-color var(--ui-transition);
 }
 
-/* Label sits absolutely above the select so the control's effective height
- * is exactly the select's 44px. This keeps the .app-bar flex row aligned with
- * the other 44px siblings (Manage setlists button, language select, etc.). */
+.profile-select-control:focus-within {
+  border-color: var(--ui-border-strong);
+}
+
 .profile-select-control > span {
-  position: absolute;
-  top: -0.92rem;
-  left: 0.05rem;
-  pointer-events: none;
+  flex: 0 0 auto;
+  color: var(--ui-muted);
+  font-size: var(--t-stage-micro);
+  font-weight: 850;
+  letter-spacing: 0;
+  text-transform: uppercase;
   white-space: nowrap;
+  pointer-events: none;
+  line-height: var(--ui-line-accent-safe);
 }
 
 .profile-select-control select {
+  flex: 1 1 auto;
   width: 100%;
   min-width: 0;
-  min-height: 44px;
-  height: 44px;
-  border: 1px solid var(--ui-border);
-  border-radius: 7px;
-  background: #101115;
+  height: 100%;
+  border: none;
+  background: transparent;
   color: var(--ui-text);
-  padding: 0 0.55rem;
-  font-size: 0.72rem;
+  padding: 0;
+  font-size: 0.78rem;
   font-weight: 750;
   text-overflow: ellipsis;
+  outline: none;
+  cursor: pointer;
 }
 
 
@@ -189,9 +199,9 @@ body {
   min-width: 0;
   gap: 0.5rem;
   color: var(--ui-muted);
-  font-size: 0.62rem;
+  font-size: 0.75rem;
   font-weight: 850;
-  letter-spacing: 0.06em;
+  letter-spacing: 0;
   text-transform: uppercase;
 }
 
@@ -210,7 +220,7 @@ body {
   border-radius: var(--ui-radius-sm);
   padding: 0.44rem 0.65rem;
   font-family: inherit;
-  font-size: 0.72rem;
+  font-size: 0.75rem;
   font-weight: 750;
   white-space: nowrap;
 }
@@ -230,7 +240,7 @@ body {
   color: var(--ui-text);
   padding: 0 0.45rem;
   font-family: inherit;
-  font-size: 0.72rem;
+  font-size: 0.75rem;
   font-weight: 750;
   cursor: pointer;
   text-overflow: ellipsis;
@@ -253,9 +263,9 @@ body {
 .quantization-control > span {
   color: var(--ui-muted);
   font-family: inherit;
-  font-size: 0.62rem;
+  font-size: 0.75rem;
   font-weight: 800;
-  letter-spacing: 0.05em;
+  letter-spacing: 0;
   text-transform: uppercase;
   white-space: nowrap;
 }
@@ -269,7 +279,7 @@ body {
   background: transparent;
   color: var(--ui-accent-strong);
   font-family: inherit;
-  font-size: 0.74rem;
+  font-size: 0.75rem;
   font-weight: 800;
   cursor: pointer;
   white-space: nowrap;
@@ -315,7 +325,7 @@ body {
   border: 1px solid var(--ui-border-strong);
   border-radius: var(--ui-radius);
   background: #15161a;
-  box-shadow: var(--ui-shadow);
+  box-shadow: none;
   padding: 0.5rem;
 }
 
@@ -331,14 +341,14 @@ body {
   height: 44px;
   gap: 0.42rem;
   border: 1px solid var(--ui-border);
-  border-radius: 999px;
+  border-radius: 0;
   background: var(--ui-surface-raised);
   color: var(--ui-muted);
   padding: 0.4rem 0.65rem;
   font-family: inherit;
-  font-size: 0.72rem;
+  font-size: 0.75rem;
   font-weight: 850;
-  letter-spacing: 0.04em;
+  letter-spacing: 0;
   cursor: pointer;
 }
 
@@ -354,12 +364,12 @@ body {
 
 .status-dot.connected {
   background: var(--ui-success);
-  box-shadow: 0 0 0 4px var(--ui-success-soft);
+  box-shadow: none;
 }
 
 .status-dot.error {
   background: var(--ui-danger);
-  box-shadow: 0 0 0 4px var(--ui-danger-soft);
+  box-shadow: none;
 }
 
 .btn-locked-active {
@@ -389,7 +399,7 @@ body {
   border: 1px solid var(--ui-border);
   border-radius: var(--ui-radius);
   background: rgba(17, 18, 22, 0.88);
-  box-shadow: var(--ui-shadow);
+  box-shadow: none;
 }
 
 .setlist-pane {
@@ -412,7 +422,7 @@ body {
   color: var(--ui-text-soft);
   font-size: 0.8rem;
   font-weight: 850;
-  letter-spacing: 0.02em;
+  letter-spacing: 0;
 }
 
 .song-list {
@@ -434,42 +444,74 @@ body {
   min-width: 0;
   gap: 0.55rem;
   border: 1px solid var(--ui-border);
-  border-radius: 11px;
-  background: rgba(23, 24, 29, 0.82);
-  padding: 0.65rem;
+  border-radius: 0;
+  background-color: rgba(23, 24, 29, 0.82);
+  /* The leading edge is reserved for the 8px identity band and the 4px state
+     bar. The clearance is unconditional so assigning a colour never shifts the
+     card's content sideways. */
+  padding: 0.65rem 0.65rem 0.65rem 1rem;
   cursor: grab;
   user-select: none;
   transition: border-color 140ms ease, background 140ms ease, transform 140ms ease;
 }
 
+/* Two separate channels share the card's leading edge, and they must never be
+   confused for one another.
+
+   The outer 4px is STATE — the contract's edge bar, the one that means NOW /
+   ARMED / NEXT / ERR. It is drawn as an inset shadow so it always sits on top.
+
+   Inside it, an 8px band is IDENTITY: the colour the user chose for this song.
+   Twice the width, always present once set, and never orange. A playing song
+   shows both at once: orange at the very edge, its own colour just inside. */
 .song-item::before {
   position: absolute;
   inset: 0 auto 0 0;
-  width: 3px;
-  border-radius: 11px 0 0 11px;
+  width: 8px;
+  border-radius: 0;
   background: transparent;
   content: "";
 }
 
 .song-item:hover {
   border-color: var(--ui-border-strong);
-  background: rgba(29, 30, 36, 0.94);
+  background-color: rgba(29, 30, 36, 0.94);
+}
+
+/* The two washes run in opposite directions so they never read as one smear.
+
+   Identity flows from the LEFT, continuing out of the colour band and the number
+   chip that already sit on that edge — band, chip and wash become a single mark.
+   It is faint on purpose: enough to tell two cards apart at a glance, far short
+   of filling one with light.
+
+   ACTIVE comes from the RIGHT, meeting identity head-on instead of covering it.
+   Fading the accent out over the leading edge, as it used to, buried the two
+   hard marks the eye actually uses to find a card in the dark. */
+.song-item.active {
+  border-color: rgba(255, 154, 47, 0.5);
+  background-image: linear-gradient(270deg, var(--ui-accent-soft), transparent 35%);
+}
+
+.song-item[data-color] {
+  background-image: linear-gradient(90deg, var(--song-color-wash), transparent 55%);
+}
+
+.song-item[data-color].active {
+  background-image:
+    linear-gradient(270deg, var(--ui-accent-soft), transparent 35%),
+    linear-gradient(90deg, var(--song-color-wash), transparent 55%);
 }
 
 .song-item.active {
-  border-color: rgba(255, 154, 47, 0.5);
-  background: linear-gradient(90deg, var(--ui-accent-soft), rgba(23, 24, 29, 0.92) 35%);
-}
-
-.song-item.active::before {
-  background: var(--ui-accent);
+  box-shadow: inset 4px 0 0 var(--ui-accent);
 }
 
 .song-item.is-reordering {
   z-index: 2;
   border-color: rgba(255, 255, 255, 0.78);
   background: rgba(47, 49, 58, 0.98);
-  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.36), 0 0 0 1px rgba(255, 255, 255, 0.24);
+  box-shadow: none;
   cursor: grabbing;
   opacity: 0.72;
   transform: scale(1.012);
@@ -482,9 +524,9 @@ body {
   right: 0.45rem;
   left: 0.45rem;
   height: 3px;
-  border-radius: 999px;
+  border-radius: 0;
   background: #fff;
-  box-shadow: 0 0 10px rgba(255, 255, 255, 0.92), 0 0 3px #fff;
+  box-shadow: none;
   content: "";
   pointer-events: none;
 }
@@ -507,7 +549,7 @@ body {
 .song-header {
   justify-content: space-between;
   gap: 0.75rem;
-  border-radius: 8px;
+  border-radius: 0;
   cursor: pointer;
 }
 
@@ -517,10 +559,10 @@ body {
   min-height: 44px;
   place-items: center;
   flex: 0 0 auto;
-  border-radius: 6px;
+  border-radius: 0;
   color: var(--ui-muted);
   font-size: 1.05rem;
-  line-height: 1;
+  line-height: var(--ui-line-accent-safe);
   cursor: grab;
   touch-action: none;
   user-select: none;
@@ -544,10 +586,10 @@ body {
   place-items: center;
   flex: 0 0 auto;
   border: 1px solid var(--ui-border);
-  border-radius: 7px;
+  border-radius: 0;
   color: var(--ui-muted);
   font-family: var(--ui-mono);
-  font-size: 0.64rem;
+  font-size: 0.75rem;
   font-weight: 850;
 }
 
@@ -566,8 +608,7 @@ body {
   white-space: nowrap;
 }
 
-.song-time,
-.song-duration {
+.song-time {
   flex: 0 0 auto;
   min-width: 3.8rem;
   text-align: right;
@@ -576,7 +617,7 @@ body {
   font-size: 0.88rem;
   font-weight: 850;
   font-variant-numeric: tabular-nums;
-  letter-spacing: 0.02em;
+  letter-spacing: 0;
 }
 
 
@@ -595,11 +636,11 @@ body {
   flex: 0 1 auto;
   gap: 0.28rem;
   border: 1px solid var(--ui-border);
-  border-radius: 8px;
+  border-radius: 0;
   background: #1b1c21;
   color: var(--ui-text-soft);
   padding: 0.42rem 0.58rem;
-  font-size: 0.68rem;
+  font-size: 0.75rem;
   font-weight: 750;
   cursor: pointer;
   transition: border-color 140ms ease, background 140ms ease, color 140ms ease;
@@ -656,10 +697,15 @@ body {
   transition: width 500ms linear;
 }
 
+/* The song header has no padding of its own — the card supplies it — so an inset
+   ring landed flush against the title and read as a box cutting through the
+   text. An outline is drawn outside the border box and takes no space, so the
+   ring gets clearance without moving anything. */
 .song-header.jumping {
   background: var(--ui-success-soft);
   color: #8ceeb8;
-  box-shadow: inset 0 0 0 1px var(--ui-success);
+  outline: 1px solid var(--ui-success);
+  outline-offset: 3px;
 }
 
 .section-btn.jumping {
@@ -671,7 +717,8 @@ body {
 .song-header.jump-confirming {
   background: var(--ui-info-soft);
   color: #a7c7ff;
-  box-shadow: inset 0 0 0 1px rgba(115, 169, 255, 0.55);
+  outline: 1px solid rgba(115, 169, 255, 0.55);
+  outline-offset: 3px;
 }
 
 .section-btn.jump-confirming {
@@ -681,79 +728,67 @@ body {
   box-shadow: inset 0 0 0 1px rgba(115, 169, 255, 0.25);
 }
 
-.section-edit-input {
-  width: 100%;
-  min-width: 0;
-  border: 1px solid var(--ui-accent);
-  border-radius: 6px;
-  background: rgba(0, 0, 0, 0.45);
-  color: var(--ui-text);
-  font-family: inherit;
-  font-size: 0.62rem;
-  font-weight: 850;
-  padding: 0.4rem 0.5rem;
-  outline: none;
-  box-sizing: border-box;
-}
-
-.section-edit-input:focus {
-  border-color: var(--ui-accent-strong);
-  box-shadow: inset 0 0 0 1px var(--ui-accent-strong);
-}
-
-/* Saving state: the input is read-only while waiting for the server command
- * to confirm. A subtle pulse signals "in flight" without distracting. */
-.section-edit-input.is-saving {
-  opacity: 0.7;
-  cursor: progress;
-  border-color: var(--ui-accent-strong);
-  background: rgba(255, 154, 47, 0.08);
-  animation: section-edit-pulse 1.2s ease-in-out infinite;
-}
-@keyframes section-edit-pulse {
-  0%, 100% { box-shadow: inset 0 0 0 1px var(--ui-accent-strong); }
-  50%      { box-shadow: inset 0 0 0 1px var(--ui-accent), 0 0 0 1px var(--ui-accent-strong); }
-}
-
 .loop-badge,
 .stop-badge,
 .next-badge,
-.bpm-badge {
+.bpm-badge,
+.click-badge,
+.skip-badge {
   display: inline-flex;
   align-items: center;
   flex: 0 0 auto;
   border: 1px solid var(--ui-border);
-  border-radius: 6px;
+  border-radius: 0;
   padding: 0.16rem 0.28rem;
-  font-size: 0.52rem;
+  font-size: 0.75rem;
   font-weight: 900;
-  letter-spacing: 0.03em;
-  line-height: 1;
+  letter-spacing: 0;
+  line-height: var(--ui-line-accent-safe);
   white-space: nowrap;
 }
 
 .loop-badge {
-  border-color: rgba(189, 145, 255, 0.32);
+  border-color: rgba(189, 145, 255, 0.35);
   background: var(--ui-loop-soft);
   color: var(--ui-loop);
 }
 
 .stop-badge {
-  border-color: rgba(255, 93, 108, 0.32);
+  border-color: rgba(255, 93, 108, 0.35);
   background: var(--ui-danger-soft);
   color: #ff929c;
 }
 
 .next-badge {
-  border-color: rgba(115, 169, 255, 0.32);
+  border-color: rgba(115, 169, 255, 0.35);
   background: var(--ui-info-soft);
   color: #a7c7ff;
 }
 
 .bpm-badge {
-  border-color: rgba(66, 216, 137, 0.3);
+  border-color: rgba(66, 216, 137, 0.35);
   background: var(--ui-success-soft);
   color: #82eab0;
+}
+
+/* Click and skip are the two remaining tags the marker panel writes. They are
+   deliberately quieter than STOP and NEXT: those interrupt the show, these only
+   describe how a part behaves when it arrives. */
+.click-badge {
+  border-color: var(--ui-rule-strong);
+  background: transparent;
+  color: var(--ui-text-2);
+}
+
+.click-badge.is-off {
+  color: var(--ui-muted);
+  text-decoration: line-through;
+}
+
+.skip-badge {
+  border-color: var(--ui-rule-strong);
+  background: transparent;
+  color: var(--ui-muted);
 }
 
 .control-column {
@@ -801,9 +836,9 @@ body {
   min-width: 0;
   min-height: 0;
   gap: 0.28rem;
-  overflow: visible;
+  overflow: hidden;
   border: 1px solid var(--ui-border);
-  border-radius: 10px;
+  border-radius: 0;
   background: rgba(23, 24, 29, 0.84);
   padding: 0.6rem;
 }
@@ -815,30 +850,46 @@ body {
 
 .hud-label {
   color: var(--ui-muted);
-  font-size: 0.55rem;
+  font-size: 0.75rem;
   font-weight: 850;
-  letter-spacing: 0.1em;
+  letter-spacing: 0;
   text-transform: uppercase;
 }
 
 .hud-value {
-  display: -webkit-box;
+  display: block;
+  width: 100%;
+  max-width: 100%;
   min-width: 0;
   min-height: 1.05em;
   overflow: hidden;
   color: var(--ui-text);
-  font-size: clamp(0.95rem, 1.75vw, 1.42rem);
-  font-weight: 900;
-  letter-spacing: -0.025em;
-  line-height: 1.05;
+  font-size: clamp(0.85rem, 1.4vw, 1.15rem);
+  font-weight: 850;
+  letter-spacing: -0.015em;
+  line-height: var(--ui-line-accent-safe);
   padding-block: 0.04em;
-  overflow-wrap: anywhere;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  box-sizing: border-box;
+  font-variation-settings: "wdth" 75;
 }
 
 .hud-value.active {
   color: var(--ui-accent-strong);
+}
+
+#hudNextSong,
+#hudNextSection {
+  display: block;
+  max-width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: var(--t-stage-micro) !important;
+  font-variation-settings: "wdth" 75;
+  color: var(--ui-text-soft) !important;
+  margin-top: 0.15rem !important;
 }
 
 .hud-lyric-card {
@@ -846,9 +897,15 @@ body {
 }
 
 .hud-lyric-text {
+  font-family: var(--ui-font-lyric);
+  font-variation-settings: normal;
+  display: -webkit-box;
   color: var(--ui-text-soft);
   font-size: clamp(0.78rem, 1.3vw, 1rem);
-  line-height: 1.28;
+  line-height: var(--ui-line-accent-safe);
+  white-space: normal;
+  overflow-wrap: anywhere;
+  -webkit-box-orient: vertical;
   -webkit-line-clamp: 3;
 }
 
@@ -860,19 +917,27 @@ body {
   font-variant-numeric: tabular-nums;
 }
 
+.hud-time-card {
+  gap: 0.22rem;
+}
+
 #hudTime {
-  font-size: clamp(0.78rem, 0.9vw, 0.88rem);
-  letter-spacing: -0.04em;
+  font-size: clamp(0.85rem, 1.05vw, 1.15rem);
+  font-weight: 700;
+  font-variation-settings: "wdth" 75;
+  letter-spacing: -0.02em;
   white-space: nowrap;
 }
 
 .hud-song-time {
   color: var(--ui-accent-strong);
-  font-size: clamp(0.72rem, 1.5vw, 0.9rem);
-  font-weight: 700;
-  line-height: 1.15;
-  min-width: 0;
-  overflow-wrap: anywhere;
+  font-size: clamp(var(--t-stage-micro), 0.85vw, 0.82rem);
+  font-weight: 650;
+  font-variation-settings: "wdth" 75;
+  line-height: var(--ui-line-accent-safe);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .transport-dock,
@@ -881,7 +946,7 @@ body {
   min-width: 0;
   gap: 0.4rem;
   border: 1px solid var(--ui-border);
-  border-radius: 10px;
+  border-radius: 0;
   background: rgba(23, 24, 29, 0.96);
   padding: 0.45rem;
 }
@@ -904,7 +969,7 @@ body {
 
 #btnPreRoll {
   padding-inline: 0.25rem;
-  line-height: 1.05;
+  line-height: var(--ui-line-accent-safe);
   text-overflow: clip;
   white-space: normal;
 }
@@ -918,7 +983,7 @@ body {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
   #btnPreRoll {
-    font-size: 0.58rem;
+    font-size: 0.75rem;
     white-space: nowrap;
   }
   .secondary-controls .quantization-control {
@@ -987,12 +1052,12 @@ body {
   min-width: 0;
   min-height: 44px;
   border: 1px solid var(--ui-border);
-  border-radius: 8px;
+  border-radius: 0;
   background: var(--ui-surface-soft);
   color: var(--ui-text-soft);
   padding: 0.48rem 0.42rem;
   overflow: hidden;
-  font-size: 0.62rem;
+  font-size: 0.75rem;
   font-weight: 850;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -1013,6 +1078,37 @@ body {
   border-color: rgba(66, 216, 137, 0.45);
   background: var(--ui-success-soft);
   color: #82eab0;
+  transition: all var(--ui-transition);
+}
+
+#btnPlay.is-playing {
+  border-color: var(--ui-success) !important;
+  background: var(--ui-success) !important;
+  color: var(--ui-bg) !important;
+}
+
+#btnPlay.is-playing .transport-icon {
+  fill: var(--ui-bg) !important;
+  stroke: var(--ui-bg) !important;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  #btnPlay:hover:not(:disabled) {
+    border-color: var(--ui-success);
+    color: var(--ui-text);
+    background: rgba(48, 209, 88, 0.22);
+  }
+
+  #btnPlay.is-playing:hover:not(:disabled) {
+    background: var(--ui-success) !important;
+    color: var(--ui-bg) !important;
+    opacity: 0.9;
+  }
+
+  #btnPlay.is-playing:hover:not(:disabled) .transport-icon {
+    fill: var(--ui-bg) !important;
+    stroke: var(--ui-bg) !important;
+  }
 }
 
 .btn-danger {
@@ -1021,25 +1117,33 @@ body {
   color: #ff929c;
 }
 
+/* A toggle that changes only hue cannot be read at a glance, and around 8% of
+   men cannot separate these two hues at all. Active is a filled block with
+   inverted ink — the Live idiom — so fill-versus-no-fill carries the state and
+   colour only says which toggle it is. */
 .btn-click-active {
-  border-color: rgba(66, 216, 137, 0.55) !important;
-  background: var(--ui-success-soft) !important;
-  color: #82eab0 !important;
+  border-color: var(--ui-success) !important;
+  background: var(--ui-success) !important;
+  color: var(--ui-bg) !important;
+  font-weight: var(--ui-wght-display) !important;
+  font-variation-settings: "wdth" 75;
 }
 
 .btn-preroll-active {
-  border-color: rgba(255, 154, 47, 0.65) !important;
-  background: rgba(255, 154, 47, 0.16) !important;
-  color: #ffc078 !important;
+  border-color: var(--ui-accent) !important;
+  background: var(--ui-accent) !important;
+  color: var(--ui-bg) !important;
+  font-weight: var(--ui-wght-display) !important;
+  font-variation-settings: "wdth" 75;
 }
 
 .log-drawer {
   min-width: 0;
   border: 1px solid var(--ui-border);
-  border-radius: 9px;
+  border-radius: 0;
   background: #0d0e11;
   color: var(--ui-muted);
-  font-size: 0.65rem;
+  font-size: 0.75rem;
 }
 
 .log-drawer > summary {
@@ -1055,7 +1159,7 @@ body {
   border-top: 1px solid var(--ui-border);
   padding: 0.55rem 0.7rem;
   font-family: var(--ui-mono);
-  font-size: 0.58rem;
+  font-size: 0.75rem;
   line-height: 1.45;
 }
 
@@ -1098,7 +1202,7 @@ body {
   border: 1px solid var(--ui-border-strong);
   border-radius: var(--ui-radius-lg);
   background: #15161a;
-  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.55);
+  box-shadow: none;
 }
 
 .modal-header {
@@ -1135,9 +1239,9 @@ body {
 .lyrics-song-control span {
   overflow: hidden;
   color: var(--ui-muted);
-  font-size: 0.62rem;
+  font-size: 0.75rem;
   font-weight: 800;
-  line-height: 1.1;
+  line-height: var(--ui-line-accent-safe);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -1145,9 +1249,9 @@ body {
 .lyrics-song-control select {
   width: 100%;
   min-width: 0;
-  min-height: 40px;
+  min-height: 44px;
   border: 1px solid var(--ui-border);
-  border-radius: 8px;
+  border-radius: 0;
   background: #101115;
   color: var(--ui-text);
   padding: 0.45rem 0.65rem;
@@ -1159,7 +1263,7 @@ body {
   height: 2.5rem;
   place-items: center;
   border: 1px solid var(--ui-border);
-  border-radius: 8px;
+  border-radius: 0;
   background: var(--ui-surface-raised);
   color: var(--ui-muted);
   font-size: 1.25rem;
@@ -1175,7 +1279,7 @@ body {
 
 .modal-body code {
   border: 1px solid rgba(255, 154, 47, 0.22);
-  border-radius: 5px;
+  border-radius: 0;
   background: var(--ui-accent-soft);
   color: var(--ui-accent-strong);
   padding: 0.12rem 0.28rem;
@@ -1185,7 +1289,7 @@ body {
 .modal-body select,
 .modal-body textarea {
   border: 1px solid var(--ui-border);
-  border-radius: 8px;
+  border-radius: 0;
   background: #101115 !important;
   color: var(--ui-text) !important;
 }
@@ -1214,11 +1318,11 @@ body {
 .profile-mutation-notice {
   margin: 0;
   border: 1px solid rgba(255, 154, 47, 0.38);
-  border-radius: 8px;
+  border-radius: 0;
   background: var(--ui-accent-soft);
   color: var(--ui-accent-strong);
   padding: 0.65rem 0.75rem;
-  font-size: 0.72rem;
+  font-size: 0.75rem;
 }
 
 .profile-create-controls,
@@ -1244,7 +1348,7 @@ body {
   min-width: 0;
   gap: 0.55rem;
   border: 1px solid var(--ui-border);
-  border-radius: 10px;
+  border-radius: 0;
   background: rgba(23, 24, 29, 0.84);
   padding: 0.65rem;
 }
@@ -1271,24 +1375,24 @@ body {
 .profile-row-heading small {
   width: 100%;
   color: var(--ui-muted);
-  font-size: 0.62rem;
+  font-size: 0.75rem;
 }
 
 .profile-active-badge {
   border: 1px solid rgba(66, 216, 137, 0.3);
-  border-radius: 999px;
+  border-radius: 0;
   background: var(--ui-success-soft);
   color: #82eab0;
   padding: 0.15rem 0.38rem;
-  font-size: 0.52rem;
+  font-size: 0.75rem;
   font-weight: 850;
   text-transform: uppercase;
 }
 
 .lyrics-tab {
-  min-height: 40px;
+  min-height: 44px;
   border: 1px solid var(--ui-border);
-  border-radius: 8px;
+  border-radius: 0;
   background: var(--ui-surface-raised);
   color: var(--ui-muted);
   padding: 0.48rem 0.7rem;
@@ -1310,7 +1414,7 @@ body {
   z-index: 70;
   right: 1rem;
   bottom: 1rem;
-  width: min(27rem, calc(100vw - 2rem));
+  width: min(26rem, calc(100vw - 2rem));
   pointer-events: none;
   opacity: 0;
   transform: translateY(0.5rem);
@@ -1329,7 +1433,7 @@ body {
   border: 1px solid rgba(255, 154, 47, 0.38);
   border-radius: var(--ui-radius);
   background: rgba(29, 23, 16, 0.97);
-  box-shadow: var(--ui-shadow);
+  box-shadow: none;
   padding: 0.85rem 1rem;
 }
 
@@ -1351,7 +1455,7 @@ body {
 
 .network-alert-box p {
   color: var(--ui-text-soft);
-  font-size: 0.7rem;
+  font-size: 0.75rem;
   line-height: 1.35;
 }
 
@@ -1386,26 +1490,6 @@ body {
 
 .section-btn.shake {
   animation: shake 300ms ease;
-}
-
-.jump-cancel-pill {
-  position: fixed;
-  z-index: 2000;
-  left: 50%;
-  bottom: 1.25rem;
-  display: none;
-  transform: translateX(-50%);
-  border: 1px solid rgba(255, 93, 108, 0.6);
-  border-radius: 999px;
-  background: #2a151a;
-  color: #ffabb3;
-  padding: 0.7rem 1rem;
-  font-weight: 850;
-  cursor: pointer;
-}
-
-.jump-cancel-pill.visible {
-  display: block;
 }
 
 @media (max-width: 1180px) {
@@ -1443,7 +1527,7 @@ body {
   .language-select {
     max-width: none;
     padding-inline: 0.45rem;
-    font-size: 0.66rem;
+    font-size: 0.75rem;
   }
 
   .app-bar .ui-button,
@@ -1527,9 +1611,9 @@ body {
     bottom: 0;
     left: 0;
     min-height: var(--mobile-transport-height);
-    border-radius: 12px 12px 0 0;
+    border-radius: 0 0 0;
     padding: 0.45rem 0.45rem max(0.45rem, env(safe-area-inset-bottom));
-    box-shadow: 0 -12px 30px rgba(0, 0, 0, 0.42);
+    box-shadow: none;
   }
 
   .hud {
@@ -1557,4 +1641,335 @@ body {
     order: 3;
     flex-basis: 100%;
   }
+}
+
+/* Martian Mono is wider than the system sans it replaced, and the pt-BR
+   count-in label is the longest string in the densest three-column row. The
+   width axis is exactly what it is for: narrow the glyphs instead of dropping
+   below the 12px stage floor. */
+.secondary-controls .btn {
+  font-weight: var(--ui-wght-display);
+  font-variation-settings: "wdth" 75;
+  padding-right: 0.2rem;
+  padding-left: 0.2rem;
+  letter-spacing: 0;
+  /* The base .btn clips with nowrap + overflow hidden, which silently ate the R
+     of "COUNT-IN 1 BAR". A label the player cannot finish reading is worse than
+     a label on two lines, and dropping below the 12px stage floor is not an
+     option — so it wraps. */
+  white-space: normal;
+  overflow-wrap: anywhere;
+  line-height: 1.15;
+  text-align: center;
+  display: grid;
+  place-items: center;
+}
+
+/* Stage touch floor. 44px satisfies WCAG AAA and is still 7.3 mm, below the
+   9.2 mm measured as the one-handed thumb minimum — and on stage the free hand
+   is whichever one the instrument left free. Phone only: the notebook and the
+   panel keep mouse density. */
+@media (max-width: 900px) and (pointer: coarse), (max-width: 560px) {
+  .transport-dock .btn {
+    min-height: 64px;
+  }
+
+  .secondary-controls .btn,
+  .song-item,
+  .song-reorder-handle,
+  .status-badge {
+    min-height: 56px;
+  }
+
+  .transport-dock {
+    gap: 12px;
+  }
+}
+
+/* ===== Marker editor =====
+   One panel for a song or a section. Tags are controls, never raw text. */
+
+.marker-editor {
+  position: fixed;
+  z-index: 1200;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: rgba(14, 14, 14, 0.92);
+  padding: var(--s-4);
+}
+
+.marker-editor[hidden] {
+  display: none;
+}
+
+.marker-panel {
+  /* Wide enough that a song with a dozen sections lists them in two columns
+     instead of a tall scroller, and still capped so the panel never fills a
+     laptop screen edge to edge. Narrow viewports fall back to the viewport. */
+  width: min(42rem, calc(100vw - 2rem));
+  max-height: calc(100dvh - 2rem);
+  overflow-y: auto;
+  border: 1px solid var(--ui-rule);
+  background: var(--ui-surface);
+  padding: var(--s-4);
+  display: grid;
+  gap: var(--s-3);
+}
+
+/* Tempo, loop, times and click are all short. Left one per row they turned a
+   wide panel into a tall column that pushed Save past the bottom of a laptop
+   window. They pair up once there is room; name, colour, the toggle row and the
+   section list always take the full width. */
+@media (min-width: 36rem) {
+  .marker-panel {
+    grid-template-columns: 1fr 1fr;
+    align-items: start;
+  }
+
+  .marker-panel > h2,
+  .marker-panel > .marker-back,
+  .marker-panel > .marker-field:has([data-field="name"]),
+  .marker-panel > [data-only="song"],
+  .marker-panel > .marker-toggles,
+  .marker-panel > .marker-error,
+  .marker-panel > .marker-actions {
+    grid-column: 1 / -1;
+  }
+}
+
+.marker-panel h2 {
+  margin: 0;
+  color: var(--ui-text-2);
+  font-size: var(--t-stage-micro);
+  font-weight: var(--ui-wght-strong);
+  font-variation-settings: "wdth" 75;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.marker-field {
+  display: grid;
+  gap: var(--s-1);
+}
+
+.marker-field > span {
+  color: var(--ui-text-2);
+  font-size: var(--t-stage-micro);
+  font-variation-settings: "wdth" 75;
+  text-transform: uppercase;
+}
+
+.marker-panel input[type="text"],
+.marker-panel input[type="number"],
+.marker-panel select {
+  min-height: 44px;
+  border: 1px solid var(--ui-rule);
+  border-radius: 0;
+  background: var(--ui-surface-raised);
+  color: var(--ui-text);
+  padding: 0 var(--s-2);
+  font-size: var(--t-stage-body);
+}
+
+.marker-panel input[type="text"] {
+  font-size: var(--t-stage-list);
+}
+
+/* Toggles read as filled or not filled, so state survives any stage light. */
+.marker-toggles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-2);
+}
+
+.marker-toggle {
+  min-height: 44px;
+  border: 1px solid var(--ui-rule);
+  border-radius: 0;
+  background: transparent;
+  color: var(--ui-text-2);
+  padding: 0 var(--s-3);
+  font-variation-settings: "wdth" 75;
+  font-weight: var(--ui-wght-strong);
+  font-size: var(--t-stage-micro);
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.marker-toggle[aria-pressed="true"] {
+  border-color: var(--ui-text);
+  background: var(--ui-text);
+  color: var(--ui-bg);
+}
+
+/* Sixteen pastels in a gapless 8x2 block, so hue order reads as order: the
+   ramp runs left to right and wraps, warm through green and blue to rose, with
+   the neutral last. The block is capped rather than stretched — the contract
+   forbids filling a large area with solid light colour, and rods take 20-40 min
+   to recover once bleached in the dark. */
+.marker-swatches {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: start;
+  gap: var(--s-2);
+}
+
+.marker-swatch-ramp {
+  display: grid;
+  grid-template-columns: repeat(8, minmax(0, 1fr));
+  width: min(24rem, 100%);
+}
+
+.marker-swatch {
+  min-width: 0;
+  height: 2.25rem;
+  border: 1px solid transparent;
+  border-radius: 0;
+  background: var(--swatch, transparent);
+  cursor: pointer;
+}
+
+.marker-swatch-none {
+  width: 2.25rem;
+  flex: 0 0 auto;
+  border-color: var(--ui-rule);
+}
+
+/* The ramp has no gaps, so selection has to read from inside the cell. */
+.marker-swatch.is-selected {
+  border-color: var(--ui-text);
+  box-shadow: inset 0 0 0 2px var(--ui-bg), inset 0 0 0 3px var(--ui-text);
+  position: relative;
+  z-index: 1;
+}
+
+.marker-swatch-none {
+  background:
+    linear-gradient(to top right,
+      transparent calc(50% - 1px), var(--ui-rule-strong) 50%, transparent calc(50% + 1px));
+}
+
+/* Arriving at a section from the song panel replaced it outright, with no way
+   back. The song this section belongs to is one click away again. */
+.marker-back {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-1);
+  align-self: flex-start;
+  min-height: 32px;
+  border: 0;
+  background: transparent;
+  color: var(--ui-text-2);
+  padding: 0;
+  font-family: var(--ui-mono);
+  font-size: var(--t-stage-micro);
+  cursor: pointer;
+}
+
+.marker-back:hover {
+  color: var(--ui-text);
+}
+
+.marker-back[hidden] {
+  display: none !important;
+}
+
+.marker-actions {
+  display: flex;
+  gap: var(--s-2);
+  justify-content: flex-end;
+}
+
+.marker-error {
+  color: var(--ui-danger-ink);
+  font-size: var(--t-stage-micro);
+}
+
+.marker-error[hidden] {
+  display: none;
+}
+
+/* A single small chip was not findable at a glance in the dark: the eye had to
+   land on it to read it. The colour now carries the 8px identity band for the
+   full height of the card as well, which reads from across a stage without
+   flooding the card with light — the contract forbids the latter. */
+.song-item[data-color]::before {
+  background: var(--song-color);
+}
+
+.song-item[data-color] .song-index {
+  border-color: transparent;
+  background: var(--song-color);
+  color: var(--ui-bg);
+}
+
+.song-item[data-color].active .song-index {
+  border-color: var(--ui-accent);
+  color: var(--ui-bg);
+}
+
+
+/* Double-click opens the marker panel, so the header must not start a text
+   selection on the way there. */
+.song-header {
+  user-select: none;
+}
+
+/* The song panel lists its sections so the parts are edited where they live,
+   without the song panel growing every control a section has. */
+/* Sections flow into as many columns as the panel width allows. A thirteen-part
+   song was a single column four rows tall, so most of it lived behind a
+   scrollbar; in two columns the same list is seven rows and usually needs no
+   scrolling at all. The cap is a safety net for a song with very many parts,
+   not the normal case. */
+.marker-sections {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(13rem, 1fr));
+  gap: 1px;
+  background: var(--ui-rule);
+  border: 1px solid var(--ui-rule);
+  max-height: 21rem;
+  overflow-y: auto;
+}
+
+.marker-section-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-2);
+  min-height: 44px;
+  border: 0;
+  background: var(--ui-surface-raised);
+  color: var(--ui-text);
+  padding: 0 var(--s-2);
+  font-variation-settings: "wdth" 75;
+  font-size: var(--t-stage-micro);
+  text-align: left;
+  cursor: pointer;
+}
+
+.marker-section-row:hover {
+  background: var(--ui-surface-soft);
+}
+
+.marker-section-row .marker-section-meta {
+  color: var(--ui-text-2);
+}
+
+.marker-sections:empty::after {
+  content: "—";
+  display: block;
+  color: var(--ui-text-2);
+  padding: var(--s-2);
+  font-size: var(--t-stage-micro);
+}
+
+/* An author `display` beats the user-agent's [hidden] rule, so a .marker-field
+   with display:grid stayed visible while the DOM said hidden. Every element in
+   the panel that is toggled must restate it. */
+.marker-field[hidden],
+.marker-sections[hidden],
+.marker-editor[hidden] {
+  display: none !important;
 }

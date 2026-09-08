@@ -1,6 +1,10 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { decodeClientMessage } from '../src/server/client-message.ts';
+import fs from 'node:fs';
+import path from 'node:path';
+import vm from 'node:vm';
+import { fileURLToPath } from 'node:url';
+import { decodeClientMessage, SONG_PALETTE } from '../src/server/client-message.ts';
 
 function expectInvalid(input, messagePattern) {
   const result = decodeClientMessage(input);
@@ -215,4 +219,24 @@ test('decoder returns only a safe valid commandId on failures', () => {
   const hostileId = expectInvalid({ type: 'metronome', value: 'yes', commandId: 'bad\nvalue' }, /commandId/);
   assert.equal(hostileId.commandId, undefined);
   assert.doesNotMatch(hostileId.message, /bad|value\n/);
+});
+
+test('the server palette matches the client palette exactly', () => {
+  // These are two copies of one list, and the drift is not hypothetical: the
+  // palette grew from eight colours to sixteen on the client while this set was
+  // left behind, so every colour in the new row was rejected as invalid. The
+  // comment claiming they mirror each other is not enforcement; this is.
+  const here = path.dirname(fileURLToPath(import.meta.url));
+  const source = fs.readFileSync(
+    path.join(here, '..', 'static', 'setlist', 'marker-editor.js'),
+    'utf8',
+  );
+  const scope = {};
+  vm.runInNewContext(source, { globalThis: scope });
+
+  assert.deepEqual(
+    [...SONG_PALETTE].sort(),
+    [...scope.RcMarkerEditor.PALETTE_HEXES].sort(),
+    'the server would reject a colour the panel offers, or accept one it does not',
+  );
 });

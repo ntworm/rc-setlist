@@ -1,3 +1,35 @@
+// Badge icons as inline currentColor SVG. The glyphs these replace (U+21BB,
+// U+25A0, U+23ED, U+2669) fall outside the shipped Martian Mono subsets and
+// would render from a fallback face at the wrong width.
+const BADGE_ICON_ATTRS = 'viewBox="0 0 24 24" aria-hidden="true" focusable="false" class="badge-icon"';
+const ICON_LOOP = `<svg ${BADGE_ICON_ATTRS}><path d="M12 5V2L8 6l4 4V7a5 5 0 1 1-5 5H5a7 7 0 1 0 7-7Z"/></svg>`;
+const ICON_STOP = `<svg ${BADGE_ICON_ATTRS}><rect x="6" y="6" width="12" height="12"/></svg>`;
+const ICON_NEXT = `<svg ${BADGE_ICON_ATTRS}><path d="M5 5v14l9-7-9-7Zm11 0h3v14h-3V5Z"/></svg>`;
+const ICON_BEAT = `<svg ${BADGE_ICON_ATTRS}><path d="M14 3v10.6a3.4 3.4 0 1 0 2 3.1V7h3V3h-5Z"/></svg>`;
+const ICON_SKIP = `<svg ${BADGE_ICON_ATTRS}><path d="M4 5v14l8-7-8-7Zm9 0v14l8-7-8-7Z"/></svg>`;
+const ICON_CLICK = `<svg ${BADGE_ICON_ATTRS}><path d="M12 2 4 20h3l5-11 5 11h3L12 2Z"/></svg>`;
+
+/**
+ * `[skip]` and `[click]` change what happens on stage, and until now neither
+ * left any mark on the card. Setting one and seeing nothing appear reads as a
+ * save that silently failed — the tag was written to Live every time, it simply
+ * had nowhere to show. Every tag the marker panel can write now has a badge.
+ */
+function markerBadges(target) {
+  const parts = [];
+  if (target.loopCount !== null && target.loopCount !== undefined) {
+    parts.push(`<span class="loop-badge">${ICON_LOOP} ${target.loopCount === -1 ? 'LOOP' : `LOOP ${target.loopCount}x`}</span>`);
+  }
+  if (target.autoStop) parts.push(`<span class="stop-badge">${ICON_STOP} STOP</span>`);
+  if (target.autoNext) parts.push(`<span class="next-badge">${ICON_NEXT} NEXT</span>`);
+  if (typeof target.bpm === 'number') parts.push(`<span class="bpm-badge">${ICON_BEAT} ${target.bpm} BPM</span>`);
+  if (target.autoClick === true) parts.push(`<span class="click-badge">${ICON_CLICK} CLICK</span>`);
+  else if (target.autoClick === false) parts.push(`<span class="click-badge is-off">${ICON_CLICK} CLICK OFF</span>`);
+  if (target.skip) parts.push(`<span class="skip-badge">${ICON_SKIP} SKIP</span>`);
+  return parts.join('');
+}
+
+
 const i18n = RcSetlistI18n;
 const t = (key, params) => i18n.t(key, params);
 const controllerRuntime = RcSetlistControllerRuntime;
@@ -30,6 +62,7 @@ const hudSection = document.getElementById('hudSection');
 const hudBpm = document.getElementById('hudBpm');
 const hudDrift = document.getElementById('hudDrift');
 const hudTime = document.getElementById('hudTime');
+const hudTimeBadge = document.getElementById('hudTimeBadge');
 const hudBar = document.getElementById('hudBar');
 const btnPreviousSong = document.getElementById('btnPreviousSong');
 const btnPrevious = document.getElementById('btnPrevious');
@@ -51,6 +84,10 @@ let lastState = null;
 let lastReceivedTime = 0;
 let lastRenderedSongsJson = '';
 let lastRenderedSetlistVersion = null;
+// Colours live outside the setlist structure, so setlistVersion does not move
+// when one changes. Without this the list kept its old paint and a colour the
+// user had just picked never appeared.
+let lastRenderedColorSignature = '';
 let lastJumpTime = 0;
 let lastJumpTarget = { song: -1, section: -1 };
 let draggedSongIdx = null;
@@ -60,6 +97,7 @@ let isLocked = localStorage.getItem('bridge_locked') === 'true';
 let lastFlashBeat = -1;
 let lastRenderedMetronome = null;
 let lastRenderedPreRoll = null;
+let lastRenderedPlaying = null;
 let currentLyrics = { song: '', format: 'none', lines: [] };
 let currentLyricsIdx = -1;
 let isController = false;
@@ -75,7 +113,17 @@ let profileState = {
   projectName: '',
 };
 const pendingProfileCommands = new Map();
-const sectionEditTracker = new Map();  // commandId -> { songIndex, sectionIndex, originalName }
+const markerEditTracker = new Map();  // commandId -> { songIndex, sectionIndex, originalName, time }
+/**
+ * Locator renames the client has sent and Live has not confirmed back yet, by
+ * beat position.
+ *
+ * Reopening a marker inside this window populated the panel from the previous
+ * name, and the next save wrote that stale name back — the earlier edit looked
+ * like it had been silently dropped. Which of the two the user hit depended
+ * only on how fast they were, which is why it read as random.
+ */
+const pendingLocatorEdits = new Map();  // time -> name awaiting confirmation
 
 function showConnectionFailure() {
   const hasState = Boolean(lastState);
@@ -222,7 +270,7 @@ function closeManagedModal(modal) {
   modal.setAttribute('aria-hidden', 'true');
   const opener = modalOpeners.get(modal);
   modalOpeners.delete(modal);
-  opener?.focus?.();
+  opener?.focus?.({ preventScroll: true });
 }
 
 function toggleProfileManageModal() {
@@ -466,7 +514,7 @@ function toggleManagedModal(modal, onOpen) {
   modal.setAttribute('aria-hidden', 'false');
   onOpen?.();
   const focusTarget = modal.querySelector('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
-  focusTarget?.focus?.();
+  focusTarget?.focus?.({ preventScroll: true });
 }
 
 document.addEventListener('keydown', (event) => {
@@ -637,7 +685,7 @@ function renderMidiMappings() {
     if (activeMidiMappingKey === key) {
       tdMap.innerHTML = `<span style="color: var(--accent); font-weight: bold; animation: pulse 1s infinite;">${escapeLyricsEditorText(t('midi.waiting'))}</span>`;
     } else if (mapping) {
-      const typeStr = mapping.type === 'cc' ? 'CC' : t('midi.note');
+      const typeStr = mapping.type === 'cc' ? 'CC' : 'Nota';
       tdMap.textContent = `${typeStr} ${mapping.number} (Ch ${mapping.channel})`;
     } else {
       tdMap.textContent = t('midi.notMapped');
@@ -873,11 +921,24 @@ function navigateAdjacent(direction) {
   if (target) jumpTo(target.songIndex, target.sectionIndex);
 }
 
+function renderPlayState(isPlaying) {
+  // The glyph never changes. This button only ever calls requestPlay — it does
+  // not pause, and Stop is a separate control. Showing a pause icon promised an
+  // action the button does not perform. Playing state is carried by the block
+  // inversion on .is-playing, which is a non-chromatic channel on its own:
+  // filled versus not filled, readable under any stage light.
+  btnPlay.classList.toggle('is-playing', isPlaying);
+  btnPlay.removeAttribute('aria-pressed');
+}
+
 function updateTransportAvailability() {
   const available = canUseTransport();
-  languageSelect.disabled = isLocked || Boolean(lastState?.isPlaying);
+  const isPlaying = Boolean(lastState?.isPlaying);
+  languageSelect.disabled = isLocked || isPlaying;
   languageSelect.setAttribute('aria-disabled', String(languageSelect.disabled));
   btnPlay.disabled = !available;
+  renderPlayState(isPlaying);
+  lastRenderedPlaying = isPlaying;
   btnStop.disabled = !available;
   btnMetronome.disabled = !available;
   btnPreRoll.disabled = !available;
@@ -929,8 +990,16 @@ function mountTransportControls() {
     ...shared,
     ...control,
   }));
+  // Stop is the most expensive mistake this interface allows: it halts the band
+  // mid-song, and it sits a thumb's width from Play on a fixed bottom bar. It
+  // gets the same 500 ms gate as its four neighbours.
+  transportHoldControllers.push(SetlistTransportRuntime.mountHoldButton({
+    ...shared,
+    button: btnStop,
+    resolveTarget: () => (canUseTransport() ? { control: 'stop' } : null),
+    onComplete: () => sendControl('stop'),
+  }));
   btnPlay.addEventListener('click', requestPlay);
-  btnStop.addEventListener('click', () => sendControl('stop'));
   updateTransportAvailability();
 }
 
@@ -1101,13 +1170,14 @@ function connect() {
       } else if (payload.type === 'command_status') {
         lyricsSaveTracker.settle(payload);
         quantizationConfirmation.settle(payload);
-        const sectionEdit = sectionEditTracker.get(payload.commandId);
-        if (sectionEdit && ['confirmed', 'failed', 'expired', 'cancelled'].includes(payload.status)) {
-          sectionEditTracker.delete(payload.commandId);
+        const markerEdit = markerEditTracker.get(payload.commandId);
+        if (markerEdit && ['confirmed', 'failed', 'expired', 'cancelled'].includes(payload.status)) {
+          markerEditTracker.delete(payload.commandId);
+          if (markerEdit.time !== undefined) pendingLocatorEdits.delete(markerEdit.time);
           if (payload.status === 'confirmed') {
-            showToast(t('setlist.sectionEditSaved'), 'info');
+            showToast(t('setlist.markerEditSaved'), 'info');
           } else {
-            showToast(t('setlist.sectionEditFailed'), 'error');
+            showToast(t('setlist.markerEditFailed'), 'error');
           }
         }
         const profileCommand = pendingProfileCommands.get(payload.commandId);
@@ -1305,7 +1375,7 @@ function tick() {
     const songElapsedBeats = calculateSongElapsedBeats(estimatedBeats, activeSong);
     const formattedInternalTime = formatBeatsAsTime(estimatedBeats, lastState.tempo);
     const songElapsedSeconds = activeSong
-      ? SetlistTransportRuntime.songElapsedSecondsFromBeats(songElapsedBeats, activeSong, lastState.tempo)
+      ? SetlistTransportRuntime.songElapsedSecondsFromBeats(songElapsedBeats, activeSong, lastState.durationBpm ?? lastState.tempo)
       : null;
     const setlistProgress = SetlistTransportRuntime.calculateSetlistProgress({
       songs: lastState.songs,
@@ -1318,6 +1388,8 @@ function tick() {
     const songUsesHours = setlistProgress.songDurationSeconds !== null
       && setlistProgress.songDurationSeconds >= 3600;
     setTextIfChanged(hudTime, `${formatDuration(setlistProgress.showElapsedSeconds, showUsesHours)} / ${formatDuration(setlistProgress.showTotalSeconds, showUsesHours)}`);
+    const isEstimated = lastState.durationConfidence === 'estimated';
+    setDisplayIfChanged(hudTimeBadge, isEstimated && setlistProgress.showTotalSeconds !== null ? 'inline-block' : 'none');
 
     if (hudSongTime) {
       setTextIfChanged(hudSongTime, t('setlist.songTime', {
@@ -1379,6 +1451,13 @@ function tick() {
     if (lastState.metronome !== lastRenderedMetronome) {
       lastRenderedMetronome = lastState.metronome;
       btnMetronome.classList.toggle('btn-click-active', lastState.metronome);
+    }
+
+    // Update Play Button active state class and non-chromatic channel
+    const isPlaying = Boolean(lastState.isPlaying);
+    if (isPlaying !== lastRenderedPlaying) {
+      lastRenderedPlaying = isPlaying;
+      renderPlayState(isPlaying);
     }
 
     // Update Loop Iteration display
@@ -1561,20 +1640,28 @@ function renderSongList(state) {
   totalSetlistDuration.title = typeof state.totalDurationSeconds === 'number'
     ? t('setlist.totalDuration')
     : t('setlist.unknownDuration');
+  const isEstimated = state.durationConfidence === 'estimated';
+  const totalEstBadge = document.getElementById('totalDurationBadge');
+  if (totalEstBadge) {
+    totalEstBadge.style.display = isEstimated && typeof state.totalDurationSeconds === 'number' ? 'inline-block' : 'none';
+  }
   if (!state.songs || state.songs.length === 0) {
     setlistTargetHoldController?.cancelForRender();
     songListDiv.innerHTML = `<div style="text-align: center; color: var(--text-muted); padding: 2rem;">${escapeLyricsEditorText(t('setlist.noSongs'))}</div>`;
     lastRenderedSongsJson = '';
     lastRenderedSetlistVersion = null;
+    lastRenderedColorSignature = '';
     activeClassController.reset();
     return;
   }
 
   const hasSetlistVersion = Number.isInteger(state.setlistVersion);
   const currentJson = hasSetlistVersion ? '' : JSON.stringify({ songs: state.songs, hidden: state.hidden });
-  const structureUnchanged = hasSetlistVersion
+  const colorSignature = JSON.stringify(state.songColors || {});
+  const structureUnchanged = (hasSetlistVersion
     ? state.setlistVersion === lastRenderedSetlistVersion
-    : currentJson === lastRenderedSongsJson;
+    : currentJson === lastRenderedSongsJson)
+    && colorSignature === lastRenderedColorSignature;
 
   if (structureUnchanged) {
     updateActiveClasses(state.activeSongIndex, state.activeSectionIndex);
@@ -1583,20 +1670,18 @@ function renderSongList(state) {
 
   lastRenderedSongsJson = currentJson;
   lastRenderedSetlistVersion = hasSetlistVersion ? state.setlistVersion : null;
+  lastRenderedColorSignature = colorSignature;
 
   let html = '';
   state.songs.forEach((song, songIdx) => {
     const isActiveSong = songIdx === state.activeSongIndex;
     html += `
-      <div class="song-item ${isActiveSong ? 'active' : ''}" data-song="${songIdx}" draggable="true" ondragstart="handleDragStart(event, ${songIdx})" ondragover="handleDragOver(event)" ondrop="handleDrop(event)" ondragend="handleDragEnd(event)">
-        <div class="song-header" data-song="${songIdx}">
+      <div class="song-item ${isActiveSong ? 'active' : ''}"${songColorAttr(song)} data-song="${songIdx}" draggable="true" ondragstart="handleDragStart(event, ${songIdx})" ondragover="handleDragOver(event)" ondrop="handleDrop(event)" ondragend="handleDragEnd(event)">
+        <div class="song-header" data-song="${songIdx}" ondblclick="openMarkerEditor('song', ${songIdx}, null, event)">
           <div class="song-info">
             <span class="song-index">${songIdx + 1}</span>
             <span class="song-title">${escapeLyricsEditorText(song.title)}</span>
-            ${song.loopCount !== null ? `<span class="loop-badge">${song.loopCount === -1 ? '↻ LOOP' : `↻ LOOP ${song.loopCount}x`}</span>` : ''}
-            ${song.autoStop ? `<span class="stop-badge">■ STOP</span>` : ''}
-            ${song.autoNext ? `<span class="next-badge">⏭ NEXT</span>` : ''}
-            ${typeof song.bpm === 'number' ? `<span class="bpm-badge">♩ ${song.bpm} BPM</span>` : ''}
+            ${markerBadges(song)}
           </div>
           <span class="song-reorder-handle" role="img" aria-label="Reorder song" title="Reorder song">&#8942;</span>
           <span class="song-time">${formatDuration(song.durationSeconds)}</span>
@@ -1607,12 +1692,9 @@ function renderSongList(state) {
             ${song.sections.map((sec, secIdx) => {
               const isActiveSection = isActiveSong && secIdx === state.activeSectionIndex;
               return `
-                <button class="section-btn ${isActiveSection ? 'active' : ''}" data-song="${songIdx}" data-section="${secIdx}" ondblclick="beginInlineSectionEdit(${songIdx}, ${secIdx}, this, event)">
+                <button class="section-btn ${isActiveSection ? 'active' : ''}" data-song="${songIdx}" data-section="${secIdx}" ondblclick="openMarkerEditor('section', ${songIdx}, ${secIdx}, event)">
                   <span class="section-name">${escapeLyricsEditorText(sectionDisplayName(sec))}</span>
-                  ${sec.loopCount !== null ? `<span class="loop-badge">${sec.loopCount === -1 ? '↻ LOOP' : `↻ LOOP ${sec.loopCount}x`}</span>` : ''}
-                  ${sec.autoStop ? `<span class="stop-badge">■ STOP</span>` : ''}
-                  ${sec.autoNext ? `<span class="next-badge">⏭ NEXT</span>` : ''}
-                  ${typeof sec.bpm === 'number' ? `<span class="bpm-badge">♩ ${sec.bpm} BPM</span>` : ''}
+                  ${markerBadges(sec)}
                 </button>
               `;
             }).join('')}
@@ -1621,8 +1703,10 @@ function renderSongList(state) {
       </div>
     `;
   });
+  const previousScrollTop = songListDiv.scrollTop;
   setlistTargetHoldController?.cancelForRender();
   songListDiv.innerHTML = html;
+  songListDiv.scrollTop = previousScrollTop;
   activeClassController.reset();
   activeClassController.update(state.activeSongIndex, state.activeSectionIndex);
 }
@@ -2095,7 +2179,7 @@ function beginInlineLyricEdit(idx, el) {
   input.value = original.text;
   input.style.cssText = 'flex: 1; background: rgba(0,0,0,0.4); border: 1px solid var(--accent); border-radius: 6px; color: var(--text); font-family: inherit; font-size: 0.9rem; padding: 0.3rem 0.5rem; outline: none;';
   el.replaceWith(input);
-  input.focus();
+  input.focus({ preventScroll: true });
   input.select();
   const commit = () => {
     const newText = input.value;
@@ -2122,7 +2206,7 @@ function beginInlineLyricTsEdit(idx, el) {
   input.placeholder = '[mm:ss.xx]';
   input.style.cssText = 'width: 78px; font-family: \'JetBrains Mono\', monospace; font-size: 0.7rem; background: rgba(0,0,0,0.4); border: 1px solid var(--accent); border-radius: 4px; color: var(--text); padding: 0.2rem 0.3rem; text-align: center; outline: none; box-sizing: border-box;';
   el.replaceWith(input);
-  input.focus();
+  input.focus({ preventScroll: true });
   input.select();
   const commit = () => {
     let val = input.value.trim();
@@ -2150,118 +2234,6 @@ function beginInlineLyricTsEdit(idx, el) {
     else if (e.key === 'Escape') { e.preventDefault(); cancel(); }
   });
   input.addEventListener('blur', commit);
-}
-
-function sendSectionEditCommand(time, name, songIndex, sectionIndex, originalName) {
-  if (!canMutateProfiles() || lastState?.isPlaying) {
-    showToast(t('setlist.stopLiveFirst'), 'error');
-    return;
-  }
-  const commandId = profileCommandId('edit_locator');
-  sectionEditTracker.set(commandId, { songIndex, sectionIndex, originalName });
-  ws.send(JSON.stringify({ type: 'edit_locator', time, name, commandId }));
-}
-
-function beginInlineSectionEdit(songIndex, sectionIndex, btnEl, event) {
-  if (event) {
-    event.preventDefault();
-    event.stopPropagation();
-  }
-  if (!lastState || !lastState.songs) return;
-  const song = lastState.songs[songIndex];
-  if (!song || !song.sections) return;
-  const section = song.sections[sectionIndex];
-  if (!section) return;
-  if (isLocked || !canMutateProfiles() || lastState.isPlaying) {
-    showToast(t('setlist.stopLiveFirst'), 'warn');
-    return;
-  }
-
-  // Pre-populate with the SECTION portion of the cue name (the user's edit scope).
-  // The full cue name in Ableton is `${song.title} > ${section.name} [tags]`; we
-  // let the user edit only the suffix because the song title is decided by which
-  // song the section belongs to. The commit handler prepends the song prefix.
-  const sectionPart = section.name
-    + (section.loopCount === -1 ? ' [loop]' : section.loopCount != null ? ` [loop ${section.loopCount}x]` : '')
-    + (section.autoStop ? ' [stop]' : '')
-    + (section.autoNext ? ' [next]' : '')
-    + (section.bpm != null ? ` [bpm ${section.bpm}]` : '')
-    + (section.autoClick === true ? ' [click]' : section.autoClick === false ? ' [click off]' : '')
-    + (section.skip ? ' [skip]' : '')
-    + (section.automationOnly ? ' [ignore]' : '');
-
-  const input = document.createElement('input');
-  input.type = 'text';
-  input.value = sectionPart;
-  input.className = 'section-edit-input';
-  input.placeholder = 'Section name + tags';
-  input.dataset.originalValue = sectionPart;
-  btnEl.replaceWith(input);
-  input.focus();
-  input.select();
-  // Track the input so we can replace it back on cancel/error.
-  input.dataset.songIndex = String(songIndex);
-  input.dataset.sectionIndex = String(sectionIndex);
-  let committed = false;
-  const restoreButton = () => {
-    // Replace the input with the original button. The renderSongList below will
-    // re-paint anyway, but doing this immediately prevents the input from being
-    // orphaned if no state push arrives (e.g., websocket closed).
-    const current = document.querySelector('.section-edit-input');
-    if (current && current === input) {
-      current.replaceWith(btnEl);
-    }
-  };
-  const commit = () => {
-    if (committed) return;
-    const trimmed = input.value.trim();
-    // No-op: nothing changed. Restore the button without round-tripping.
-    if (trimmed === input.dataset.originalValue) {
-      committed = true;
-      restoreButton();
-      return;
-    }
-    // Empty input is invalid: the cue point would have no display name. Reject.
-    // Extract the display name portion (the part before any `[tag]`).
-    const displayName = trimmed.replace(/\s*\[[^\]]+\]/g, '').trim();
-    if (!displayName) {
-      showToast(t('setlist.sectionEditEmptyName'), 'warn');
-      input.focus();
-      input.select();
-      return;
-    }
-    committed = true;
-    // The cue point name Ableton stores is the full path: '${song.title} > ${section.name}'.
-    // Prepend the song title so the recreate preserves the song context.
-    const fullCueName = `${song.title} > ${trimmed}`;
-    const commandId = profileCommandId('edit_locator');
-    sectionEditTracker.set(commandId, { songIndex, sectionIndex, originalName: fullCueName });
-    if (ws && ws.readyState === WebSocket.OPEN) {
-      input.classList.add('is-saving');
-      input.readOnly = true;
-      ws.send(JSON.stringify({ type: 'edit_locator', time: section.time, name: fullCueName, commandId }));
-    } else {
-      showToast(t('setlist.sectionEditFailed'), 'error');
-      restoreButton();
-    }
-    // Do NOT re-render here. The next state push will overwrite the button.
-    // This avoids the "flash of stale content" race that the optimistic re-render
-    // introduced: the user saw the parsing-incomplete input value briefly before
-    // the round-trip resolved.
-  };
-  const cancel = () => {
-    if (committed) return;
-    committed = true;
-    restoreButton();
-  };
-  input.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') { e.preventDefault(); commit(); }
-    else if (e.key === 'Escape') { e.preventDefault(); cancel(); }
-  });
-  input.addEventListener('blur', () => {
-    // Blur commits unless the user just pressed Escape (which calls cancel first).
-    if (!committed) commit();
-  });
 }
 
 function addLyricLine() {
@@ -2520,3 +2492,325 @@ globalThis.setlistStageRuntime = StageRuntime.mount({ i18n });
 mountTransportControls();
 mountSetlistTargetControls();
 connect();
+
+/* ===== Marker editor =====
+   One panel for a song or a section. Tags are controls here, never raw text:
+   the old raw-text editor let a [bpm] tag be deleted by accident, and that tag
+   feeds the show duration. */
+
+function songColor(song) {
+  const color = lastState && lastState.songColors
+    ? lastState.songColors[String(song.time)]
+    : undefined;
+  return window.RcMarkerEditor.isPaletteColor(color) ? color : '';
+}
+
+/**
+ * Goes on the card itself: the identity band, the number chip and the faint
+ * background wash all read from it.
+ *
+ * The wash is the same colour at low alpha, written as an eight-digit hex here
+ * rather than composed in CSS, so the stylesheet needs no colour-mixing support
+ * from whatever Chromium the Live extension host happens to ship.
+ */
+const SONG_COLOR_WASH_ALPHA = '26'; // ~15%
+
+function songColorAttr(song) {
+  const color = songColor(song);
+  if (!color) return '';
+  return ' data-color="1" style="--song-color: ' + color
+    + '; --song-color-wash: ' + color + SONG_COLOR_WASH_ALPHA + '"';
+}
+
+const markerEditor = document.getElementById('markerEditor');
+const markerPanel = document.getElementById('markerPanel');
+const markerSwatches = document.getElementById('markerSwatches');
+const markerToggles = document.getElementById('markerToggles');
+const markerError = document.getElementById('markerError');
+const markerLoopTimesField = document.getElementById('markerLoopTimesField');
+const markerBack = document.getElementById('markerBack');
+let markerTarget = null;
+
+// `[hidden]` and `[ignore]` are absent on purpose: either one removes the marker
+// from the setlist, and an unlabelled toggle beside STOP made a section vanish on
+// a mis-tap. They stay on the locator, carried through untouched.
+const MARKER_TOGGLE_LABELS = {
+  stop: 'marker.stop',
+  next: 'marker.next',
+  skip: 'marker.skip',
+};
+
+function closeMarkerEditor() {
+  markerTarget = null;
+  if (markerEditor) markerEditor.hidden = true;
+}
+
+function markerFieldEl(field) {
+  return markerPanel ? markerPanel.querySelector('[data-field="' + field + '"]') : null;
+}
+
+function renderMarkerToggles(kind, parsed) {
+  const fields = window.RcMarkerEditor.fieldsFor(kind);
+  markerToggles.innerHTML = Object.keys(MARKER_TOGGLE_LABELS)
+    .filter((field) => fields.indexOf(field) !== -1)
+    .map((field) => {
+      const on = Boolean(parsed[field]);
+      return '<button type="button" class="marker-toggle" data-toggle="' + field + '"'
+        + ' aria-pressed="' + (on ? 'true' : 'false') + '">'
+        + i18n.t(MARKER_TOGGLE_LABELS[field]) + '</button>';
+    })
+    .join('');
+  markerToggles.querySelectorAll('[data-toggle]').forEach((button) => {
+    button.addEventListener('click', () => {
+      const on = button.getAttribute('aria-pressed') === 'true';
+      button.setAttribute('aria-pressed', on ? 'false' : 'true');
+    });
+  });
+}
+
+function syncMarkerLoopTimes() {
+  const mode = markerFieldEl('loop-mode');
+  if (markerLoopTimesField && mode) markerLoopTimesField.hidden = mode.value !== 'count';
+}
+
+/**
+ * Renaming a locator is a delete followed by a recreate, and Live can only put a
+ * cue point where the playhead stands. With the transport rolling the recreate
+ * lands wherever playback reached, which drops a duplicate in the middle of the
+ * set. The server refuses it too; this is the message the user actually sees.
+ */
+function canEditMarkers() {
+  if (isLocked || !canMutateProfiles() || (lastState && lastState.isPlaying)) {
+    showToast(t('setlist.stopLiveFirst'), 'warn');
+    return false;
+  }
+  return true;
+}
+
+/**
+ * A rename in flight for this exact marker means the state on screen is the one
+ * before it. Opening the panel now would show the old values and write them
+ * back on the next save.
+ */
+function markerEditPending(time) {
+  if (!pendingLocatorEdits.has(time)) return false;
+  showToast(t('setlist.markerSaving'), 'warn');
+  return true;
+}
+
+function openMarkerEditor(kind, songIndex, sectionIndex, event) {
+  if (event) {
+    event.preventDefault();
+    event.stopPropagation();
+  }
+  if (!lastState || !lastState.songs) return;
+  if (!canEditMarkers()) return;
+  const song = lastState.songs[songIndex];
+  if (!song) return;
+  const section = sectionIndex === null ? null : (song.sections || [])[sectionIndex];
+  if (sectionIndex !== null && !section) return;
+
+  const time = section ? section.time : song.time;
+  if (markerEditPending(time)) return;
+  // The locator name exactly as Live has it. Two things ride on this being the
+  // real name and not one we reconstructed: tags the panel does not show are
+  // carried through from it, and the section's prefix — `> VERSO` or
+  // `JÚLIA > VERSO`, both valid — is preserved instead of being rewritten.
+  const rawName = section
+    ? (section.rawName || ('> ' + section.name))
+    : (song.rawName || song.title);
+  const source = section || song;
+  const clickValue = section ? section.autoClick : song.autoClick;
+
+  const parsed = {
+    name: section ? section.name : song.title,
+    bpm: source.bpm,
+    loopCount: source.loopCount,
+    stop: Boolean(source.autoStop),
+    next: Boolean(source.autoNext),
+    click: clickValue === true ? 'on' : clickValue === false ? 'off' : 'inherit',
+    skip: Boolean(source.skip),
+    hidden: false,
+    ignore: Boolean(section && section.automationOnly),
+  };
+
+  // Coming from the song panel, the way back is the song we came from.
+  const cameFromSong = kind === 'section' && markerTarget && markerTarget.kind === 'song'
+    && markerTarget.songIndex === songIndex;
+  markerTarget = {
+    kind, songIndex, sectionIndex, time, songTitle: song.title, rawName,
+    color: kind === 'song' ? songColor(song) : '',
+    backToSong: cameFromSong || (markerTarget && markerTarget.backToSong && kind === 'section'),
+  };
+
+  markerFieldEl('name').value = parsed.name;
+  markerFieldEl('bpm').value = typeof parsed.bpm === 'number' ? String(parsed.bpm) : '';
+  const mode = markerFieldEl('loop-mode');
+  mode.value = parsed.loopCount === -1 ? 'infinite'
+    : typeof parsed.loopCount === 'number' ? 'count' : 'off';
+  markerFieldEl('loop-times').value = typeof parsed.loopCount === 'number' && parsed.loopCount > 0
+    ? String(parsed.loopCount) : '2';
+  markerFieldEl('click').value = parsed.click;
+  syncMarkerLoopTimes();
+
+  const currentColor = markerTarget.color;
+  markerPanel.dataset.color = currentColor;
+  markerSwatches.innerHTML = window.RcMarkerEditor.swatchMarkup(currentColor);
+  markerSwatches.querySelectorAll('[data-swatch]').forEach((button) => {
+    button.addEventListener('click', () => {
+      markerPanel.dataset.color = button.dataset.swatch;
+      markerSwatches.querySelectorAll('[data-swatch]').forEach((other) => {
+        const on = other === button;
+        other.classList.toggle('is-selected', on);
+        other.setAttribute('aria-pressed', on ? 'true' : 'false');
+      });
+    });
+  });
+
+  markerPanel.querySelectorAll('[data-only]').forEach((el) => {
+    el.hidden = el.dataset.only !== kind;
+  });
+  if (kind === 'section') markerLoopTimesField.hidden = mode.value !== 'count';
+  renderMarkerSections(kind, songIndex, song);
+
+  renderMarkerToggles(kind, parsed);
+  if (markerBack) {
+    markerBack.hidden = !markerTarget.backToSong;
+    markerBack.textContent = '← ' + song.title;
+  }
+  markerError.hidden = true;
+  markerEditor.hidden = false;
+  markerFieldEl('name').focus({ preventScroll: true });
+  markerFieldEl('name').select();
+}
+
+/**
+ * The song panel lists its sections. Loop, click and the per-part behaviour are
+ * section concerns — that is how the music is structured and how the user reads
+ * it — so they are edited where they live instead of piling onto the song.
+ */
+function renderMarkerSections(kind, songIndex, song) {
+  const host = document.getElementById('markerSections');
+  if (!host) return;
+  if (kind !== 'song') {
+    host.innerHTML = '';
+    return;
+  }
+  const sections = song.sections || [];
+  host.innerHTML = sections.map((section, index) => {
+    const bits = [];
+    if (typeof section.bpm === 'number') bits.push(section.bpm + ' BPM');
+    if (section.loopCount === -1) bits.push('LOOP');
+    else if (typeof section.loopCount === 'number') bits.push('LOOP ' + section.loopCount + 'x');
+    if (section.autoStop) bits.push('STOP');
+    if (section.autoNext) bits.push('NEXT');
+    return '<button type="button" class="marker-section-row" data-section-index="' + index + '">'
+      + '<span>' + escapeLyricsEditorText(section.name) + '</span>'
+      + '<span class="marker-section-meta">' + bits.join(' · ') + '</span>'
+      + '</button>';
+  }).join('');
+  host.querySelectorAll('[data-section-index]').forEach((row) => {
+    row.addEventListener('click', () => {
+      openMarkerEditor('section', songIndex, Number(row.dataset.sectionIndex), null);
+    });
+  });
+}
+
+function buildMarkerName() {
+  const read = window.RcMarkerEditor.readForm(markerPanel, markerTarget.kind);
+  if (!read) return null;
+  Object.keys(MARKER_TOGGLE_LABELS).forEach((field) => {
+    const button = markerToggles.querySelector('[data-toggle="' + field + '"]');
+    if (button) read[field] = button.getAttribute('aria-pressed') === 'true';
+  });
+
+  // A section keeps whatever prefix its locator already had. Composing
+  // `songTitle + ' > '` instead rewrote every `> VERSO` in the set into
+  // `JÚLIA > VERSO` the moment the panel touched it.
+  const head = markerTarget.kind === 'song'
+    ? read.name
+    : (window.RcMarkerEditor.sectionPrefix(markerTarget.rawName) + read.name);
+  const fullName = window.RcMarkerEditor.buildLocatorName(
+    head, read, markerTarget.kind, markerTarget.rawName,
+  );
+  return { fullName, color: read.color };
+}
+
+function commitMarkerEditor(event) {
+  if (event) event.preventDefault();
+  if (!markerTarget) return;
+  const built = buildMarkerName();
+  if (!built) {
+    markerError.textContent = i18n.t('marker.invalid');
+    markerError.hidden = false;
+    return;
+  }
+
+  const renaming = !window.RcMarkerEditor.isSameLocatorName(built.fullName, markerTarget.rawName);
+  const recolouring = markerTarget.kind === 'song' && (built.color || '') !== markerTarget.color;
+  // The panel can sit open across a transport start. Re-check at the moment of
+  // the write, not only at the moment it opened.
+  if (renaming && !canEditMarkers()) return;
+  if (!ws || ws.readyState !== WebSocket.OPEN) {
+    markerError.textContent = i18n.t('setlist.markerEditFailed');
+    markerError.hidden = false;
+    return;
+  }
+
+  if (renaming) {
+    // Registered so a failed rename surfaces as a toast instead of vanishing.
+    const commandId = profileCommandId('edit_locator');
+    markerEditTracker.set(commandId, {
+      songIndex: markerTarget.songIndex,
+      sectionIndex: markerTarget.sectionIndex,
+      originalName: markerTarget.rawName,
+      time: markerTarget.time,
+    });
+    pendingLocatorEdits.set(markerTarget.time, built.fullName);
+    ws.send(JSON.stringify({
+      type: 'edit_locator', time: markerTarget.time, name: built.fullName, commandId,
+    }));
+  }
+  if (recolouring) {
+    // Colour is RC Setlist's own memory and never touches the Live project.
+    ws.send(JSON.stringify({
+      type: 'set_song_color',
+      time: markerTarget.time,
+      color: built.color || null,
+    }));
+  }
+  closeMarkerEditor();
+}
+
+if (markerPanel) {
+  markerPanel.addEventListener('submit', commitMarkerEditor);
+  const markerCancel = document.getElementById('markerCancel');
+  if (markerCancel) markerCancel.addEventListener('click', closeMarkerEditor);
+  if (markerBack) {
+    markerBack.addEventListener('click', () => {
+      if (!markerTarget) return;
+      const songIndex = markerTarget.songIndex;
+      markerTarget = null;
+      openMarkerEditor('song', songIndex, null, null);
+    });
+  }
+  const markerLoopMode = markerFieldEl('loop-mode');
+  if (markerLoopMode) markerLoopMode.addEventListener('change', syncMarkerLoopTimes);
+}
+if (markerEditor) {
+  // Click fires on the common ancestor of mousedown and mouseup, so selecting
+  // text inside a field and releasing past the panel edge produced a click whose
+  // target was the backdrop — the panel closed mid-edit and the work was lost.
+  // The gesture has to both start and end on the backdrop to count as dismissal.
+  let backdropPressed = false;
+  markerEditor.addEventListener('mousedown', (event) => {
+    backdropPressed = event.target === markerEditor;
+  });
+  markerEditor.addEventListener('click', (event) => {
+    if (backdropPressed && event.target === markerEditor) closeMarkerEditor();
+    backdropPressed = false;
+  });
+}
+document.addEventListener('keydown', (event) => {
+  if (event.key === 'Escape' && markerEditor && !markerEditor.hidden) closeMarkerEditor();
+});

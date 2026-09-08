@@ -55,6 +55,8 @@ export interface ProfilePaths {
   metadata: string;
   lyrics: string;
   customOrder: string;
+  /** Song identities and the side data keyed to them. See song-book.ts. */
+  songBook: string;
   exports: string;
   audio: string;
 }
@@ -266,6 +268,7 @@ export class ProfileManager {
     const metadata = path.resolve(root, 'profile.json');
     const lyrics = path.resolve(root, 'lyrics');
     const customOrder = path.resolve(root, 'custom-order.json');
+    const songBook = path.resolve(root, 'song-book.json');
     const exports = path.resolve(root, 'exports');
     const audio = path.resolve(root, 'audio');
 
@@ -275,13 +278,13 @@ export class ProfileManager {
     }
 
     const rootWithSlash = root.endsWith(path.sep) ? root : root + path.sep;
-    for (const p of [metadata, lyrics, customOrder, exports, audio]) {
+    for (const p of [metadata, lyrics, customOrder, songBook, exports, audio]) {
       if (!p.startsWith(rootWithSlash)) {
         throw new ProfileError('profile_io_error', 'Path traversal detected in profile subpaths.');
       }
     }
 
-    return { root, metadata, lyrics, customOrder, exports, audio };
+    return { root, metadata, lyrics, customOrder, songBook, exports, audio };
   }
 
   public getActivePaths(): ProfilePaths {
@@ -945,6 +948,7 @@ export class ProfileManager {
       metadata: path.join(stagingRoot, 'profile.json'),
       lyrics: path.join(stagingRoot, 'lyrics'),
       customOrder: path.join(stagingRoot, 'custom-order.json'),
+      songBook: path.join(stagingRoot, 'song-book.json'),
       exports: path.join(stagingRoot, 'exports'),
       audio: path.join(stagingRoot, 'audio')
     };

@@ -1,5 +1,7 @@
 export interface Section {
   name: string;
+  /** The locator name exactly as Live has it, tags included. */
+  rawName?: string;
   time: number;
   automationOnly?: true;
   loopCount: number | null;
@@ -12,6 +14,8 @@ export interface Section {
 
 export interface Song {
   title: string;
+  /** The locator name exactly as Live has it, tags included. */
+  rawName?: string;
   time: number;
   durationSeconds?: number | null;
   sections: Section[];
@@ -48,6 +52,17 @@ export interface SetlistState {
   currentLoopIteration: number;
   clipTriggerQuantization: number;
   totalDurationSeconds?: number | null;
+  /** Frozen tempo base the durations above were measured with. */
+  durationBpm?: number;
+  /** Song colours keyed by beat position. */
+  songColors?: Record<string, string>;
+  /**
+   * Confidence level for the set's calculated durations.
+   * 'declared': At least one [bpm] tag was authored on a song or section.
+   * 'estimated': No [bpm] tags exist anywhere in the set; durations fall back
+   * to a single frozen tempo and cannot observe Live arrangement tempo automation.
+   */
+  durationConfidence?: 'declared' | 'estimated';
   arrangementEndTime?: number | null;
 
   // Reliability Core state fields
@@ -117,7 +132,8 @@ export type ClientMessage =
   | (ClientMessageBase & { type: 'profile_restore'; id: string })
   | (ClientMessageBase & { type: 'profile_rename'; id: string; name: string })
   | (ClientMessageBase & { type: 'profile_delete'; id: string; confirmationName: string })
-  | (ClientMessageBase & { type: 'edit_locator'; time: number; name: string });
+  | (ClientMessageBase & { type: 'edit_locator'; time: number; name: string })
+  | (ClientMessageBase & { type: 'set_song_color'; time: number; color: string | null });
 
 export interface ShowCommand<TPayload = unknown> {
   commandId: string;

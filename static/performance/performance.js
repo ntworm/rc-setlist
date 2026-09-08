@@ -1,3 +1,13 @@
+// Badge icons as inline currentColor SVG. The glyphs these replace (U+21BB,
+// U+25A0, U+23ED, U+2669) fall outside the shipped Martian Mono subsets and
+// would render from a fallback face at the wrong width.
+const BADGE_ICON_ATTRS = 'viewBox="0 0 24 24" aria-hidden="true" focusable="false" class="badge-icon"';
+const ICON_LOOP = `<svg ${BADGE_ICON_ATTRS}><path d="M12 5V2L8 6l4 4V7a5 5 0 1 1-5 5H5a7 7 0 1 0 7-7Z"/></svg>`;
+const ICON_STOP = `<svg ${BADGE_ICON_ATTRS}><rect x="6" y="6" width="12" height="12"/></svg>`;
+const ICON_NEXT = `<svg ${BADGE_ICON_ATTRS}><path d="M5 5v14l9-7-9-7Zm11 0h3v14h-3V5Z"/></svg>`;
+const ICON_BEAT = `<svg ${BADGE_ICON_ATTRS}><path d="M14 3v10.6a3.4 3.4 0 1 0 2 3.1V7h3V3h-5Z"/></svg>`;
+
+
 
 
 function escapeHtml(unsafe) {
@@ -241,11 +251,11 @@ function updateUINonTimeSensitive(state) {
   let songBadgeHtml = '';
   if (currentSong) {
     if (currentSong.loopCount !== null) {
-      songBadgeHtml += `<span class="perf-badge loop-badge">${currentSong.loopCount === -1 ? '↻ LOOP' : `↻ LOOP ${currentSong.loopCount}x`}</span>`;
+      songBadgeHtml += `<span class="perf-badge loop-badge">${currentSong.loopCount === -1 ? `${ICON_LOOP} LOOP` : `${ICON_LOOP} LOOP ${currentSong.loopCount}x`}</span>`;
     }
-    if (currentSong.autoStop) songBadgeHtml += `<span class="perf-badge stop-badge">■ STOP</span>`;
-    if (currentSong.autoNext) songBadgeHtml += `<span class="perf-badge next-badge">⏭ NEXT</span>`;
-    if (typeof currentSong.bpm === 'number') songBadgeHtml += `<span class="perf-badge bpm-badge">♩ ${currentSong.bpm} BPM</span>`;
+    if (currentSong.autoStop) songBadgeHtml += `<span class="perf-badge stop-badge">${ICON_STOP} STOP</span>`;
+    if (currentSong.autoNext) songBadgeHtml += `<span class="perf-badge next-badge">${ICON_NEXT} NEXT</span>`;
+    if (typeof currentSong.bpm === 'number') songBadgeHtml += `<span class="perf-badge bpm-badge">${ICON_BEAT} ${currentSong.bpm} BPM</span>`;
   }
   document.getElementById('songBadges').innerHTML = songBadgeHtml;
 
@@ -253,11 +263,11 @@ function updateUINonTimeSensitive(state) {
   let sectionBadgeHtml = '';
   if (currentSection) {
     if (currentSection.loopCount !== null) {
-      sectionBadgeHtml += `<span class="perf-badge loop-badge">${currentSection.loopCount === -1 ? '↻ LOOP' : `↻ LOOP ${currentSection.loopCount}x`}</span>`;
+      sectionBadgeHtml += `<span class="perf-badge loop-badge">${currentSection.loopCount === -1 ? `${ICON_LOOP} LOOP` : `${ICON_LOOP} LOOP ${currentSection.loopCount}x`}</span>`;
     }
-    if (currentSection.autoStop) sectionBadgeHtml += `<span class="perf-badge stop-badge">■ STOP</span>`;
-    if (currentSection.autoNext) sectionBadgeHtml += `<span class="perf-badge next-badge">⏭ NEXT</span>`;
-    if (typeof currentSection.bpm === 'number') sectionBadgeHtml += `<span class="perf-badge bpm-badge">♩ ${currentSection.bpm} BPM</span>`;
+    if (currentSection.autoStop) sectionBadgeHtml += `<span class="perf-badge stop-badge">${ICON_STOP} STOP</span>`;
+    if (currentSection.autoNext) sectionBadgeHtml += `<span class="perf-badge next-badge">${ICON_NEXT} NEXT</span>`;
+    if (typeof currentSection.bpm === 'number') sectionBadgeHtml += `<span class="perf-badge bpm-badge">${ICON_BEAT} ${currentSection.bpm} BPM</span>`;
   }
   document.getElementById('sectionBadges').innerHTML = sectionBadgeHtml;
 }
@@ -269,9 +279,8 @@ function tick() {
     const estimatedBeats = getEstimatedBeats();
     const activeSong = lastState.songs[lastState.activeSongIndex];
     const songElapsedBeats = calculateSongElapsedBeats(estimatedBeats, activeSong);
-    const activeBpm = (activeSong && typeof activeSong.bpm === 'number') ? activeSong.bpm : lastState.tempo;
-    const songElapsedSeconds = Number.isFinite(songElapsedBeats)
-      ? Math.max(0, songElapsedBeats) * 60 / (activeBpm || 120)
+    const songElapsedSeconds = activeSong
+      ? SetlistTransportRuntime.songElapsedSecondsFromBeats(songElapsedBeats, activeSong, lastState.durationBpm ?? lastState.tempo)
       : null;
 
     const setlistProgress = SetlistTransportRuntime.calculateSetlistProgress({
@@ -284,6 +293,12 @@ function tick() {
     // Show elapsed / total
     const showUsesHours = setlistProgress.showTotalSeconds !== null && setlistProgress.showTotalSeconds >= 3600;
     timecode.textContent = `${formatSecondsAsTime(setlistProgress.showElapsedSeconds)} / ${formatDuration(setlistProgress.showTotalSeconds, showUsesHours)}`;
+
+    const timecodeEstEl = document.getElementById('timecodeEst');
+    if (timecodeEstEl) {
+      const isEstimated = lastState.durationConfidence === 'estimated';
+      timecodeEstEl.style.display = isEstimated && setlistProgress.showTotalSeconds !== null ? 'inline-block' : 'none';
+    }
 
     const songTimecodeEl = document.getElementById('songTimecode');
     if (songTimecodeEl) {
@@ -334,7 +349,7 @@ function tick() {
 
     // Update Loop Iteration display
     if (lastState.loopIteration) {
-      perfLoopIter.textContent = `↻ LOOP: ${lastState.loopIteration.current}/${lastState.loopIteration.total}`;
+      perfLoopIter.innerHTML = `${ICON_LOOP} LOOP: ${lastState.loopIteration.current}/${lastState.loopIteration.total}`;
       perfLoopIter.style.display = 'block';
     } else {
       perfLoopIter.style.display = 'none';

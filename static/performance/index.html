@@ -51,7 +51,7 @@
               <span class="card-label" data-i18n="performance.activeSection">Active section</span>
               <span id="sectionName" class="card-value">&mdash;</span>
               <div id="sectionBadges" class="perf-badges"></div>
-              <div id="perfLoopIter" class="loop-iteration">↻ LOOP: 1/4</div>
+              <div id="perfLoopIter" class="loop-iteration">LOOP: 1/4</div>
             </div>
             <div class="card-footer">
               <span data-i18n="performance.next">Next</span>
@@ -63,7 +63,10 @@
         <div class="performance-footer" aria-label="Show telemetry" data-i18n-aria-label="performance.telemetryAria">
           <div class="telemetry-card timecode-card">
             <span class="card-label" data-i18n="performance.timecode">Timecode</span>
-            <span id="timecode" class="timecode-display">0:00:00</span>
+            <div style="display: flex; align-items: baseline; gap: 0.4rem; flex-wrap: wrap;">
+              <span id="timecode" class="timecode-display">0:00:00</span>
+              <span id="timecodeEst" class="duration-est-badge" style="display: none;" title="Estimated duration" data-i18n-title="setlist.durationEstimatedTitle">EST.</span>
+            </div>
             <span id="songTimecode" class="song-timecode">Song: 0:00:00</span>
           </div>
           <div class="telemetry-card bar-card">

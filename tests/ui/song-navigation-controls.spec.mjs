@@ -126,3 +126,28 @@ test('all directional holds disable under Lock Mode and lost controller authorit
   await pointerHold(page, page.locator('#btnNextSong'), 9);
   expect(await jumpMessages(page)).toEqual([]);
 });
+
+test('play button shows playing state by block inversion and never turns into a pause icon', async ({ page }) => {
+  const btnPlay = page.locator('#btnPlay');
+  const playPath = btnPlay.locator('svg path');
+  await expect(btnPlay).toHaveClass(/is-playing/);
+  await expect(btnPlay).not.toHaveAttribute('aria-pressed');
+  // The glyph must stay a play triangle while playing: this button does not pause.
+  await expect(playPath).toHaveAttribute('d', 'M8 5v14l11-7L8 5Z');
+
+  const fixture = await page.evaluate(async () => (
+    fetch('/__test__/state').then((response) => response.json())
+  ));
+  await emitServerMessage(page, { ...fixture, state: { ...fixture.state, isPlaying: false } });
+
+  await expect(btnPlay).not.toHaveClass(/is-playing/);
+  await expect(btnPlay).not.toHaveAttribute('aria-pressed');
+  await expect(playPath).toHaveAttribute('d', 'M8 5v14l11-7L8 5Z');
+
+  await emitServerMessage(page, { ...fixture, state: { ...fixture.state, isPlaying: true } });
+
+  await expect(btnPlay).toHaveClass(/is-playing/);
+  await expect(btnPlay).not.toHaveAttribute('aria-pressed');
+  // The glyph must stay a play triangle while playing: this button does not pause.
+  await expect(playPath).toHaveAttribute('d', 'M8 5v14l11-7L8 5Z');
+});

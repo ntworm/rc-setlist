@@ -9,8 +9,9 @@ import {
   getOscDiagnostics,
   requestOscDiagnosticProbe,
 } from '../index.js';
+import { bridgeState } from '../core/bridge-state.js';
 import { getLanAddresses, pickLanIps } from '../util/helpers.js';
-import { getAutoStart, getUiLocale, setAutoStart, setUiLocale, type UiLocale } from '../preferences.js';
+import { getAutoStart, getUiLocale, setAutoStart, setUiLocale, type UiLocale , getWriteTempoOnJump, setWriteTempoOnJump } from '../preferences.js';
 import { buildOscDiagnosticModel } from './osc-diagnostics.js';
 // __dirname is a global in CommonJS, which is our target format
 
@@ -98,6 +99,11 @@ export async function showPanelDialog(context: ModalContext): Promise<void> {
         const next = !getAutoStart();
         const ok = setAutoStart(next);
         console.log(`[rc-setlist] auto-start toggled to ${next} (write ok=${ok})`);
+      } else if (action === 'toggle-write-tempo') {
+        const next = !getWriteTempoOnJump();
+        const ok = setWriteTempoOnJump(next);
+        bridgeState.writeTempoOnJump = next;
+        console.log(`[rc-setlist] write-tempo-on-jump toggled to ${next} (write ok=${ok})`);
       } else if (action === 'diagnose-osc' && running) {
         requestOscDiagnosticProbe();
         await new Promise<void>((resolve) => setTimeout(resolve, 350));
@@ -124,11 +130,15 @@ async function renderPanelDialog(context: ModalContext): Promise<string> {
   let html = '';
   try {
     html = await fs.readFile(path.join(panelDir, 'index.html'), 'utf8');
+    const uiSystemCss = await fs.readFile(path.join(__dirname, 'static/shared/ui-system.css'), 'utf8');
     const qrJs = await fs.readFile(path.join(panelDir, 'qrcode.js'), 'utf8');
     const i18nJs = await fs.readFile(path.join(__dirname, 'static/shared/i18n.js'), 'utf8');
 
+    html = html.replace('<link rel="stylesheet" href="../shared/ui-system.css">', `<style>${uiSystemCss}</style>`);
     html = html.replace('<script src="../shared/i18n.js"></script>', `<script>${i18nJs}</script>`);
     html = html.replace('<script src="qrcode.js"></script>', `<script>${qrJs}</script>`);
+
+    const durationConfidence = bridgeState.manager?.getState()?.durationConfidence ?? 'estimated';
 
     const injection = `
       <script>
@@ -136,9 +146,11 @@ async function renderPanelDialog(context: ModalContext): Promise<string> {
         window.INITIAL_IS_RUNNING = ${isRunning};
         window.INITIAL_PRIMARY_IP = "${primaryIp}";
         window.INITIAL_AUTO_START = ${getAutoStart()};
+        window.INITIAL_WRITE_TEMPO_ON_JUMP = ${getWriteTempoOnJump()};
         window.INITIAL_TOKEN = "${getAuthToken()}";
         window.INITIAL_LOCALE = ${JSON.stringify(getUiLocale())};
         window.INITIAL_OSC_DIAGNOSTICS = ${JSON.stringify(oscDiagnostics)};
+        window.INITIAL_DURATION_CONFIDENCE = "${durationConfidence}";
       </script>
     `;
     html = html.replace('<body>', `<body>${injection}`);

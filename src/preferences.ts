@@ -5,6 +5,7 @@ import { getExtensionContext } from './context.js';
 const SETLIST_DIR = '.setlist';
 const AUTO_START_FILE = 'auto-start';
 const UI_LOCALE_FILE = 'ui-locale';
+const WRITE_TEMPO_ON_JUMP_FILE = 'write-tempo-on-jump';
 
 function preferencePath(fileName: string): string | null {
   // 1. Try SDK storageDirectory first if context is available
@@ -92,6 +93,27 @@ export function setAutoStart(on: boolean): boolean {
 }
 
 export type UiLocale = 'en' | 'pt-BR';
+
+/**
+ * Whether an explicit jump may write the destination tempo into Live.
+ *
+ * Defaults to FALSE, and the default is the whole point. Writing `song.tempo`
+ * overrides Live's tempo automation: the arrangement stops following its own
+ * envelope until the user presses Re-Enable Automation. For anyone whose show
+ * lives on tempo automation drawn inside Live, a single jump mid-set would
+ * silently flatten the rest of the night.
+ *
+ * A `[bpm N]` tag means "measure the duration with this". It does not mean
+ * "impose this on Live". Turn this on only if the setlist tags ARE the source
+ * of truth for tempo and the arrangement has no tempo automation.
+ */
+export function getWriteTempoOnJump(): boolean {
+  return readPreference(WRITE_TEMPO_ON_JUMP_FILE)?.toLowerCase() === 'true';
+}
+
+export function setWriteTempoOnJump(on: boolean): boolean {
+  return writePreference(WRITE_TEMPO_ON_JUMP_FILE, on ? 'true' : 'false');
+}
 
 export function getUiLocale(): UiLocale {
   return readPreference(UI_LOCALE_FILE) === 'pt-BR' ? 'pt-BR' : 'en';

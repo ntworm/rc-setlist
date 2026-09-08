@@ -7,7 +7,8 @@ import { JumpScheduler } from './next-downbeat-jump.js';
 import { PreRollCoordinator, type PreRollFinishAction } from './pre-roll-coordinator.js';
 import { OSCClient } from '../integration/osc-client.js';
 import { SetlistWSServer } from '../server/ws.js';
-import { ProfileManager, ProfileError } from './profile-manager.js';
+import { ProfileManager, ProfileError, safeRandomUUID } from './profile-manager.js';
+import { applyCues, colorsByTime, emptySongBook, parseSongBook, setSongColor, type SongBook } from './song-book.js';
 import { EventLogger } from './event-log.js';
 import { CommandBus } from './command-bus.js';
 import { McpTcpClient } from '../integration/mcp-client.js';
@@ -39,6 +40,15 @@ export interface BridgeState {
   sdkSyncInterval: NodeJS.Timeout | null;
   mcpSyncInterval: NodeJS.Timeout | null;
 
+  /**
+   * Whether an explicit jump may write the destination tempo into Live.
+   * Loaded from the user preference at startup and toggled from the panel.
+   * Default false: writing the tempo overrides Live's tempo automation, and the
+   * arrangement stops following its envelope until Re-Enable Automation.
+   */
+  writeTempoOnJump: boolean;
+  /** Cached song book for the active profile. */
+  songBook: SongBook | null;
   serverRunning: boolean;
   lastActiveSongTitle: string;
   lastCuesFingerprint: string;
@@ -72,6 +82,8 @@ export const bridgeState: BridgeState = {
   sdkSyncInterval: null,
   mcpSyncInterval: null,
 
+  writeTempoOnJump: false,
+  songBook: null,
   serverRunning: false,
   lastActiveSongTitle: '',
   lastCuesFingerprint: '__init__',
@@ -102,7 +114,10 @@ export function getActiveProfilePaths() {
 export function broadcastState(): void {
   if (bridgeState.manager && bridgeState.wsServer) {
     bridgeState.commandBus?.resolveObservableConfirmations();
-    bridgeState.wsServer.broadcastState(bridgeState.manager.getState());
+    // Colours are keyed by beat position on the wire: the client knows a song
+    // by where it sits, not by the id the song book keeps on the server.
+    const songColors = bridgeState.songBook ? colorsByTime(bridgeState.songBook) : {};
+    bridgeState.wsServer.broadcastState({ ...bridgeState.manager.getState(), songColors });
   }
 }
 
@@ -238,6 +253,71 @@ export function attemptCompatibleLegacyRecovery(): Promise<void> {
   });
   bridgeState.legacyRecoveryPromise = recovery;
   return recovery;
+}
+
+export function loadSongBook(filePath: string): SongBook {
+  try {
+    if (!fs.existsSync(filePath)) return emptySongBook();
+    return parseSongBook(JSON.parse(fs.readFileSync(filePath, 'utf8')));
+  } catch {
+    // A corrupt or hand-edited book costs the user their colours. It must never
+    // cost them a working setlist, so this degrades instead of throwing.
+    console.warn('[song-book] unreadable; starting a fresh one');
+    return emptySongBook();
+  }
+}
+
+export function saveSongBook(filePath: string, book: SongBook): void {
+  try {
+    fs.mkdirSync(path.dirname(filePath), { recursive: true });
+    fs.writeFileSync(filePath, JSON.stringify(book, null, 1), 'utf8');
+  } catch (err) {
+    console.warn(`[song-book] could not save: ${err instanceof Error ? err.message : String(err)}`);
+  }
+}
+
+/**
+ * Fold the cue list Live just reported into the song book, so identities and
+ * their colours follow renames and moves. Called right after updateCues.
+ */
+export function refreshSongBook(): void {
+  if (!bridgeState.manager || !bridgeState.profileManager) return;
+  let bookPath: string;
+  try {
+    bookPath = bridgeState.profileManager.getActivePaths().songBook;
+  } catch {
+    return;
+  }
+  const cues = bridgeState.manager.getState().songs.map((song) => ({
+    name: song.title,
+    time: song.time,
+  }));
+  const next = applyCues(bridgeState.songBook ?? loadSongBook(bookPath), cues, safeRandomUUID);
+  bridgeState.songBook = next;
+  saveSongBook(bookPath, next);
+}
+
+/**
+ * Set or clear the colour of the song sitting at a beat position.
+ * Returns false when no identity is known there, which is the honest answer
+ * after a reload that has not reconciled yet.
+ */
+export function setSongColorAtTime(time: number, color: string | undefined): boolean {
+  if (!bridgeState.profileManager) return false;
+  let bookPath: string;
+  try {
+    bookPath = bridgeState.profileManager.getActivePaths().songBook;
+  } catch {
+    return false;
+  }
+  const book = bridgeState.songBook ?? loadSongBook(bookPath);
+  const entry = book.present.find((candidate) => candidate.time === time);
+  if (!entry) return false;
+
+  const next = setSongColor(book, entry.id, color);
+  bridgeState.songBook = next;
+  saveSongBook(bookPath, next);
+  return true;
 }
 
 export function loadCustomOrder(filePath: string): string[] {

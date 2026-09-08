@@ -14,7 +14,17 @@ export function resolveJumpTargetTempo(songIndex: number, sectionIndex: number |
   return isValidTempo(song.bpm) ? song.bpm : null;
 }
 
+/**
+ * Apply the destination tempo before a cue jump — but only when the user has
+ * asked for it and nothing suggests Live owns the tempo.
+ *
+ * Returns the tempo written, or null when nothing was written. A null return is
+ * the normal, safe case; it is not an error.
+ */
 export function applyJumpTargetTempo(songIndex: number, sectionIndex: number | null): number | null {
+  if (!bridgeState.writeTempoOnJump) return null;
+  if (bridgeState.manager?.isTempoAutomationSuspected()) return null;
+
   const bpm = resolveJumpTargetTempo(songIndex, sectionIndex);
   if (bpm === null) return null;
 

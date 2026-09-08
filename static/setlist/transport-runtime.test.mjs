@@ -161,7 +161,7 @@ test('touch reorder grip is discoverable without becoming a second button', () =
   assert.match(setlistSource, /class="song-reorder-handle"[^>]*role="img"[^>]*aria-label="Reorder song"[^>]*title="Reorder song"/);
   assert.doesNotMatch(setlistSource, /song-reorder-handle"[^>]*aria-hidden/);
   assert.match(setlistCss, /\.song-reorder-handle\s*\{[\s\S]*?touch-action:\s*none/);
-  assert.match(setlistCss, /\.song-reorder-handle\s*\{[\s\S]*?min-height:\s*44px/);
+  assert.match(setlistCss, /\.song-reorder-handle\s*\{[\s\S]*?min-height:\s*56px/);
 });
 
 test('resolveNavigationTarget advances, restarts, and crosses song boundaries', () => {
@@ -1181,3 +1181,39 @@ test('songElapsedSecondsFromBeats never reports negative elapsed time', () => {
 
   assert.equal(songElapsedSecondsFromBeats(-4, { bpm: 120 }, 120), 0);
 });
+
+test('songElapsedSecondsFromBeats inherits BPM from first section when song BPM is null', () => {
+  const { songElapsedSecondsFromBeats } = loadRuntime();
+
+  const song = {
+    bpm: null,
+    time: 100,
+    sections: [
+      { name: 'Intro [bpm 150]', time: 100, bpm: 150 },
+      { name: 'Verse', time: 130, bpm: null },
+    ],
+  };
+
+  // 15 beats at 150 BPM = 15 * 60 / 150 = 6 seconds
+  assert.equal(songElapsedSecondsFromBeats(15, song, 120), 6);
+});
+
+test('songElapsedSecondsFromBeats calculates piecewise elapsed time across sections with different BPMs', () => {
+  const { songElapsedSecondsFromBeats } = loadRuntime();
+
+  const song = {
+    bpm: 120,
+    time: 100,
+    sections: [
+      { name: 'Part 1', time: 100, bpm: 120 },
+      { name: 'Part 2', time: 116, bpm: 60 },
+    ],
+  };
+
+  // In Part 1: 8 beats at 120 BPM = 4 seconds
+  assert.equal(songElapsedSecondsFromBeats(8, song, 120), 4);
+
+  // In Part 2: 16 beats at 120 BPM (8s) + 4 beats at 60 BPM (4s) = 12 seconds
+  assert.equal(songElapsedSecondsFromBeats(20, song, 120), 12);
+});
+

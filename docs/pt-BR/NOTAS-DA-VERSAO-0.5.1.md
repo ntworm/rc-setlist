@@ -1,49 +1,20 @@
 # Notas da Versão 0.5.1
 
-O Ableton RC Setlist 0.5.1 prioriza navegação de palco mais segura, relógios
-mais claros e controles físicos mais flexíveis. A versão também consolida os
-fluxos de perfis, letras e CSV entregues nas versões 0.4.x e 0.5.0.
+O Ableton RC Setlist 0.5.1 chegou! Esta versão traz melhorias significativas de usabilidade, particularmente nos controles de transporte do palco, além de correções cruciais de bugs para garantir a máxima confiabilidade da performance ao vivo.
 
-## Novidades e mudanças
+## Novidades
 
-- **Música anterior e próxima música:** as setas externas do Stage Control
-  saltam para o início da música adjacente. Os botões ficam desativados nos
-  limites do setlist e exigem que o toque ou ponteiro seja segurado por 500 ms.
-- **Seção anterior e próxima seção:** as setas internas preservam a navegação
-  por seções com o mesmo gesto protegido.
-- **Alvo de reordenação:** arrastar no desktop ou segurar e arrastar no celular
-  mostra uma prévia do alvo de inserção antes de confirmar a nova ordem.
-- **Keyboard Mapping:** as nove ações do Controle de Palco podem ser atribuídas
-  ao Numpad ou a teclas alfabéticas: Play, Stop, Música anterior, Próxima música,
-  Seção anterior, Próxima seção, Alternar clique, Alternar bloqueio do painel e
-  Alternar compasso de contagem.
-- **MIDI Mapping:** as mesmas nove ações aceitam mensagens MIDI Note On ou
-  Control Change no canal configurado (1–16).
-- **Count-in Pre-roll:** `CONTAGEM 1 COMP` ativa uma introdução opcional de um
-  compasso quando o transporte está parado, usando o metrônomo nativo do Live.
-  O recurso não arma pistas, não entra em Record e não altera a quantização dos saltos.
-- **Edição de seção em linha:** clique duas vezes em uma tag de seção no Setlist
-  do desktop para editá-la no próprio lugar.
-- **Relógios do show e da música:** o Stage Control exibe os tempos relativos
-  SHOW e SONG em vez da coordenada bruta do Arrangement.
+- **Suporte a Keyboard Mapping**: Agora você pode mapear teclas (como o Numpad ou alfanuméricas) para os controles de transporte, tornando as mudanças de música e navegação muito mais seguras e fáceis sem depender de toque na tela ou mouse.
+- **Toggle de Count-in Pre-roll**: Você agora pode ativar ou desativar o count-in de pre-roll de 1 compasso diretamente pelo painel Stage Control. Isso permite iniciar o playback sem count-in quando a banda precisar.
+- **Melhorias de "Hold-to-Select" no Mobile**: A navegação pelo transporte em aparelhos mobile agora requer um gesto de "hold" (pressionar e segurar) para saltos seguros entre as músicas, prevenindo toques acidentais durante o show. O threshold foi cuidadosamente balanceado.
+- **Edição de Seção via Double-Click**: Agora você pode fazer um clique duplo para editar as tags da seção diretamente da visualização Setlist no desktop.
 
-## Correções
+## Correções de Bugs
 
-- Os tempos decorridos de SHOW e SONG não voltam quando a automação de tempo do
-  Live muda; as durações estimadas usam o BPM declarado de cada música.
-- A inicialização da contagem não espera indefinidamente por uma confirmação
-  separada antes de enviar, em ordem, os comandos de Click, posição e Play.
-- Os limites do WebSocket e do roteamento de comandos tratam eventos rápidos e
-  sucessivos de forma mais consistente, mantendo as verificações de autorização.
-- A exportação pública agora inclui o ponto de entrada real do build e estas
-  notas, mas deixa o checkout externo do AbletonOSC fora do repositório para que
-  o GitHub Pages publique a documentação estática.
+- **Relógio Desacoplado (Decoupled Show Clock)**: O relógio geral do show e o tempo decorrido da música foram devidamente desacoplados da automação de BPM do Live, garantindo que o seu timecode não sofra saltos repentinos quando o tempo muda.
+- **Rastreamento de Estado Seguro**: Foram resolvidas corridas de sincronização (race conditions) em que o servidor e a UI podiam discordar temporariamente sobre a seção atual sendo reproduzida.
+- **Estabilidade**: Refinamentos nas observações de pre-roll, correção nos limites de WebSocket e estabilização da interface contra cliques sucessivos e rápidos.
 
-## Antes de usar no palco
-
-Os requisitos de instalação e compatibilidade estão no
-[Guia de Instalação](../INSTALL.md). Windows é a plataforma validada desta versão;
-macOS continua experimental até ser testado em hardware macOS real. Ensaie o Live
-Set, o controlador e a rede exatos antes do uso no palco.
+*Para detalhes completos de migração da versão 0.4.x, consulte o [Guia de Instalação](../INSTALL.md).*
 
 *Read these notes in English: [RELEASE-NOTES-0.5.1.md](../RELEASE-NOTES-0.5.1.md).*

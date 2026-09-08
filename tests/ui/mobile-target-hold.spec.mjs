@@ -341,13 +341,176 @@ test('Lock Mode and read-only authority block a completed mobile hold', async ({
   expect(await jumpMessages(page)).toEqual([]);
 });
 
-test('desktop double-click still opens inline section editing', async ({ page }) => {
+test('desktop double-click opens the marker panel when stopped and blocks it during performance', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  const fixture = await page.evaluate(async () => (
+    fetch('/__test__/state').then((response) => response.json())
+  ));
+
+  // 1. Stopped (rehearsal / editing): double-click opens the marker panel.
+  // The raw-text editor this replaced let a [bpm] tag be deleted by accident,
+  // and that tag feeds the show duration.
+  await emitServerMessage(page, { ...fixture, state: { ...fixture.state, isPlaying: false } });
+  const section = page.locator('.section-btn[data-song="0"][data-section="0"]');
+  await section.dblclick();
+  await expect(page.locator('#markerEditor')).toBeVisible();
+  await expect(page.locator('#markerPanel [data-field="name"]')).toHaveCount(1);
+  await expect(page.locator('.section-edit-input')).toHaveCount(0);
+
+  await page.keyboard.press('Escape');
+  await expect(page.locator('#markerEditor')).toBeHidden();
+
+  // 2. Playing (during performance): a rename is a delete plus a recreate at the
+  // playhead, so the panel must not open at all.
+  await emitServerMessage(page, { ...fixture, state: { ...fixture.state, isPlaying: true } });
+  await section.dblclick();
+  await expect(page.locator('#markerEditor')).toBeHidden();
+});
+
+test('double-clicking anywhere on the song header opens the song panel', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   const fixture = await page.evaluate(async () => (
     fetch('/__test__/state').then((response) => response.json())
   ));
   await emitServerMessage(page, { ...fixture, state: { ...fixture.state, isPlaying: false } });
-  const section = page.locator('.section-btn[data-song="0"][data-section="0"]');
-  await section.dblclick();
-  await expect(page.locator('.section-edit-input[data-song-index="0"][data-section-index="0"]')).toBeVisible();
+
+  // The handler used to sit on the title span alone, so a double-click that
+  // landed a few pixels off did nothing and the panel felt broken.
+  await page.locator('.song-header[data-song="0"] .song-time').dblclick();
+  await expect(page.locator('#markerEditor')).toBeVisible();
+  await expect(page.locator('#markerSectionsField')).toBeVisible();
+});
+
+test('every tag the marker panel writes has a badge on the card', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  const fixture = await page.evaluate(async () => (
+    fetch('/__test__/state').then((response) => response.json())
+  ));
+  const state = { ...fixture.state, isPlaying: false };
+  state.songs = JSON.parse(JSON.stringify(state.songs));
+  state.songs[0].skip = true;
+  state.songs[0].autoClick = false;
+  state.songs[0].sections[0].skip = true;
+  state.songs[0].sections[1].autoClick = true;
+  await emitServerMessage(page, { ...fixture, state });
+
+  // Setting [skip] or [click] used to leave no mark anywhere, which read as a
+  // save that had silently failed.
+  const header = page.locator('.song-header[data-song="0"]');
+  await expect(header.locator('.skip-badge')).toHaveCount(1);
+  await expect(header.locator('.click-badge')).toHaveText(/CLICK OFF/);
+  await expect(page.locator('.section-btn[data-song="0"][data-section="0"] .skip-badge')).toHaveCount(1);
+  await expect(page.locator('.section-btn[data-song="0"][data-section="1"] .click-badge')).toHaveText(/CLICK/);
+});
+
+test('a marker with a save still in flight cannot be reopened onto stale values', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  const fixture = await page.evaluate(async () => (
+    fetch('/__test__/state').then((response) => response.json())
+  ));
+  await emitServerMessage(page, { ...fixture, state: { ...fixture.state, isPlaying: false } });
+
+  await page.locator('.song-header[data-song="0"]').dblclick();
+  await page.locator('#markerPanel [data-field="name"]').fill('ABERTURA');
+  await page.locator('#markerSave').click();
+  await expect(page.locator('#markerEditor')).toBeHidden();
+
+  // Live has not reported the new name back yet. Reopening here would populate
+  // the panel from the name before the edit and write it back on the next save.
+  await page.locator('.song-header[data-song="0"]').dblclick();
+  await expect(page.locator('#markerEditor')).toBeHidden();
+
+  // A different marker is unaffected.
+  await page.locator('.song-header[data-song="1"]').dblclick();
+  await expect(page.locator('#markerEditor')).toBeVisible();
+});
+
+test('a selection drag that ends outside the panel does not dismiss it', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  const fixture = await page.evaluate(async () => (
+    fetch('/__test__/state').then((response) => response.json())
+  ));
+  await emitServerMessage(page, { ...fixture, state: { ...fixture.state, isPlaying: false } });
+
+  await page.locator('.song-header[data-song="0"]').dblclick();
+  await expect(page.locator('#markerEditor')).toBeVisible();
+
+  // click fires on the common ancestor of press and release, so releasing past
+  // the panel edge produced a backdrop click and closed the panel mid-edit.
+  const field = page.locator('#markerPanel [data-field="name"]');
+  const box = await field.boundingBox();
+  await page.mouse.move(box.x + 10, box.y + box.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(12, 12);
+  await page.mouse.up();
+  await expect(page.locator('#markerEditor')).toBeVisible();
+
+  // A press that starts on the backdrop still dismisses.
+  await page.mouse.move(12, 12);
+  await page.mouse.down();
+  await page.mouse.up();
+  await expect(page.locator('#markerEditor')).toBeHidden();
+});
+
+test('a song with many sections lists them without a scrollbar on desktop', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  const fixture = await page.evaluate(async () => (
+    fetch('/__test__/state').then((response) => response.json())
+  ));
+  const state = { ...fixture.state, isPlaying: false };
+  state.songs = JSON.parse(JSON.stringify(state.songs));
+  // Thirteen parts is an ordinary song, not an edge case. In a single column it
+  // showed four at a time and the rest lived behind a scrollbar.
+  state.songs[0].sections = Array.from({ length: 13 }, (_, index) => ({
+    name: `PART ${index + 1}`,
+    rawName: `> PART ${index + 1}`,
+    time: index * 32,
+    loopCount: null,
+    autoStop: false,
+    autoNext: false,
+    bpm: null,
+    autoClick: null,
+    skip: false,
+  }));
+  await emitServerMessage(page, { ...fixture, state });
+
+  await page.locator('.song-header[data-song="0"]').dblclick();
+  await expect(page.locator('#markerEditor')).toBeVisible();
+
+  const list = await page.locator('#markerSections').evaluate((el) => ({
+    columns: getComputedStyle(el).gridTemplateColumns.split(' ').length,
+    scrolls: el.scrollHeight > el.clientHeight + 1,
+  }));
+  expect(list.columns, 'sections should flow into more than one column').toBeGreaterThan(1);
+  expect(list.scrolls, 'thirteen sections should fit without scrolling').toBe(false);
+
+  // The panel still has to fit the window, Save included.
+  const fits = await page.locator('#markerPanel').evaluate((el) => {
+    const box = el.getBoundingClientRect();
+    return box.right <= window.innerWidth + 1 && box.bottom <= window.innerHeight + 1;
+  });
+  expect(fits, 'the panel must fit the viewport').toBe(true);
+});
+
+test('the jump ring clears the song title instead of cutting through it', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  const fixture = await page.evaluate(async () => (
+    fetch('/__test__/state').then((response) => response.json())
+  ));
+  await emitServerMessage(page, { ...fixture, state: { ...fixture.state, isPlaying: false } });
+
+  // The header carries no padding of its own, so an inset ring landed flush
+  // against the title and read as a box slicing the text.
+  const ring = await page.locator('.song-header[data-song="0"]').evaluate((el) => {
+    el.classList.add('jumping');
+    const style = getComputedStyle(el);
+    return {
+      outlineWidth: style.outlineWidth,
+      outlineOffset: parseFloat(style.outlineOffset),
+      inset: style.boxShadow.includes('inset'),
+    };
+  });
+  expect(ring.outlineWidth).toBe('1px');
+  expect(ring.outlineOffset).toBeGreaterThan(0);
+  expect(ring.inset, 'the ring must not be an inset shadow').toBe(false);
 });

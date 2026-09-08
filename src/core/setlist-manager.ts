@@ -18,7 +18,23 @@ export class SetlistManager {
   private activeSectionIndex: number = -1;
   private isPlaying: boolean = false;
   private tempo: number = 120;
-  private durationFallbackBpm: number = 120; // fixed BPM for duration calculation; never updated by live transport
+  private hasObservedTempo: boolean = false;
+  /**
+   * Sticky evidence that something other than this setlist moves the tempo.
+   *
+   * The Live Object Model does not expose the tempo envelope, so the only
+   * signal available is divergence: the tempo Live reports while sitting on a
+   * tagged song is not the tempo that tag declares. One observation is enough
+   * and it is never cleared, because the cost of a false negative is a show
+   * whose tempo automation got flattened by a jump, and the cost of a false
+   * positive is only that a jump stops setting the tempo.
+   */
+  private tempoAutomationSuspected: boolean = false;
+  // Tempo used to convert arrangement beats into seconds. Declared [bpm] tags
+  // always win. This is only the floor for a set that declares nothing, and it
+  // settles at most once — see adoptInitialTempoForDuration.
+  private durationFallbackBpm: number = 120;
+  private durationFallbackIsProvisional: boolean = true;
   private currentSongTime: number = 0;
   private rawCues: { name: string; time: number; cueIndex?: number }[] = [];
   private appliedCuesFingerprint: string | null = null;
@@ -70,11 +86,14 @@ export class SetlistManager {
     const parsed = parseSetlist(this.rawCues);
     this.songs = parsed.songs;
     this.hidden = parsed.hidden;
+
     // Recalculate the duration fallback BPM from the new song list.
     // This is the first declared BPM in chronological order, or the current
     // live tempo if no song has a [bpm] tag — it stays fixed for the entire
     // show so that changing tempo automations don't reshuffle durations.
-    this.durationFallbackBpm = this.computeDurationFallbackBpm();
+    const resolved = this.computeDurationFallbackBpm();
+    this.durationFallbackBpm = resolved.bpm;
+    this.durationFallbackIsProvisional = resolved.provisional;
     this.sortSongs();
     this.firedAutomations.clear();
     this.clearLoop();
@@ -82,16 +101,103 @@ export class SetlistManager {
     this.stateVersion++;
   }
 
-  private computeDurationFallbackBpm(): number {
-    // Find the first BPM tag in chronological order. If none exists, use
-    // the current live tempo as a one-time snapshot.
+  /** Tolerance in BPM: Live reports a float, a tag is typed by hand. */
+  private static readonly TEMPO_DIVERGENCE_BPM = 0.51;
+
+  private noteTempoDivergence(observed: number): void {
+    if (this.tempoAutomationSuspected) return;
+    if (!(Number.isFinite(observed) && observed > 0)) return;
+    const declared = this.declaredTempoAtPlayhead();
+    if (declared === null) return;
+    if (Math.abs(observed - declared) > SetlistManager.TEMPO_DIVERGENCE_BPM) {
+      this.tempoAutomationSuspected = true;
+    }
+  }
+
+  /** The tempo the setlist declares for wherever the playhead is sitting. */
+  private declaredTempoAtPlayhead(): number | null {
+    const usable = (v: unknown): number | null =>
+      typeof v === 'number' && Number.isFinite(v) && v > 0 ? v : null;
+    let declared: number | null = null;
+    let bestTime = -Infinity;
+    for (const song of this.songs) {
+      if (!Number.isFinite(song.time) || song.time > this.currentSongTime) continue;
+      const songBpm = usable(song.bpm);
+      if (songBpm !== null && song.time >= bestTime) {
+        declared = songBpm;
+        bestTime = song.time;
+      }
+      for (const section of song.sections) {
+        const sectionBpm = usable(section.bpm);
+        if (sectionBpm !== null && Number.isFinite(section.time)
+          && section.time <= this.currentSongTime && section.time >= bestTime) {
+          declared = sectionBpm;
+          bestTime = section.time;
+        }
+      }
+    }
+    return declared;
+  }
+
+  /**
+   * True when the arrangement appears to own its own tempo. Consumers must not
+   * write Live's tempo while this holds — doing so overrides the automation and
+   * the arrangement stops following its envelope until the user presses
+   * Re-Enable Automation in Live.
+   */
+  public isTempoAutomationSuspected(): boolean {
+    return this.tempoAutomationSuspected;
+  }
+
+  private computeDurationFallbackBpm(): { bpm: number; provisional: boolean } {
+    // A declared [bpm] tag is authoritative and never provisional: the set's
+    // duration is then a pure function of the arrangement and the user's tags.
     const chronological = [...this.songs].sort((a, b) => a.time - b.time);
     for (const song of chronological) {
       if (typeof song.bpm === 'number' && Number.isFinite(song.bpm) && song.bpm > 0) {
-        return song.bpm;
+        return { bpm: song.bpm, provisional: false };
+      }
+      for (const section of song.sections) {
+        if (typeof section.bpm === 'number' && Number.isFinite(section.bpm) && section.bpm > 0) {
+          return { bpm: section.bpm, provisional: false };
+        }
       }
     }
-    return this.tempo > 0 ? this.tempo : 120;
+    // Nothing declared anywhere. Take the tempo Live reports, once, and freeze.
+    // A tempo Live has not reported yet is not an observation: 120 is merely
+    // this class's default, and adopting it would silently lock the wrong number.
+    return this.hasObservedTempo && this.tempo > 0
+      ? { bpm: this.tempo, provisional: false }
+      : { bpm: 120, provisional: true };
+  }
+
+  // Called on the first transport message when the set declares no tempo at all
+  // and cues loaded before Live reported one. It settles the number a single
+  // time; every later tempo change is ignored, so the set total never moves
+  // again during the show.
+  private adoptInitialTempoForDuration(observed: number): void {
+    if (!this.durationFallbackIsProvisional) return;
+    if (!(typeof observed === 'number' && Number.isFinite(observed) && observed > 0)) return;
+    this.durationFallbackIsProvisional = false;
+    if (observed === this.durationFallbackBpm) return;
+    this.durationFallbackBpm = observed;
+    this.derivedSongs = null;
+    this.derivedTotalDurationSeconds = null;
+    this.setlistVersion++;
+  }
+
+  private computeDurationConfidence(): 'declared' | 'estimated' {
+    for (const song of this.songs) {
+      if (typeof song.bpm === 'number' && Number.isFinite(song.bpm) && song.bpm > 0) {
+        return 'declared';
+      }
+      for (const section of song.sections) {
+        if (typeof section.bpm === 'number' && Number.isFinite(section.bpm) && section.bpm > 0) {
+          return 'declared';
+        }
+      }
+    }
+    return 'estimated';
   }
 
   private sortSongs(): void {
@@ -186,6 +292,14 @@ export class SetlistManager {
     const prevTime = this.currentSongTime;
     this.currentSongTime = time;
     this.isPlaying = isPlaying;
+    if (tempo !== undefined) {
+      this.hasObservedTempo = true;
+      this.noteTempoDivergence(tempo);
+      // Settle on the FIRST tempo Live reports, even when it happens to equal
+      // this class's default. Waiting for a *change* would settle on the second
+      // tempo instead, which is the very coupling this removes.
+      this.adoptInitialTempoForDuration(tempo);
+    }
     if (tempo !== undefined && tempo !== this.tempo) {
       this.tempo = tempo;
       // NOTE: we deliberately do NOT invalidate derived songs here.
@@ -218,6 +332,13 @@ export class SetlistManager {
     }
 
     this.updateActiveIndices();
+
+    // Durations are deliberately NOT touched here. Capturing the live transport
+    // tempo for an untagged song made every duration — and therefore the set
+    // total — depend on the tempo the song happened to be played at. Untagged
+    // songs inherit the last declared [bpm] in chronological order instead, so
+    // the set total is a planning number that never moves during a show.
+
     this.stateVersion++;
   }
 
@@ -449,6 +570,13 @@ export class SetlistManager {
       currentLoopIteration: this.currentLoopIteration,
       clipTriggerQuantization: this.clipTriggerQuantization,
       totalDurationSeconds: derived.totalDurationSeconds,
+      // The tempo base every duration on screen was measured with. The clients
+      // must use THIS to turn elapsed beats into elapsed seconds; using the live
+      // transport tempo instead put the elapsed clock and the duration beside it
+      // on different time bases, so at 180 bpm the clock never reached the end
+      // and at 60 bpm it sat at "1:00 / 1:00" from halfway through.
+      durationBpm: this.durationFallbackBpm,
+      durationConfidence: this.computeDurationConfidence(),
       arrangementEndTime: this.arrangementEndTime,
 
       stateVersion: this.stateVersion,

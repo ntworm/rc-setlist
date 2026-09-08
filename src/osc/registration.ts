@@ -5,8 +5,10 @@ import {
   checkAndBroadcastLyrics,
   observePreRollPosition,
   observePreRollTransport,
+  refreshSongBook,
 } from '../core/bridge-state.js';
 import { executeAutomationActions } from '../automation/executor.js';
+import { computeCuesFingerprint } from '../core/locator-parser.js';
 
 const MCP_TRANSPORT_FRESHNESS_MS = 500;
 
@@ -81,15 +83,14 @@ export function registerOscListeners(options: StartServerOptions = {}) {
   });
 
   bridgeState.oscClient.on('cue_points', (cues) => {
-    const sorted = [...cues].sort((a, b) => a.time - b.time);
-    const fingerprint = sorted.map(c => `${c.name}@${c.time}`).join('|');
+    const fingerprint = computeCuesFingerprint(cues);
     const fingerprintChanged = fingerprint !== bridgeState.lastCuesFingerprint;
 
-    if (fingerprintChanged) {
-      bridgeState.lastCuesFingerprint = fingerprint;
-    }
+    if (!fingerprintChanged) return;
 
+    bridgeState.lastCuesFingerprint = fingerprint;
     bridgeState.manager?.updateCues(cues);
+    refreshSongBook();
     const state = bridgeState.manager?.getState();
     if (state) {
       console.log(`[Setlist] Loaded ${state.songs.length} songs:`);
