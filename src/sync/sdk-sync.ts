@@ -11,31 +11,25 @@ export function syncFromSdkContext(context: ExtensionContext): void {
   if (song) {
     try {
       if (typeof song.tempo === 'number') {
-        bridgeState.manager.updateTransport(
-          bridgeState.manager.getState().currentSongTime,
-          bridgeState.manager.getState().isPlaying,
-          song.tempo
-        );
+        bridgeState.manager.updateTempo(song.tempo);
       }
     } catch {}
 
     try {
       const sdkCues = song.cuePoints;
       if (Array.isArray(sdkCues)) {
-        if (sdkCues.length === 0 && bridgeState.manager.getRawCues().length > 0) {
-          // Do not overwrite cues already loaded via OSC if SDK reports empty cuePoints
-        } else {
-          const cues = sdkCues.map((c: { name?: string; time?: number }) => ({
-            name: c.name || '',
-            time: c.time || 0
-          }));
-          const fingerprint = computeCuesFingerprint(cues);
-          if (fingerprint !== bridgeState.lastCuesFingerprint) {
-            bridgeState.lastCuesFingerprint = fingerprint;
-            bridgeState.manager.updateCues(cues);
-            refreshSongBook();
-            void attemptCompatibleLegacyRecovery();
-          }
+        // An empty array is a valid snapshot (new empty Set or last locator
+        // deleted). Only unavailable/non-array data may retain the old cues.
+        const cues = sdkCues.map((c: { name?: string; time?: number }) => ({
+          name: c.name || '',
+          time: c.time || 0
+        }));
+        const fingerprint = computeCuesFingerprint(cues);
+        if (fingerprint !== bridgeState.lastCuesFingerprint) {
+          bridgeState.lastCuesFingerprint = fingerprint;
+          bridgeState.manager.updateCues(cues);
+          refreshSongBook();
+          void attemptCompatibleLegacyRecovery();
         }
       }
     } catch (err) {

@@ -493,6 +493,25 @@ test('SetlistManager: checkAutomations fires [next] action', () => {
   assert.strictEqual(actions.length, 1);
   assert.strictEqual(actions[0].type, 'next');
   assert.strictEqual(actions[0].nextSongIndex, 1);
+  assert.strictEqual(actions[0].targetTime, 100, 'the next song starts at its own locator');
+});
+
+test('a [next] crossed late still targets the first beat of the next song', () => {
+  // The playhead is sampled every ~100ms, so the marker is always seen a
+  // fraction of a beat after it was crossed. The song after it must still be
+  // entered at its first beat: nothing of its intro may be skipped.
+  const manager = new SetlistManager();
+  manager.updateCues([
+    { name: 'MÚSICA 1', time: 0 },
+    { name: '> FIM [next]', time: 64 },
+    { name: 'MÚSICA 2', time: 80 },
+  ]);
+  manager.updateTransport(63.8, true, 120);
+  assert.deepEqual(manager.checkAutomations(), []);
+  manager.updateTransport(64.4, true, 120);
+  assert.deepEqual(manager.checkAutomations(), [{ type: 'next', nextSongIndex: 1, targetTime: 80 }]);
+  manager.updateTransport(64.6, true, 120);
+  assert.deepEqual(manager.checkAutomations(), [], 'fires once per entry');
 });
 
 test('SetlistManager: checkAutomations fires [loop] activation', () => {
@@ -565,6 +584,7 @@ test('SetlistManager: checkAutomations fires [skip] action', () => {
   assert.strictEqual(actions.length, 1);
   assert.strictEqual(actions[0].type, 'skip');
   assert.strictEqual(actions[0].targetCue, 'Song A > Chorus');
+  assert.strictEqual(actions[0].targetTime, 30);
 });
 
 test('SetlistManager: tracks counted loops iterations and fires deactivate_loop', () => {
@@ -1487,5 +1507,88 @@ test('SetlistManager suspects nothing when the setlist declares no tempo', () =>
     manager.isTempoAutomationSuspected(),
     false,
     'without a declared tempo there is nothing to diverge from',
+  );
+});
+
+test('a song-level tag fires when the song is entered, even with a section on the same beat', () => {
+  // The evaluator used to pick `section || song`, so once the playhead was
+  // inside any section the song's own tags were never read again. A song tag
+  // therefore only fired in the gap before the first section, and when a
+  // section began on the song's own beat it never fired at all. The marker
+  // editor offers STOP, NEXT and SKIP on the song panel, so that was a control
+  // the user could set and watch do nothing.
+  const manager = new SetlistManager();
+  manager.updateCues([
+    { name: 'A [next]', time: 0 },
+    { name: 'A > Verse', time: 0 },
+    { name: 'B', time: 64 },
+  ]);
+  manager.updateTransport(0, true, 120);
+  assert.deepEqual(
+    manager.checkAutomations().filter((a) => a.type === 'next'),
+    [{ type: 'next', nextSongIndex: 1, targetTime: 64 }],
+  );
+});
+
+test('a song-level tag fires once, not once per section boundary', () => {
+  // Crossing into a section makes that section's tags fresh again; it must not
+  // make the song's fresh, or a song-level [next] would fire at every section.
+  const manager = new SetlistManager();
+  manager.updateCues([
+    { name: 'A [next]', time: 0 },
+    { name: 'A > V1', time: 4 },
+    { name: 'A > V2', time: 8 },
+    { name: 'B', time: 64 },
+  ]);
+  let fired = 0;
+  for (const beat of [0, 4, 8, 12]) {
+    manager.updateTransport(beat, true, 120);
+    fired += manager.checkAutomations().filter((a) => a.type === 'next').length;
+  }
+  assert.equal(fired, 1);
+});
+
+test('a section tag still fires on its own entry while the song tag stays spent', () => {
+  const manager = new SetlistManager();
+  manager.updateCues([
+    { name: 'A [next]', time: 0 },
+    { name: 'A > V1', time: 4 },
+    { name: 'A > V2 [stop]', time: 8 },
+    { name: 'B', time: 64 },
+  ]);
+  const seen = [];
+  for (const beat of [0, 4, 8, 12]) {
+    manager.updateTransport(beat, true, 120);
+    seen.push(manager.checkAutomations().map((a) => a.type).join('+') || '-');
+  }
+  assert.deepEqual(seen, ['next', '-', 'stop', '-']);
+});
+
+test('a section tag overrides the song tag of the same kind', () => {
+  // Both fire, and the section is applied last so the more specific value wins.
+  const manager = new SetlistManager();
+  manager.updateCues([
+    { name: 'A [bpm 160]', time: 0 },
+    { name: 'A > V [bpm 107]', time: 0 },
+    { name: 'B', time: 64 },
+  ]);
+  manager.updateTransport(0, true, 160);
+  const tempos = manager.checkAutomations()
+    .filter((a) => a.type === 'change_bpm')
+    .map((a) => a.bpm);
+  assert.deepEqual(tempos, [160, 107]);
+});
+
+test('a song-level skip leaves the song rather than skipping into its own section', () => {
+  const manager = new SetlistManager();
+  manager.updateCues([
+    { name: 'A [skip]', time: 0 },
+    { name: 'A > V', time: 0 },
+    { name: 'B', time: 64 },
+  ]);
+  manager.updateTransport(0, true, 120);
+  assert.deepEqual(
+    manager.checkAutomations().filter((a) => a.type === 'skip'),
+    [{ type: 'skip', targetCue: 'B', targetTime: 64 }],
   );
 });

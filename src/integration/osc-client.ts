@@ -366,7 +366,16 @@ export class OSCClient extends EventEmitter {
   }
   public getCuePoints(): void { this.send('/live/song/get/cue_points'); }
   public getLastEventTime(): void { this.send('/live/song/get/last_event_time'); }
+  /**
+   * Live has two ways to start, and neither is "from the playhead":
+   * `start_playing` begins at the start marker (which a cue jump or a click
+   * while stopped moves, but a stop does not), `continue_playing` resumes where
+   * the transport last came to rest (ignoring anything done to the playhead
+   * while stopped). Which one Play means is decided in the command handler
+   * from what the playhead did since the transport stopped.
+   */
   public startPlaying(): void { this.send('/live/song/start_playing'); }
+  public continuePlaying(): void { this.send('/live/song/continue_playing'); }
   public stopPlaying(): void { this.send('/live/song/stop_playing'); }
   public getMetronome(requireConfirmation = false): void {
     const address = '/live/song/get/metronome';

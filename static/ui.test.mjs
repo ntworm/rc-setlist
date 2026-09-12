@@ -374,3 +374,29 @@ test('Static UI: i18n tooltips for Manage Setlists, Export CSV, and CSV feedback
   assert.match(setlistHtml, /data-i18n-title="setlist\.manageSetlistsTitle"/);
   assert.match(setlistHtml, /data-i18n-title="setlist\.exportCsvTitle"/);
 });
+
+test('Static UI: the help modal tells [next] and [skip] apart, with the end-of-song example, in EN and PT-BR', () => {
+  // A colleague of the owner read the table, put [next] on the last marker of a
+  // song and could not tell whether the tag had done anything. The guide now
+  // says where each tag takes the playhead, when, and shows the chaining case.
+  const i18nSource = fs.readFileSync(path.join(__dirname, 'shared', 'i18n.js'), 'utf8');
+  const setlistHtml = fs.readFileSync(path.join(__dirname, 'setlist', 'index.html'), 'utf8');
+  new Function(i18nSource)();
+  const { t } = globalThis.RcSetlistI18n;
+
+  for (const key of ['help.next', 'help.skip', 'help.nextVsSkip', 'help.nextVsSkipNext', 'help.nextVsSkipSkip', 'help.nextVsSkipTiming', 'help.exampleChain']) {
+    assert.match(setlistHtml, new RegExp(`data-i18n="${key.replace('.', '\.')}"`), `${key} is not in the help markup`);
+    assert.notStrictEqual(t(key, {}, 'en'), key, `${key} missing in EN`);
+    assert.notStrictEqual(t(key, {}, 'pt-BR'), key, `${key} missing in PT-BR`);
+  }
+
+  assert.match(t('help.nextVsSkipNext', {}, 'en'), /next song/i);
+  assert.match(t('help.nextVsSkipSkip', {}, 'en'), /next section/i);
+  assert.match(t('help.nextVsSkipTiming', {}, 'en'), /not .*next bar|at the marker/i);
+  assert.match(t('help.nextVsSkipNext', {}, 'pt-BR'), /próxima música/i);
+  assert.match(t('help.nextVsSkipSkip', {}, 'pt-BR'), /próxima seção/i);
+
+  // The chaining example: an end marker carrying [next], then the next song.
+  const example = setlistHtml.slice(setlistHtml.indexOf('data-i18n="help.exampleChain"'));
+  assert.match(example, /&gt; (End|Fim) \[next\]<br>\s*Song B/);
+});

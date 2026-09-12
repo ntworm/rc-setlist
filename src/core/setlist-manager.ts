@@ -1,15 +1,22 @@
 import { Section, Song, SetlistState } from '../types.js';
-import { parseSetlist } from './locator-parser.js';
+import { computeCuesFingerprint, parseSetlist } from './locator-parser.js';
 import { calculateSetlistMetrics } from './setlist-metrics.js';
 
+/**
+ * `next` and `skip` carry the beat the playhead must be moved to. Both hand
+ * playback over the moment their marker is crossed, and the executor relocates
+ * the playhead there directly rather than asking Live for a cue jump, because
+ * Live launch-quantizes cue jumps: the jump would land on the bar line after
+ * the marker, one full quantization period late. See executor.ts.
+ */
 export type AutomationAction =
   | { type: 'stop' }
-  | { type: 'next'; nextSongIndex: number }
+  | { type: 'next'; nextSongIndex: number; targetTime: number }
   | { type: 'activate_loop'; start: number; duration: number }
   | { type: 'deactivate_loop' }
   | { type: 'change_bpm'; bpm: number }
   | { type: 'change_metronome'; value: boolean }
-  | { type: 'skip'; targetCue: string };
+  | { type: 'skip'; targetCue: string; targetTime: number };
 
 export class SetlistManager {
   private songs: Song[] = [];
@@ -36,6 +43,14 @@ export class SetlistManager {
   private durationFallbackBpm: number = 120;
   private durationFallbackIsProvisional: boolean = true;
   private currentSongTime: number = 0;
+  /**
+   * Where the transport came to rest, or null while it plays. Live's
+   * `continue_playing` resumes from exactly this beat, whatever was done to the
+   * playhead since; see shouldContinuePlayback.
+   */
+  private restingAt: number | null = null;
+  /** Forward movement a stop may still show while the last samples settle. */
+  private static readonly REST_SETTLE_BEATS = 2;
   private rawCues: { name: string; time: number; cueIndex?: number }[] = [];
   private appliedCuesFingerprint: string | null = null;
   private metronome: boolean = false;
@@ -78,7 +93,19 @@ export class SetlistManager {
   public updateCues(cues: { name: string; time: number }[]): void {
     const cuesWithIndex = cues.map((c, idx) => ({ ...c, cueIndex: idx }));
     const sortedCues = [...cuesWithIndex].sort((a, b) => a.time - b.time);
-    const fingerprint = JSON.stringify(sortedCues.map((cue) => [cue.name, cue.time]));
+    /*
+     * The same fingerprint the callers use, quantized to 1/100 of a beat.
+     *
+     * Cues arrive from two places at two rates — the SDK every 100ms and
+     * AbletonOSC every two seconds — and they do not agree to the last decimal.
+     * Comparing exact floats here meant each source looked like a change to the
+     * other, so the setlist was reparsed and its version bumped on every OSC
+     * poll, and the whole song list was rebuilt from scratch twice a second's
+     * worth of beats apart. On screen that is the page flickering.
+     *
+     * A difference below 1/100 of a beat cannot change how a locator parses.
+     */
+    const fingerprint = computeCuesFingerprint(sortedCues);
     if (fingerprint === this.appliedCuesFingerprint) return;
 
     this.appliedCuesFingerprint = fingerprint;
@@ -114,8 +141,16 @@ export class SetlistManager {
     }
   }
 
-  /** The tempo the setlist declares for wherever the playhead is sitting. */
-  private declaredTempoAtPlayhead(): number | null {
+  /**
+   * The tempo the setlist declares for wherever the playhead is sitting.
+   *
+   * Public because the count-in needs it: the count has to be heard at the
+   * tempo of the bar the transport is about to play, and that is the last
+   * `[bpm]` declared at or before the playhead, not Live's current tempo —
+   * which, in a set with arrangement automation, is whatever the previous song
+   * left behind.
+   */
+  public declaredTempoAtPlayhead(): number | null {
     const usable = (v: unknown): number | null =>
       typeof v === 'number' && Number.isFinite(v) && v > 0 ? v : null;
     let declared: number | null = null;
@@ -288,24 +323,36 @@ export class SetlistManager {
     };
   }
 
-  public updateTransport(time: number, isPlaying: boolean, tempo?: number): void {
-    const prevTime = this.currentSongTime;
-    this.currentSongTime = time;
-    this.isPlaying = isPlaying;
-    if (tempo !== undefined) {
-      this.hasObservedTempo = true;
-      this.noteTempoDivergence(tempo);
-      // Settle on the FIRST tempo Live reports, even when it happens to equal
-      // this class's default. Waiting for a *change* would settle on the second
-      // tempo instead, which is the very coupling this removes.
-      this.adoptInitialTempoForDuration(tempo);
-    }
-    if (tempo !== undefined && tempo !== this.tempo) {
+  /**
+   * A tempo report on its own. Tempo arrives from the SDK every 100ms and from
+   * AbletonOSC's listener without a position, and it must not pass through
+   * updateTransport: that would present the current position and playing
+   * state as a fresh observation — before Live's position has ever been seen,
+   * a resting beat of zero.
+   */
+  public updateTempo(tempo: number): void {
+    this.hasObservedTempo = true;
+    this.noteTempoDivergence(tempo);
+    // Settle on the FIRST tempo Live reports, even when it happens to equal
+    // this class's default. Waiting for a *change* would settle on the second
+    // tempo instead, which is the very coupling this removes.
+    this.adoptInitialTempoForDuration(tempo);
+    if (tempo !== this.tempo) {
       this.tempo = tempo;
       // NOTE: we deliberately do NOT invalidate derived songs here.
       // Song durations use `durationFallbackBpm` which is frozen at cue-load
       // time, so live BPM automation does not reshuffle the show clock.
     }
+    this.stateVersion++;
+  }
+
+  /** A position and playing-state observation, with the tempo seen alongside it. */
+  public updateTransport(time: number, isPlaying: boolean, tempo?: number): void {
+    const prevTime = this.currentSongTime;
+    this.trackRestingPosition(time, isPlaying);
+    this.currentSongTime = time;
+    this.isPlaying = isPlaying;
+    if (tempo !== undefined) this.updateTempo(tempo);
 
     if (this.loopActive) {
       // If playhead jumped significantly outside the loop boundaries, reset loop state.
@@ -340,6 +387,49 @@ export class SetlistManager {
     // the set total is a planning number that never moves during a show.
 
     this.stateVersion++;
+  }
+
+  /**
+   * Live keeps the beat the transport last stopped at, and `continue_playing`
+   * resumes from it no matter where the playhead was put afterwards: a cue jump
+   * or an Arrangement click while stopped moves the playhead and the start
+   * marker, not that resting beat. So the resting beat is remembered here from
+   * the moment the transport stops (or from the first stopped sample, when the
+   * transport was never seen running), and any later movement of the stopped
+   * playhead is a relocation.
+   *
+   * A stop is reported with the last position sample, up to a poll behind
+   * where Live actually came to rest, so a short forward drift right after
+   * stopping follows the resting beat instead of counting as a relocation.
+   * Relocating forward by less than that while stopped is therefore read as
+   * drift too: Play then resumes from the resting beat, at most two beats
+   * behind the playhead. Backward movement is always a relocation.
+   */
+  private trackRestingPosition(time: number, isPlaying: boolean): void {
+    if (isPlaying) {
+      this.restingAt = null;
+      return;
+    }
+    if (this.isPlaying || this.restingAt === null) {
+      this.restingAt = time;
+      return;
+    }
+    const drift = time - this.restingAt;
+    if (drift >= 0 && drift <= SetlistManager.REST_SETTLE_BEATS) {
+      this.restingAt = time;
+    }
+  }
+
+  /**
+   * True when Play should resume where the transport stopped
+   * (`continue_playing`); false when the playhead was relocated while stopped
+   * and Play must start from the start marker (`start_playing`). A running
+   * transport always continues: `start_playing` would restart it.
+   */
+  public shouldContinuePlayback(): boolean {
+    if (this.isPlaying) return true;
+    if (this.restingAt === null) return true;
+    return Math.abs(this.currentSongTime - this.restingAt) < 0.01;
   }
 
   public updateMetronome(metronome: boolean): void {
@@ -392,10 +482,22 @@ export class SetlistManager {
       }
     }
 
-    // Reset fired automations when the active section changes
-    if (this.activeSongIndex !== this.lastSongIndex || newSectionIndex !== this.lastSectionIndex) {
+    /*
+     * Crossing into a new section makes that section's tags fresh again. It
+     * must not make the song's tags fresh: a song-level [next] fires once when
+     * the song is entered, not once per section boundary inside it. Only a new
+     * song clears everything.
+     *
+     * Song keys are `<tag>:song:<index>`; section keys are `<tag>:<song>:<section>`.
+     */
+    if (this.activeSongIndex !== this.lastSongIndex) {
       this.firedAutomations.clear();
       this.lastSongIndex = this.activeSongIndex;
+      this.lastSectionIndex = newSectionIndex;
+    } else if (newSectionIndex !== this.lastSectionIndex) {
+      for (const fired of [...this.firedAutomations]) {
+        if (!fired.includes(':song:')) this.firedAutomations.delete(fired);
+      }
       this.lastSectionIndex = newSectionIndex;
     }
 
@@ -420,106 +522,121 @@ export class SetlistManager {
     const song = this.songs[this.activeSongIndex];
     if (!song) return actions;
 
-    // Determine which tags to check — section-level if available, otherwise song-level
+    /*
+     * A song's tags and its sections' tags are evaluated separately, and both.
+     *
+     * This used to pick one target — `section || song` — so once the playhead
+     * was inside any section the song's own tags were never looked at again.
+     * A song-level tag therefore only fired in the gap between the song's
+     * locator and its first section, and when a section began on the song's own
+     * beat, which is the ordinary case, it never fired at all. The marker
+     * editor offers STOP, NEXT and SKIP on the song panel, so that silence was
+     * a control the user could set and watch do nothing.
+     *
+     * The song is evaluated first so that a section declaring the same tag is
+     * applied after it and wins, which is what "more specific" should mean.
+     */
     const section = song.sections[this.activeSectionIndex];
-    const target = section || song;
-    const key = section
-      ? `${this.activeSongIndex}:${this.activeSectionIndex}`
-      : `song:${this.activeSongIndex}`;
-
-    // Auto-stop: fire when we enter a region with [stop]
-    if (target.autoStop && !this.firedAutomations.has(`stop:${key}`)) {
-      this.firedAutomations.add(`stop:${key}`);
-      actions.push({ type: 'stop' });
-    }
-
-    // Auto-next: fire when we enter a region with [next]
-    if (target.autoNext && !this.firedAutomations.has(`next:${key}`)) {
-      this.firedAutomations.add(`next:${key}`);
-      // Find the next song in the setlist (custom order)
-      const nextIdx = this.activeSongIndex + 1;
-      if (nextIdx < this.songs.length) {
-        actions.push({ type: 'next', nextSongIndex: nextIdx });
-      } else {
-        // No next song, just stop
-        actions.push({ type: 'stop' });
-      }
-    }
-
-    // Auto-loop: activate loop when entering a region with [loop]
-    if (target.loopCount !== null && !this.loopActive && !this.firedAutomations.has(`loop:${key}`)) {
-      this.firedAutomations.add(`loop:${key}`);
-      if (section) {
-        const region = this.getLoopRegion(this.activeSongIndex, this.activeSectionIndex);
-        if (region) {
-          this.loopActive = true;
-          this.loopCount = target.loopCount;
-          this.currentLoopIteration = 1;
-          this.loopStartBeat = region.start;
-          this.loopEndBeat = region.end;
-          actions.push({ type: 'activate_loop', start: region.start, duration: region.duration });
-        }
-      } else {
-        // Song-level loop — loop the entire song region
-        const region = this.getSongRegion(this.activeSongIndex);
-        if (region) {
-          this.loopActive = true;
-          this.loopCount = target.loopCount;
-          this.currentLoopIteration = 1;
-          this.loopStartBeat = region.start;
-          this.loopEndBeat = region.end;
-          actions.push({ type: 'activate_loop', start: region.start, duration: region.duration });
-        }
-      }
-    }
-
-    // Auto-bpm: change Ableton tempo when entering a region with [bpm N]
-    if (target.bpm !== null && !this.firedAutomations.has(`bpm:${key}`)) {
-      this.firedAutomations.add(`bpm:${key}`);
-      actions.push({ type: 'change_bpm', bpm: target.bpm });
-    }
-
-    // Auto-click: change metronome state when entering a region with [click] or [click off]
-    if (target.autoClick !== null && !this.firedAutomations.has(`click:${key}`)) {
-      this.firedAutomations.add(`click:${key}`);
-      actions.push({ type: 'change_metronome', value: target.autoClick });
-    }
-
-    // Auto-skip: skip the current song or section if [skip] is active
-    if (target.skip && !this.firedAutomations.has(`skip:${key}`)) {
-      this.firedAutomations.add(`skip:${key}`);
-      const nextCue = this.getNextCueName(this.activeSongIndex, this.activeSectionIndex);
-      if (nextCue) {
-        actions.push({ type: 'skip', targetCue: nextCue });
-      }
+    this.collectAutomations(actions, song, `song:${this.activeSongIndex}`, null);
+    if (section) {
+      this.collectAutomations(
+        actions,
+        section,
+        `${this.activeSongIndex}:${this.activeSectionIndex}`,
+        this.activeSectionIndex,
+      );
     }
 
     return actions;
   }
 
-  public getNextCueName(songIndex: number, sectionIndex: number): string | null {
+  /**
+   * Fire the tags on one marker, once per entry.
+   *
+   * `sectionIndex` is the section this marker is, or null when the marker is
+   * the song itself. It decides what "the next thing" means: a section skips to
+   * the section after it, a song skips to the song after it.
+   */
+  private collectAutomations(
+    actions: AutomationAction[],
+    target: Song | Section,
+    key: string,
+    sectionIndex: number | null,
+  ): void {
+    const isSection = sectionIndex !== null;
+
+    if (target.autoStop && !this.firedAutomations.has(`stop:${key}`)) {
+      this.firedAutomations.add(`stop:${key}`);
+      actions.push({ type: 'stop' });
+    }
+
+    if (target.autoNext && !this.firedAutomations.has(`next:${key}`)) {
+      this.firedAutomations.add(`next:${key}`);
+      const nextIdx = this.activeSongIndex + 1;
+      const nextSong = this.songs[nextIdx];
+      if (nextSong) {
+        // Always the song's first beat. The marker is seen a fraction of a beat
+        // after it was crossed, and that overshoot must not be carried into the
+        // next song: its intro starts from the top.
+        actions.push({ type: 'next', nextSongIndex: nextIdx, targetTime: nextSong.time });
+      } else {
+        actions.push({ type: 'stop' });
+      }
+    }
+
+    if (target.loopCount !== null && !this.loopActive && !this.firedAutomations.has(`loop:${key}`)) {
+      this.firedAutomations.add(`loop:${key}`);
+      const region = isSection
+        ? this.getLoopRegion(this.activeSongIndex, sectionIndex!)
+        : this.getSongRegion(this.activeSongIndex);
+      if (region) {
+        this.loopActive = true;
+        this.loopCount = target.loopCount;
+        this.currentLoopIteration = 1;
+        this.loopStartBeat = region.start;
+        this.loopEndBeat = region.end;
+        actions.push({ type: 'activate_loop', start: region.start, duration: region.duration });
+      }
+    }
+
+    if (target.bpm !== null && !this.firedAutomations.has(`bpm:${key}`)) {
+      this.firedAutomations.add(`bpm:${key}`);
+      actions.push({ type: 'change_bpm', bpm: target.bpm });
+    }
+
+    if (target.autoClick !== null && !this.firedAutomations.has(`click:${key}`)) {
+      this.firedAutomations.add(`click:${key}`);
+      actions.push({ type: 'change_metronome', value: target.autoClick });
+    }
+
+    if (target.skip && !this.firedAutomations.has(`skip:${key}`)) {
+      this.firedAutomations.add(`skip:${key}`);
+      // A song-level skip leaves the song, so it asks for the next song rather
+      // than the next section of the song it is skipping.
+      const nextCue = this.getNextCue(this.activeSongIndex, isSection ? sectionIndex! : -1);
+      if (nextCue) {
+        actions.push({ type: 'skip', targetCue: nextCue.name, targetTime: nextCue.time });
+      }
+    }
+  }
+
+  /**
+   * The cue a [skip] hands over to: the section after the given one, or the
+   * song after the given song when the skip is song-level or on a last section.
+   */
+  public getNextCue(songIndex: number, sectionIndex: number): { name: string; time: number } | null {
     const currentSong = this.songs[songIndex];
     if (!currentSong) return null;
 
+    let targetTime: number | null = null;
     if (sectionIndex !== -1 && sectionIndex < currentSong.sections.length - 1) {
-      // Next section in same song
-      const nextSec = currentSong.sections[sectionIndex + 1];
-      if (nextSec) {
-        const matchingCue = this.rawCues.find(c => c.time === nextSec.time);
-        return matchingCue ? matchingCue.name : null;
-      }
+      targetTime = currentSong.sections[sectionIndex + 1]?.time ?? null;
     } else {
-      // Next song
-      const nextSongIdx = songIndex + 1;
-      if (nextSongIdx < this.songs.length) {
-        const nextSong = this.songs[nextSongIdx];
-        if (nextSong) {
-          const matchingCue = this.rawCues.find(c => c.time === nextSong.time);
-          return matchingCue ? matchingCue.name : null;
-        }
-      }
+      targetTime = this.songs[songIndex + 1]?.time ?? null;
     }
-    return null;
+    if (targetTime === null) return null;
+    const matchingCue = this.rawCues.find(c => c.time === targetTime);
+    return matchingCue ? { name: matchingCue.name, time: matchingCue.time } : null;
   }
 
   /** Call when user manually jumps to a section (disables active loop) */
@@ -577,6 +694,7 @@ export class SetlistManager {
       // and at 60 bpm it sat at "1:00 / 1:00" from halfway through.
       durationBpm: this.durationFallbackBpm,
       durationConfidence: this.computeDurationConfidence(),
+      declaredTempo: this.declaredTempoAtPlayhead(),
       arrangementEndTime: this.arrangementEndTime,
 
       stateVersion: this.stateVersion,

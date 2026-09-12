@@ -124,7 +124,7 @@ test('certificate onboarding is explicit in both languages and canonical English
 test('generated installation kit keeps English and Portuguese guides in their language folders', (t) => {
   const tempRoot = mkdtempSync(path.join(tmpdir(), 'rc-setlist-kit-contract-'));
   t.after(() => rmSync(tempRoot, { recursive: true, force: true }));
-  const ablxPath = path.join(tempRoot, 'Ableton-RC-Setlist-0.6.0.ablx');
+  const ablxPath = path.join(tempRoot, 'Ableton-RC-Setlist-0.6.1.ablx');
   const outputRoot = path.join(tempRoot, 'output');
   writeFileSync(ablxPath, '');
 
@@ -133,13 +133,13 @@ test('generated installation kit keeps English and Portuguese guides in their la
     '-NoProfile',
     '-ExecutionPolicy', 'Bypass',
     '-File', path.join(rootPath, 'scripts', 'package-release-candidate.ps1'),
-    '-Version', '0.6.0',
+    '-Version', '0.6.1',
     '-AblxPath', ablxPath,
     '-OutputRoot', outputRoot,
   ], { cwd: rootPath, encoding: 'utf8' });
   assert.equal(result.status, 0, result.error?.message || result.stderr || result.stdout);
 
-  const kitRoot = path.join(outputRoot, 'Ableton-RC-Setlist-0.6.0-Installation-Kit');
+  const kitRoot = path.join(outputRoot, 'Ableton-RC-Setlist-0.6.1-Installation-Kit');
   const expectedGuides = ['INSTALL.md', 'USER-GUIDE.md', 'TROUBLESHOOTING.md', 'FAQ.md', 'TEST-CHECKLIST.md'];
   for (const locale of ['en', 'pt-BR']) {
     for (const guide of expectedGuides) {

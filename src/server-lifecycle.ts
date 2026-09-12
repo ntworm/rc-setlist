@@ -16,12 +16,10 @@ import {
   selectProfile,
   loadLyricsForSong,
   runPreflightCheck,
-  cancelActivePreRoll,
 } from './core/bridge-state.js';
 import { getExtensionContext } from './context.js';
 import { SetlistManager } from './core/setlist-manager.js';
 import { JumpScheduler, type PendingJump } from './core/next-downbeat-jump.js';
-import { PreRollCoordinator } from './core/pre-roll-coordinator.js';
 import { EventLogger } from './core/event-log.js';
 import { CommandBus } from './core/command-bus.js';
 import { OSCClient } from './integration/osc-client.js';
@@ -176,10 +174,10 @@ export function handleJumpSchedulerEvent(event: { type: 'replaced' | 'executed';
     return;
   }
 
-  const cueIndex = event.pending.cueIndex;
+  // The cue jump itself went to Live when it was requested; Live lands it on
+  // its grid line, which is the beat this side computed. What is left for the
+  // landing is the destination's tempo and loop, and telling the page.
   applyJumpTargetTempo(event.pending.songIndex, event.pending.sectionIndex);
-  if (cueIndex >= 0) bridgeState.oscClient.jumpToCuePoint(cueIndex);
-  else bridgeState.oscClient.jumpToCuePoint(event.pending.cueName);
 
   if (event.pending.sectionIndex !== null && event.pending.sectionIndex !== undefined) {
     const song = bridgeState.manager.getState().songs[event.pending.songIndex];
@@ -214,7 +212,6 @@ export async function startServer(options: StartServerOptions = {}): Promise<voi
 
   try {
     bridgeState.manager = new SetlistManager();
-    bridgeState.preRollCoordinator = new PreRollCoordinator();
     bridgeState.lastCuesFingerprint = '__init__';
     bridgeState.scheduler = new JumpScheduler();
     bridgeState.scheduler.on(handleJumpSchedulerEvent);
@@ -578,7 +575,6 @@ export async function stopServer(): Promise<void> {
     bridgeState.mcpClient = null;
   }
 
-  cancelActivePreRoll();
 
   if (bridgeState.wsServer) {
     bridgeState.wsServer.stop();
@@ -617,7 +613,6 @@ export async function stopServer(): Promise<void> {
 
   bridgeState.manager = null;
   bridgeState.scheduler = null;
-  bridgeState.preRollCoordinator = null;
   bridgeState.profileManager = null;
   bridgeState.projectIdentity = null;
   bridgeState.profileScopeSwitching = false;

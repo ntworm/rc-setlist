@@ -309,6 +309,22 @@ button,
   text-transform: uppercase;
 }
 
+/*
+ * Native select popups. Chromium paints the option list from the select's
+ * own background, and a select drawn transparent over a dark control got a
+ * white list with near-white text — the setlist picker was unreadable. The
+ * root color-scheme alone did not reach it, so every option is painted here.
+ */
+select {
+  color-scheme: dark;
+}
+
+select option,
+select optgroup {
+  background: var(--ui-surface-raised);
+  color: var(--ui-text);
+}
+
 .language-select {
   min-height: 44px;
   max-width: 10.5rem;

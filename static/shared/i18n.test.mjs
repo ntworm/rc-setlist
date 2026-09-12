@@ -66,7 +66,6 @@ test('locale runtime translates, interpolates and exposes missing keys', () => {
   assert.equal(i18n.t('setlist.nextSectionHold', {}, 'pt-BR'), 'Próxima seção — pressione e segure');
   assert.equal(i18n.t('setlist.nextSongHold'), 'Next song — press and hold');
   assert.equal(i18n.t('setlist.nextSongHold', {}, 'pt-BR'), 'Próxima música — pressione e segure');
-  assert.match(i18n.t('feedback.preRollShortened', {}, 'pt-BR'), /encurtada/i);
 });
 
 test('locale selection persists and survives unavailable storage', () => {

@@ -272,6 +272,22 @@ function updateUINonTimeSensitive(state) {
   document.getElementById('sectionBadges').innerHTML = sectionBadgeHtml;
 }
 
+let beatFlashAnimation = null;
+
+function flashBeat(isDownbeat) {
+  if (!clickCard || typeof clickCard.animate !== 'function') return;
+  // One animation, recycled. A show is thousands of beats, and every call
+  // otherwise leaves a finished Animation object behind on the element.
+  if (beatFlashAnimation) beatFlashAnimation.cancel();
+  const from = isDownbeat
+    ? { borderColor: 'rgb(48, 209, 88)', backgroundColor: 'rgba(48, 209, 88, 0.16)' }
+    : { borderColor: 'rgba(255, 255, 255, 0.72)', backgroundColor: 'rgba(255, 255, 255, 0.08)' };
+  beatFlashAnimation = clickCard.animate(
+    [from, { borderColor: 'transparent', backgroundColor: 'transparent' }],
+    { duration: 180, easing: 'ease-out' },
+  );
+}
+
 function tick() {
   if (lastState) {
     bpm.textContent = lastState.tempo ? lastState.tempo.toFixed(1) : '120.0';
@@ -328,14 +344,10 @@ function tick() {
       lastFlashBeat = currentIntBeat;
     } else if (currentIntBeat > lastFlashBeat && lastState.isPlaying) {
       lastFlashBeat = currentIntBeat;
-      const isDownbeat = currentIntBeat % num === 0;
-      clickCard.classList.remove('beat-flash-accent', 'beat-flash-normal');
-      void clickCard.offsetWidth; // force reflow
-      if (isDownbeat) {
-        clickCard.classList.add('beat-flash-accent');
-      } else {
-        clickCard.classList.add('beat-flash-normal');
-      }
+      // Restarting a CSS animation by class needs a forced reflow of the whole
+      // document, twice a second at 120 BPM. The Web Animations API restarts on
+      // its own and invalidates nothing. Same reasoning as Stage Control.
+      flashBeat(currentIntBeat % num === 0);
     }
 
     // Update Metronome Click Card state

@@ -1,7 +1,7 @@
 # Ableton RC Setlist
 
 [![PolyForm Noncommercial](https://img.shields.io/badge/license-PolyForm%20Noncommercial-orange)](LICENSE)
-[![Version](https://img.shields.io/badge/version-0.6.0-f97316)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-0.6.1-f97316)](CHANGELOG.md)
 [![CI](https://github.com/ntworm/rc-setlist/actions/workflows/ci.yml/badge.svg)](https://github.com/ntworm/rc-setlist/actions/workflows/ci.yml)
 
 > **[Landing page and screenshots](https://ntworm.github.io/rc-setlist/)**
@@ -52,7 +52,7 @@ until this release is exercised on real macOS hardware.
 ## Quick start
 
 1. Install AbletonOSC from its [upstream repository](https://github.com/ideoforms/AbletonOSC).
-2. Download `Ableton-RC-Setlist-0.6.0.ablx` from the latest release.
+2. Download `Ableton-RC-Setlist-0.6.1.ablx` from the latest release.
 3. Open the `.ablx` and approve installation in Live.
 4. In Live, open **Extensions > Ableton RC Setlist** and start the server.
 5. Use the panel URL or QR code to open `/setlist` or `/performance`.
@@ -104,7 +104,7 @@ Authorized developers can configure a complete build using
 ## Documentation
 
 - [Documentation index](docs/README.md)
-- [What is new in 0.6.0](docs/RELEASE-NOTES-0.6.0.md)
+- [What is new in 0.6.1](docs/RELEASE-NOTES-0.6.1.md)
 - [Installation](docs/INSTALL.md)
 - [User guide](docs/USER-GUIDE.md)
 - [Português (Brasil)](docs/pt-BR/README.md)

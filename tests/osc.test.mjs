@@ -1,66 +1,94 @@
 import { test } from 'node:test';
 import assert from 'node:assert';
+import dgram from 'node:dgram';
+import { once } from 'node:events';
 import { MockOSCServer } from './mocks/mock-osc-server.ts';
 import { OSCClient } from '../src/integration/osc-client.ts';
 
-test('OSC integration: client communicates with mock server', async () => {
+test('OSC mock requests an ephemeral port, never the Live command port', async (t) => {
+  const requestedPorts = [];
+  const bind = dgram.Socket.prototype.bind;
+  // Even the failing regression must never bind Live's port. Record what the
+  // mock requests, but force the actual socket onto an OS-assigned test port.
+  t.mock.method(dgram.Socket.prototype, 'bind', function (port, ...args) {
+    requestedPorts.push(port);
+    return bind.call(this, 0, ...args);
+  });
+  const mockServer = new MockOSCServer();
+  try {
+    await mockServer.start();
+    assert.deepStrictEqual(requestedPorts, [0]);
+  } finally {
+    await mockServer.stop();
+  }
+});
+
+test('OSC integration: client communicates with mock server', { timeout: 5_000 }, async (t) => {
+  const bind = dgram.Socket.prototype.bind;
+  t.mock.method(dgram.Socket.prototype, 'bind', function (port, ...args) {
+    // Fail before binding if a future edit restores a production port, even
+    // when the earlier regression test has already failed in this test run.
+    assert.strictEqual(typeof port === 'object' ? port.port : port, 0);
+    return bind.call(this, port, ...args);
+  });
   const mockServer = new MockOSCServer();
   const client = new OSCClient();
+  const socket = dgram.createSocket('udp4');
+  const previousSocket = globalThis.abletonOSCSocket;
+  const previousListeners = globalThis.abletonOSCListeners;
 
   try {
-    try {
-      await mockServer.start();
-    } catch (err) {
-      if (err && err.code === 'EADDRINUSE') {
-        console.warn('[Test] Skipping OSC integration test: Port 11000 is in use (Ableton Live is likely open).');
-        return;
-      }
-      throw err;
-    }
-    try {
-      await client.start();
-    } catch (err) {
-      if (err && err.code === 'EADDRINUSE') {
-        console.warn('[Test] Skipping OSC integration test: Port 11001 is in use (another instance of the bridge is likely running).');
-        return;
-      }
-      throw err;
-    }
-    // 1. Test getTempo
-    const tempoPromise = new Promise((resolve) => {
-      client.once('tempo', (bpm) => {
-        resolve(bpm);
-      });
+    const port = await mockServer.start();
+    assert.ok(Number.isInteger(port) && port > 0, 'mock must return its bound port');
+    assert.ok(![11000, 11001, 11101, 11201].includes(port));
+    client['targetPort'] = port;
+
+    // Exercise the existing cooperative socket path with a real test socket;
+    // production OSC defaults and Live's sockets are never used by this test.
+    const listening = once(socket, 'listening', { signal: AbortSignal.timeout(1_000) });
+    socket.bind(0, '127.0.0.1');
+    await listening;
+    globalThis.abletonOSCSocket = socket;
+    globalThis.abletonOSCListeners = new Set();
+    socket.on('message', (message) => {
+      for (const listener of globalThis.abletonOSCListeners ?? []) listener(message);
     });
+    await client.start();
+    assert.strictEqual(client.getDebugSnapshot().oscListenPort, socket.address().port);
+
+    // 1. Test getTempo
+    const tempoPromise = once(client, 'tempo', { signal: AbortSignal.timeout(1_000) });
     client.getTempo();
-    const bpm = await tempoPromise;
+    const [bpm] = await tempoPromise;
     assert.strictEqual(bpm, 120);
 
     // 2. Test getCuePoints
-    const cuesPromise = new Promise((resolve) => {
-      client.once('cue_points', (cues) => {
-        resolve(cues);
-      });
-    });
+    const cuesPromise = once(client, 'cue_points', { signal: AbortSignal.timeout(1_000) });
     client.getCuePoints();
-    const cues = await cuesPromise;
+    const [cues] = await cuesPromise;
     assert.strictEqual(cues.length, 5);
     assert.strictEqual(cues[0]?.name, 'Song A');
     assert.strictEqual(cues[1]?.name, 'Song A > Verse');
 
     // 3. Test transport controls
-    const isPlayingPromise = new Promise((resolve) => {
-      client.once('is_playing', (isPlaying) => {
-        resolve(isPlaying);
-      });
-    });
+    const isPlayingPromise = once(client, 'is_playing', { signal: AbortSignal.timeout(1_000) });
     client.startPlaying();
-    const isPlaying = await isPlayingPromise;
+    const [isPlaying] = await isPlayingPromise;
     assert.strictEqual(isPlaying, true);
+
+    const stoppedPromise = once(client, 'is_playing', { signal: AbortSignal.timeout(1_000) });
+    client.stopPlaying();
+    const [stopped] = await stoppedPromise;
+    assert.strictEqual(stopped, false);
 
   } finally {
     await client.stop();
     await mockServer.stop();
+    try { socket.close(); } catch {}
+    if (previousSocket === undefined) delete globalThis.abletonOSCSocket;
+    else globalThis.abletonOSCSocket = previousSocket;
+    if (previousListeners === undefined) delete globalThis.abletonOSCListeners;
+    else globalThis.abletonOSCListeners = previousListeners;
   }
 });
 

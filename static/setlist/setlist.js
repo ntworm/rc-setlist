@@ -88,6 +88,18 @@ let lastRenderedSetlistVersion = null;
 // when one changes. Without this the list kept its old paint and a colour the
 // user had just picked never appeared.
 let lastRenderedColorSignature = '';
+/*
+ * The markup currently on screen.
+ *
+ * The version and colour checks above decide whether it is worth *building* the
+ * list again. This decides whether it is worth *replacing* it, and the two are
+ * not the same question: anything upstream that bumps the setlist version —
+ * three sync sources at three different rates — used to throw the DOM away and
+ * rebuild it even when every pixel came out identical, which on a two-second
+ * poll reads as the page flickering. Rebuilding also drops the scroll position
+ * and any focus inside the list.
+ */
+let lastRenderedHtml = '';
 let lastJumpTime = 0;
 let lastJumpTarget = { song: -1, section: -1 };
 let draggedSongIdx = null;
@@ -742,8 +754,9 @@ function renderMidiMappings() {
 
 function executeSetlistAction(action) {
   if (action === 'play') {
-    sendControl('play');
+    requestPlay();
   } else if (action === 'stop') {
+    cancelCountIn();
     sendControl('stop');
   } else if (action === 'next_song') {
     const nextIdx = lastState ? lastState.activeSongIndex + 1 : -1;
@@ -948,6 +961,36 @@ function updateTransportAvailability() {
   setlistTargetHoldController?.update();
 }
 
+/**
+ * Flash the tempo card on the beat, without forcing the page to lay itself out.
+ *
+ * This used to restart a CSS animation by removing the class, reading
+ * `offsetWidth` to force a synchronous reflow, and adding it back. That reflow
+ * is of the whole document, twice a second at 120 BPM, and the setlist is a
+ * large tree — twenty songs and a couple of hundred section chips. As the cards
+ * grew badges, a colour band and a wash, the cost of that per-beat layout grew
+ * with them until the page visibly stuttered.
+ *
+ * The Web Animations API restarts on its own and animates on the compositor, so
+ * nothing is invalidated and no layout is flushed. `border-color` and
+ * `background-color` are the same properties the keyframes used.
+ */
+let beatFlashAnimation = null;
+
+function flashBeat(isDownbeat) {
+  if (!bpmCard || typeof bpmCard.animate !== 'function') return;
+  // One animation, recycled. A show is thousands of beats, and every call
+  // otherwise leaves a finished Animation object behind on the element.
+  if (beatFlashAnimation) beatFlashAnimation.cancel();
+  const from = isDownbeat
+    ? { borderColor: 'rgb(48, 209, 88)', backgroundColor: 'rgba(48, 209, 88, 0.16)' }
+    : { borderColor: 'rgba(255, 255, 255, 0.72)', backgroundColor: 'rgba(255, 255, 255, 0.08)' };
+  beatFlashAnimation = bpmCard.animate(
+    [from, { borderColor: 'transparent', backgroundColor: 'transparent' }],
+    { duration: 180, easing: 'ease-out' },
+  );
+}
+
 function renderPreRoll() {
   const enabled = lastState?.preRollEnabled === true;
   if (enabled === lastRenderedPreRoll) return;
@@ -956,22 +999,126 @@ function renderPreRoll() {
   btnPreRoll.setAttribute('aria-pressed', String(enabled));
 }
 
-function requestPlay() {
-  const preRollBarBeats = SetlistTransportRuntime.preRollBarBeats(
-    lastState?.signatureNumerator,
-    lastState?.signatureDenominator,
-  );
-  if (
-    canUseTransport()
-    && lastState?.preRollEnabled === true
-    && lastState.isPlaying === false
-    && Number.isFinite(lastState.currentSongTime)
-    && Number.isFinite(preRollBarBeats)
-    && lastState.currentSongTime < preRollBarBeats
-  ) {
-    showToast(t('feedback.preRollShortened'), 'warn');
+/* ===== Count-in =====
+   The bar is sounded here, in the browser, and Live is started where it already
+   stands. It used to be done by rewinding Live's playhead one bar: that bar
+   belonged to the previous song, so the count ran at that song's tempo and its
+   audio played, and making the count audible meant switching Live's metronome
+   on over a click the operator had turned off. None of that happens now. */
+
+let countInAudio = null;
+let countInTimer = null;
+let countInBeatTimers = [];
+// Every blip of the current count. They are scheduled ahead on the audio clock,
+// so cancelling has to stop them: clearing the timers only stops the digits
+// changing, and the bar would keep sounding underneath the playback that a
+// second press had already started.
+let countInVoices = [];
+
+function countInContext() {
+  if (countInAudio) return countInAudio;
+  const Ctor = window.AudioContext || window.webkitAudioContext;
+  if (!Ctor) return null;
+  try {
+    countInAudio = new Ctor();
+  } catch {
+    countInAudio = null;
   }
-  sendControl('play');
+  return countInAudio;
+}
+
+function cancelCountIn() {
+  if (countInTimer !== null) {
+    clearTimeout(countInTimer);
+    countInTimer = null;
+  }
+  countInBeatTimers.forEach((id) => clearTimeout(id));
+  countInBeatTimers = [];
+  countInVoices.forEach(({ oscillator, gain }) => {
+    try { oscillator.stop(); } catch { /* already finished */ }
+    try { oscillator.disconnect(); } catch { /* already detached */ }
+    try { gain.disconnect(); } catch { /* already detached */ }
+  });
+  countInVoices = [];
+  btnPlay.classList.remove('is-counting');
+  btnPlay.removeAttribute('data-count');
+}
+
+function isCountingIn() {
+  return countInTimer !== null;
+}
+
+/**
+ * Schedule one blip on the audio clock rather than a timer, so the beats keep
+ * their spacing even when the main thread is busy rendering the setlist.
+ */
+function scheduleCountInBlip(ctx, atSeconds, accent) {
+  const osc = ctx.createOscillator();
+  const gain = ctx.createGain();
+  osc.frequency.value = accent ? 1000 : 800;
+  // A short exponential decay, not a square edge: an abrupt gate clicks in a
+  // way that is hard to tell apart from the count itself on a small speaker.
+  gain.gain.setValueAtTime(0.0001, atSeconds);
+  gain.gain.exponentialRampToValueAtTime(accent ? 0.5 : 0.32, atSeconds + 0.002);
+  gain.gain.exponentialRampToValueAtTime(0.0001, atSeconds + 0.06);
+  osc.connect(gain);
+  gain.connect(ctx.destination);
+  osc.start(atSeconds);
+  osc.stop(atSeconds + 0.08);
+  countInVoices.push({ oscillator: osc, gain });
+  osc.addEventListener('ended', () => {
+    countInVoices = countInVoices.filter((voice) => voice.oscillator !== osc);
+  });
+}
+
+function requestPlay() {
+  // A second press during the count means "go now", not "count again".
+  if (isCountingIn()) {
+    cancelCountIn();
+    sendControl('play');
+    return;
+  }
+
+  const wantsCountIn = canUseTransport()
+    && lastState?.preRollEnabled === true
+    && lastState.isPlaying === false;
+  if (!wantsCountIn) {
+    sendControl('play');
+    return;
+  }
+
+  const plan = window.RcCountIn.planCountIn({
+    bpm: window.RcCountIn.countInTempo(lastState),
+    beatsPerBar: SetlistTransportRuntime.preRollBarBeats(
+      lastState.signatureNumerator,
+      lastState.signatureDenominator,
+    ),
+    latencyMs: latencyCompensationMs,
+  });
+  const ctx = plan ? countInContext() : null;
+  if (!plan || !ctx) {
+    // No usable tempo, signature or audio device: start rather than invent a
+    // count the operator cannot hear.
+    sendControl('play');
+    return;
+  }
+  if (ctx.state === 'suspended') ctx.resume();
+
+  const startedAt = ctx.currentTime + 0.06;   // a beat of headroom to schedule in
+  plan.beats.forEach((beat) => {
+    scheduleCountInBlip(ctx, startedAt + beat.offsetMs / 1000, beat.accent);
+    countInBeatTimers.push(setTimeout(() => {
+      btnPlay.dataset.count = String(beat.index + 1);
+    }, beat.offsetMs));
+  });
+
+  btnPlay.classList.add('is-counting');
+  btnPlay.dataset.count = '1';
+  countInTimer = setTimeout(() => {
+    countInTimer = null;
+    cancelCountIn();
+    sendControl('play');
+  }, plan.sendPlayOffsetMs);
 }
 
 function mountTransportControls() {
@@ -997,7 +1144,7 @@ function mountTransportControls() {
     ...shared,
     button: btnStop,
     resolveTarget: () => (canUseTransport() ? { control: 'stop' } : null),
-    onComplete: () => sendControl('stop'),
+    onComplete: () => { cancelCountIn(); sendControl('stop'); },
   }));
   btnPlay.addEventListener('click', requestPlay);
   updateTransportAvailability();
@@ -1138,6 +1285,9 @@ function connect() {
         handleCsvReady(payload.url, payload.count, payload.fileName);
       } else if (payload.type === 'jump_pending') {
         jumpConfirmation.pending(payload);
+      } else if (payload.type === 'jump_cancelled') {
+        // Stop disarmed a jump that had not reached its quantization boundary.
+        jumpConfirmation.clear();
       } else if (payload.type === 'jump_executed') {
         jumpConfirmation.executed(payload);
       } else if (payload.type === 'auth_status') {
@@ -1429,22 +1579,13 @@ function tick() {
       setTextIfChanged(lyricsSyncTimecode, formattedInternalTime);
     }
 
-    // Metronome Visual Beat Flash
+    // Metronome Visual Beat Flash — see flashBeat below
     const currentIntBeat = Math.floor(estimatedBeats);
     if (Math.abs(currentIntBeat - lastFlashBeat) > 4) {
       lastFlashBeat = currentIntBeat;
     } else if (currentIntBeat > lastFlashBeat && lastState.isPlaying) {
       lastFlashBeat = currentIntBeat;
-      if (bpmCard) {
-        const isDownbeat = currentIntBeat % num === 0;
-        bpmCard.classList.remove('beat-flash-accent', 'beat-flash-normal');
-        void bpmCard.offsetWidth; // force reflow
-        if (isDownbeat) {
-          bpmCard.classList.add('beat-flash-accent');
-        } else {
-          bpmCard.classList.add('beat-flash-normal');
-        }
-      }
+      flashBeat(currentIntBeat % num === 0);
     }
 
     // Update Metronome Button active state class
@@ -1651,6 +1792,7 @@ function renderSongList(state) {
     lastRenderedSongsJson = '';
     lastRenderedSetlistVersion = null;
     lastRenderedColorSignature = '';
+    lastRenderedHtml = '';
     activeClassController.reset();
     return;
   }
@@ -1703,6 +1845,14 @@ function renderSongList(state) {
       </div>
     `;
   });
+  if (html === lastRenderedHtml) {
+    // Something upstream changed its mind about the version, but nothing the
+    // user can see changed. Leave the DOM alone.
+    updateActiveClasses(state.activeSongIndex, state.activeSectionIndex);
+    return;
+  }
+
+  lastRenderedHtml = html;
   const previousScrollTop = songListDiv.scrollTop;
   setlistTargetHoldController?.cancelForRender();
   songListDiv.innerHTML = html;
@@ -2475,8 +2625,12 @@ i18n.subscribe(() => {
   renderMidiMappings();
   renderProfileState();
   if (lastState) {
+    // A language change can alter text inside the list, so forget the markup
+    // as well as the version — otherwise the identical-HTML guard would keep
+    // the old translation on screen.
     lastRenderedSongsJson = '';
     lastRenderedSetlistVersion = null;
+    lastRenderedHtml = '';
     renderSongList(lastState);
   }
   renderActiveLyric();

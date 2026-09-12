@@ -314,13 +314,23 @@ body {
   color: var(--ui-accent-strong);
 }
 
+/*
+ * Sized by its widest label. A fixed 11rem box was narrower than
+ * "Mapeamento de Teclado", and a grid track sizes to its content, so the
+ * buttons ran past the popover's right edge and the border cut across them.
+ * The single column is capped at the box (minmax(0, 1fr)); the box itself
+ * grows to fit, up to what the viewport allows.
+ */
 .tools-popover {
   position: absolute;
   z-index: 60;
   top: calc(100% + 0.45rem);
   right: 0;
   display: grid;
-  width: 11rem;
+  grid-template-columns: minmax(0, 1fr);
+  width: max-content;
+  min-width: 11rem;
+  max-width: min(22rem, calc(100vw - 1rem));
   gap: 0.35rem;
   border: 1px solid var(--ui-border-strong);
   border-radius: var(--ui-radius);
@@ -330,8 +340,10 @@ body {
 }
 
 .tools-popover .ui-button {
-  justify-content: flex-start;
   width: 100%;
+  min-width: 0;
+  text-align: left;
+  white-space: nowrap;
 }
 
 .status-badge {
@@ -453,6 +465,30 @@ body {
   cursor: grab;
   user-select: none;
   transition: border-color 140ms ease, background 140ms ease, transform 140ms ease;
+}
+
+/* While the count runs, the Play button shows which beat it is on.
+   The triangle is hidden rather than covered: layering the number over it left
+   both visible at once, with the digit sitting on the glyph. */
+#btnPlay.is-counting {
+  position: relative;
+}
+
+#btnPlay.is-counting .transport-icon {
+  visibility: hidden;
+}
+
+#btnPlay.is-counting::after {
+  content: attr(data-count);
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  color: var(--ui-accent-strong);
+  font-family: var(--ui-mono);
+  font-size: 1.05rem;
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
 }
 
 /* Two separate channels share the card's leading edge, and they must never be
@@ -1457,19 +1493,6 @@ body {
   color: var(--ui-text-soft);
   font-size: 0.75rem;
   line-height: 1.35;
-}
-
-.beat-flash-accent { animation: flash-accent 180ms ease-out; }
-.beat-flash-normal { animation: flash-normal 180ms ease-out; }
-
-@keyframes flash-accent {
-  0% { border-color: var(--ui-success); background: var(--ui-success-soft); }
-  100% { border-color: var(--ui-border); }
-}
-
-@keyframes flash-normal {
-  0% { border-color: rgba(255,255,255,0.72); background: rgba(255,255,255,0.08); }
-  100% { border-color: var(--ui-border); }
 }
 
 .section-btn.flash-pending {

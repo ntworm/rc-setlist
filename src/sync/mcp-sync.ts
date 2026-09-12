@@ -3,8 +3,6 @@ import {
   bridgeState,
   broadcastState,
   checkAndBroadcastLyrics,
-  observePreRollPosition,
-  observePreRollTransport,
 } from '../core/bridge-state.js';
 import { executeAutomationActions } from '../automation/executor.js';
 
@@ -21,13 +19,11 @@ export function syncFromMcpInfo(info: SessionInfo): void {
     const prevActiveSongIdx = bridgeState.manager.getState().activeSongIndex;
     const prevActiveSectionIdx = bridgeState.manager.getState().activeSectionIndex;
 
-    observePreRollTransport(info.is_playing);
     bridgeState.manager.updateTransport(
       info.current_song_time,
       info.is_playing,
       typeof info.tempo === 'number' ? info.tempo : undefined
     );
-    observePreRollPosition(info.current_song_time);
 
     const newState = bridgeState.manager.getState();
 

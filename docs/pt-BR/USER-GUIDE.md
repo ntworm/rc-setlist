@@ -28,14 +28,42 @@ Marcador Técnico [ignore]
 | `[loop]` | Repete a seção atual até ser desativado. |
 | `[loop Nx]` | Repete a seção N vezes. |
 | `[stop]` | Para quando o localizador é alcançado. |
-| `[next]` | Avança para a próxima música. |
+| `[next]` | Passa a reprodução para a próxima música no instante em que este marcador é alcançado. Escrita numa seção, ela ainda sai da música — não avança para a próxima seção. |
 | `[bpm N]` | Define o BPM esperado. |
 | `[click]` / `[click off]` | Liga ou desliga o metrônomo do Live. |
-| `[skip]` | Ignora esta seção ou música. |
+| `[skip]` | Ignora esta seção ou música: passa a reprodução para a próxima seção (ou música) no instante em que este marcador é alcançado. |
 | `[hidden]` | Oculta uma âncora de automação do setlist visível. |
 | `[ignore]` | Marcador técnico que oculta o localizador e tem precedência sobre qualquer tag de ação. |
 
 As tags não diferenciam maiúsculas de minúsculas e não aparecem no nome exibido. A tag `[ignore]` tem precedência sobre tags de automação, ocultando o marcador e ignorando quaisquer tags de ação no localizador sem criar músicas, seções ou automações.
+
+### Emendar músicas com `[next]`
+
+Para ir direto do fim de uma música para a próxima, pulando os compassos vazios
+entre elas, coloque um marcador onde o áudio da música termina e dê a ele
+`[next]`:
+
+```text
+Música A [bpm 122]
+> Verso
+> Refrão
+> Fim [next]
+Música B [bpm 96]
+```
+
+Quando o playhead alcança `> Fim`, o RC Setlist o move para o localizador de
+`Música B` na hora — não no próximo compasso. Os saltos de localizador do
+próprio Live são quantizados pela quantização global, o que, num marcador
+seguido de um compasso vazio, cairia exatamente onde `Música B` já estaria
+começando; por isso essa transição não é um salto de cue do Live. A passagem
+acontece cerca de um décimo de segundo depois de o marcador ser cruzado (a
+posição é lida a cada 100 ms e o AbletonOSC processa comandos a cada 100 ms),
+nunca antes, e a próxima música sempre começa do seu primeiro tempo. `[skip]`
+passa a reprodução do mesmo jeito.
+
+Como o playhead é movido diretamente, o marcador de início do Live fica onde
+estava. O Play do RC Setlist retoma de onde você parou, então isso só aparece
+se você apertar Stop duas vezes no Live, que volta ao marcador de início.
 
 ## Editar um marcador
 
@@ -148,7 +176,9 @@ A declaração de tags `[bpm N]` nos localizadores de música elimina a discrep�
 Abra `/setlist` pela URL de controle com token mostrada no painel do Live.
 
 - Arraste músicas para mudar a ordem exibida.
-- Use Play e Stop para ações imediatas.
+- Use Play e Stop para ações imediatas. O Play retoma de onde o transporte
+  parou; depois de saltar para uma música ou seção com o transporte parado (ou
+  clicar no Arranjo do Live), o Play começa dali.
 - Anterior e Próxima exigem um hold deliberado de 500 ms.
 - Selecione a quantização; o agendador de saltos aplica imediatamente o valor
   pedido e o reconcilia com a resposta nativa do Live quando ela estiver disponível.
@@ -158,28 +188,40 @@ Abra `/setlist` pela URL de controle com token mostrada no painel do Live.
 
 ### Ordem de tempo dos saltos
 
-Saltos explícitos aplicam o BPM de destino antes do salto de cue. O BPM da seção
+Saltos explícitos aplicam o BPM de destino em torno do salto de cue. O BPM da seção
 substitui o BPM da música; uma seção sem BPM herda o BPM da música de destino.
-No limite de execução, o RC Setlist usa uma escrita de tempo SDK-first e depois
-envia o salto de cue. As operações são sequenciais, não atômicas, portanto não
-garantem precisão de amostra. A automação de tempo nativa no Arrangement no
-destino é recomendada para transições com precisão de amostra dentro do Live.
+Com o transporte parado, ou com a quantização em None, o RC Setlist
+usa uma escrita de tempo SDK-first e depois envia o salto de cue. Tocando com
+quantização, o salto de cue é entregue ao Live na hora — o Live o executa na
+próxima linha da grade — e o tempo é escrito quando essa chegada é observada.
+As operações são sequenciais, não atômicas, portanto não garantem precisão de
+amostra. A automação de tempo nativa no Arrangement no destino é recomendada
+para transições com precisão de amostra dentro do Live.
 
 ### Contagem de um compasso
 
-`CONTAGEM 1 COMP.` ativa um pré-roll de exatamente um compasso antes do ponto
-selecionado, somente quando Play é solicitado e o transporte está parado. O
-recurso usa o metrônomo nativo do Live e o transporte: o RC Setlist recua o
-playhead em um compasso, inicia a reprodução e restaura o Click no ponto
-selecionado caso ele tenha sido ligado temporariamente. Se o ponto estiver a
-menos de um compasso do beat zero, a contagem disponível é encurtada com
-segurança.
+`CONTAGEM 1 COMP.` toca um compasso no navegador antes de enviar o Play, quando
+o Play é solicitado enquanto o transporte está parado. O playhead do Live não se move e o
+metrônomo do Live não é tocado: a contagem é áudio do navegador, e o transporte
+começa no beat onde já estava.
+
+A contagem roda no tempo que **o setlist declara** para aquele ponto — o último
+`[bpm]` em ou antes do playhead — e só recorre ao tempo atual do Live quando o
+set não declara nada. Isso importa na virada de música: o Live ainda está no
+tempo da música anterior, então contar por ele seria contar na velocidade errada
+para a música que vai começar.
+
+O Play é enviado um pouco antes do último beat, para o transporte chegar no
+tempo forte e não depois dele. Apertar Play de novo durante a contagem começa
+imediatamente em vez de contar outra vez, e o Stop cancela.
+
+Como a contagem não toma mais o Click do Live emprestado, um click que você
+desligou continua desligado durante ela, e um que você ligou não é afetado.
 
 Esse controle de ensaio não entra em Record e não arma pistas. Ele também não
 altera a quantização dos saltos. Quando o Live já está tocando, Play e os saltos
 de música/seção mantêm o comportamento existente, incluindo a quantização
-atual. Uma alteração manual de Click durante a contagem tem prioridade sobre a
-restauração automática.
+atual.
 
 A interface mantém o último estado válido durante reconexões breves. O aviso de
 reconexão não significa que o estado antigo acabou de ser confirmado.

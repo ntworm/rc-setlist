@@ -67,8 +67,14 @@
       </div>
       <div class="modal-body" style="max-height: 70vh; overflow-y: auto;">
         <p style="margin-bottom: 1rem; color: var(--text-muted);" data-i18n="help.intro">Add bracketed tags to Ableton Live locators to program automations:</p>
-        
+
         <div style="display: flex; flex-direction: column; gap: 1.25rem;">
+          <div>
+            <div style="font-weight: 700; margin-bottom: 0.35rem; color: var(--accent);" data-i18n="help.editing">Writing tags without typing them:</div>
+            <p style="font-size: 0.8rem; line-height: 1.5; margin: 0; color: var(--text-muted);" data-i18n="help.editingBody">Double-click a song row or a section chip to open the marker editor. Every tag there is a control, so you never type brackets and cannot delete one by accident. A tag the panel does not show is carried through your edit untouched. Editing is refused while the transport is playing.</p>
+            <p style="font-size: 0.8rem; line-height: 1.5; margin: 0.5rem 0 0; color: var(--text-muted);" data-i18n="help.colour">Colour is not a tag. It is chosen in the same panel, stored beside your setlist, never written into the Live project, and it follows a song through renames and moves.</p>
+          </div>
+
           <div>
             <div style="font-weight: 700; margin-bottom: 0.35rem; color: var(--accent);" data-i18n="help.flow">Transition &amp; Flow Tags:</div>
             <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.8rem; line-height: 1.4;">
@@ -93,18 +99,39 @@
                 </tr>
                 <tr style="border-bottom: 1px dashed rgba(255,255,255,0.05);">
                   <td style="padding: 0.5rem 0;"><code>[next]</code></td>
-                  <td data-i18n="help.next">Jumps immediately to the next song and keeps playing.</td>
+                  <td data-i18n="help.next">When the playhead reaches this marker, playback moves to the start of the next song and keeps going. Put it on the marker where a song's audio ends to chain straight into the next song.</td>
                 </tr>
                 <tr style="border-bottom: 1px dashed rgba(255,255,255,0.05);">
                   <td style="padding: 0.5rem 0;"><code>[skip]</code></td>
-                  <td data-i18n="help.skip">Skips the segment and advances directly to the next section.</td>
+                  <td data-i18n="help.skip">When the playhead reaches this marker, playback moves to the marker after it: the next section, or the next song if this was the last section. The tagged part is never heard.</td>
                 </tr>
                 <tr style="border-bottom: 1px dashed rgba(255,255,255,0.05);">
                   <td style="padding: 0.5rem 0;"><code>[ignore]</code></td>
-                  <td data-i18n="help.ignore">[ignore]: hides technical markers or overrides action tags without creating songs, sections or automations.</td>
+                  <td data-i18n="help.ignore">Hides the marker and overrides any other tag on it: no song, section or automation is created.</td>
                 </tr>
               </tbody>
             </table>
+          </div>
+
+          <div>
+            <div style="font-weight: 700; margin-bottom: 0.35rem; color: var(--accent);" data-i18n="help.nextVsSkip">[next] or [skip]?</div>
+            <ul style="font-size: 0.8rem; margin: 0; padding-left: 1.2rem; line-height: 1.5; color: var(--text-muted);">
+              <li data-i18n="help.nextVsSkipNext">[next] always goes to the next song. On a section it leaves the song from that point; it never advances to the next section.</li>
+              <li data-i18n="help.nextVsSkipSkip">[skip] goes to whatever comes right after the marker. On a section that is the next section of the same song; on a song, or on its last section, it is the next song.</li>
+              <li data-i18n="help.nextVsSkipTiming">Both hand over the moment the marker is reached &mdash; about a tenth of a second later, never before &mdash; not on the next bar. The target always starts from its first beat.</li>
+            </ul>
+          </div>
+
+          <div>
+            <div style="font-weight: 700; margin-bottom: 0.35rem; color: var(--accent);" data-i18n="help.exampleChain">Chaining songs: skip the empty bars between them</div>
+            <div style="font-size: 0.8rem; background: rgba(255,255,255,0.02); padding: 0.65rem; border-radius: 8px; border: 1px solid var(--card-border); font-family: monospace; line-height: 1.45;">
+              Song A [bpm 122]<br>
+              &gt; Verse<br>
+              &gt; Chorus<br>
+              &gt; End [next]<br>
+              Song B [bpm 96]
+            </div>
+            <p style="font-size: 0.8rem; line-height: 1.5; margin: 0.5rem 0 0; color: var(--text-muted);" data-i18n="help.exampleChainBody">&gt; End sits where Song A's audio ends. Reaching it starts Song B at once, so the gap between the two is never played.</p>
           </div>
 
           <div>
@@ -119,7 +146,7 @@
               <tbody>
                 <tr style="border-bottom: 1px dashed rgba(255,255,255,0.05);">
                   <td style="padding: 0.5rem 0;"><code>[bpm 140]</code> or <code>[bpm 111.11]</code></td>
-                  <td data-i18n="help.bpm">Changes the global Ableton Live tempo when crossed; decimal values are supported.</td>
+                  <td data-i18n="help.bpm">Declares the tempo of this song or section, which is what the setlist durations are calculated from. Decimals are supported. It only writes the tempo into Live when Set Live tempo on jump is switched on in the Live panel, and RC Setlist disarms that write on its own when it detects arrangement tempo automation.</td>
                 </tr>
                 <tr style="border-bottom: 1px dashed rgba(255,255,255,0.05);">
                   <td style="padding: 0.5rem 0;"><code>[click]</code></td>
@@ -134,9 +161,14 @@
           </div>
 
           <div>
+            <p style="font-size: 0.8rem; line-height: 1.5; margin: 0; color: var(--text-muted);" data-i18n="help.durationNote">Without any [bpm] tag the whole set is timed at one frozen tempo, and an EST. badge marks the durations as estimates. One tag per song, plus one wherever the tempo changes inside a song, is what makes the times exact.</p>
+          </div>
+
+          <div>
             <div style="font-weight: 700; margin-bottom: 0.35rem; color: var(--accent);" data-i18n="help.extra">Extra Features &amp; Filters:</div>
             <ul style="font-size: 0.8rem; margin: 0; padding-left: 1.2rem; line-height: 1.5; color: var(--text-muted);">
               <li data-i18n="help.relativeSyntax">&gt; Section: relative locator attached to the preceding song (e.g. &gt; Intro).</li>
+              <li data-i18n="help.prefixEquivalence">Both spellings of a section are valid and are never rewritten: &gt; Verse attaches to the song above it, and Song A &gt; Verse names the song outright.</li>
               <li data-i18n="help.hidden">[hidden] or the _ prefix: hides the locator from the visual setlist.</li>
               <li data-i18n="help.lock">🔒 Lock Mode: blocks taps and drags on phones or tablets to prevent accidental stage input.</li>
               <li data-i18n="help.metronome">⚡ Visual Metronome: the BPM and bar card flashes with the click using +90 ms network compensation.</li>
@@ -154,6 +186,17 @@
               Opening &gt; Guitar Solo [skip]<br>
               Opening &gt; Chorus [loop 2]<br>
               Song 2 [stop]
+            </div>
+          </div>
+
+          <div>
+            <div style="font-weight: 700; margin-bottom: 0.35rem; color: var(--accent);" data-i18n="help.exampleTempo">A song whose tempo changes partway through:</div>
+            <div style="font-size: 0.8rem; background: rgba(255,255,255,0.02); padding: 0.65rem; border-radius: 8px; border: 1px solid var(--card-border); font-family: monospace; line-height: 1.45;">
+              Ballad [bpm 160]<br>
+              &gt; Intro<br>
+              &gt; Verse 1 [bpm 107]<br>
+              &gt; Chorus<br>
+              &gt; Outro [stop]
             </div>
           </div>
         </div>
@@ -533,6 +576,7 @@ A quiet pulse becomes our guide..." style="width: 100%; height: 180px; padding: 
   <script src="../shared/i18n.js"></script>
   <script src="../shared/stage-runtime.js"></script>
   <script src="./transport-runtime.js"></script>
+  <script src="./count-in.js"></script>
   <script src="./marker-editor.js"></script>
   <script src="./controller-runtime.js"></script>
   <script src="./setlist.js"></script>

@@ -109,11 +109,35 @@ test('an untagged destination does not send pre-jump tempo', () => {
   }
 });
 
-test('scheduled execution applies SDK tempo immediately before the cue jump', () => {
+test('a quantized jump is handed to Live when it is requested, not on the landing sample', () => {
+  // Live quantizes a cue jump requested while playing to its next grid line.
+  // The request used to be sent when this side's clock passed the landing
+  // beat — just past the grid line — so Live landed it a full quantization
+  // period after the beat the page had announced. Owner's set, 2026-09-08:
+  // a jump requested at 872.3 landed at 876.0; one requested at 876.x lands
+  // at 880.
+  const harness = installHarness(4);
+  try {
+    executeJumpCommand({ songIndex: 1, sectionIndex: 1 });
+    assert.deepEqual(harness.calls, [['jump', 5]]);
+    assert.equal(bridgeState.scheduler.hasPending(), true, 'the landing is still tracked for the page');
+
+    handleJumpSchedulerEvent({
+      type: 'executed',
+      pending: bridgeState.scheduler.getPending(),
+    });
+    assert.deepEqual(harness.calls.filter((call) => call[0] === 'jump'), [['jump', 5]], 'the landing sends no second jump');
+    assert.deepEqual(harness.payloads.at(-1), { type: 'jump_executed', songIndex: 1, sectionIndex: 1 });
+  } finally {
+    harness.restore();
+  }
+});
+
+test('the landing of a quantized jump writes the destination tempo, after the cue jump already went out', () => {
   const harness = installHarness(4, (value, calls) => calls.push(['sdk-tempo', value]));
   try {
     executeJumpCommand({ songIndex: 1, sectionIndex: 1 });
-    assert.deepEqual(harness.calls, []);
+    assert.deepEqual(harness.calls, [['jump', 5]]);
 
     handleJumpSchedulerEvent({
       type: 'executed',
@@ -127,7 +151,8 @@ test('scheduled execution applies SDK tempo immediately before the cue jump', ()
         scheduledAt: 0,
       },
     });
-    assert.deepEqual(harness.calls.slice(0, 2), [['sdk-tempo', 105], ['jump', 5]]);
+    assert.deepEqual(harness.calls.slice(0, 2), [['jump', 5], ['sdk-tempo', 105]]);
+    assert.equal(harness.calls.filter((call) => call[0] === 'jump').length, 1);
   } finally {
     harness.restore();
   }

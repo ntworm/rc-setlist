@@ -3,8 +3,6 @@ import {
   bridgeState,
   broadcastState,
   checkAndBroadcastLyrics,
-  observePreRollPosition,
-  observePreRollTransport,
   refreshSongBook,
 } from '../core/bridge-state.js';
 import { executeAutomationActions } from '../automation/executor.js';
@@ -21,16 +19,11 @@ export function registerOscListeners(options: StartServerOptions = {}) {
   if (!bridgeState.oscClient) return;
 
   bridgeState.oscClient.on('tempo', (bpm) => {
-    bridgeState.manager?.updateTransport(
-      bridgeState.manager.getState().currentSongTime,
-      bridgeState.manager.getState().isPlaying,
-      bpm
-    );
+    bridgeState.manager?.updateTempo(bpm);
     broadcastState();
   });
 
   bridgeState.oscClient.on('is_playing_sample', (isPlaying) => {
-    observePreRollTransport(isPlaying);
   });
 
   bridgeState.oscClient.on('is_playing', (isPlaying) => {
@@ -55,7 +48,6 @@ export function registerOscListeners(options: StartServerOptions = {}) {
     }
     const prevState = bridgeState.manager?.getState();
     bridgeState.manager?.updateTransport(time, bridgeState.manager.getState().isPlaying);
-    observePreRollPosition(time);
     const newState = bridgeState.manager?.getState();
 
     if (newState) {

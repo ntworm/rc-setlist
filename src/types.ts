@@ -54,6 +54,12 @@ export interface SetlistState {
   totalDurationSeconds?: number | null;
   /** Frozen tempo base the durations above were measured with. */
   durationBpm?: number;
+  /**
+   * The tempo the setlist declares at the playhead, or null when nothing is
+   * declared before it. The count-in counts at this tempo rather than at
+   * `tempo`, which is whatever Live happens to be sitting at.
+   */
+  declaredTempo?: number | null;
   /** Song colours keyed by beat position. */
   songColors?: Record<string, string>;
   /**

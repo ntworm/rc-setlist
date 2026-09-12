@@ -486,23 +486,6 @@ body {
   line-height: 1.35;
 }
 
-.beat-flash-accent {
-  animation: flash-accent 180ms ease-out;
-}
-
-.beat-flash-normal {
-  animation: flash-normal 180ms ease-out;
-}
-
-@keyframes flash-accent {
-  0% { border-color: var(--ui-success); background: var(--ui-success-soft); }
-  100% { border-color: var(--ui-border); }
-}
-
-/* The lit area is the cost, not the brightness: rods need 20-40 min to recover.
-   The pulse now rides the rule, never the card fill. */
-@keyframes flash-normal {
-  0% { border-color: var(--ui-text-2); }
   100% { border-color: var(--ui-rule); }
 }
 

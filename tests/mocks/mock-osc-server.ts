@@ -8,7 +8,7 @@ export class MockOSCServer {
   private isPlaying: boolean = false;
   private tempo: number = 120;
   private currentSongTime: number = 0;
-  private lastClientPort: number = 11001;
+  private lastClientPort: number = 0;
   private lastClientAddress: string = '127.0.0.1';
   
   // Mock cues corresponding to the unit test setup
@@ -61,7 +61,7 @@ export class MockOSCServer {
         args.push({ type: 'float', value: cue.time });
       }
       this.sendReply('/live/song/get/cue_points', args);
-    } else if (address === '/live/song/start_playing') {
+    } else if (address === '/live/song/start_playing' || address === '/live/song/continue_playing') {
       this.isPlaying = true;
       this.sendReply('/live/song/get/is_playing', [
         { type: 'integer', value: 1 }
@@ -141,6 +141,7 @@ export class MockOSCServer {
   }
 
   private sendReply(address: string, args: any[]): void {
+    if (!this.lastClientPort) return;
     const oscMsg = {
       oscType: 'message',
       address,
@@ -150,23 +151,25 @@ export class MockOSCServer {
     this.client.send(buffer, this.lastClientPort, this.lastClientAddress);
   }
 
-  public start(): Promise<void> {
+  public start(): Promise<number> {
     return new Promise((resolve, reject) => {
       const onError = (err: any) => {
         this.server.off('error', onError);
         reject(err);
       };
       this.server.once('error', onError);
-      this.server.bind(11000, '127.0.0.1', () => {
+      // Never occupy AbletonOSC's command port: on Windows a loopback bind can
+      // shadow Live's wildcard bind without EADDRINUSE and hijack real commands.
+      this.server.bind(0, '127.0.0.1', () => {
         this.server.off('error', onError);
-        resolve();
+        resolve(this.server.address().port);
       });
     });
   }
 
-  public stop(): Promise<void> {
-    try { this.server.close(); } catch {}
-    try { this.client.close(); } catch {}
-    return Promise.resolve();
+  public async stop(): Promise<void> {
+    await Promise.all([this.server, this.client].map((socket) => new Promise<void>((resolve) => {
+      try { socket.close(() => resolve()); } catch { resolve(); }
+    })));
   }
 }

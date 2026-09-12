@@ -190,9 +190,18 @@ test('direct-touch drag suppression restores draggable cards for cancellation, b
   await page.evaluate(() => window.dispatchEvent(new Event('blur')));
   await expect(item).toHaveAttribute('draggable', 'true');
 
+  // A version bump that changes nothing visible no longer rebuilds the list, so
+  // the card the finger is on survives and the gesture is left alone. Only a
+  // render that actually replaces the DOM has to hand the card back.
   await begin(63);
   const fixture = await page.evaluate(async () => fetch('/__test__/state').then((response) => response.json()));
   await emitServerMessage(page, { ...fixture, state: { ...fixture.state, setlistVersion: 63 } });
+  await expect(item).toHaveAttribute('draggable', 'false');
+
+  const renamed = JSON.parse(JSON.stringify(fixture.state));
+  renamed.songs[0].title = 'RENDER RESET';
+  renamed.setlistVersion = 64;
+  await emitServerMessage(page, { ...fixture, state: renamed });
   await expect(item).toHaveAttribute('draggable', 'true');
 });
 
@@ -513,4 +522,44 @@ test('the jump ring clears the song title instead of cutting through it', async 
   expect(ring.outlineWidth).toBe('1px');
   expect(ring.outlineOffset).toBeGreaterThan(0);
   expect(ring.inset, 'the ring must not be an inset shadow').toBe(false);
+});
+
+test('a state push that changes nothing visible never replaces the song list', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  const fixture = await page.evaluate(async () => (
+    fetch('/__test__/state').then((response) => response.json())
+  ));
+  await emitServerMessage(page, { ...fixture, state: { ...fixture.state, isPlaying: false } });
+  await expect(page.locator('.song-item')).toHaveCount(8);
+
+  await page.evaluate(() => {
+    window.__rebuilds = 0;
+    const host = document.getElementById('songList');
+    new MutationObserver((records) => {
+      for (const record of records) {
+        if (record.target === host && record.addedNodes.length) window.__rebuilds += 1;
+      }
+    }).observe(host, { childList: true });
+  });
+
+  // Cues arrive from three sync sources at three rates and do not agree to the
+  // last decimal, so setlistVersion moves without the setlist meaning anything
+  // different. Rebuilding the DOM on that read as the page flickering every two
+  // seconds, and threw away the scroll position with it.
+  for (let i = 0; i < 6; i++) {
+    await emitServerMessage(page, {
+      ...fixture,
+      state: {
+        ...fixture.state,
+        isPlaying: false,
+        setlistVersion: (fixture.state.setlistVersion ?? 1) + i + 1,
+        currentSongTime: 40 + i,
+      },
+    });
+    await page.waitForTimeout(60);
+  }
+
+  const rebuilds = await page.evaluate(() => window.__rebuilds);
+  expect(rebuilds, 'identical markup must not be written back to the DOM').toBe(0);
+  await expect(page.locator('.song-item')).toHaveCount(8);
 });

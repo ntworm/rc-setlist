@@ -11,15 +11,15 @@ function read(path) {
   return readFileSync(new URL(path, rootUrl), 'utf8');
 }
 
-test('machine-readable metadata identifies the Ableton RC Setlist 0.6.0 release', () => {
+test('machine-readable metadata identifies the Ableton RC Setlist 0.6.1 release', () => {
   const packageJson = JSON.parse(read('package.json'));
   const packageLock = JSON.parse(read('package-lock.json'));
   const manifest = JSON.parse(read('manifest.json'));
 
   assert.equal(packageJson.name, 'rc-setlist');
-  assert.equal(packageJson.version, '0.6.0');
-  assert.equal(packageLock.version, '0.6.0');
-  assert.equal(packageLock.packages?.['']?.version, '0.6.0');
+  assert.equal(packageJson.version, '0.6.1');
+  assert.equal(packageLock.version, '0.6.1');
+  assert.equal(packageLock.packages?.['']?.version, '0.6.1');
   assert.equal(packageJson.author, 'ntworm');
   assert.equal(packageJson.private, true);
   assert.equal(packageJson.license, 'PolyForm-Noncommercial-1.0.0');
@@ -30,7 +30,7 @@ test('machine-readable metadata identifies the Ableton RC Setlist 0.6.0 release'
 
   assert.equal(manifest.name, 'Ableton RC Setlist');
   assert.equal(manifest.author, 'ntworm');
-  assert.equal(manifest.version, '0.6.0');
+  assert.equal(manifest.version, '0.6.1');
 });
 
 test('project license is PolyForm Noncommercial with the required notice', () => {

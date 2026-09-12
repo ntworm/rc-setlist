@@ -33,52 +33,104 @@ test('Setlist count-in toggle waits for authoritative server state', async ({ pa
   await expect(button).toHaveAttribute('aria-pressed', 'true');
   await expect(button).toHaveClass(/btn-preroll-active/);
 
+});
+
+test('the count-in holds Play back and sends it when the bar is over', async ({ page }) => {
+  await page.goto('/setlist/');
+  const fixture = await page.evaluate(async () => fetch('/__test__/state').then((response) => response.json()));
+
+  // 160 BPM in 4/4 is a two-second bar, so Play must not be on the wire
+  // immediately — and the button counts while it waits.
   await emitServerMessage(page, {
     ...fixture,
     state: {
       ...fixture.state,
       preRollEnabled: true,
       isPlaying: false,
-      currentSongTime: 2,
+      currentSongTime: 64,
+      declaredTempo: 160,
+      tempo: 110,
+      signatureNumerator: 4,
+      signatureDenominator: 4,
+    },
+  });
+
+  await page.locator('#btnPlay').click();
+  await expect(page.locator('#btnPlay')).toHaveClass(/is-counting/);
+  const playSentDuringCount = (await receivedControlMessages(page)).some((m) => m.type === 'play');
+  expect(playSentDuringCount, 'Play must wait for the count to finish').toBe(false);
+
+  await expect.poll(
+    async () => (await receivedControlMessages(page)).some((message) => message.type === 'play'),
+    { timeout: 6_000 },
+  ).toBe(true);
+  await expect(page.locator('#btnPlay')).not.toHaveClass(/is-counting/);
+});
+
+test('a second press during the count starts immediately instead of counting again', async ({ page }) => {
+  await page.goto('/setlist/');
+  const fixture = await page.evaluate(async () => fetch('/__test__/state').then((response) => response.json()));
+  await emitServerMessage(page, {
+    ...fixture,
+    state: {
+      ...fixture.state,
+      preRollEnabled: true,
+      isPlaying: false,
+      currentSongTime: 64,
+      declaredTempo: 60,
       signatureNumerator: 4,
     },
   });
-  await page.locator('#btnPlay').click();
-  await expect(page.locator('#operationToast')).toContainText('shortened');
+
+  const play = page.locator('#btnPlay');
+  await play.click();
+  await expect(play).toHaveClass(/is-counting/);
+  await play.click();
+
+  await expect.poll(async () => (
+    await receivedControlMessages(page)
+  ).filter((message) => message.type === 'play').length).toBe(1);
+  await expect(play).not.toHaveClass(/is-counting/);
 });
 
-test('Setlist shortened count-in warning uses denominator-aware bar distance', async ({ page }) => {
+test('Stop cancels an armed count instead of leaving Play to fire later', async ({ page }) => {
   await page.goto('/setlist/');
   const fixture = await page.evaluate(async () => fetch('/__test__/state').then((response) => response.json()));
-  const toast = page.locator('#operationToast');
-
   await emitServerMessage(page, {
     ...fixture,
     state: {
       ...fixture.state,
       preRollEnabled: true,
       isPlaying: false,
-      currentSongTime: 4,
-      signatureNumerator: 6,
-      signatureDenominator: 8,
+      currentSongTime: 64,
+      declaredTempo: 60,
+      signatureNumerator: 4,
     },
   });
-  await page.locator('#btnPlay').click();
-  await expect(toast).not.toContainText('shortened');
 
+  await page.locator('#btnPlay').click();
+  await expect(page.locator('#btnPlay')).toHaveClass(/is-counting/);
+  await page.evaluate(() => cancelCountIn());
+  await expect(page.locator('#btnPlay')).not.toHaveClass(/is-counting/);
+
+  await page.waitForTimeout(1_200);
+  const played = (await receivedControlMessages(page)).some((message) => message.type === 'play');
+  expect(played, 'a cancelled count must not send Play afterwards').toBe(false);
+});
+
+test('the count-in toggle off starts playback with no count at all', async ({ page }) => {
+  await page.goto('/setlist/');
+  const fixture = await page.evaluate(async () => fetch('/__test__/state').then((response) => response.json()));
   await emitServerMessage(page, {
     ...fixture,
-    state: {
-      ...fixture.state,
-      preRollEnabled: true,
-      isPlaying: false,
-      currentSongTime: 4,
-      signatureNumerator: 3,
-      signatureDenominator: 2,
-    },
+    state: { ...fixture.state, preRollEnabled: false, isPlaying: false, declaredTempo: 160 },
   });
+
   await page.locator('#btnPlay').click();
-  await expect(toast).toContainText('shortened');
+  await expect(page.locator('#btnPlay')).not.toHaveClass(/is-counting/);
+  await expect.poll(async () => (
+    await receivedControlMessages(page)
+  ).some((message) => message.type === 'play')).toBe(true);
 });
 
 test('Setlist count-in is disabled without control authority and in Lock Mode', async ({ page }) => {

@@ -68,12 +68,19 @@ test('user guides define the stopped-play one-bar count-in safety contract', () 
   const tester = readRequired('docs/TESTER-GUIDE.md');
   const changelog = readRequired('CHANGELOG.md');
 
+  // The count is browser audio now. What the guides have to promise changed
+  // with it: Live's playhead and metronome are left alone, and the count runs
+  // at the tempo the setlist declares rather than the one Live is sitting at.
   assert.match(english, /COUNT-IN 1 BAR[\s\S]*one bar[\s\S]*transport is stopped/i);
-  assert.match(english, /Live(?:'s)? native metronome[\s\S]*does not (?:enter )?Record[\s\S]*arm tracks/i);
+  assert.match(english, /playhead does not move[\s\S]*metronome is not touched/i);
+  assert.match(english, /tempo \*\*the setlist declares\*\*/i);
+  assert.match(english, /does not (?:enter )?Record[\s\S]*arm tracks/i);
   assert.match(english, /does not change[\s\S]*jump quantization/i);
 
   assert.match(portuguese, /CONTAGEM 1 COMP[\s\S]*um compasso[\s\S]*transporte est[aá] parado/i);
-  assert.match(portuguese, /metr[oô]nomo nativo do Live[\s\S]*n[aã]o entra em Record[\s\S]*n[aã]o arma pistas/i);
+  assert.match(portuguese, /playhead do Live n[aã]o se move[\s\S]*metr[oô]nomo do Live n[aã]o [eé] tocado/i);
+  assert.match(portuguese, /tempo que \*\*o setlist declara\*\*/i);
+  assert.match(portuguese, /n[aã]o entra em Record[\s\S]*n[aã]o arma pistas/i);
   assert.match(portuguese, /n[aã]o\s+altera[\s\S]*quantiza[cç][aã]o dos saltos/i);
 
   for (const marker of ['Click off', 'Click on', 'beat zero', 'Stop', 'manual Click', 'already playing']) {
@@ -181,8 +188,9 @@ test('0.5.1 final notes are bilingual and promote the field-tested release surfa
 
   // The landing page and the README name the current release, not this one.
   // What has to survive is that the 0.5.1 notes remain published and bilingual.
-  assert.match(landing, /RELEASE-NOTES-0\.6\.0\.md/);
-  assert.match(readme, /Ableton-RC-Setlist-0\.6\.0\.ablx/);
+  const version = JSON.parse(read('package.json')).version;
+  assert.ok(landing.includes(`RELEASE-NOTES-${version}.md`));
+  assert.ok(readme.includes(`Ableton-RC-Setlist-${version}.ablx`));
 });
 
 test('0.4.1 guides and changelog document durations, recoverable profiles and WebSocket compatibility', () => {
@@ -357,13 +365,15 @@ test('jump documentation preserves the destination-BPM ordering and timing limit
   const portuguese = readRequired('docs/pt-BR/USER-GUIDE.md');
   const changelog = readRequired('CHANGELOG.md');
 
-  assert.match(english, /explicit jumps[\s\S]*destination BPM[\s\S]*before[\s\S]*cue jump/i);
+  assert.match(english, /explicit jumps[\s\S]*destination BPM[\s\S]*around[\s\S]*cue jump/i);
+  assert.match(english, /handed to Live at once[\s\S]*next grid line[\s\S]*tempo is written when that landing is observed/i);
   assert.match(english, /section BPM[\s\S]*overrides[\s\S]*song BPM/i);
   assert.match(english, /SDK-first/i);
   assert.match(english, /sequential[\s\S]*(?:not atomic|non-atomic)/i);
   assert.match(english, /Arrangement tempo automation[\s\S]*sample-accurate/i);
 
-  assert.match(portuguese, /saltos expl.citos[\s\S]*BPM de destino[\s\S]*antes[\s\S]*salto de cue/i);
+  assert.match(portuguese, /saltos expl.citos[\s\S]*BPM de destino[\s\S]*em torno[\s\S]*salto de cue/i);
+  assert.match(portuguese, /entregue ao Live na hora[\s\S]*pr.xima linha da grade/i);
   assert.match(portuguese, /BPM da se..o[\s\S]*substitui[\s\S]*BPM da m.sica/i);
   assert.match(portuguese, /SDK-first/i);
   assert.match(portuguese, /sequenciais[\s\S]*(?:n.o at.micas|n.o s.o at.micas)/i);
@@ -375,6 +385,32 @@ test('jump documentation preserves the destination-BPM ordering and timing limit
   assert.match(changelog, /Arrangement tempo automation[\s\S]*sample-accurate/i);
 });
 
+
+test('0.6.1 notes are bilingual and describe the stage pass this version ships', () => {
+  const changelog = readRequired('CHANGELOG.md');
+  const englishNotes = readRequired('docs/RELEASE-NOTES-0.6.1.md');
+  const portugueseNotes = readRequired('docs/pt-BR/NOTAS-DA-VERSAO-0.6.1.md');
+  const landing = readRequired('docs/index.html');
+  const siteStrings = readRequired('docs/site-i18n.js');
+  const readme = readRequired('README.md');
+
+  assert.match(changelog, /^## \[0\.6\.1\] - 2026-09-12/m);
+
+  for (const notes of [englishNotes, portugueseNotes]) {
+    assert.match(notes, /0\.6\.1/);
+    assert.match(notes, /\[next\]/, 'the end-of-song hand-over is the headline fix');
+    assert.match(notes, /872\.3[\s\S]*876\.0/, 'and it is stated with the measurement that found it');
+    assert.match(notes, /Play/);
+  }
+  assert.match(englishNotes, /pt-BR\/NOTAS-DA-VERSAO-0\.6\.1\.md/);
+  assert.match(portugueseNotes, /\.\.\/RELEASE-NOTES-0\.6\.1\.md/);
+
+  assert.match(landing, /RELEASE-NOTES-0\.6\.1\.md/);
+  assert.match(readme, /Ableton-RC-Setlist-0\.6\.1\.ablx/);
+  assert.match(readme, /docs\/RELEASE-NOTES-0\.6\.1\.md/);
+  assert.doesNotMatch(siteStrings, /v0\.6\.0|v0\.5\.\d/, 'the site strings must not name a superseded version');
+  assert.doesNotMatch(landing, /v0\.6\.0|v0\.5\.\d/);
+});
 
 test('0.6.0 notes are bilingual and describe the release this version actually ships', () => {
   const changelog = readRequired('CHANGELOG.md');
@@ -394,9 +430,8 @@ test('0.6.0 notes are bilingual and describe the release this version actually s
   assert.match(englishNotes, /pt-BR\/NOTAS-DA-VERSAO-0\.6\.0\.md/);
   assert.match(portugueseNotes, /\.\.\/RELEASE-NOTES-0\.6\.0\.md/);
 
-  assert.match(landing, /RELEASE-NOTES-0\.6\.0\.md/);
-  assert.match(readme, /Ableton-RC-Setlist-0\.6\.0\.ablx/);
-  assert.match(readme, /docs\/RELEASE-NOTES-0\.6\.0\.md/);
+  // The landing page and README now name 0.6.1; the 0.6.0 notes stay
+  // published and are reached from the changelog.
 
   // site-i18n.js overrides the landing markup at runtime, so a version left
   // behind there is the one visitors actually read. It had been showing v0.5.0

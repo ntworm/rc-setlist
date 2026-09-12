@@ -1,4 +1,4 @@
-ABLETON RC SETLIST 0.6.0 — INSTALLATION KIT / KIT DE INSTALAÇÃO
+ABLETON RC SETLIST 0.6.1 — INSTALLATION KIT / KIT DE INSTALAÇÃO
 ==============================================================
 
 START HERE / COMECE AQUI
@@ -10,7 +10,7 @@ As notas da versão estão em en/RELEASE-NOTES.md e pt-BR/NOTAS-DA-VERSAO.md.
 
 MAIN FILE / ARQUIVO PRINCIPAL
 -----------------------------
-Ableton-RC-Setlist-0.6.0.ablx
+Ableton-RC-Setlist-0.6.1.ablx
 
 REQUIREMENTS / REQUISITOS
 -------------------------

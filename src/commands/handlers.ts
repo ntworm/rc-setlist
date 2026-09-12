@@ -9,7 +9,6 @@ import {
   checkAndBroadcastLyrics,
   selectProfile,
   loadLyricsForSong,
-  cancelActivePreRoll,
   setSongColorAtTime,
 } from '../core/bridge-state.js';
 import {
@@ -137,47 +136,50 @@ export async function executeCommandAction(
   const osc = bridgeState.oscClient!;
 
   switch (msg.type) {
-    case 'play': {
-      const state = bridgeState.manager!.getState();
-      const coordinator = bridgeState.preRollCoordinator;
-
-      if (state.isPlaying) {
-        osc.startPlaying();
-        break;
-      }
-
-      const decision = coordinator?.start({
-        enabled: state.preRollEnabled,
-        isPlaying: state.isPlaying,
-        targetBeat: state.currentSongTime,
-        signatureNumerator: state.signatureNumerator,
-        signatureDenominator: state.signatureDenominator,
-        metronome: state.metronome,
-      });
-      if (!decision || decision.kind === 'passthrough') {
-        if (decision?.reason === 'invalid') {
-          bridgeState.wsServer?.broadcastLog('Count-in could not determine a safe pre-roll position. Starting normally.', 'warn');
-        }
-        osc.startPlaying();
-        break;
-      }
-      // Send the count-in and Play in one ordered burst. AbletonOSC's reply
-      // port can be owned by another Control Surface, so waiting for a
-      // confirmation here would strand Play whenever replies never arrive.
-      if (decision.enableMetronome) {
-        osc.setMetronome(true);
-        bridgeState.manager!.updateMetronome(true);
-      }
-      osc.startPlaying();
-      osc.setCurrentSongTime(decision.startBeat);
+    case 'play':
+      // Play starts the transport where it stands, and nothing else.
+      //
+      // The count-in used to live here: it rewound Live's playhead one bar and
+      // started there. That bar is real arrangement time belonging to the
+      // previous song, so the count was heard at the previous song's tempo and
+      // its audio played too. Making the count audible also meant switching
+      // Live's metronome on, which overrode a click the operator had
+      // deliberately turned off.
+      //
+      // The count is now produced in the browser, at the tempo this setlist
+      // declares for the playhead, and Play is sent when it finishes. See
+      // static/setlist/count-in.js.
+      //
+      // Live offers a resume and a start-from-the-start-marker, and only one of
+      // them plays from where the operator sees the playhead: resume when it
+      // has not moved since the transport stopped, start when a jump or a
+      // click moved it (both of which move Live's start marker too). See
+      // SetlistManager.shouldContinuePlayback.
+      if (bridgeState.manager!.shouldContinuePlayback()) osc.continuePlaying();
+      else osc.startPlaying();
       break;
-    }
     case 'stop':
-      cancelActivePreRoll();
+      /*
+       * Stop disarms a jump that was waiting for a quantization boundary.
+       *
+       * Live cancels a cue jump it has armed when the transport stops
+       * (measured on Live 12.4), and this side's landing tracker must agree:
+       * left pending, its landing sample would apply the destination's tempo
+       * and loop to a transport that never went there, and the page would
+       * announce a jump that did not happen.
+       *
+       * Stop itself is exactly Live's `stop_playing`. Note that a second
+       * `stop_playing` while already stopped does nothing over the API
+       * (measured): the return to the start marker that Live's own Stop button
+       * performs does not happen from here.
+       */
+      if (bridgeState.scheduler?.hasPending()) {
+        bridgeState.scheduler.clearPending();
+        bridgeState.wsServer?.broadcast({ type: 'jump_cancelled' });
+      }
       osc.stopPlaying();
       break;
     case 'metronome':
-      bridgeState.preRollCoordinator?.markMetronomeOverridden();
       osc.setMetronome(msg.value);
       bridgeState.manager!.updateMetronome(msg.value);
       broadcastState();
@@ -221,7 +223,6 @@ export async function executeCommandAction(
     case 'set_panic':
       bridgeState.manager!.setPanic(msg.active);
       if (msg.active) {
-        cancelActivePreRoll();
         osc.stopPlaying();
         bridgeState.manager!.clearLoop();
       }
@@ -317,6 +318,23 @@ export function executeJumpCommand(msg: ClientMessageOf<'jump'>): void {
     applyJumpTargetTempo(msg.songIndex, msg.sectionIndex ?? null);
     bridgeState.oscClient.jumpToCuePoint(cueIndex);
 
+    /*
+     * Move this side's playhead to the target straight away, while stopped.
+     *
+     * Live is only told to jump; where the playhead actually is comes back on
+     * the position poll, up to half a second later. The count-in reads the
+     * tempo this setlist declares at the playhead, so jumping to a section and
+     * pressing Play immediately counted at the tempo of wherever the playhead
+     * had been — the rehearsal case this feature exists for.
+     *
+     * Only while stopped. During playback the same write would evaluate the
+     * target's automations before the transport has reached it.
+     */
+    if (!mgrState.isPlaying && targetTime !== null && Number.isFinite(targetTime)) {
+      bridgeState.manager.updateTransport(targetTime, false);
+      broadcastState();
+    }
+
     if (msg.sectionIndex !== null && msg.sectionIndex !== undefined) {
       const section = song.sections[msg.sectionIndex];
       if (section && section.loopCount !== null) {
@@ -341,6 +359,20 @@ export function executeJumpCommand(msg: ClientMessageOf<'jump'>): void {
       sectionIndex: msg.sectionIndex ?? null,
     });
   } else {
+    /*
+     * Live quantizes a cue jump requested while playing to its next
+     * global-quantization grid line, so the jump goes out now and Live lands
+     * it. The scheduler only tracks the landing: the page shows it, a second
+     * request replaces it, Stop disarms it, and the landing sample applies the
+     * destination tempo and loop.
+     *
+     * The request used to be sent on the landing sample instead. That sample
+     * is just past the grid line, so Live landed the jump a full quantization
+     * period after the beat the page had announced — one bar late, every
+     * time. Live cancels an armed cue jump on Stop (measured), which keeps
+     * this side's `jump_cancelled` truthful.
+     */
+    bridgeState.oscClient.jumpToCuePoint(cueIndex);
     bridgeState.scheduler.schedule(
       msg.songIndex,
       msg.sectionIndex ?? null,

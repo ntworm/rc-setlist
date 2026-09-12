@@ -32,14 +32,40 @@ Technical cue [ignore]
 | `[loop]` | Loop the current section until disabled. |
 | `[loop Nx]` | Loop the section N times. |
 | `[stop]` | Stop when the locator is reached. |
-| `[next]` | Move to the next song. |
+| `[next]` | Hand playback to the next song the moment this marker is reached. Written on a section it still leaves the song — it does not advance to the next section. |
 | `[bpm N]` | Set the target BPM. |
 | `[click]` / `[click off]` | Enable or disable Live's metronome. |
-| `[skip]` | Skip this section/song. |
+| `[skip]` | Skip this section/song: hand playback to the next section (or song) the moment this marker is reached. |
 | `[hidden]` | Keep an automation anchor out of the visible setlist. |
 | `[ignore]` | Technical marker that hides the locator and takes precedence over any action tags. |
 
 Tags are case-insensitive and removed from the display name. The `[ignore]` tag takes precedence over automation tags, hiding the marker and ignoring any action tags on that locator without creating songs, sections, or automations.
+
+### Chaining songs with `[next]`
+
+To go straight from the end of one song into the next, skipping the empty bars
+between them, put a marker where the song's audio ends and give it `[next]`:
+
+```text
+Song A [bpm 122]
+> Verse
+> Chorus
+> End [next]
+Song B [bpm 96]
+```
+
+When the playhead reaches `> End`, RC Setlist moves it to `Song B`'s locator
+straight away — not on the next bar line. Live's own locator jumps are
+quantized to the global quantization, which for a marker followed by a one-bar
+gap would have landed exactly where `Song B` was starting anyway; that is why
+this transition is not a Live cue jump. The hand-over happens about a tenth of
+a second after the marker is crossed (the position is polled every 100 ms and
+AbletonOSC processes commands every 100 ms), never before it, and the next
+song always starts from its first beat. `[skip]` hands over the same way.
+
+Because the playhead is moved directly, Live's start marker stays where it was.
+Play in RC Setlist resumes from wherever you stopped, so this only shows if you
+press Stop twice in Live, which returns to the start marker.
 
 ## Editing a marker
 
@@ -149,7 +175,9 @@ the exact 78:41 total, and clears the `EST.` warning badge.
 Open `/setlist` from the tokenized controller URL shown in the Live panel.
 
 - Drag songs to change their displayed order.
-- Use Play and Stop for immediate transport actions.
+- Use Play and Stop for immediate transport actions. Play resumes where the
+  transport stopped; after you jump to a song or section while stopped (or
+  click in Live's Arrangement), Play starts from there instead.
 - Previous and Next require a deliberate 500 ms hold.
 - Select transport quantization; the jump scheduler applies the requested value
   immediately and reconciles it with a native Live reply when one is available.
@@ -159,27 +187,40 @@ Open `/setlist` from the tokenized controller URL shown in the Live panel.
 
 ### Jump tempo ordering
 
-Explicit jumps apply the destination BPM before the cue jump. A section BPM
+Explicit jumps apply the destination BPM around the cue jump. A section BPM
 overrides its song BPM; an untagged section inherits the destination song BPM.
-At the execution boundary, RC Setlist uses an SDK-first tempo write and then
-sends the cue jump. These are sequential operations, not atomic operations, so
-they cannot guarantee sample-accurate timing. Native Arrangement tempo automation
-at the destination is recommended for sample-accurate transitions.
+While stopped, or with quantization at None, RC Setlist uses an SDK-first tempo
+write and then sends the cue jump. While playing with quantization on, the cue
+jump is handed to Live at once — Live lands it on its next grid line — and the
+tempo is written when that landing is observed. These are sequential
+operations, not atomic operations, so they cannot guarantee sample-accurate
+timing. Native Arrangement tempo automation at the destination is recommended
+for sample-accurate transitions.
 
 ### One-bar count-in
 
-`COUNT-IN 1 BAR` enables a pre-roll of exactly one bar before the selected
-position, only when Play is requested while the transport is stopped. It uses
-Live's native metronome and transport: RC Setlist moves the playhead back one
-bar, starts playback, and restores Click at the selected position if RC Setlist
-temporarily enabled it. If the selected position is less than one bar from beat
-zero, the available count-in is shortened safely.
+`COUNT-IN 1 BAR` sounds one bar in the browser before Play is sent, when Play
+is requested while the transport is stopped. Live's playhead does not move and
+Live's metronome is not touched: the count is browser audio, and the transport
+starts on the beat it was already sitting on.
+
+The count runs at the tempo **the setlist declares** for that point — the last
+`[bpm]` at or before the playhead — and only falls back to Live's current tempo
+when the set declares nothing. This matters at a song boundary: Live is still
+sitting at the previous song's tempo, so counting at that would count the wrong
+speed for the song about to start.
+
+Play is sent shortly before the last beat so the transport arrives on the
+downbeat rather than after it. Pressing Play again during the count starts
+immediately instead of counting again, and Stop cancels it.
+
+Because the count no longer borrows Live's Click, a click you have switched off
+stays off through the count-in, and one you have switched on is unaffected.
 
 This rehearsal control does not enter Record and does not arm tracks. It also
 does not change live jump quantization. When Live is already playing, Play and
 song/section jumps keep their existing behavior, including the current
-quantization. A manual Click change during the count-in takes precedence over
-automatic restoration.
+quantization.
 
 The UI keeps the last valid state visible during brief reconnects. A reconnect
 notice does not mean the old state is newly confirmed.
