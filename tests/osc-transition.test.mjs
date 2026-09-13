@@ -49,13 +49,19 @@ test('OSC-only transport: an end-of-song [next] hands over to the next song at t
     { name: 'MÚSICA 2', time: 68 },
   ];
   const client = new OSCClient();
+  // A silent socket stands in for a stock AbletonOSC on the bridge port, so the
+  // probe times out and the client takes the legacy path — and never sends a
+  // byte towards the real bridge port on this machine.
+  const silentBridge = dgram.createSocket('udp4');
+  silentBridge.bind(0, '127.0.0.1');
+  await once(silentBridge, 'listening');
   const socket = dgram.createSocket('udp4');
   const timers = [];
   const logs = [];
 
   try {
     const port = await mock.start();
-    client['targetPort'] = port;
+    client.configureBridge({ bridgePort: silentBridge.address().port, probeTimeoutMs: 100, legacyTargetPort: port });
     const listening = once(socket, 'listening', { signal: AbortSignal.timeout(1_000) });
     socket.bind(0, '127.0.0.1');
     await listening;
@@ -127,11 +133,98 @@ test('OSC-only transport: an end-of-song [next] hands over to the next song at t
     await client.stop();
     await mock.stop();
     try { socket.close(); } catch {}
+    try { silentBridge.close(); } catch {}
     if (previousSocket === undefined) delete globalThis.abletonOSCSocket;
     else globalThis.abletonOSCSocket = previousSocket;
     if (previousListeners === undefined) delete globalThis.abletonOSCListeners;
     else globalThis.abletonOSCListeners = previousListeners;
     Object.assign(bridgeState, saved);
     rmSync(profileDir, { recursive: true, force: true });
+  }
+});
+
+/**
+ * The marker editor's rename used to be MCP-only, which meant nobody but the
+ * owner could use it: RC Bridge and AbletonOSC both rename a cue by its index
+ * in Live's chronological list, so the OSC path does it too, and reads the
+ * list back to confirm.
+ */
+test('OSC-only transport: edit_locator renames the cue through RC Bridge and confirms it', { timeout: 10_000 }, async (t) => {
+  const bind = dgram.Socket.prototype.bind;
+  t.mock.method(dgram.Socket.prototype, 'bind', function (port, ...args) {
+    assert.strictEqual(typeof port === 'object' ? port.port : port, 0);
+    return bind.call(this, port, ...args);
+  });
+  const { executeCommandAction } = await import('../src/commands/handlers.ts');
+
+  const saved = {
+    manager: bridgeState.manager,
+    scheduler: bridgeState.scheduler,
+    oscClient: bridgeState.oscClient,
+    wsServer: bridgeState.wsServer,
+    profileManager: bridgeState.profileManager,
+    mcpClient: bridgeState.mcpClient,
+    mcpFallbackSync: bridgeState.mcpFallbackSync,
+    lastActiveSongTitle: bridgeState.lastActiveSongTitle,
+    lastCuesFingerprint: bridgeState.lastCuesFingerprint,
+  };
+  const previousSocket = globalThis.abletonOSCSocket;
+  const previousListeners = globalThis.abletonOSCListeners;
+  delete globalThis.abletonOSCSocket;
+  delete globalThis.abletonOSCListeners;
+
+  const mock = new MockOSCServer({ identifyAsBridge: true });
+  mock['cues'] = [
+    { name: 'MÚSICA 1', time: 0 },
+    { name: '> VERSO', time: 16 },
+    { name: 'MÚSICA 2', time: 64 },
+  ];
+  const client = new OSCClient();
+  const logs = [];
+
+  try {
+    const port = await mock.start();
+    client.configureBridge({ bridgePort: port, probeTimeoutMs: 800, legacyListenPorts: [0] });
+    bridgeState.manager = new SetlistManager();
+    bridgeState.scheduler = new JumpScheduler();
+    bridgeState.oscClient = client;
+    bridgeState.mcpClient = null;
+    bridgeState.mcpFallbackSync = null;
+    bridgeState.lastActiveSongTitle = null;
+    bridgeState.lastCuesFingerprint = '__init__';
+    bridgeState.profileManager = null;
+    bridgeState.wsServer = {
+      broadcast() {},
+      broadcastState() {},
+      broadcastLog: (message, level) => logs.push([level, message]),
+    };
+
+    await client.start();
+    registerOscListeners({});
+    const cuesLoaded = once(client, 'cue_points', { signal: AbortSignal.timeout(2_000) });
+    client.getCuePoints();
+    await cuesLoaded;
+
+    await executeCommandAction({
+      commandId: 'rename-1', type: 'edit_locator', payload: { time: 16, name: '> VERSO [loop 2x]' },
+      sourceClientId: 'test', createdAt: Date.now(), status: 'created', retryCount: 0,
+    });
+    assert.deepEqual(mock['cues'].map((c) => c.name), ['MÚSICA 1', '> VERSO [loop 2x]', 'MÚSICA 2']);
+    assert.ok(logs.some(([, message]) => message === 'Locator edited at 16.'), `logs: ${JSON.stringify(logs)}`);
+
+    // A cue the manager does not know cannot be renamed, and says so.
+    await assert.rejects(
+      executeCommandAction({
+        commandId: 'rename-2', type: 'edit_locator', payload: { time: 99, name: 'Nowhere' },
+        sourceClientId: 'test', createdAt: Date.now(), status: 'created', retryCount: 0,
+      }),
+      /No cue point found at time 99/,
+    );
+  } finally {
+    await client.stop();
+    await mock.stop();
+    if (previousSocket !== undefined) globalThis.abletonOSCSocket = previousSocket;
+    if (previousListeners !== undefined) globalThis.abletonOSCListeners = previousListeners;
+    Object.assign(bridgeState, saved);
   }
 });

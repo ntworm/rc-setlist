@@ -12,6 +12,8 @@ const MAX_COMMAND_ID_LENGTH = 128;
 const MAX_CLIENT_ID_LENGTH = 128;
 const MAX_PROFILE_FIELD_LENGTH = 80;
 const MAX_LOCATOR_NAME_LENGTH = 255;
+/** One line on a stage card: long enough for key, tuning and a cue, short enough to stay one line. */
+const MAX_SONG_NOTES_LENGTH = 200;
 const MAX_SONG_TITLE_LENGTH = 255;
 const MAX_LYRICS_LENGTH = 96 * 1024;
 const MAX_REORDER_SONGS = 4096;
@@ -114,8 +116,6 @@ export function decodeClientMessage(input: unknown): DecodeResult {
       return success({ type: 'refresh' });
     case 'export_csv':
       return success({ type: 'export_csv' });
-    case 'create_test_session':
-      return success({ type: 'create_test_session' });
     case 'metronome':
       if (typeof input.value !== 'boolean') return fail('Invalid value for metronome.');
       return success({ type: 'metronome', value: input.value });
@@ -189,6 +189,16 @@ export function decodeClientMessage(input: unknown): DecodeResult {
         return fail('Invalid colour for set_song_color.');
       }
       return success({ type: 'set_song_color', time: input.time as number, color: color as string | null });
+    }
+    case 'set_song_notes': {
+      if (!isBoundedNumber(input.time, 0, 1_000_000)) return fail('Invalid time for set_song_notes.');
+      const notes = input.notes;
+      if (notes === null || (typeof notes === 'string' && notes.trim() === '')) {
+        return success({ type: 'set_song_notes', time: input.time as number, notes: null });
+      }
+      // One line: the card has room for one, and a newline is a control character anyway.
+      if (!isBoundedText(notes, MAX_SONG_NOTES_LENGTH)) return fail('Invalid notes for set_song_notes.');
+      return success({ type: 'set_song_notes', time: input.time as number, notes: (notes as string).trim() });
     }
     case 'edit_locator':
       if (!isBoundedNumber(input.time, 0, 1_000_000)) return fail('Invalid time for edit_locator.');

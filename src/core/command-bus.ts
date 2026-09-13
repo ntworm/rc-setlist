@@ -1,4 +1,6 @@
 import { EventEmitter } from 'node:events';
+import { OperatorError } from '../commands/operator-error.js';
+import { ProfileError } from './profile-manager.js';
 import type { SetlistManager } from './setlist-manager.js';
 import type { EventLogger } from './event-log.js';
 import type {
@@ -33,7 +35,6 @@ export const COMMAND_POLICIES: Readonly<Record<string, CommandPolicy>> = Object.
   save_lyrics: Object.freeze({ completion: 'local', timeoutMs: 5_000 }),
   click_preview: Object.freeze({ completion: 'local', timeoutMs: 5_000 }),
   export_csv: Object.freeze({ completion: 'local', timeoutMs: 5_000 }),
-  create_test_session: Object.freeze({ completion: 'local', timeoutMs: 30_000 }),
   set_panic: Object.freeze({ completion: 'local', safetyLane: true, timeoutMs: 5_000 }),
   set_critical_lock: DEFAULT_LOCAL_POLICY,
   set_mode: DEFAULT_LOCAL_POLICY,
@@ -194,8 +195,12 @@ export class CommandBus extends EventEmitter {
     }
 
     if (!policy.safetyLane && this.commandQueue.length >= this.maxQueueSize) {
+      // The client learns of it through the failed status; throwing here
+      // would only surface as an unhandled rejection in the WS listener.
+      console.warn(`[CommandBus] Queue full (${this.maxQueueSize}); rejecting ${command.type}.`);
+      command.error = 'Command queue capacity exceeded';
       this.updateCommandStatus(command, 'failed', 'execution_failed');
-      throw new Error('Command queue capacity exceeded');
+      return;
     }
 
     this.updateRetentionPhase(command, 'queued');
@@ -242,7 +247,12 @@ export class CommandBus extends EventEmitter {
       } else {
         this.resolveObservableConfirmations();
       }
-    } catch {
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      console.error(`[CommandBus] ${command.type} failed: ${message}`);
+      // Only messages written for the operator travel to the client; a raw
+      // Error may carry a path or a stack fragment that stays on the host.
+      if (err instanceof OperatorError || err instanceof ProfileError) command.error = message;
       this.updateCommandStatus(command, 'failed', 'execution_failed');
     } finally {
       this.markExecutionSettled(command);

@@ -3,31 +3,50 @@
 ## Requisitos
 
 - Ableton Live 12.4.5+ Suite (Beta) com suporte a Extensions.
-- [AbletonOSC](https://github.com/ideoforms/AbletonOSC) instalado como Control Surface.
+- RC Bridge selecionado como Control Surface no Live. Ele vem com a extensão e
+  com o kit de instalação; o passo 1 abaixo instala. (Um
+  [AbletonOSC](https://github.com/ideoforms/AbletonOSC) comum também funciona.)
 - Windows para o caminho de lançamento validado. O macOS é experimental.
 
 O Node.js 24.16.0 é necessário apenas para desenvolver a partir do código-fonte,
 não para instalar o pacote de lançamento.
 
-## 1. Instalar o AbletonOSC
+## 1. Instalar o RC Bridge
 
-O Ableton RC Setlist usa o Remote Script externo AbletonOSC, licenciado sob MIT,
-para transporte e operações do Live Object Model. Ele não está incluído neste
-repositório nem no kit de lançamento.
+O RC Bridge é o Remote Script do Live com que o Ableton RC Setlist conversa. É
+um fork do [AbletonOSC](https://github.com/ideoforms/AbletonOSC), licenciado
+sob MIT, que responde a cada cliente na porta dele — assim nunca disputa a
+porta de resposta com outra extensão RC e convive com um AbletonOSC comum, se
+você tiver um. Nada para baixar: ele está dentro da extensão e dentro do kit.
 
-1. Baixe o AbletonOSC no [repositório oficial](https://github.com/ideoforms/AbletonOSC).
-2. Siga as instruções de instalação do projeto.
-3. Coloque a pasta `AbletonOSC` diretamente no diretório de Remote Scripts do Live:
-   - Windows: `%USERPROFILE%\Documents\Ableton\User Library\Remote Scripts\AbletonOSC`
-   - macOS: `~/Music/Ableton/User Library/Remote Scripts/AbletonOSC`
-4. Reinicie o Live.
-5. Abra **Settings/Preferences > Link, Tempo & MIDI** e selecione AbletonOSC como
-   Control Surface.
+Escolha um dos dois jeitos de colocá-lo na User Library do Live:
 
-Importante: use `User Library/Remote Scripts/AbletonOSC`, e não a pasta oculta
-`User Remote Scripts` das preferências do Live (ela serve para
-`UserConfiguration.txt`). Confirme que `AbletonOSC/__init__.py` existe
-diretamente nesse local, sem outra pasta `AbletonOSC` aninhada.
+- **Pelo kit** — na pasta `RC-Bridge`, clique duas vezes em
+  `Install-RC-Bridge.cmd` (Windows) ou `Install RC Bridge.command` (macOS; na
+  primeira vez, botão direito › Abrir). Ele copia o script e mostra o último
+  passo.
+- **À mão** — copie a pasta `RCBridge` do kit para
+  - Windows: `%USERPROFILE%\Documents\Ableton\User Library\Remote Scripts\RCBridge`
+  - macOS: `~/Music/Ableton/User Library/Remote Scripts/RCBridge`
+
+Depois, o único passo que o Live não deixa ninguém fazer por você: abra
+**Settings/Preferences > Link, Tempo & MIDI** e escolha **RCBridge** como
+Control Surface. Input e Output podem ficar em `None`. Se o Live já estava
+aberto quando o script foi copiado, feche e abra de novo uma vez, para ele
+enxergar a pasta nova.
+
+Use `User Library/Remote Scripts/`, e não a pasta oculta `User Remote Scripts`
+das preferências do Live (ela serve para `UserConfiguration.txt`). Confirme que
+`RCBridge/__init__.py` existe diretamente nesse local, sem outra pasta
+`RCBridge` aninhada.
+
+Se você já usa o AbletonOSC com outras ferramentas, pode manter. O RC Bridge
+escuta na porta 11020; o AbletonOSC fica com a 11000. O RC Setlist procura o
+RC Bridge primeiro e cai para o AbletonOSC quando ele não está lá, então os
+dois funcionam — o RC Bridge é o que também funciona ao lado do RC Surface. A
+linha OSC do painel diz qual está em uso (`via RC Bridge 1.0.0 na porta 11020`).
+A própria extensão não consegue copiar o script por você: o Live roda as
+extensões numa sandbox que não escreve na sua User Library.
 
 ## 2. Instalar o Ableton RC Setlist
 

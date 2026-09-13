@@ -134,6 +134,7 @@ test('WebSocket profile and reliability core protocol', async () => {
       commandId: 'invalid-reorder',
       status: 'failed',
       reason: 'execution_failed',
+      error: 'Reorder must contain every song exactly once.',
     });
     assert.deepEqual(bridgeState.manager.getState().songs.map(({ title }) => title), ['Song A', 'Song B']);
     assert.equal(stateMessages.length, 0);

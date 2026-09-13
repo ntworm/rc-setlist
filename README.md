@@ -1,7 +1,7 @@
 # Ableton RC Setlist
 
 [![PolyForm Noncommercial](https://img.shields.io/badge/license-PolyForm%20Noncommercial-orange)](LICENSE)
-[![Version](https://img.shields.io/badge/version-0.6.1-f97316)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-0.7.0-f97316)](CHANGELOG.md)
 [![CI](https://github.com/ntworm/rc-setlist/actions/workflows/ci.yml/badge.svg)](https://github.com/ntworm/rc-setlist/actions/workflows/ci.yml)
 
 > **[Landing page and screenshots](https://ntworm.github.io/rc-setlist/)**
@@ -41,7 +41,8 @@ click feedback, and guarded transport controls for rehearsals and live shows.
 ## Requirements
 
 - Ableton Live 12.4.5+ Suite (Beta) with Extensions support.
-- [AbletonOSC](https://github.com/ideoforms/AbletonOSC) installed as a Live
+- RC Bridge, the bundled Remote Script (a fork of
+  [AbletonOSC](https://github.com/ideoforms/AbletonOSC)), selected as a Live
   Control Surface for transport and Live Object Model operations.
 - Node.js 24.16.0 or newer in the Node 24 LTS line only when developing from
   source. End users install the `.ablx` and do not need Node.js.
@@ -51,8 +52,8 @@ until this release is exercised on real macOS hardware.
 
 ## Quick start
 
-1. Install AbletonOSC from its [upstream repository](https://github.com/ideoforms/AbletonOSC).
-2. Download `Ableton-RC-Setlist-0.6.1.ablx` from the latest release.
+1. Install RC Bridge: run the kit's `Install-RC-Bridge.cmd` / `Install RC Bridge.command`, then choose RCBridge as a Control Surface in Live.
+2. Download `Ableton-RC-Setlist-0.7.0.ablx` from the latest release.
 3. Open the `.ablx` and approve installation in Live.
 4. In Live, open **Extensions > Ableton RC Setlist** and start the server.
 5. Use the panel URL or QR code to open `/setlist` or `/performance`.
@@ -77,8 +78,9 @@ for a complete demonstration set.
 ## Architecture
 
 ```text
-Ableton Live + AbletonOSC
-          │ OSC 11000 / cooperative listener
+Ableton Live + RC Bridge (bundled fork of AbletonOSC)
+          │ OSC 11020, replies to the asking socket
+          │ (stock AbletonOSC on 11000/11001 still accepted)
           ▼
      Ableton RC Setlist extension
           │ local HTTP(S) + WebSocket :4444
@@ -104,7 +106,7 @@ Authorized developers can configure a complete build using
 ## Documentation
 
 - [Documentation index](docs/README.md)
-- [What is new in 0.6.1](docs/RELEASE-NOTES-0.6.1.md)
+- [What is new in 0.7.0](docs/RELEASE-NOTES-0.7.0.md)
 - [Installation](docs/INSTALL.md)
 - [User guide](docs/USER-GUIDE.md)
 - [Português (Brasil)](docs/pt-BR/README.md)

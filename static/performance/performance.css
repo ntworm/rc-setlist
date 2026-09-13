@@ -255,6 +255,20 @@ body {
   white-space: nowrap;
 }
 
+/* Stage information, so it wraps instead of trailing off: up to three lines. */
+.card-notes {
+  display: -webkit-box;
+  min-width: 0;
+  margin-top: clamp(0.3rem, 0.8vh, 0.55rem);
+  overflow: hidden;
+  color: var(--ui-muted);
+  font-size: clamp(0.85rem, 1.4vw, 1.25rem);
+  font-weight: 650;
+  line-height: 1.25;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+}
+
 .perf-badges {
   display: flex;
   min-width: 0;

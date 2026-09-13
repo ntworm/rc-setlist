@@ -23,9 +23,6 @@ export function registerOscListeners(options: StartServerOptions = {}) {
     broadcastState();
   });
 
-  bridgeState.oscClient.on('is_playing_sample', (isPlaying) => {
-  });
-
   bridgeState.oscClient.on('is_playing', (isPlaying) => {
     bridgeState.manager?.updateTransport(
       bridgeState.manager.getState().currentSongTime,

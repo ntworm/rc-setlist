@@ -20,6 +20,7 @@ README.md
 SECURITY.md
 SUPPORT.md
 THIRD_PARTY_NOTICES.md
+bridge/
 docs/.nojekyll
 docs/DEVELOPMENT.md
 docs/FAQ.md
@@ -30,6 +31,7 @@ docs/RELEASE-NOTES-0.4.2.md
 docs/RELEASE-NOTES-0.5.1.md
 docs/RELEASE-NOTES-0.6.0.md
 docs/RELEASE-NOTES-0.6.1.md
+docs/RELEASE-NOTES-0.7.0.md
 docs/TESTER-GUIDE.md
 docs/TROUBLESHOOTING.md
 docs/USER-GUIDE.md
@@ -73,6 +75,7 @@ scripts/package-release-candidate.ps1
 scripts/render-site-assets.mjs
 scripts/media-kit-template.html
 scripts/render-media-kit.mjs
+scripts/run-bridge-tests.mjs
 scripts/verify-ableton-deps.mjs
 scripts/verify-production-bundle.mjs
 scripts/verify-public-snapshot.mjs

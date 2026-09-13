@@ -32,6 +32,7 @@ Marcador Técnico [ignore]
 | `[bpm N]` | Define o BPM esperado. |
 | `[click]` / `[click off]` | Liga ou desliga o metrônomo do Live. |
 | `[skip]` | Ignora esta seção ou música: passa a reprodução para a próxima seção (ou música) no instante em que este marcador é alcançado. |
+| `[jump NOME]` | Passa a reprodução para o marcador chamado NOME no instante em que este marcador é alcançado — uma seção desta música, uma música, ou `Música > Seção`. Nomes são comparados sem as tags e sem diferenciar maiúsculas. |
 | `[hidden]` | Oculta uma âncora de automação do setlist visível. |
 | `[ignore]` | Marcador técnico que oculta o localizador e tem precedência sobre qualquer tag de ação. |
 
@@ -61,6 +62,13 @@ posição é lida a cada 100 ms e o AbletonOSC processa comandos a cada 100 ms),
 nunca antes, e a próxima música sempre começa do seu primeiro tempo. `[skip]`
 passa a reprodução do mesmo jeito.
 
+`[jump NOME]` é a mesma passagem apontada para qualquer lugar: `> Verso 2 [jump Refrão]`
+vai para o refrão desta música, `> Coda [jump Música B]` para o início de outra
+música, `> Solo [jump Música B > Ponte]` para uma seção de outra música. Um nome
+sozinho é procurado primeiro nas seções desta música, depois nos títulos das
+músicas, depois em todas as seções na ordem do arranjo; um nome que não bate
+com nada não faz nada.
+
 Como o playhead é movido diretamente, o marcador de início do Live fica onde
 estava. O Play do RC Setlist retoma de onde você parou, então isso só aparece
 se você apertar Stop duas vezes no Live, que volta ao marcador de início.
@@ -71,8 +79,11 @@ Dê um clique duplo na linha de uma música ou no chip de uma seção no Control
 Palco para abrir o editor de marcador. Ali toda tag é um controle — você nunca
 digita uma `[tag]` à mão, e não consegue apagar uma sem querer.
 
-Uma **música** carrega nome, cor, andamento inicial e os comportamentos
-`[stop]`, `[next]` e `[skip]`. Ela também lista suas seções; clique em uma para
+Uma **música** carrega nome, cor, notas, andamento inicial e os comportamentos
+`[stop]`, `[next]` e `[skip]`. As notas são uma linha para o palco — tom,
+afinação, quem começa — mostrada abaixo do título no card e na tela de
+performance; como a cor, ficam guardadas ao lado do setlist e nunca vão para o
+projeto do Live. Ela também lista suas seções; clique em uma para
 editá-la, e a seta no topo do painel traz você de volta para a música.
 
 Uma **seção** carrega nome, andamento, loop, click e os mesmos três

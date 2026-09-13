@@ -40,7 +40,9 @@ test('PolyForm license keeps its canonical sections and Ableton RC Setlist notic
 
 test('project notice states copyright, source-available license and trademark independence', () => {
   const notice = readRequired('NOTICE');
-  assert.match(notice, /Ableton RC Setlist 0\.5\.0/);
+  // The notice carries no version on purpose: a version written by hand goes stale.
+  assert.match(notice, /^Ableton RC Setlist\n/);
+  assert.doesNotMatch(notice, /Setlist \d+\.\d+\.\d+/);
   assert.match(notice, /Copyright © 2026 Gabriel Worm/);
   assert.match(notice, /PolyForm Noncommercial 1\.0\.0/);
   assert.match(notice, /Ableton and Ableton Live are trademarks of Ableton AG/);
@@ -55,7 +57,12 @@ test('third-party notices cover direct runtime dependencies and bundled QR code'
   assert.match(notices, /Kazuhiko Arase/);
   assert.match(notices, /Ableton Extensions SDK/i);
   assert.match(notices, /not redistributed in this source repository/i);
-  assert.doesNotMatch(notices, /AbletonOSC.+bundled/is);
+  // RC Bridge is a bundled fork of AbletonOSC (MIT): the attribution, the
+  // licence text and the upstream commit it was taken from must travel with it.
+  assert.match(notices, /## RC Bridge \(a fork of AbletonOSC\)/);
+  assert.match(notices, /Daniel John Jones and contributors/);
+  assert.match(notices, /0ca68214bd62c9b5cb641ca34006cfd70ba94430/);
+  assert.match(notices, /RC Bridge[\s\S]*Permission is hereby granted, free of charge/);
 });
 
 test('third-party notice generation normalizes dependency license line endings', () => {

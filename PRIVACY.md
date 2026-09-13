@@ -16,8 +16,8 @@ Removing the extension does not automatically remove that storage. See
 ## Local network traffic
 
 The host serves the operator and performance pages on TCP port `4444` and uses
-WebSockets for live state. AbletonOSC communication stays on the host through
-UDP. Browser clients receive setlist state, timing, lyrics and status needed for
+WebSockets for live state. Communication with RC Bridge (the bundled Remote
+Script, a fork of AbletonOSC) stays on the host through UDP. Browser clients receive setlist state, timing, lyrics and status needed for
 the interface. A controller token protects write-capable WebSocket actions;
 keep controller URLs private.
 
@@ -29,6 +29,6 @@ extension storage directory. Private keys are never packaged in release files.
 ## Third parties
 
 The runtime does not intentionally contact an Ableton RC Setlist service. Ableton Live,
-the Ableton Extensions host and AbletonOSC are separate software governed by
-their own terms. Package and browser-component licenses are listed in
+the Ableton Extensions host and, if you keep one installed, a stock AbletonOSC
+are separate software governed by their own terms. Package and browser-component licenses are listed in
 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).

@@ -7,6 +7,7 @@ import {
   ProfileManager,
   isValidUUID,
   profileNameKey,
+  isDefaultProfileName,
   writeJsonAtomic,
   type ProfileSummary,
   type ProfileManagerOptions,
@@ -204,7 +205,7 @@ async function mergeProjectProfiles(
 async function isPristineDefaultManager(manager: ProfileManager): Promise<boolean> {
   const profiles = manager.list();
   return profiles.length === 1
-    && profiles[0]?.name === 'Main Setlist'
+    && isDefaultProfileName(profiles[0]!.name)
     && !await hasLegacyPayload(manager.getPaths(profiles[0]!.id).root);
 }
 
@@ -255,7 +256,7 @@ export async function recoverCompatibleLegacyPayload({
   songTitles,
   candidateRoots = candidateStorageRoots(storageRoot),
 }: CompatibleLegacyRecoveryOptions): Promise<CompatibleLegacyRecoveryResult> {
-  const targetProfile = manager.list().find(({ name }) => name === 'Main Setlist');
+  const targetProfile = manager.list().find(({ name }) => isDefaultProfileName(name));
   if (!targetProfile || songTitles.length === 0) {
     return { recovered: false, customOrder: [], profileId: null };
   }

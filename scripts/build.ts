@@ -10,6 +10,7 @@ const watch = process.argv.includes('--watch');
 
 const outputDir = path.dirname(manifest.entry);
 const staticDst = path.join(outputDir, 'static');
+const bridgeDst = path.join(outputDir, 'bridge');
 
 function copyDir(src: string, dst: string): void {
   if (!fs.existsSync(src)) return;
@@ -30,6 +31,11 @@ function copyDir(src: string, dst: string): void {
 function copyStatic(): void {
   copyStaticTree('static', staticDst);
   console.log(`copied static/* → ${staticDst}`);
+  // The RC Bridge remote script travels inside the package, beside the static
+  // files but outside the HTTP root, so the panel can install it into Live's
+  // User Library without a download. Its tests stay behind.
+  copyStaticTree('bridge', bridgeDst, { skip: (name) => name === 'tests' || name === '__pycache__' });
+  console.log(`copied bridge/* → ${bridgeDst}`);
 }
 
 function copyStaticWhileWatching(): void {

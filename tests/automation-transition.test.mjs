@@ -135,3 +135,24 @@ test('[next] on the last song stops instead of relocating', () => {
     harness.restore();
   }
 });
+
+test('[jump NAME] hands over to the named marker the same way', () => {
+  const harness = installHarness();
+  try {
+    harness.manager.updateCues([
+      { name: 'A', time: 0 },
+      { name: 'A > Verse [jump Chorus]', time: 8 },
+      { name: 'A > Chorus', time: 16 },
+    ]);
+    harness.manager.updateTransport(8.2, true, 120);
+    const actions = harness.manager.checkAutomations();
+    assert.deepEqual(actions, [{ type: 'jump_to', targetCue: 'A > Chorus', targetTime: 16 }]);
+    executeAutomationActions(actions, 8.2);
+    assert.deepEqual(harness.calls, [
+      ['send', '/live/song/set/loop', [0]],
+      ['position', 16],
+    ]);
+  } finally {
+    harness.restore();
+  }
+});

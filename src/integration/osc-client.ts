@@ -31,6 +31,8 @@ function ensureTextEncodingGlobals(): void {
   }
 }
 
+export type OscBridgeKind = 'rcbridge' | 'abletonosc';
+
 export interface OscDebugSnapshot {
   oscTargetHost: string;
   oscTargetPort: number;
@@ -40,13 +42,36 @@ export interface OscDebugSnapshot {
   oscTimeSinceLastMessageMs: number | null;
   oscRxCount: number;
   oscTxCount: number;
+  /** Which remote script answered: the bundled fork, or a stock AbletonOSC. Null until start(). */
+  oscBridge: OscBridgeKind | null;
+  oscBridgeVersion: string | null;
 }
+
+/**
+ * Where to look for the two remote scripts this client can talk to.
+ *
+ * RC Bridge — the fork shipped in the installation kit — listens on 11020 and
+ * replies to whichever socket asked, so this client binds an ephemeral port of
+ * its own. A stock AbletonOSC listens on 11000 and replies to a fixed 11001,
+ * which is why the legacy path below shares one socket between RC extensions
+ * and falls back through 11101 and 11201 when 11001 is taken.
+ */
+export interface OscBridgeOptions {
+  bridgeHost: string;
+  bridgePort: number;
+  probeTimeoutMs: number;
+  legacyTargetPort: number;
+  legacyListenPorts: number[];
+}
+
+export const RC_BRIDGE_PORT = 11020;
+export const ABLETON_OSC_PORT = 11000;
 
 export class OSCClient extends EventEmitter {
   private server: dgram.Socket | null = null;
   private targetPort: number = 11000;
   private targetHost: string = '127.0.0.1';
-  private listenPort: number = 0; // bound to first free of [11001, 11101, 11201] at start()
+  private listenPort: number = 0; // ephemeral in RC Bridge mode; first free of legacyListenPorts on the AbletonOSC path
   private onMessageCallback: ((msg: Buffer) => void) | null = null;
   // Tracks most recent value per rate-prone address so redundant replies
   // from AbletonOSC (e.g. current_song_time bursts) don't fan out identical
@@ -63,9 +88,25 @@ export class OSCClient extends EventEmitter {
   private cuePointsPollInterval: NodeJS.Timeout | null = null;
   private rxCount: number = 0;
   private txCount: number = 0;
+  private bridge: OscBridgeKind | null = null;
+  private bridgeVersion: string | null = null;
+  /** Bumped by stop() so a probe still in flight when the client stops is discarded. */
+  private generation = 0;
+  private bridgeOptions: OscBridgeOptions = {
+    bridgeHost: '127.0.0.1',
+    bridgePort: RC_BRIDGE_PORT,
+    probeTimeoutMs: 700,
+    legacyTargetPort: ABLETON_OSC_PORT,
+    legacyListenPorts: [11001, 11101, 11201],
+  };
 
   constructor() {
     super();
+  }
+
+  /** Test seam and future preference hook; production keeps the defaults. */
+  public configureBridge(options: Partial<OscBridgeOptions>): void {
+    this.bridgeOptions = { ...this.bridgeOptions, ...options };
   }
 
   private handleMessage(msg: Buffer): void {
@@ -143,12 +184,19 @@ export class OSCClient extends EventEmitter {
       '/live/song/tempo',
       '/live/song/is_playing',
       '/live/song/metronome',
+      '/live/rcbridge/version',
     ]);
     if (!KNOWN.has(address)) {
       dbg('RX-UNKNOWN-ADDR', `address=${address} args=${JSON.stringify(args)}`);
     }
 
-    if (address === '/live/song/get/tempo') {
+    if (address === '/live/rcbridge/version') {
+      const name = args[0]?.value;
+      const version = args[1]?.value;
+      if (typeof name === 'string' && typeof version === 'string') {
+        this.bridgeVersion = `${name} ${version}`;
+      }
+    } else if (address === '/live/song/get/tempo') {
       const bpm = args[0]?.value;
       if (typeof bpm === 'number') {
         console.log(`[OSC] tempo reply: ${bpm}`);
@@ -210,8 +258,11 @@ export class OSCClient extends EventEmitter {
   }
 
   public send(address: string, args: any[] = []): boolean {
+    // A malformed address or an unencodable argument is a programming error
+    // on this side, not a transport failure: report it and return false as
+    // the signature promises rather than raising 'error' at the caller.
     if (typeof address !== 'string' || !address.startsWith('/')) {
-      this.emit('error', new Error(`[OSC] send: invalid address ${JSON.stringify(address)}`));
+      console.error(`[OSC] send: invalid address ${JSON.stringify(address)}`);
       return false;
     }
     const safeArgs = Array.isArray(args) ? args : [];
@@ -226,7 +277,7 @@ export class OSCClient extends EventEmitter {
       const encoded = osc.toBuffer(oscMsg);
       buffer = Buffer.from(encoded.buffer, encoded.byteOffset, encoded.byteLength);
     } catch (err) {
-      this.emit('error', err);
+      console.error(`[OSC] send: could not encode ${address}:`, err);
       return false;
     }
     const socket = this.server;
@@ -242,10 +293,13 @@ export class OSCClient extends EventEmitter {
     return true;
   }
 
-  public start(): Promise<void> {
+  public async start(): Promise<void> {
+    if (this.server) return; // already started; stop() first to change bridge
     this.lastMessageTime = 0;
     this.isConnected = false;
-    
+    this.bridge = null;
+    this.bridgeVersion = null;
+
     if (this.connectionCheckInterval) {
       clearInterval(this.connectionCheckInterval);
     }
@@ -253,12 +307,105 @@ export class OSCClient extends EventEmitter {
       this.checkConnection();
     }, 1000);
 
+    this.onMessageCallback = (msg: Buffer) => {
+      this.handleMessage(msg);
+    };
+
+    const generation = this.generation;
+    const probe = await this.probeBridge();
+    if (generation !== this.generation) {
+      // stop() ran while the probe was out; whatever answered is not ours to keep.
+      if (probe) { try { probe.socket.close(); } catch { /* ignore */ } }
+      return;
+    }
+    if (probe) {
+      // Adopt the socket before handing over its first message: 'connect'
+      // fires from handleMessage, and the connect handler sends the listener
+      // registrations, which need this.server to be set.
+      this.server = probe.socket;
+      this.targetHost = this.bridgeOptions.bridgeHost;
+      this.targetPort = this.bridgeOptions.bridgePort;
+      this.listenPort = probe.socket.address().port;
+      this.bridge = 'rcbridge';
+      probe.socket.removeAllListeners('error');
+      probe.socket.on('error', (err) => {
+        console.error('[OSC] RC Bridge socket error:', err);
+        if (this.isConnected) {
+          this.isConnected = false;
+          this.emit('disconnect');
+        }
+      });
+      this.handleMessage(probe.versionReply);
+      console.log(`[OSC] ${this.bridgeVersion ?? 'RC Bridge'} answered on port ${this.targetPort}; replies arrive on port ${this.listenPort}`);
+      return;
+    }
+
+    this.targetPort = this.bridgeOptions.legacyTargetPort;
+    this.bridge = 'abletonosc';
+    console.log(`[OSC] No RC Bridge on port ${this.bridgeOptions.bridgePort}; using AbletonOSC on port ${this.targetPort}`);
+    await this.startLegacy();
+  }
+
+  /**
+   * Ask RC Bridge to identify itself. Resolves with the socket that heard the
+   * answer — already receiving, already the one to keep — and the answer
+   * itself, which start() feeds through handleMessage once the socket is
+   * adopted; or null after the timeout, which is how a stock AbletonOSC
+   * (silent on unknown addresses) and an absent script both look.
+   */
+  private probeBridge(): Promise<{ socket: dgram.Socket; versionReply: Buffer } | null> {
+    return new Promise((resolve) => {
+      const socket = dgram.createSocket('udp4');
+      let settled = false;
+      let found = false;
+      const finish = (versionReply: Buffer | null) => {
+        if (settled) return;
+        settled = true;
+        found = versionReply !== null;
+        clearTimeout(timer);
+        if (versionReply) {
+          resolve({ socket, versionReply });
+        } else {
+          try { socket.close(); } catch { /* ignore */ }
+          resolve(null);
+        }
+      };
+      const timer = setTimeout(() => finish(null), this.bridgeOptions.probeTimeoutMs);
+      socket.on('error', () => finish(null));
+      socket.on('message', (msg) => {
+        if (!settled) {
+          try {
+            const parsed = osc.fromBuffer(msg);
+            if (parsed.oscType === 'message' && parsed.address === '/live/rcbridge/version') {
+              finish(msg);
+              return;
+            }
+          } catch { /* not the answer being waited for */ }
+          return;
+        }
+        if (found && this.onMessageCallback) this.onMessageCallback(msg);
+      });
+      socket.bind(0, '127.0.0.1', () => {
+        let buffer: Buffer;
+        try {
+          ensureTextEncodingGlobals();
+          const probe = { oscType: 'message', address: '/live/rcbridge/version', args: [] as any[] };
+          const encoded = osc.toBuffer(probe);
+          buffer = Buffer.from(encoded.buffer, encoded.byteOffset, encoded.byteLength);
+        } catch {
+          finish(null);
+          return;
+        }
+        socket.send(buffer, this.bridgeOptions.bridgePort, this.bridgeOptions.bridgeHost, (err) => {
+          if (err) finish(null);
+        });
+      });
+    });
+  }
+
+  private startLegacy(): Promise<void> {
     return new Promise((resolve, reject) => {
       const g = globalThis as any;
-
-      this.onMessageCallback = (msg: Buffer) => {
-        this.handleMessage(msg);
-      };
 
       if (g.abletonOSCSocket) {
         this.server = g.abletonOSCSocket;
@@ -282,7 +429,7 @@ export class OSCClient extends EventEmitter {
       // 11002..11010: binding a parallel socket on those ports would
       // make AbletonOSC route responses to whichever socket registered
       // the start_listen/* callbacks first, silently dropping our updates.
-      const OSC_PORT_CANDIDATES = [11001, 11101, 11201];
+      const OSC_PORT_CANDIDATES = this.bridgeOptions.legacyListenPorts;
 
       const tryBindOn = (port: number): void => {
         const serverSocket = dgram.createSocket('udp4');
@@ -331,12 +478,23 @@ export class OSCClient extends EventEmitter {
   }
 
   public stop(): Promise<void> {
+    this.generation++;
     this.clearRequestedConfirmations();
     if (this.connectionCheckInterval) {
       clearInterval(this.connectionCheckInterval);
       this.connectionCheckInterval = null;
     }
     this.stopPolling();
+    if (this.bridge === 'rcbridge') {
+      // Bridge mode owns its socket outright.
+      if (this.server) {
+        try { this.server.close(); } catch { /* ignore */ }
+      }
+      this.server = null;
+      this.onMessageCallback = null;
+      this.bridge = null;
+      return Promise.resolve();
+    }
     const g = globalThis as any;
     if (this.onMessageCallback) {
       if (g.abletonOSCListeners) {
@@ -410,12 +568,45 @@ export class OSCClient extends EventEmitter {
       oscTimeSinceLastMessageMs: this.lastMessageTime ? Date.now() - this.lastMessageTime : null,
       oscRxCount: this.rxCount,
       oscTxCount: this.txCount,
+      oscBridge: this.bridge,
+      oscBridgeVersion: this.bridgeVersion,
     };
   }
   
   public jumpToCuePoint(indexOrName: number | string): void {
     const type = typeof indexOrName === 'number' ? 'integer' : 'string';
     this.send('/live/song/cue_point/jump', [{ type, value: indexOrName }]);
+  }
+
+  /** Rename the cue at `index` in Live's chronological cue list. */
+  public setCuePointName(index: number, name: string): boolean {
+    return this.send('/live/song/cue_point/set/name', [
+      { type: 'integer', value: index },
+      { type: 'string', value: name },
+    ]);
+  }
+
+  /**
+   * Ask for the cue list and wait for the answer. Null when nothing came
+   * back in time, which the caller must treat as "unknown", not as "empty".
+   */
+  public readCuePoints(timeoutMs = 1_000): Promise<{ name: string; time: number }[] | null> {
+    return new Promise((resolve) => {
+      const onCues = (cues: { name: string; time: number }[]) => {
+        clearTimeout(timer);
+        resolve(cues);
+      };
+      const timer = setTimeout(() => {
+        this.off('cue_points', onCues);
+        resolve(null);
+      }, timeoutMs);
+      this.once('cue_points', onCues);
+      if (!this.send('/live/song/get/cue_points')) {
+        clearTimeout(timer);
+        this.off('cue_points', onCues);
+        resolve(null);
+      }
+    });
   }
 
   public startPropertyListeners(): void {

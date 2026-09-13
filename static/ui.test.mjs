@@ -127,17 +127,14 @@ test('Static UI Setlist: loads external design/runtime assets and fullscreen con
   assert.doesNotMatch(setlistHtml, /<script(?![^>]*\bsrc=)[^>]*>/i);
 });
 
-test('Static UI Setlist: does not load helper modules as classic scripts', () => {
+test('Static UI Setlist: the retired modules/ tree is gone and nothing loads it', () => {
+  // static/setlist/modules/ was an unfinished split of setlist.js that nothing
+  // ever loaded; it was deleted on 2026-09-13. A script tag pointing there
+  // would 404 in the shipped bundle.
   const setlistDir = path.join(__dirname, 'setlist');
   const setlistHtml = fs.readFileSync(path.join(setlistDir, 'index.html'), 'utf8');
-
-  assert.doesNotMatch(setlistHtml, /<script\s+src=["']\.\/modules\//i);
-  for (const moduleFile of ['ws.js', 'transport.js', 'profiles.js', 'lyrics.js', 'view.js']) {
-    assert.ok(
-      fs.existsSync(path.join(setlistDir, 'modules', moduleFile)),
-      `${moduleFile} must remain in the repository`,
-    );
-  }
+  assert.doesNotMatch(setlistHtml, /modules\//i);
+  assert.ok(!fs.existsSync(path.join(setlistDir, 'modules')), 'static/setlist/modules must not come back');
 });
 
 test('Static UI Setlist: loads the safe transport runtime and dock controls', () => {
@@ -295,8 +292,11 @@ test('Static UI Panel: separates server status from actionable OSC diagnostics',
   assert.doesNotMatch(panelHtml, /certificate-notice|oscInstallHint/);
   assert.doesNotMatch(panelHtml, /ERR_CERT_AUTHORITY_INVALID|User Remote Scripts/);
   assert.doesNotMatch(panelHtml, /id="statusText"[^>]*data-i18n=/);
-  assert.match(i18nSource, /User Library\/Remote Scripts\/AbletonOSC/);
-  assert.match(i18nSource, /User Remote Scripts/);
+  // The install hint points at the kit's installers and Live's Control Surface
+  // list; the upstream AbletonOSC folder is no longer something we ask for.
+  assert.match(i18nSource, /Install-RC-Bridge\.cmd/);
+  assert.match(i18nSource, /Install RC Bridge\.command/);
+  assert.doesNotMatch(i18nSource, /Remote Scripts\/AbletonOSC/);
   assert.match(i18nSource, /Check OSC/);
   assert.match(i18nSource, /Verificar OSC/);
 });
@@ -399,4 +399,20 @@ test('Static UI: the help modal tells [next] and [skip] apart, with the end-of-s
   // The chaining example: an end marker carrying [next], then the next song.
   const example = setlistHtml.slice(setlistHtml.indexOf('data-i18n="help.exampleChain"'));
   assert.match(example, /&gt; (End|Fim) \[next\]<br>\s*Song B/);
+});
+
+test('Static UI: the song panel offers a notes field and the card and performance view have a place for it', () => {
+  const setlistHtml = fs.readFileSync(path.join(__dirname, 'setlist', 'index.html'), 'utf8');
+  const performanceHtml = fs.readFileSync(path.join(__dirname, 'performance', 'index.html'), 'utf8');
+  const i18nSource = fs.readFileSync(path.join(__dirname, 'shared', 'i18n.js'), 'utf8');
+  new Function(i18nSource)();
+  const { t } = globalThis.RcSetlistI18n;
+
+  assert.match(setlistHtml, /<[^>]*class="marker-field"[^>]*data-only="song"[^>]*>[\s\S]*?data-field="notes"/, 'the notes field is song-only');
+  assert.match(setlistHtml, /data-field="notes"[^>]*maxlength="200"/);
+  assert.match(performanceHtml, /id="songNotes"/);
+  for (const key of ['marker.notes', 'marker.notesPlaceholder']) {
+    assert.notStrictEqual(t(key, {}, 'en'), key, `${key} missing in EN`);
+    assert.notStrictEqual(t(key, {}, 'pt-BR'), key, `${key} missing in PT-BR`);
+  }
 });

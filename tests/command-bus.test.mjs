@@ -87,7 +87,23 @@ test('rejected local handlers settle with only the stable execution_failed reaso
   assert.equal(settledCommand.status, 'failed');
   assert.equal(settledCommand.reason, 'execution_failed');
   assert.equal(events.at(-1)?.message.includes('disk unavailable'), false);
+  assert.equal(settledCommand.error, undefined, 'a raw Error message (it may hold a path) never reaches the client');
   assert.equal(bus.getPending().length, 0);
+  bus.stop();
+});
+
+test('a handler that throws an OperatorError hands its message to the client', async () => {
+  const { OperatorError } = await import('../src/commands/operator-error.ts');
+  const { bus } = createBus();
+  const command = bus.registerCommand('failed-operator', 'edit_locator', {}, 'test');
+  const result = settled(bus, command.commandId);
+
+  bus.dispatch(command, async () => { throw new OperatorError('No cue point found at time 64.'); });
+  const settledCommand = await result;
+
+  assert.equal(settledCommand.status, 'failed');
+  assert.equal(settledCommand.reason, 'execution_failed');
+  assert.equal(settledCommand.error, 'No cue point found at time 64.');
   bus.stop();
 });
 
@@ -118,7 +134,7 @@ test('stop and active panic bypass a blocked normal mutation', async () => {
   const longHandler = new Promise((resolve) => { releaseLong = resolve; });
   const order = [];
 
-  const long = bus.registerCommand('long', 'create_test_session', {}, 'test');
+  const long = bus.registerCommand('long', 'export_csv', {}, 'test');
   const longResult = settled(bus, long.commandId);
   bus.dispatch(long, async () => {
     order.push('long-start');

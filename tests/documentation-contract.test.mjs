@@ -52,14 +52,18 @@ test('public documentation uses the official compatibility floor', () => {
   }
 });
 
-test('public documentation describes external AbletonOSC without bundling it', () => {
+test('public documentation presents RC Bridge as the bundled fork of AbletonOSC, with the upstream credited', () => {
   const readme = readRequired('README.md');
   const install = readRequired('docs/INSTALL.md');
 
   for (const [label, content] of [['README', readme], ['install guide', install]]) {
     assert.match(content, /github\.com\/ideoforms\/AbletonOSC/i, `${label} must link upstream AbletonOSC`);
-    assert.doesNotMatch(content, /bundled.+AbletonOSC|vendor\/AbletonOSC/i, `${label} must not claim AbletonOSC is bundled`);
+    assert.match(content, /RC Bridge/, `${label} must name the bundled script`);
+    assert.match(content, /fork/i, `${label} must say it is a fork, not the upstream project`);
   }
+  // The fork ships in the tree with its licence; nothing is fetched at build time.
+  assert.ok(existsSync(new URL('../bridge/RCBridge/LICENSE.md', import.meta.url)), 'the MIT licence travels with the fork');
+  assert.ok(existsSync(new URL('../bridge/RCBridge/README.md', import.meta.url)), 'the fork documents its changes');
 });
 
 test('user guides define the stopped-play one-bar count-in safety contract', () => {
@@ -89,7 +93,7 @@ test('user guides define the stopped-play one-bar count-in safety contract', () 
   assert.match(changelog, /\[ws\][^\n]*preRollEnabled[^\n]*protocolVersion 3/i);
 });
 
-test('installation and troubleshooting guides prevent the AbletonOSC folder mix-up', () => {
+test('installation and troubleshooting guides prevent the remote-script folder mix-up', () => {
   for (const path of [
     'docs/INSTALL.md',
     'docs/TROUBLESHOOTING.md',
@@ -97,9 +101,16 @@ test('installation and troubleshooting guides prevent the AbletonOSC folder mix-
     'docs/pt-BR/TROUBLESHOOTING.md',
   ]) {
     const content = readRequired(path);
-    assert.match(content, /User Library[\\/]Remote Scripts[\\/]AbletonOSC/i, `${path} must show the exact install target`);
+    assert.match(content, /User Library[\\/]Remote Scripts[\\/]RCBridge/i, `${path} must show the exact install target`);
     assert.match(content, /User Remote Scripts/i, `${path} must distinguish Live's hidden preferences folder`);
-    assert.match(content, /AbletonOSC[\\/]__init__\.py/i, `${path} must show how to detect an extra nested folder`);
+    assert.match(content, /RCBridge[\\/]__init__\.py/i, `${path} must show how to detect an extra nested folder`);
+  }
+  // The two ways in: the kit installers and the manual copy.
+  for (const path of ['docs/INSTALL.md', 'docs/pt-BR/INSTALL.md']) {
+    const content = readRequired(path);
+    assert.match(content, /Install-RC-Bridge\.cmd/);
+    assert.match(content, /Install RC Bridge\.command/);
+    assert.match(content, /Link, Tempo & MIDI/);
   }
 });
 
@@ -405,11 +416,38 @@ test('0.6.1 notes are bilingual and describe the stage pass this version ships',
   assert.match(englishNotes, /pt-BR\/NOTAS-DA-VERSAO-0\.6\.1\.md/);
   assert.match(portugueseNotes, /\.\.\/RELEASE-NOTES-0\.6\.1\.md/);
 
-  assert.match(landing, /RELEASE-NOTES-0\.6\.1\.md/);
-  assert.match(readme, /Ableton-RC-Setlist-0\.6\.1\.ablx/);
-  assert.match(readme, /docs\/RELEASE-NOTES-0\.6\.1\.md/);
+  // The landing page and README now name 0.7.0; the 0.6.1 notes stay
+  // published and are reached from the changelog.
   assert.doesNotMatch(siteStrings, /v0\.6\.0|v0\.5\.\d/, 'the site strings must not name a superseded version');
   assert.doesNotMatch(landing, /v0\.6\.0|v0\.5\.\d/);
+});
+
+test('0.7.0 notes are bilingual and describe the release this version ships', () => {
+  const changelog = readRequired('CHANGELOG.md');
+  const englishNotes = readRequired('docs/RELEASE-NOTES-0.7.0.md');
+  const portugueseNotes = readRequired('docs/pt-BR/NOTAS-DA-VERSAO-0.7.0.md');
+  const landing = readRequired('docs/index.html');
+  const siteStrings = readRequired('docs/site-i18n.js');
+  const readme = readRequired('README.md');
+
+  assert.match(changelog, /^## \[0\.7\.0\] - 2026-09-13/m);
+
+  for (const notes of [englishNotes, portugueseNotes]) {
+    assert.match(notes, /0\.7\.0/);
+    assert.match(notes, /RC Bridge/, 'the bundled bridge is the headline of this release');
+    assert.match(notes, /\[jump/, 'the named jump ships in this release');
+    assert.match(notes, /11020/, 'the bridge port is stated');
+  }
+  assert.match(englishNotes, /one line of notes/i, 'the per-song notes are the third feature');
+  assert.match(portugueseNotes, /uma linha de notas/i, 'the per-song notes are the third feature');
+  assert.match(englishNotes, /pt-BR\/NOTAS-DA-VERSAO-0\.7\.0\.md/);
+  assert.match(portugueseNotes, /\.\.\/RELEASE-NOTES-0\.7\.0\.md/);
+
+  assert.match(landing, /RELEASE-NOTES-0\.7\.0\.md/);
+  assert.match(readme, /Ableton-RC-Setlist-0\.7\.0\.ablx/);
+  assert.match(readme, /docs\/RELEASE-NOTES-0\.7\.0\.md/);
+  assert.doesNotMatch(siteStrings, /v0\.6\.\d|v0\.5\.\d/, 'the site strings must not name a superseded version');
+  assert.doesNotMatch(landing, /v0\.6\.\d|v0\.5\.\d/);
 });
 
 test('0.6.0 notes are bilingual and describe the release this version actually ships', () => {
@@ -438,4 +476,23 @@ test('0.6.0 notes are bilingual and describe the release this version actually s
   // for the whole 0.5.1 release.
   assert.doesNotMatch(siteStrings, /v0\.5\.\d/, 'the site strings must not name a superseded version');
   assert.doesNotMatch(landing, /v0\.5\.\d/);
+});
+
+test('the repository map only names paths that exist', () => {
+  // docs/agent/PROJECT_MAP.md is the map agents are told to read first; a
+  // path that no longer exists sends them to a module that moved or died.
+  const map = readRequired('docs/agent/PROJECT_MAP.md');
+  const roots = ['src/', 'static/', 'bridge/', 'scripts/', 'tests/', 'docs/', 'release-template/', '.agents/', 'package.json', 'public-files.txt'];
+  const missing = [];
+  for (const match of map.matchAll(/`([A-Za-z0-9_./{},*-]+)`/g)) {
+    const token = match[1];
+    if (!roots.some((root) => token.startsWith(root))) continue;
+    const braces = token.match(/^(.*)\{([^}]+)\}(.*)$/);
+    const candidates = braces ? braces[2].split(',').map((part) => braces[1] + part + braces[3]) : [token];
+    for (const candidate of candidates) {
+      if (candidate.includes('*')) continue;
+      if (!existsSync(new URL(`../${candidate}`, import.meta.url))) missing.push(candidate);
+    }
+  }
+  assert.deepEqual(missing, [], 'PROJECT_MAP.md names paths that do not exist');
 });

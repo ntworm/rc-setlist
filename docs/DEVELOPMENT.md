@@ -6,6 +6,8 @@
 - npm 11.8.0 (pinned in `package.json`).
 - Ableton Live 12.4.5+ Suite (Beta) for complete integration testing.
 - Authorized Ableton Extensions SDK/CLI archives for `.ablx` builds.
+- Python 3.9 or newer on the PATH for `npm run test:bridge` (Live embeds its
+  own interpreter; the tests only need a stock one).
 
 ## Public gate
 
@@ -36,6 +38,7 @@ The path variables must be absolute. The setup command installs locally with
 ```bash
 npm run test:src
 npm run test:static
+npm run test:bridge
 npm run test:ui
 npm run test:release-surface
 npm run build:public
@@ -49,6 +52,9 @@ npm run notices:check
 - `src/integration/osc-client.ts` owns OSC encoding/socket behavior.
 - `src/server/` and `src/server-lifecycle.ts` own the local network service.
 - `static/` is shipped browser code with no runtime CDN dependency.
+- `bridge/RCBridge/` is RC Bridge, the Remote Script fork of AbletonOSC that
+  ships inside the `.ablx` and the installation kit; `bridge/tests/` is its
+  unittest suite.
 
 The public TypeScript configuration excludes SDK-facing files but checks the
 portable core. The release gate checks the complete application.

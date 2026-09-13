@@ -16,6 +16,7 @@ export function extractTags(raw: string): {
   skip: boolean;
   hidden: boolean;
   ignore: boolean;
+  jumpTarget: string | null;
 } {
   let loopCount: number | null = null;
   let autoStop = false;
@@ -25,6 +26,7 @@ export function extractTags(raw: string): {
   let skip = false;
   let hidden = false;
   let ignore = false;
+  let jumpTarget: string | null = null;
 
   // Match all [...] blocks
   const tagPattern = /\[([^\]]+)\]/g;
@@ -32,6 +34,16 @@ export function extractTags(raw: string): {
 
   while ((match = tagPattern.exec(raw)) !== null) {
     const tag = match[1]!.trim().toLowerCase();
+
+    // The keyword is case-insensitive like every tag; the target is a marker
+    // name and keeps its spelling. Matching against it is case-insensitive
+    // too (see SetlistManager.resolveJumpTarget), so the spelling only matters
+    // for what the badge shows.
+    const jump = /^jump\s+(.+)$/i.exec(match[1]!.trim());
+    if (jump) {
+      jumpTarget = jump[1]!.trim();
+      continue;
+    }
 
     if (tag === 'loop') {
       loopCount = -1; // -1 = infinite loop (Infinity breaks JSON serialization)
@@ -61,18 +73,84 @@ export function extractTags(raw: string): {
   // Remove all [...] blocks from display name
   const displayName = raw.replace(/\s*\[[^\]]+\]/g, '').trim();
 
-  return { displayName, loopCount, autoStop, autoNext, bpm, autoClick, skip, hidden, ignore };
+  return { displayName, loopCount, autoStop, autoNext, bpm, autoClick, skip, hidden, ignore, jumpTarget };
 }
+
+/** The optional `jumpTarget` key, present only when the tag was written. */
+function jumpOf(info: { jumpTarget: string | null }): { jumpTarget?: string } {
+  return info.jumpTarget ? { jumpTarget: info.jumpTarget } : {};
+}
+
+type TagInfo = ReturnType<typeof extractTags>;
+
+/** Whether any tag on this marker does something when the playhead reaches it. */
+function hasAnyAutomation(info: TagInfo): boolean {
+  return info.loopCount !== null
+    || info.autoStop
+    || info.autoNext
+    || info.bpm !== null
+    || info.autoClick !== null
+    || info.skip
+    || info.jumpTarget !== null;
+}
+
+/** The tag fields a song or a section carries, in the shape both share. */
+function tagFields(info: TagInfo): Pick<Section, 'loopCount' | 'autoStop' | 'autoNext' | 'bpm' | 'autoClick' | 'skip' | 'jumpTarget'> {
+  return {
+    loopCount: info.loopCount,
+    autoStop: info.autoStop,
+    autoNext: info.autoNext,
+    bpm: info.bpm,
+    autoClick: info.autoClick,
+    skip: info.skip,
+    ...jumpOf(info),
+  };
+}
+
+/** A section from its parsed tags; `time` is filled in by parseSetlist. */
+function sectionFromTags(info: TagInfo, automationOnly = false): Section {
+  return {
+    name: automationOnly ? '' : info.displayName,
+    time: 0,
+    ...tagFields(info),
+    ...(automationOnly ? { automationOnly: true } : {}),
+  };
+}
+
+/**
+ * Split on `>` outside brackets. A `>` inside a tag ([jump B > Chorus]) is
+ * part of that tag's value; a tag anywhere else — `Song A [bpm 120] > Chorus`
+ * — does not stop the split, so the section still belongs to Song A.
+ */
+function splitOutsideTags(text: string): string[] {
+  const parts: string[] = [];
+  let depth = 0;
+  let current = '';
+  for (const char of text) {
+    if (char === '[') depth++;
+    else if (char === ']') depth = Math.max(0, depth - 1);
+    if (char === '>' && depth === 0) {
+      parts.push(current.trim());
+      current = '';
+      continue;
+    }
+    current += char;
+  }
+  parts.push(current.trim());
+  return parts;
+}
+
+export const PLACEHOLDER_SONG_TITLE = '_Sem Música_';
 
 export function parseLocator(name: string): {
   kind: 'song' | 'section' | 'automation' | 'hidden' | 'relative-section' | 'relative-automation';
   songName?: string;
-  songTags?: { loopCount: number | null; autoStop: boolean; autoNext: boolean; bpm: number | null; autoClick: boolean | null; skip: boolean };
+  songTags?: { loopCount: number | null; autoStop: boolean; autoNext: boolean; bpm: number | null; autoClick: boolean | null; skip: boolean; jumpTarget?: string };
   section?: Section;
   hiddenName?: string;
 } {
   const trimmed = name.trim();
-  
+
   // Quick precheck for '_'-prefixed hidden name
   if (trimmed.startsWith('_')) {
     return { kind: 'hidden', hiddenName: trimmed };
@@ -88,220 +166,89 @@ export function parseLocator(name: string): {
     if (info.hidden || info.ignore) {
       return { kind: 'hidden', hiddenName: info.displayName };
     }
-    const hasAutomation = info.loopCount !== null
-      || info.autoStop
-      || info.autoNext
-      || info.bpm !== null
-      || info.autoClick !== null
-      || info.skip;
-
     if (!info.displayName) {
-      if (!hasAutomation) {
+      if (!hasAnyAutomation(info)) {
         return { kind: 'hidden', hiddenName: '_empty' };
       }
-      return {
-        kind: 'relative-automation',
-        section: {
-          name: '',
-          time: 0,
-          loopCount: info.loopCount,
-          autoStop: info.autoStop,
-          autoNext: info.autoNext,
-          bpm: info.bpm,
-          autoClick: info.autoClick,
-          skip: info.skip,
-          automationOnly: true,
-        },
-      };
+      return { kind: 'relative-automation', section: sectionFromTags(info, true) };
     }
-
-    return {
-      kind: 'relative-section',
-      section: {
-        name: info.displayName,
-        time: 0,
-        loopCount: info.loopCount,
-        autoStop: info.autoStop,
-        autoNext: info.autoNext,
-        bpm: info.bpm,
-        autoClick: info.autoClick,
-        skip: info.skip,
-      },
-    };
+    return { kind: 'relative-section', section: sectionFromTags(info) };
   }
 
   const info = extractTags(trimmed);
-  
   if (info.hidden || info.ignore) {
     return { kind: 'hidden', hiddenName: info.displayName };
   }
-  
-  const parts = trimmed.split('>').map(p => p.trim());
-  if (parts.length === 0 || !parts[0]) {
-    return { kind: 'hidden', hiddenName: '_empty' };
-  }
-  
+
+  const parts = splitOutsideTags(trimmed);
   if (parts.length === 1) {
-    const songInfo = extractTags(parts[0]);
-    if (songInfo.hidden || songInfo.ignore) {
-      return { kind: 'hidden', hiddenName: songInfo.displayName };
+    if (!trimmed) {
+      return { kind: 'hidden', hiddenName: '_empty' };
     }
-    const hasAutomation = songInfo.loopCount !== null
-      || songInfo.autoStop
-      || songInfo.autoNext
-      || songInfo.bpm !== null
-      || songInfo.autoClick !== null
-      || songInfo.skip;
-    if (!songInfo.displayName) {
-      if (!hasAutomation) {
+    if (!info.displayName) {
+      if (!hasAnyAutomation(info)) {
         return { kind: 'hidden', hiddenName: trimmed };
       }
-      return {
-        kind: 'automation',
-        section: {
-          name: '',
-          time: 0,
-          loopCount: songInfo.loopCount,
-          autoStop: songInfo.autoStop,
-          autoNext: songInfo.autoNext,
-          bpm: songInfo.bpm,
-          autoClick: songInfo.autoClick,
-          skip: songInfo.skip,
-          automationOnly: true,
-        },
-      };
+      return { kind: 'automation', section: sectionFromTags(info, true) };
     }
-    return {
-      kind: 'song',
-      songName: songInfo.displayName,
-      songTags: {
-        loopCount: songInfo.loopCount,
-        autoStop: songInfo.autoStop,
-        autoNext: songInfo.autoNext,
-        bpm: songInfo.bpm,
-        autoClick: songInfo.autoClick,
-        skip: songInfo.skip
-      }
-    };
+    return { kind: 'song', songName: info.displayName, songTags: tagFields(info) };
   }
-  
-  const songName = parts[0];
-  const cleanedSongName = extractTags(songName).displayName;
-  
-  const sectionPart = parts[parts.length - 1]!;
-  const sectionInfo = extractTags(sectionPart);
-  
+
+  // `Song > Section`: the song half only names the song (tags written there
+  // belong to no marker); the last part is the section with its tags.
+  const cleanedSongName = extractTags(parts[0]!).displayName;
+  const sectionInfo = extractTags(parts[parts.length - 1]!);
   if (sectionInfo.hidden || sectionInfo.ignore) {
     return { kind: 'hidden', hiddenName: sectionInfo.displayName };
   }
-  
+  return { kind: 'section', songName: cleanedSongName, section: sectionFromTags(sectionInfo) };
+}
+
+/** The song a section or automation marker belongs to when none was declared. */
+function placeholderSong(time: number): Song {
   return {
-    kind: 'section',
-    songName: cleanedSongName,
-    section: {
-      name: sectionInfo.displayName,
-      time: 0,
-      loopCount: sectionInfo.loopCount,
-      autoStop: sectionInfo.autoStop,
-      autoNext: sectionInfo.autoNext,
-      bpm: sectionInfo.bpm,
-      autoClick: sectionInfo.autoClick,
-      skip: sectionInfo.skip
-    }
+    title: PLACEHOLDER_SONG_TITLE,
+    time,
+    sections: [],
+    loopCount: null,
+    autoStop: false,
+    autoNext: false,
+    bpm: null,
+    autoClick: null,
+    skip: false,
   };
 }
 
 export function parseSetlist(cues: { name: string; time: number }[]): Setlist {
   const songs: Song[] = [];
   const hidden: { name: string; time: number }[] = [];
-  
+
   const sortedCues = [...cues].sort((a, b) => a.time - b.time);
   let currentSong: Song | null = null;
-  
+
   for (const cue of sortedCues) {
     const parsed = parseLocator(cue.name);
-    
+
     if (parsed.kind === 'hidden') {
       hidden.push({ name: parsed.hiddenName!, time: cue.time });
       continue;
     }
 
-    if (parsed.kind === 'relative-section' || parsed.kind === 'relative-automation') {
-      if (!currentSong) {
-        currentSong = {
-          title: '_Sem Música_',
-          time: cue.time,
-          sections: [],
-          loopCount: null,
-          autoStop: false,
-          autoNext: false,
-          bpm: null,
-          autoClick: null,
-          skip: false
-        };
-        songs.push(currentSong);
-      }
-      currentSong.sections.push({
-        ...parsed.section!,
-        rawName: cue.name,
-        time: cue.time,
-      });
-      continue;
-    }
-
-    if (parsed.kind === 'automation') {
-      if (!currentSong) {
-        currentSong = {
-          title: '_Sem Música_',
-          time: cue.time,
-          sections: [],
-          loopCount: null,
-          autoStop: false,
-          autoNext: false,
-          bpm: null,
-          autoClick: null,
-          skip: false
-        };
-        songs.push(currentSong);
-      }
-      currentSong.sections.push({
-        ...parsed.section!,
-        rawName: cue.name,
-        time: cue.time,
-      });
-      continue;
-    }
-    
     if (parsed.kind === 'song') {
       currentSong = {
         title: parsed.songName!,
         rawName: cue.name,
         time: cue.time,
         sections: [],
-        loopCount: parsed.songTags?.loopCount ?? null,
-        autoStop: parsed.songTags?.autoStop ?? false,
-        autoNext: parsed.songTags?.autoNext ?? false,
-        bpm: parsed.songTags?.bpm ?? null,
-        autoClick: parsed.songTags?.autoClick ?? null,
-        skip: parsed.songTags?.skip ?? false
+        ...parsed.songTags!,
       };
       songs.push(currentSong);
       continue;
     }
-    
+
     if (parsed.kind === 'section') {
       if (!currentSong || currentSong.title !== parsed.songName) {
-        currentSong = {
-          title: parsed.songName!,
-          time: cue.time,
-          sections: [],
-          loopCount: null,
-          autoStop: false,
-          autoNext: false,
-          bpm: parsed.section?.bpm ?? null,
-          autoClick: null,
-          skip: false
-        };
+        currentSong = { ...placeholderSong(cue.time), title: parsed.songName!, bpm: parsed.section?.bpm ?? null };
         songs.push(currentSong);
       } else if (
         currentSong.bpm === null
@@ -315,20 +262,19 @@ export function parseSetlist(cues: { name: string; time: number }[]): Setlist {
         // tempo EVENT at its own position; the metrics timeline handles it.
         currentSong.bpm = parsed.section.bpm;
       }
-      
-      currentSong.sections.push({
-        name: parsed.section!.name,
-        rawName: cue.name,
-        time: cue.time,
-        loopCount: parsed.section!.loopCount,
-        autoStop: parsed.section!.autoStop,
-        autoNext: parsed.section!.autoNext,
-        bpm: parsed.section!.bpm,
-        autoClick: parsed.section!.autoClick,
-        skip: parsed.section!.skip
-      });
+    } else if (!currentSong) {
+      // relative-section, relative-automation, automation: a section before
+      // any song gets a placeholder song to hang from.
+      currentSong = placeholderSong(cue.time);
+      songs.push(currentSong);
     }
+
+    currentSong.sections.push({
+      ...parsed.section!,
+      rawName: cue.name,
+      time: cue.time,
+    });
   }
-  
+
   return { songs, hidden };
 }

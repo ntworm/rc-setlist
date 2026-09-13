@@ -67,8 +67,12 @@ function buildNotices() {
 
   const versionedHeader = header.replace('Ableton RC Setlist 0.4.0', `Ableton RC Setlist ${releaseVersion}`);
   const martianSection = `## Martian Mono 1.0.0\n\nCopyright 2021 The Martian Mono Project Authors (https://github.com/evilmartians/mono)\n\nLicense: SIL Open Font License 1.1\n\nSource: https://github.com/evilmartians/mono\n\n\`\`\`text\n${martianLicense}\n\`\`\``;
+  const rcBridgeLicense = readFileSync(path.join(root, 'bridge', 'RCBridge', 'LICENSE.md'), 'utf8')
+    .replace(/\r\n?/g, '\n')
+    .trim();
+  const rcBridgeSection = `## RC Bridge (a fork of AbletonOSC)\n\nCopyright (c) Daniel John Jones and contributors\n\nLicense: MIT\n\nSource: https://github.com/ideoforms/AbletonOSC — forked at 0ca68214bd62c9b5cb641ca34006cfd70ba94430; the changes are listed in bridge/RCBridge/README.md. Bundled inside the extension package and the installation kit as the Live remote script this extension talks to.\n\n\`\`\`text\n${rcBridgeLicense}\n\`\`\``;
   const barlowSection = `## Barlow Semi Condensed\n\nCopyright 2017 The Barlow Project Authors (https://github.com/jpt/barlow)\n\nLicense: SIL Open Font License 1.1\n\nSource: https://github.com/jpt/barlow\n\n\`\`\`text\n${barlowLicense}\n\`\`\``;
-  return `${versionedHeader}\n\n${martianSection}\n\n${barlowSection}\n\n${sections.join('\n\n')}\n`;
+  return `${versionedHeader}\n\n${rcBridgeSection}\n\n${martianSection}\n\n${barlowSection}\n\n${sections.join('\n\n')}\n`;
 }
 
 const generated = buildNotices();

@@ -1,4 +1,4 @@
-ABLETON RC SETLIST 0.6.1 — INSTALLATION KIT / KIT DE INSTALAÇÃO
+ABLETON RC SETLIST 0.7.0 — INSTALLATION KIT / KIT DE INSTALAÇÃO
 ==============================================================
 
 START HERE / COMECE AQUI
@@ -10,18 +10,20 @@ As notas da versão estão em en/RELEASE-NOTES.md e pt-BR/NOTAS-DA-VERSAO.md.
 
 MAIN FILE / ARQUIVO PRINCIPAL
 -----------------------------
-Ableton-RC-Setlist-0.6.1.ablx
+Ableton-RC-Setlist-0.7.0.ablx
 
 REQUIREMENTS / REQUISITOS
 -------------------------
 - Ableton Live 12.4.5+ Suite Beta with Extensions support.
 - Ableton Live 12.4.5+ Suite Beta com suporte a Extensions.
-- AbletonOSC installed separately from the official project:
-  https://github.com/ideoforms/AbletonOSC
-- Install at User Library/Remote Scripts/AbletonOSC, not the hidden
-  User Remote Scripts preferences folder. Confirm AbletonOSC/__init__.py exists.
-- Instale em User Library/Remote Scripts/AbletonOSC, não na pasta oculta
-  User Remote Scripts das preferências. Confirme AbletonOSC/__init__.py.
+- RC Bridge, the Live control surface in the RC-Bridge folder of this kit.
+  Double-click RC-Bridge/Install-RC-Bridge.cmd (Windows) or
+  "RC-Bridge/Install RC Bridge.command" (macOS), then in Live choose RCBridge
+  under Settings > Link, Tempo & MIDI > Control Surface. Nothing to download.
+- RC Bridge, a control surface do Live na pasta RC-Bridge deste kit.
+  Clique duas vezes em RC-Bridge/Install-RC-Bridge.cmd (Windows) ou
+  "RC-Bridge/Install RC Bridge.command" (macOS), depois no Live escolha RCBridge
+  em Settings > Link, Tempo & MIDI > Control Surface. Nada para baixar.
 - A trusted local network / LAN for another computer, tablet or phone.
 - Uma rede local confiável / LAN para outro computador, tablet ou celular.
 

@@ -3,31 +3,49 @@
 ## Requirements
 
 - Ableton Live 12.4.5+ Suite (Beta) with Extensions support.
-- [AbletonOSC](https://github.com/ideoforms/AbletonOSC) installed as a Control Surface.
+- RC Bridge selected as a Control Surface in Live. It ships with the extension
+  and the installation kit; step 1 below installs it. (A stock
+  [AbletonOSC](https://github.com/ideoforms/AbletonOSC) also works.)
 - Windows for the validated release path. macOS is experimental.
 
 Node.js 24.16.0 is required only for source development, not for installing the
 release package.
 
-## 1. Install AbletonOSC
+## 1. Install RC Bridge
 
-Ableton RC Setlist uses the external MIT-licensed AbletonOSC Remote Script for transport
-and Live Object Model operations. It is not included in this repository or in
-the Ableton RC Setlist release kit.
+RC Bridge is the Live Remote Script that Ableton RC Setlist talks to. It is a
+fork of the MIT-licensed [AbletonOSC](https://github.com/ideoforms/AbletonOSC)
+that answers each client on its own port, so it never fights another RC
+extension for a reply port and runs beside a stock AbletonOSC if you have one.
+Nothing to download: it is inside the extension and inside the installation kit.
 
-1. Download AbletonOSC from its [upstream repository](https://github.com/ideoforms/AbletonOSC).
-2. Follow its upstream installation instructions.
-3. Place the `AbletonOSC` folder directly in your Live Remote Scripts directory:
-   - Windows: `%USERPROFILE%\Documents\Ableton\User Library\Remote Scripts\AbletonOSC`
-   - macOS: `~/Music/Ableton/User Library/Remote Scripts/AbletonOSC`
-4. Restart Live.
-5. Open **Settings/Preferences > Link, Tempo & MIDI** and select AbletonOSC as a
-   Control Surface.
+Pick one of the two ways to put it in Live's User Library:
 
-Important: use `User Library/Remote Scripts/AbletonOSC`, not Live's hidden
-`User Remote Scripts` preferences folder (that folder is for
-`UserConfiguration.txt`). Confirm that `AbletonOSC/__init__.py` exists directly
-at that location, without another nested `AbletonOSC` folder.
+- **From the kit** — in the `RC-Bridge` folder, double-click
+  `Install-RC-Bridge.cmd` (Windows) or `Install RC Bridge.command` (macOS;
+  right-click › Open the first time). It copies the script and prints the last
+  step.
+- **By hand** — copy the `RCBridge` folder from the kit into
+  - Windows: `%USERPROFILE%\Documents\Ableton\User Library\Remote Scripts\RCBridge`
+  - macOS: `~/Music/Ableton/User Library/Remote Scripts/RCBridge`
+
+Then the one step Live cannot do for you: open
+**Settings/Preferences > Link, Tempo & MIDI** and choose **RCBridge** as a
+Control Surface. Input and Output can stay `None`. If Live was already open
+when the script was copied, close and reopen it once so it sees the new folder.
+
+Use `User Library/Remote Scripts/`, not Live's hidden `User Remote Scripts`
+preferences folder (that one is for `UserConfiguration.txt`). Confirm that
+`RCBridge/__init__.py` exists directly at that location, without another
+nested `RCBridge` folder.
+
+If you already use AbletonOSC for other tools, keep it. RC Bridge listens on
+port 11020; AbletonOSC keeps 11000. RC Setlist looks for RC Bridge first and
+falls back to AbletonOSC when it is not there, so both work — RC Bridge is the
+one that also works next to RC Surface. The panel's OSC line says which one is
+in use (`via RC Bridge 1.0.0 on port 11020`). The extension itself cannot
+copy the script for you: Live runs extensions in a sandbox that cannot write
+to your User Library.
 
 ## 2. Install Ableton RC Setlist
 

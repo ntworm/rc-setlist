@@ -4,6 +4,26 @@ All notable public changes to Ableton RC Setlist are recorded here.
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-09-13
+
+### Added
+
+- **RC Bridge, the bundled Live control surface**: the Remote Script the extension talks to now ships inside the extension and the installation kit, as a fork of the MIT-licensed AbletonOSC (upstream `0ca6821`). Nobody downloads AbletonOSC by hand any more: the kit has `Install-RC-Bridge.cmd` (Windows) and `Install RC Bridge.command` (macOS) that copy it into Live's User Library and print the one remaining step. Selecting **RCBridge** under Settings › Link, Tempo & MIDI › Control Surface stays the user's step, because Live offers no way to do it for them — and the copy itself cannot happen from inside Live either: the ExtensionHost sandboxes the filesystem to the extension's own folders, so the panel reports which script is in use and shows the steps instead of pretending to install. The fork also exposes `last_event_time`, which upstream never did, so the show's total duration no longer needs the MCP bridge.
+- **`[jump NAME]`**: a marker that hands playback to a *named* marker instead of the next one — a section of the same song, a song, or `Song > Section`. Names match with tags stripped and case ignored; a bare name is resolved in this song's sections first, then song titles, then every section in arrangement order. It uses the same immediate hand-over as `[next]` and `[skip]`, has its own field in the marker editor and a badge on the card, and a name that matches nothing does nothing. Along the way the locator parser stopped splitting `Song > Section` on a `>` that sits inside a tag.
+- **Notes per song**: one line for the stage — key, tuning, who counts in — edited on the song panel beside the colour, shown under the title on the card and on the performance display. Stored in the song book with the colour, so it follows the song through renames and moves and never touches the Live project.
+- **Why a fork**: AbletonOSC sends every reply and every listener update to one fixed port, 11001, so only one client per machine could hear it — RC Surface and RC Setlist in the same Live could not both work, and the loser showed "OSC return port busy". RC Bridge listens on its own port (11020, so a stock AbletonOSC can keep running beside it), replies to whichever socket asked, and publishes each listener's updates to every subscriber, with one Live listener per property and a 60-second lease that forgets clients that went away. It also stops logging every property read at INFO, which had grown one owner's log to 34 million lines. The extension probes for RC Bridge first and falls back to a stock AbletonOSC when it is absent, and the panel's OSC line says which one it is talking to (`via RC Bridge 1.0.0 on port 11020`).
+
+### Changed
+
+- **Command Bus and Error Sanitization**: the command bus now attaches operator-facing error messages (`OperatorError` and `ProfileError`) to `command_status.error`, while internal exceptions (such as raw filesystem paths) remain strictly sanitized and arrive as generic `execution_failed`.
+- **Locator Tag Parsing Cleaned Up**: tag extraction and section construction were refactored into a single coherent pipeline without duplicated branches.
+
+### Fixed
+
+- **Song Book Cache Follows Active Profile**: song colors and notes are cached per profile; switching profiles now clears the cache immediately, preventing one profile's edits from leaking into another.
+- **MCP Sync Tick Logs Unexpected Failures Quietly**: bridge connection timeouts/refusals stay silent as expected when the MCP is absent, while internal callback errors log cleanly.
+- **Dead Code and Orphaned Tests Removed**: retired test-session locator creation utilities and orphaned tests were removed cleanly.
+
 ## [0.6.1] - 2026-09-12
 
 ### Changed

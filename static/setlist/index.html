@@ -106,6 +106,10 @@
                   <td data-i18n="help.skip">When the playhead reaches this marker, playback moves to the marker after it: the next section, or the next song if this was the last section. The tagged part is never heard.</td>
                 </tr>
                 <tr style="border-bottom: 1px dashed rgba(255,255,255,0.05);">
+                  <td style="padding: 0.5rem 0;"><code>[jump NAME]</code></td>
+                  <td data-i18n="help.jump">When the playhead reaches this marker, playback moves to the marker called NAME: a section of this song, a song, or Song &gt; Section. Same timing as [next] and [skip].</td>
+                </tr>
+                <tr style="border-bottom: 1px dashed rgba(255,255,255,0.05);">
                   <td style="padding: 0.5rem 0;"><code>[ignore]</code></td>
                   <td data-i18n="help.ignore">Hides the marker and overrides any other tag on it: no song, section or automation is created.</td>
                 </tr>
@@ -558,6 +562,14 @@ A quiet pulse becomes our guide..." style="width: 100%; height: 180px; padding: 
           <option value="on" data-i18n="marker.clickOn">On</option>
           <option value="off" data-i18n="marker.clickOff">Off</option>
         </select>
+      </label>
+      <label class="marker-field" data-only="song">
+        <span data-i18n="marker.notes">Notes</span>
+        <input type="text" data-field="notes" maxlength="200" autocomplete="off" spellcheck="false" data-i18n-placeholder="marker.notesPlaceholder" placeholder="Key, tuning, who counts in…">
+      </label>
+      <label class="marker-field">
+        <span data-i18n="marker.jump">Jump to</span>
+        <input type="text" data-field="jump" autocomplete="off" spellcheck="false" data-i18n-placeholder="marker.jumpPlaceholder" placeholder="Marker name, or Song > Section">
       </label>
       <div class="marker-toggles" id="markerToggles"></div>
       <div class="marker-field" data-only="song" id="markerSectionsField">

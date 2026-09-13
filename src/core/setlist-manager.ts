@@ -16,7 +16,8 @@ export type AutomationAction =
   | { type: 'deactivate_loop' }
   | { type: 'change_bpm'; bpm: number }
   | { type: 'change_metronome'; value: boolean }
-  | { type: 'skip'; targetCue: string; targetTime: number };
+  | { type: 'skip'; targetCue: string; targetTime: number }
+  | { type: 'jump_to'; targetCue: string; targetTime: number };
 
 export class SetlistManager {
   private songs: Song[] = [];
@@ -77,8 +78,14 @@ export class SetlistManager {
 
   // Track which automations have already fired to prevent re-triggering
   private firedAutomations: Set<string> = new Set();
-  private lastSongIndex: number = -1;
-  private lastSectionIndex: number = -1;
+  /**
+   * The marker the playhead was last seen in, by beat rather than by index:
+   * a cue reload that inserts or removes a marker earlier in the set shifts
+   * every index but leaves the marker under the playhead where it was, and
+   * its tags must not fire a second time because of it.
+   */
+  private lastSongKey: string | null = null;
+  private lastSectionKey: string | null = null;
   
   // Loop iteration tracking
   private loopActive: boolean = false;
@@ -122,10 +129,31 @@ export class SetlistManager {
     this.durationFallbackBpm = resolved.bpm;
     this.durationFallbackIsProvisional = resolved.provisional;
     this.sortSongs();
-    this.firedAutomations.clear();
-    this.clearLoop();
+    // Tags already fired stay fired: they are keyed by marker beat, so a
+    // reload only re-arms a tag whose marker actually moved. A loop survives
+    // the reload as long as its marker still declares the same region.
+    if (this.loopActive && !this.loopRegionStillDeclared()) {
+      // The region changed under a running loop: drop it and let the marker
+      // (if it still loops) arm the new region on the next check.
+      this.firedAutomations.delete(`loop:song@${this.loopStartBeat}`);
+      this.firedAutomations.delete(`loop:section@${this.loopStartBeat}`);
+      this.clearLoop();
+    }
     this.updateActiveIndices();
     this.stateVersion++;
+  }
+
+  private loopRegionStillDeclared(): boolean {
+    const near = (a: number, b: number) => Math.abs(a - b) < 0.01;
+    for (const song of this.songs) {
+      const markers: { time: number; loopCount: number | null }[] = [song, ...song.sections];
+      for (const marker of markers) {
+        if (marker.loopCount === null || !near(marker.time, this.loopStartBeat)) continue;
+        const region = this.getRegionFromStart(marker.time);
+        return region !== null && near(region.end, this.loopEndBeat);
+      }
+    }
+    return false;
   }
 
   /** Tolerance in BPM: Live reports a float, a tag is typed by hand. */
@@ -488,20 +516,31 @@ export class SetlistManager {
      * the song is entered, not once per section boundary inside it. Only a new
      * song clears everything.
      *
-     * Song keys are `<tag>:song:<index>`; section keys are `<tag>:<song>:<section>`.
+     * Song keys are `<tag>:song@<beat>`; section keys are `<tag>:section@<beat>`.
      */
-    if (this.activeSongIndex !== this.lastSongIndex) {
+    const songKey = activeSong ? SetlistManager.songKey(activeSong) : null;
+    const section = activeSong && newSectionIndex >= 0 ? activeSong.sections[newSectionIndex]! : null;
+    const sectionKey = section ? SetlistManager.sectionKey(section) : null;
+    if (songKey !== this.lastSongKey) {
       this.firedAutomations.clear();
-      this.lastSongIndex = this.activeSongIndex;
-      this.lastSectionIndex = newSectionIndex;
-    } else if (newSectionIndex !== this.lastSectionIndex) {
+      this.lastSongKey = songKey;
+      this.lastSectionKey = sectionKey;
+    } else if (sectionKey !== this.lastSectionKey) {
       for (const fired of [...this.firedAutomations]) {
-        if (!fired.includes(':song:')) this.firedAutomations.delete(fired);
+        if (!fired.includes(':song@')) this.firedAutomations.delete(fired);
       }
-      this.lastSectionIndex = newSectionIndex;
+      this.lastSectionKey = sectionKey;
     }
 
     this.activeSectionIndex = newSectionIndex;
+  }
+
+  private static songKey(song: Song): string {
+    return `song@${song.time}`;
+  }
+
+  private static sectionKey(section: Section): string {
+    return `section@${section.time}`;
   }
 
   /**
@@ -537,12 +576,12 @@ export class SetlistManager {
      * applied after it and wins, which is what "more specific" should mean.
      */
     const section = song.sections[this.activeSectionIndex];
-    this.collectAutomations(actions, song, `song:${this.activeSongIndex}`, null);
+    this.collectAutomations(actions, song, SetlistManager.songKey(song), null);
     if (section) {
       this.collectAutomations(
         actions,
         section,
-        `${this.activeSongIndex}:${this.activeSectionIndex}`,
+        SetlistManager.sectionKey(section),
         this.activeSectionIndex,
       );
     }
@@ -618,6 +657,59 @@ export class SetlistManager {
         actions.push({ type: 'skip', targetCue: nextCue.name, targetTime: nextCue.time });
       }
     }
+
+    if (target.jumpTarget && !this.firedAutomations.has(`jump:${key}`)) {
+      this.firedAutomations.add(`jump:${key}`);
+      const cue = this.resolveJumpTarget(target.jumpTarget, this.activeSongIndex);
+      if (cue) {
+        actions.push({ type: 'jump_to', targetCue: cue.name, targetTime: cue.time });
+      }
+    }
+  }
+
+  /**
+   * The marker a `[jump NAME]` means, by the name the user sees — tags
+   * stripped, case and surrounding spaces ignored.
+   *
+   * `Song > Section` names a section of a given song. A bare name is looked
+   * up in this order: a section of the song the tag sits in, then a song, then
+   * a section of any song in arrangement order. The first rule is what makes
+   * `[jump Chorus]` mean *this* song's chorus in a set where every song has
+   * one; the last is what lets a bridge shared by two songs be reached from
+   * either.
+   */
+  public resolveJumpTarget(name: string, fromSongIndex: number): { name: string; time: number } | null {
+    const fold = (value: string) => value.replace(/\s+/g, ' ').trim().toLowerCase();
+    const wanted = fold(name);
+    if (!wanted) return null;
+    const cueAt = (time: number) => {
+      const cue = this.rawCues.find((c) => c.time === time);
+      return cue ? { name: cue.name, time: cue.time } : null;
+    };
+    const chronological = [...this.songs].sort((a, b) => a.time - b.time);
+
+    const separator = wanted.indexOf('>');
+    if (separator !== -1) {
+      const songName = fold(wanted.slice(0, separator));
+      const sectionName = fold(wanted.slice(separator + 1));
+      for (const song of chronological) {
+        if (fold(song.title) !== songName) continue;
+        const section = song.sections.find((s) => fold(s.name) === sectionName);
+        if (section) return cueAt(section.time);
+      }
+      return null;
+    }
+
+    const here = this.songs[fromSongIndex];
+    const own = here?.sections.find((s) => fold(s.name) === wanted);
+    if (own) return cueAt(own.time);
+    const song = chronological.find((s) => fold(s.title) === wanted);
+    if (song) return cueAt(song.time);
+    for (const candidate of chronological) {
+      const section = candidate.sections.find((s) => fold(s.name) === wanted);
+      if (section) return cueAt(section.time);
+    }
+    return null;
   }
 
   /**
@@ -652,8 +744,8 @@ export class SetlistManager {
 
   public resetFiredAutomations(): void {
     this.firedAutomations.clear();
-    this.lastSongIndex = -1;
-    this.lastSectionIndex = -1;
+    this.lastSongKey = null;
+    this.lastSectionKey = null;
   }
 
   public isLoopActive(): boolean {

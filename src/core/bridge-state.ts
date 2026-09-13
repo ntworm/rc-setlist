@@ -7,7 +7,7 @@ import { JumpScheduler } from './next-downbeat-jump.js';
 import { OSCClient } from '../integration/osc-client.js';
 import { SetlistWSServer } from '../server/ws.js';
 import { ProfileManager, ProfileError, safeRandomUUID } from './profile-manager.js';
-import { applyCues, colorsByTime, emptySongBook, parseSongBook, setSongColor, type SongBook } from './song-book.js';
+import { applyCues, colorsByTime, emptySongBook, notesByTime, parseSongBook, setSongColor, setSongNotes, type SongBook } from './song-book.js';
 import { EventLogger } from './event-log.js';
 import { CommandBus } from './command-bus.js';
 import { McpTcpClient } from '../integration/mcp-client.js';
@@ -114,7 +114,8 @@ export function broadcastState(): void {
     // Colours are keyed by beat position on the wire: the client knows a song
     // by where it sits, not by the id the song book keeps on the server.
     const songColors = bridgeState.songBook ? colorsByTime(bridgeState.songBook) : {};
-    bridgeState.wsServer.broadcastState({ ...bridgeState.manager.getState(), songColors });
+    const songNotes = bridgeState.songBook ? notesByTime(bridgeState.songBook) : {};
+    bridgeState.wsServer.broadcastState({ ...bridgeState.manager.getState(), songColors, songNotes });
   }
 }
 
@@ -281,6 +282,15 @@ export function refreshSongBook(): void {
  * after a reload that has not reconciled yet.
  */
 export function setSongColorAtTime(time: number, color: string | undefined): boolean {
+  return updateSongBookAtTime(time, (book, songId) => setSongColor(book, songId, color));
+}
+
+export function setSongNotesAtTime(time: number, notes: string | undefined): boolean {
+  return updateSongBookAtTime(time, (book, songId) => setSongNotes(book, songId, notes));
+}
+
+/** Apply one side-data change to the song at `time` and persist the book. False when no song is known there. */
+function updateSongBookAtTime(time: number, change: (book: SongBook, songId: string) => SongBook): boolean {
   if (!bridgeState.profileManager) return false;
   let bookPath: string;
   try {
@@ -292,7 +302,7 @@ export function setSongColorAtTime(time: number, color: string | undefined): boo
   const entry = book.present.find((candidate) => candidate.time === time);
   if (!entry) return false;
 
-  const next = setSongColor(book, entry.id, color);
+  const next = change(book, entry.id);
   bridgeState.songBook = next;
   saveSongBook(bookPath, next);
   return true;
@@ -373,6 +383,10 @@ export async function activateProjectProfileScope(
   bridgeState.legacyRecoveryKey = '';
   bridgeState.legacyRecoveryPending = false;
   bridgeState.legacyRecoveryPromise = null;
+  // The song book is per profile: forget the old one before the first save
+  // under the new paths, or the old colours and notes land in the new file.
+  bridgeState.songBook = null;
+  refreshSongBook();
   broadcastProfileState();
   broadcastState();
   const currentSong = bridgeState.manager?.getState().songs[bridgeState.manager.getState().activeSongIndex];
@@ -388,6 +402,8 @@ export async function selectProfile(id: string): Promise<void> {
   bridgeState.manager!.setCustomOrder(nextOrder);
   bridgeState.lastActiveSongTitle = '';
   bridgeState.legacyRecoveryKey = '';
+  bridgeState.songBook = null;
+  refreshSongBook();
   broadcastProfileState();
   broadcastState();
   const state = bridgeState.manager!.getState();

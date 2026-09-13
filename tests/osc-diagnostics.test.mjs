@@ -13,9 +13,13 @@ function snapshot(overrides = {}) {
     oscTimeSinceLastMessageMs: null,
     oscRxCount: 0,
     oscTxCount: 0,
+    oscBridge: 'abletonosc',
+    oscBridgeVersion: null,
     ...overrides,
   };
 }
+
+const legacyBridge = { bridge: 'abletonosc', bridgeVersion: null, targetPort: 11000 };
 
 test('OSC diagnostics: stopped server does not claim an OSC failure', () => {
   assert.deepEqual(
@@ -29,6 +33,9 @@ test('OSC diagnostics: stopped server does not claim an OSC failure', () => {
       rxCount: 0,
       txCount: 0,
       lastReplyAgeMs: null,
+      bridge: null,
+      bridgeVersion: null,
+      targetPort: null,
     },
   );
 });
@@ -45,6 +52,7 @@ test('OSC diagnostics: sent queries with zero replies identify no-reply setup', 
       rxCount: 0,
       txCount: 8,
       lastReplyAgeMs: null,
+      ...legacyBridge,
     },
   );
 });
@@ -64,6 +72,7 @@ test('OSC diagnostics: fallback listener without replies identifies a return-por
       rxCount: 0,
       txCount: 55,
       lastReplyAgeMs: null,
+      ...legacyBridge,
     },
   );
 });
@@ -86,6 +95,7 @@ test('OSC diagnostics: recent received traffic reports responding', () => {
       rxCount: 14,
       txCount: 20,
       lastReplyAgeMs: 180,
+      ...legacyBridge,
     },
   );
 });
@@ -107,6 +117,24 @@ test('OSC diagnostics: prior traffic without a current connection reports stale'
       rxCount: 14,
       txCount: 35,
       lastReplyAgeMs: 4_500,
+      ...legacyBridge,
     },
   );
+});
+
+test('OSC diagnostics: RC Bridge on an ephemeral port is never a return-port conflict', () => {
+  const model = buildOscDiagnosticModel({
+    serverRunning: true,
+    snapshot: snapshot({
+      oscBridge: 'rcbridge',
+      oscBridgeVersion: 'RC Bridge 1.0.0',
+      oscTargetPort: 11020,
+      oscListenPort: 51873,
+      oscTxCount: 3,
+    }),
+  });
+  assert.equal(model.state, 'no-reply');
+  assert.equal(model.bridge, 'rcbridge');
+  assert.equal(model.bridgeVersion, 'RC Bridge 1.0.0');
+  assert.equal(model.targetPort, 11020);
 });

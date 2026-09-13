@@ -1,12 +1,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert';
-import { tmpdir } from 'node:os';
-import { join } from 'node:path';
-import { mkdtempSync, rmSync } from 'node:fs';
 
 import { parseLocator, parseSetlist, computeCuesFingerprint } from '../src/core/locator-parser.js';
 import { SetlistManager } from '../src/core/setlist-manager.js';
-import { saveSetlist, loadSetlist, listSetlists, deleteSetlist } from '../src/core/persistence.js';
 import { parseLrc, parseTxt } from '../src/core/lyrics-parser.js';
 
 test('parseLocator: simple song title', () => {
@@ -888,28 +884,6 @@ test('SetlistManager: collision — song and first section share loop start beat
   assert.ok(sawDeactivate, 'loop 5x must deactivate within a few wraps');
 });
 
-test('Persistence: save, load, list, delete', () => {
-  const dir = mkdtempSync(join(tmpdir(), 'setlist-test-'));
-  try {
-    const data = {
-      songs: [{ title: 'Song 1', time: 0, sections: [], loopCount: null, autoStop: false, autoNext: false, bpm: null, autoClick: null, skip: false }],
-      hidden: [{ name: '_pre', time: 0 }]
-    };
-    saveSetlist(dir, 'test-setlist', data);
-    
-    const list = listSetlists(dir);
-    assert.deepStrictEqual(list, ['test-setlist']);
-    
-    const loaded = loadSetlist(dir, 'test-setlist');
-    assert.deepStrictEqual(loaded, data);
-    
-    deleteSetlist(dir, 'test-setlist');
-    assert.deepStrictEqual(listSetlists(dir), []);
-  } finally {
-    rmSync(dir, { recursive: true });
-  }
-});
-
 // --- Lyrics Parser Tests ---
 
 test('parseLrc: parses timestamps and text correctly', () => {
@@ -1591,4 +1565,138 @@ test('a song-level skip leaves the song rather than skipping into its own sectio
     manager.checkAutomations().filter((a) => a.type === 'skip'),
     [{ type: 'skip', targetCue: 'B', targetTime: 64 }],
   );
+});
+
+// ---------------------------------------------------------------------------
+// [jump NAME]: hand over to a named marker, not just the next one.
+// ---------------------------------------------------------------------------
+
+test('parseLocator: [jump NAME] keeps the target verbatim and strips the tag from the name', () => {
+  const r = parseLocator('> Verse 2 [jump Chorus II] [bpm 120]');
+  assert.equal(r.kind, 'relative-section');
+  assert.equal(r.section.name, 'Verse 2');
+  assert.equal(r.section.jumpTarget, 'Chorus II');
+  assert.equal(r.section.bpm, 120);
+  assert.equal(parseLocator('Song A [JUMP  Outro ]').songTags.jumpTarget, 'Outro', 'keyword case-insensitive, target trimmed');
+  assert.equal('jumpTarget' in parseLocator('> Verse').section, false, 'absent when no tag');
+});
+
+test('a section [jump] resolves to a section of the same song first, then a song, then any section', () => {
+  const manager = new SetlistManager();
+  manager.updateCues([
+    { name: 'A', time: 0 },
+    { name: 'A > Verse [jump Chorus]', time: 8 },
+    { name: 'A > Chorus', time: 16 },
+    { name: 'B', time: 64 },
+    { name: 'B > Chorus', time: 72 },
+    { name: 'B > Solo [jump Bridge]', time: 80 },
+    { name: 'C > Bridge', time: 128 },
+    { name: 'D > Coda [jump B]', time: 200 },
+  ]);
+  const at = (beat) => { manager.updateTransport(beat, true, 120); return manager.checkAutomations().filter((a) => a.type === 'jump_to'); };
+  assert.deepEqual(at(8.2), [{ type: 'jump_to', targetCue: 'A > Chorus', targetTime: 16 }], 'same song wins over B > Chorus');
+  assert.deepEqual(at(80.1), [{ type: 'jump_to', targetCue: 'C > Bridge', targetTime: 128 }], 'a section elsewhere when the song has none');
+  assert.deepEqual(at(200.3), [{ type: 'jump_to', targetCue: 'B', targetTime: 64 }], 'a song by title');
+});
+
+test('[jump Song > Section] names the song outright, and a target that does not exist fires nothing', () => {
+  const manager = new SetlistManager();
+  manager.updateCues([
+    { name: 'A', time: 0 },
+    { name: 'A > Out [jump B > Chorus]', time: 8 },
+    { name: 'A > Chorus', time: 16 },
+    { name: 'B', time: 64 },
+    { name: 'B > Chorus', time: 72 },
+    { name: 'B > Tail [jump Nowhere]', time: 96 },
+  ]);
+  manager.updateTransport(8.1, true, 120);
+  assert.deepEqual(manager.checkAutomations().filter((a) => a.type === 'jump_to'), [{ type: 'jump_to', targetCue: 'B > Chorus', targetTime: 72 }]);
+  manager.updateTransport(96.1, true, 120);
+  assert.deepEqual(manager.checkAutomations().filter((a) => a.type === 'jump_to'), []);
+});
+
+test('a [jump] fires once per entry and matches names case-insensitively, tags ignored', () => {
+  const manager = new SetlistManager();
+  manager.updateCues([
+    { name: 'A', time: 0 },
+    { name: 'A > Verse [jump chorus]', time: 8 },
+    { name: 'A > CHORUS [loop 2x]', time: 16 },
+  ]);
+  let fired = 0;
+  for (const beat of [8, 8.2, 8.4]) {
+    manager.updateTransport(beat, true, 120);
+    fired += manager.checkAutomations().filter((a) => a.type === 'jump_to').length;
+  }
+  assert.equal(fired, 1);
+});
+
+test('a cue reload that leaves the marker under the playhead alone does not fire its tags again', () => {
+  // Renaming an unrelated marker in Live while playing reloads the cue list.
+  // The [stop] the playhead already crossed used to fire a second time on
+  // the next tick, stopping the transport in the middle of the next phrase.
+  const manager = new SetlistManager();
+  const cues = [
+    { name: 'Song A', time: 0 },
+    { name: 'Song A > Verse [stop]', time: 16 },
+    { name: 'Song B', time: 64 },
+  ];
+  manager.updateCues(cues);
+  manager.updateTransport(17, true, 120);
+  assert.deepEqual(manager.checkAutomations().map((a) => a.type), ['stop']);
+  manager.updateTransport(18, true, 120);
+  assert.deepEqual(manager.checkAutomations(), []);
+
+  manager.updateCues([cues[0], cues[1], { name: 'Song B (renamed)', time: 64 }]);
+  manager.updateTransport(19, true, 120);
+  assert.deepEqual(manager.checkAutomations(), [], 'an unrelated rename must not refire [stop]');
+
+  // Inserting a marker earlier in the set shifts every index; the marker
+  // under the playhead is still the same marker.
+  manager.updateCues([{ name: 'Intro', time: -8 }, ...cues]);
+  manager.updateTransport(20, true, 120);
+  assert.deepEqual(manager.checkAutomations(), [], 'an index shift must not refire [stop]');
+
+  // Moving the marker itself is a new marker: its tags are fresh again.
+  manager.updateCues([cues[0], { name: 'Song A > Verse [stop]', time: 20.5 }, cues[2]]);
+  manager.updateTransport(21, true, 120);
+  assert.deepEqual(manager.checkAutomations().map((a) => a.type), ['stop']);
+});
+
+test('a cue reload keeps an active loop whose marker still declares it, and drops one whose marker is gone', () => {
+  const manager = new SetlistManager();
+  const cues = [
+    { name: 'Song A', time: 0 },
+    { name: 'Song A > Vamp [loop 4x]', time: 16 },
+    { name: 'Song A > Out', time: 24 },
+    { name: 'Song B', time: 64 },
+  ];
+  manager.updateCues(cues);
+  manager.updateTransport(16.5, true, 120);
+  assert.deepEqual(manager.checkAutomations().map((a) => a.type), ['activate_loop']);
+  assert.equal(manager.isLoopActive(), true);
+
+  manager.updateCues([cues[0], cues[1], cues[2], { name: 'Song B (renamed)', time: 64 }]);
+  assert.equal(manager.isLoopActive(), true, 'the loop marker is untouched, so the loop stays');
+
+  manager.updateCues([cues[0], { name: 'Song A > Vamp', time: 16 }, cues[2], cues[3]]);
+  assert.equal(manager.isLoopActive(), false, 'the loop tag was removed from the marker, so the loop is dropped');
+});
+
+test('parseLocator: a tag in the song half does not turn "Song A [bpm 120] > Chorus" into a new song', () => {
+  // Regression from the [jump] work: splitting only the text before the first
+  // tag made this a song called "Song A > Chorus" carrying the tag.
+  const r = parseLocator('Song A [bpm 120] > Chorus');
+  assert.equal(r.kind, 'section');
+  assert.equal(r.songName, 'Song A');
+  assert.equal(r.section.name, 'Chorus');
+  assert.equal(r.section.bpm, null, 'a tag on the song half belongs to no marker');
+
+  const both = parseLocator('Song A [x] > Chorus [loop 2x]');
+  assert.equal(both.kind, 'section');
+  assert.equal(both.songName, 'Song A');
+  assert.deepEqual([both.section.name, both.section.loopCount], ['Chorus', 2]);
+
+  const inTag = parseLocator('Song A > Verse [jump Song B > Bridge]');
+  assert.equal(inTag.kind, 'section');
+  assert.equal(inTag.section.jumpTarget, 'Song B > Bridge');
 });

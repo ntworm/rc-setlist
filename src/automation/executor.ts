@@ -43,6 +43,11 @@ export function executeAutomationActions(actions: any[], time: number): void {
       console.log(`[Automation] ${msg}`);
       bridgeState.wsServer?.broadcastLog(msg, 'automation');
       handOver(action.targetTime);
+    } else if (action.type === 'jump_to') {
+      const msg = `⤴ JUMP triggered at ${time.toFixed(1)}s — handing over to "${action.targetCue}" at ${action.targetTime}`;
+      console.log(`[Automation] ${msg}`);
+      bridgeState.wsServer?.broadcastLog(msg, 'automation');
+      handOver(action.targetTime);
     } else if (action.type === 'next') {
       const nextSong = bridgeState.manager.getState().songs[action.nextSongIndex];
       const msg = `⏭ NEXT triggered at ${time.toFixed(1)}s — handing over to "${nextSong?.title}" (idx ${action.nextSongIndex}) at ${action.targetTime}`;

@@ -1,4 +1,4 @@
-# Checklist de lançamento — Ableton RC Setlist 0.6.1
+# Checklist de lançamento — Ableton RC Setlist 0.7.0
 
 Use uma cópia de um Live Set e uma **rede local confiável / LAN**. Não faça o
 primeiro teste durante um show real.
@@ -6,13 +6,17 @@ primeiro teste durante um show real.
 ## Instalação
 
 - [ ] Ableton Live 12.4.5+ Suite Beta abre normalmente.
-- [ ] O AbletonOSC está em `User Library/Remote Scripts/AbletonOSC`, não na pasta
-  oculta `User Remote Scripts` das preferências, e
-  `AbletonOSC/__init__.py` existe diretamente dentro dela.
-- [ ] AbletonOSC aparece e está selecionado como Control Surface.
-- [ ] `Ableton-RC-Setlist-0.6.1.ablx` instala sem erro.
+- [ ] `RC-Bridge/Install-RC-Bridge.cmd` (ou `Install RC Bridge.command`) roda e
+  mostra o caminho de instalação; `RCBridge/__init__.py` existe diretamente
+  dentro de `User Library/Remote Scripts/RCBridge`.
+- [ ] RCBridge aparece e está selecionado como Control Surface.
+- [ ] Depois de Iniciar, a linha OSC do painel do RC Setlist diz
+  `via RC Bridge 1.0.0 na porta 11020`.
+- [ ] Com um AbletonOSC comum selecionado no lugar, a linha OSC diz
+  `via AbletonOSC na porta 11000` e o transporte continua funcionando.
+- [ ] `Ableton-RC-Setlist-0.7.0.ablx` instala sem erro.
 - [ ] Em dados limpos, o primeiro **Iniciar** cria o perfil padrão e sobe o servidor sem erro de persistência.
-- [ ] **Extensions > Ableton RC Setlist** abre o painel correto e mostra a versão 0.6.1.
+- [ ] **Extensions > Ableton RC Setlist** abre o painel correto e mostra a versão 0.7.0.
 
 ## Idioma
 
@@ -69,7 +73,7 @@ TESTE 02 > REFRÃO
 - [ ] Um setlist criado neste Live Set não aparece ao abrir outro `.als` salvo;
   reabrir o primeiro Set recupera esse setlist.
 - [ ] Uma queda breve mostra reconexão sem inventar dados.
-- [ ] Sem AbletonOSC, a interface falha de forma compreensível.
+- [ ] Sem nenhuma control surface selecionada, a interface falha de forma compreensível.
 - [ ] **Verificar OSC** distingue parado, aguardando, conectado, interrompido e
   porta de retorno OSC ocupada com um rótulo compacto.
 - [ ] O token completo do controle não aparece em nenhuma captura pública.

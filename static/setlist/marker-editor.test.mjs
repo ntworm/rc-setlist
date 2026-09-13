@@ -284,3 +284,33 @@ test('reordering tags is not a change: a no-op save must not trigger a rename', 
   assert.equal(editor.isSameLocatorName('INTRO [bpm 136]', 'INTRO [bpm 136] [stop]'), false);
   assert.equal(editor.isSameLocatorName('INTRO', undefined), false);
 });
+
+test('a jump target is a text field on both panels and is written as [jump NAME]', () => {
+  const read = editor.readForm(fakeForm({ name: 'VERSO', bpm: '', jump: ' Refrão II ' }), 'section');
+  assert.equal(read.jump, 'Refrão II', 'trimmed, spelling kept');
+  const out = editor.buildLocatorName('> VERSO', read, 'section', '> VERSO [mood dark]');
+  assert.equal(out, '> VERSO [jump Refrão II] [mood dark]');
+  const song = editor.readForm(fakeForm({ name: 'A', bpm: '', jump: 'B > Chorus' }), 'song');
+  assert.equal(editor.buildLocatorName('A', song, 'song', 'A'), 'A [jump B > Chorus]');
+});
+
+test('a jump target with brackets is rejected, and clearing it removes the tag', () => {
+  assert.equal(editor.readForm(fakeForm({ name: 'VERSO', bpm: '', jump: 'x [y]' }), 'section'), null);
+  const cleared = editor.readForm(fakeForm({ name: 'VERSO', bpm: '100', jump: '' }), 'section');
+  assert.equal(editor.buildLocatorName('> VERSO', cleared, 'section', '> VERSO [jump Chorus] [bpm 100]'), '> VERSO [bpm 100]');
+});
+
+test('an existing [jump] is recognised as the jump field, not carried as an unknown tag', () => {
+  const read = editor.readForm(fakeForm({ name: 'VERSO', bpm: '', jump: 'Ponte' }), 'section');
+  const out = editor.buildLocatorName('> VERSO', read, 'section', '> VERSO [JUMP old target]');
+  assert.equal(out, '> VERSO [jump Ponte]');
+  assert.equal(editor.isSameLocatorName('> A [jump X] [stop]', '> A [stop] [jump x]'), true, 'tag order and keyword case do not matter');
+});
+
+test('notes belong to the song panel only and never enter the locator name', () => {
+  const song = editor.readForm(fakeForm({ name: 'JÚLIA', bpm: '160', notes: '  Sol maior · capo 2 ' }), 'song');
+  assert.equal(song.notes, 'Sol maior · capo 2');
+  assert.equal(editor.buildLocatorName('JÚLIA', song, 'song', 'JÚLIA [bpm 160]'), 'JÚLIA [bpm 160]', 'notes are RC Setlist memory, not a tag');
+  const section = editor.readForm(fakeForm({ name: 'VERSO', bpm: '', notes: 'ignored' }), 'section');
+  assert.equal(section.notes, '', 'a section has no notes field');
+});

@@ -1,30 +1,40 @@
-import { existsSync, readFileSync } from 'node:fs';
+// Checks every Markdown and HTML document that reaches the public repository
+// for local links that point at nothing. The document list is the public
+// allowlist itself, so a document cannot be published without being checked.
+import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const root = fileURLToPath(new URL('../', import.meta.url));
-const documents = [
-  'README.md',
-  'CHANGELOG.md',
-  'CODE_OF_CONDUCT.md',
-  'CONTRIBUTING.md',
-  'PRIVACY.md',
-  'SECURITY.md',
-  'SUPPORT.md',
-  'examples/README.md',
-  'vendor/README.md',
-  'docs/README.md',
-  'docs/INSTALL.md',
-  'docs/USER-GUIDE.md',
-  'docs/TESTER-GUIDE.md',
-  'docs/DEVELOPMENT.md',
-  'docs/FAQ.md',
-  'docs/TROUBLESHOOTING.md',
-  'docs/index.html',
-  '.github/ISSUE_TEMPLATE/bug_report.md',
-  '.github/ISSUE_TEMPLATE/feature_request.md',
-  '.github/pull_request_template.md',
-];
+
+// Templates whose links only resolve once rendered or copied into the kit:
+// tests/release-package.test.mjs checks the kit, scripts/render-media-kit.mjs
+// fills the media template.
+const TEMPLATE_PREFIXES = ['release-template/', 'scripts/'];
+
+function publicDocuments() {
+  const allowlist = readFileSync(path.join(root, 'public-files.txt'), 'utf8')
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter((line) => line && !line.startsWith('#'));
+  const documents = new Set();
+  const isDocument = (file) => /\.(?:md|html)$/i.test(file);
+  const walk = (relativeDir) => {
+    const absolute = path.join(root, relativeDir);
+    if (!existsSync(absolute)) return;
+    for (const entry of readdirSync(absolute)) {
+      const relative = path.posix.join(relativeDir, entry);
+      if (statSync(path.join(root, relative)).isDirectory()) walk(relative);
+      else if (isDocument(relative)) documents.add(relative);
+    }
+  };
+  for (const entry of allowlist) {
+    if (TEMPLATE_PREFIXES.some((prefix) => entry.startsWith(prefix))) continue;
+    if (entry.endsWith('/')) walk(entry.slice(0, -1));
+    else if (isDocument(entry)) documents.add(entry);
+  }
+  return [...documents].sort();
+}
 
 function localTargets(file, content) {
   const targets = [];
@@ -39,6 +49,7 @@ function localTargets(file, content) {
   });
 }
 
+const documents = publicDocuments();
 const broken = [];
 for (const file of documents) {
   const absolute = path.join(root, file);

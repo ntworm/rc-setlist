@@ -79,8 +79,8 @@
    * beside STOP and NEXT made a section vanish on a mis-tap. They stay in the
    * locator, carried through untouched; they are simply not switched from here.
    */
-  const SECTION_FIELDS = ['name', 'bpm', 'loop', 'stop', 'next', 'click', 'skip'];
-  const SONG_FIELDS = ['name', 'color', 'bpm', 'stop', 'next', 'skip'];
+  const SECTION_FIELDS = ['name', 'bpm', 'loop', 'stop', 'next', 'click', 'skip', 'jump'];
+  const SONG_FIELDS = ['name', 'color', 'bpm', 'stop', 'next', 'skip', 'jump', 'notes'];
 
   function fieldsFor(kind) {
     return kind === 'song' ? SONG_FIELDS : SECTION_FIELDS;
@@ -122,10 +122,18 @@
     const fields = fieldsFor(kind);
     const has = (field) => fields.indexOf(field) !== -1;
 
+    // A jump target is a marker name; brackets would start a tag inside a tag.
+    const jump = has('jump') ? value('[data-field="jump"]').trim() : '';
+    if (jump.indexOf('[') !== -1 || jump.indexOf(']') !== -1) return null;
+
     return {
       name,
       bpm,
       loopCount,
+      jump,
+      // RC Setlist's own memory, like the colour: stored beside the setlist,
+      // shown on the card, never written into the locator name.
+      notes: has('notes') ? value('[data-field="notes"]').trim() : '',
       stop: has('stop') && checked('[data-field="stop"]'),
       next: has('next') && checked('[data-field="next"]'),
       click: value('[data-field="click"]') || 'inherit',
@@ -173,6 +181,7 @@
     if (/^bpm\s+\d+(?:\.\d+)?$/.test(tag)) return 'bpm';
     if (tag === 'click' || tag === 'click off' || tag === 'click-off') return 'click';
     if (['stop', 'next', 'skip', 'hidden', 'ignore'].indexOf(tag) !== -1) return tag;
+    if (/^jump\s+\S/.test(tag)) return 'jump';
     return null;
   }
 
@@ -251,6 +260,7 @@
       else if (read.click === 'off') parts.push('[click off]');
     }
     if (shows('skip') && read.skip) parts.push('[skip]');
+    if (shows('jump') && read.jump) parts.push('[jump ' + read.jump + ']');
     if (shows('hidden') && read.hidden) parts.push('[hidden]');
     if (shows('ignore') && read.ignore) parts.push('[ignore]');
 

@@ -17,8 +17,13 @@ import { reconcileSongIdentities, type IdentifiedSong, type IncomingSong } from 
  */
 
 export interface SongSideData {
-  /** One of the eight palette values, or absent for the default neutral chip. */
+  /** One of the palette values, or absent for the default neutral chip. */
   color?: string;
+  /**
+   * One line the operator wants beside the song on stage — key, tuning, who
+   * counts in. Never written into the Live project.
+   */
+  notes?: string;
 }
 
 export interface SongBook {
@@ -67,8 +72,11 @@ export function parseSongBook(raw: unknown): SongBook {
   if (typeof candidate.data === 'object' && candidate.data !== null) {
     for (const [id, value] of Object.entries(candidate.data as Record<string, unknown>)) {
       if (typeof value !== 'object' || value === null) continue;
-      const color = (value as Record<string, unknown>).color;
-      if (typeof color === 'string') data[id] = { color };
+      const entry = value as Record<string, unknown>;
+      const side: SongSideData = {};
+      if (typeof entry.color === 'string') side.color = entry.color;
+      if (typeof entry.notes === 'string' && entry.notes.trim()) side.notes = entry.notes;
+      if (Object.keys(side).length > 0) data[id] = side;
     }
   }
 
@@ -107,17 +115,46 @@ export function getSongColor(book: SongBook, songId: string): string | undefined
   return book.data[songId]?.color;
 }
 
-/** Passing undefined clears the colour and removes the entry entirely. */
-export function setSongColor(book: SongBook, songId: string, color: string | undefined): SongBook {
+function setSideField<K extends keyof SongSideData>(
+  book: SongBook,
+  songId: string,
+  field: K,
+  value: SongSideData[K] | undefined,
+): SongBook {
   const data = { ...book.data };
   const rest: SongSideData = { ...data[songId] };
-  if (color === undefined) delete rest.color;
-  else rest.color = color;
+  if (value === undefined) delete rest[field];
+  else rest[field] = value;
 
   if (Object.keys(rest).length === 0) delete data[songId];
   else data[songId] = rest;
 
   return { ...book, data };
+}
+
+/** Passing undefined clears the colour; an entry with nothing left is removed entirely. */
+export function setSongColor(book: SongBook, songId: string, color: string | undefined): SongBook {
+  return setSideField(book, songId, 'color', color);
+}
+
+export function getSongNotes(book: SongBook, songId: string): string | undefined {
+  return book.data[songId]?.notes;
+}
+
+/** Passing undefined (or blank) clears the notes; the colour is untouched. */
+export function setSongNotes(book: SongBook, songId: string, notes: string | undefined): SongBook {
+  const trimmed = notes?.trim();
+  return setSideField(book, songId, 'notes', trimmed ? trimmed : undefined);
+}
+
+/** Notes for the UI, keyed by beat position like the colours. */
+export function notesByTime(book: SongBook): Record<string, string> {
+  const out: Record<string, string> = {};
+  for (const entry of book.present) {
+    const notes = book.data[entry.id]?.notes;
+    if (notes) out[String(entry.time)] = notes;
+  }
+  return out;
 }
 
 /** Colour lookup for the UI, keyed by beat position — what the client knows. */

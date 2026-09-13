@@ -16,6 +16,18 @@ interface McpFallbackSyncOptions {
   retryIntervalMs?: number;
 }
 
+/**
+ * The bridge did not answer (absent, refused, timed out, or replied with an
+ * error). Expected whenever the MCP is not installed, so callers stay quiet
+ * about it — unlike a failure inside one of our own callbacks.
+ */
+export class McpUnavailableError extends Error {
+  constructor(cause: unknown) {
+    super(`MCP bridge unavailable: ${cause instanceof Error ? cause.message : String(cause)}`, { cause });
+    this.name = 'McpUnavailableError';
+  }
+}
+
 export interface McpFallbackSnapshot {
   inFlight: boolean;
   lastResponseTime: number;
@@ -57,6 +69,16 @@ export class McpFallbackSync {
     this.lastResponseTime = this.now();
   }
 
+  private async request<T>(type: string): Promise<T> {
+    try {
+      const value = await this.client.call(type);
+      this.markResponse();
+      return value as T;
+    } catch (cause) {
+      throw new McpUnavailableError(cause);
+    }
+  }
+
   public getSnapshot(): McpFallbackSnapshot {
     const current = this.now();
     return {
@@ -76,25 +98,21 @@ export class McpFallbackSync {
     if (this.inFlight || this.now() < this.nextAttemptTime) return false;
     this.inFlight = true;
     try {
-      const info = await this.client.call('get_session_info') as SessionInfo;
+      const info = await this.request<SessionInfo>('get_session_info');
       this.nextAttemptTime = Number.NEGATIVE_INFINITY;
-      this.markResponse();
       this.lastSessionInfoTime = this.now();
       await this.onSessionInfo(info);
 
       const current = this.now();
       if (current - this.lastSlowPollTime >= this.slowPollIntervalMs) {
         this.lastSlowPollTime = current;
-        try {
-          const result = await this.client.call('get_song_length') as { song_length?: unknown };
-          this.markResponse();
-          const length = result?.song_length;
-          if (typeof length === 'number' && Number.isFinite(length)) {
-            await this.onSongLength(length);
-          }
-        } catch {
-          // The fast transport snapshot remains useful when an older MCP
-          // bridge does not expose get_song_length.
+        // The fast transport snapshot remains useful when an older MCP bridge
+        // does not expose get_song_length; only the request may fail quietly,
+        // never our own callback.
+        const result = await this.request<{ song_length?: unknown }>('get_song_length').catch(() => null);
+        const length = result?.song_length;
+        if (typeof length === 'number' && Number.isFinite(length)) {
+          await this.onSongLength(length);
         }
       }
 
@@ -105,21 +123,18 @@ export class McpFallbackSync {
         && current - this.lastMetadataPollTime >= this.metadataPollIntervalMs
       ) {
         this.lastMetadataPollTime = current;
-        try {
-          const metadata = await this.client.call('get_project_metadata') as ProjectMetadata;
-          this.markResponse();
-          if (metadata && typeof metadata === 'object') {
-            await this.onProjectMetadata(metadata, projectMetadataRequestToken);
-          }
-        } catch {
-          // Saved-set metadata can become available after startup; retry on
-          // the next slow metadata interval without disrupting transport.
+        // Saved-set metadata can become available after startup; retry on
+        // the next slow metadata interval without disrupting transport.
+        const metadata = await this.request<ProjectMetadata>('get_project_metadata').catch(() => null);
+        if (metadata && typeof metadata === 'object') {
+          await this.onProjectMetadata(metadata, projectMetadataRequestToken);
         }
       }
 
       return true;
     } catch (error) {
-      this.nextAttemptTime = this.now() + this.retryIntervalMs;
+      // Back off only when the bridge itself is the problem.
+      if (error instanceof McpUnavailableError) this.nextAttemptTime = this.now() + this.retryIntervalMs;
       throw error;
     } finally {
       this.inFlight = false;

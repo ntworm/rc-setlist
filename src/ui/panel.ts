@@ -48,7 +48,7 @@ export async function showInfoDialog(
 ): Promise<void> {
   const safe = escapeHtml(message);
   const html = `<!DOCTYPE html>
-<html><head><style>
+<html><head><meta charset="utf-8"><style>
 *,*::before,*::after{box-sizing:border-box}*{margin:0}
 :root{--bg:hsl(0,0%,21%);--text:hsl(0,0%,71%);--ctrl:hsl(0,0%,16%);--border:hsl(0,0%,7%);--accent:hsl(32,100%,55%)}
 html{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;font-size:12px;height:100%}

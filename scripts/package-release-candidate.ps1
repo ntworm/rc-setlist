@@ -1,5 +1,5 @@
 param(
-    [string]$Version = "0.6.1",
+    [string]$Version = "0.7.0",
     [string]$AblxPath,
     [string]$OutputRoot
 )
@@ -66,11 +66,16 @@ New-Item -ItemType Directory -Path (Join-Path $kitRoot "LEGAL") | Out-Null
 New-Item -ItemType Directory -Path (Join-Path $kitRoot "examples") | Out-Null
 New-Item -ItemType Directory -Path (Join-Path $kitRoot "en") | Out-Null
 New-Item -ItemType Directory -Path (Join-Path $kitRoot "pt-BR") | Out-Null
+New-Item -ItemType Directory -Path (Join-Path $kitRoot "RC-Bridge") | Out-Null
 
 $copies = @(
     @{ Source = $ablxFull; Target = "Ableton-RC-Setlist-$Version.ablx" },
     @{ Source = (Join-Path $repoRoot "release-template/START-HERE.html"); Target = "START-HERE.html" },
     @{ Source = (Join-Path $repoRoot "release-template/README.txt"); Target = "README.txt" },
+    @{ Source = (Join-Path $repoRoot "release-template/RC-Bridge/Install-RC-Bridge.cmd"); Target = "RC-Bridge/Install-RC-Bridge.cmd" },
+    @{ Source = (Join-Path $repoRoot "release-template/RC-Bridge/Install-RC-Bridge.ps1"); Target = "RC-Bridge/Install-RC-Bridge.ps1" },
+    @{ Source = (Join-Path $repoRoot "release-template/RC-Bridge/Install RC Bridge.command"); Target = "RC-Bridge/Install RC Bridge.command" },
+    @{ Source = (Join-Path $repoRoot "release-template/RC-Bridge/README.txt"); Target = "RC-Bridge/README.txt" },
     @{ Source = (Join-Path $repoRoot "release-template/en/TEST-CHECKLIST.md"); Target = "en/TEST-CHECKLIST.md" },
     @{ Source = (Join-Path $repoRoot "release-template/pt-BR/TEST-CHECKLIST.md"); Target = "pt-BR/TEST-CHECKLIST.md" },
     @{ Source = (Join-Path $repoRoot "docs/INSTALL.md"); Target = "en/INSTALL.md" },
@@ -99,6 +104,14 @@ $exampleSource = Join-Path $repoRoot "examples"
 foreach ($exampleEntry in Get-ChildItem -LiteralPath $exampleSource) {
     Copy-Item -LiteralPath $exampleEntry.FullName -Destination (Join-Path $kitRoot "examples") -Recurse
 }
+# The RC Bridge remote script itself, without its tests or compiled leftovers.
+$bridgeSource = Join-Path $repoRoot "bridge/RCBridge"
+if (-not (Test-Path -LiteralPath (Join-Path $bridgeSource "abletonosc/constants.py") -PathType Leaf)) {
+    throw "RC Bridge source is missing: $bridgeSource"
+}
+$bridgeTarget = Join-Path $kitRoot "RC-Bridge/RCBridge"
+Copy-Item -LiteralPath $bridgeSource -Destination $bridgeTarget -Recurse
+Get-ChildItem -LiteralPath $bridgeTarget -Recurse -Directory -Filter "__pycache__" | Remove-Item -Recurse -Force
 
 $ablxHash = Get-FileSha256 -LiteralPath $ablxFull
 $ablxSize = (Get-Item -LiteralPath $ablxFull).Length

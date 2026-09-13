@@ -3,7 +3,6 @@ import * as fs from 'node:fs/promises';
 import { writeJsonAtomic as defaultWriteJsonAtomic } from './profile/storage.js';
 import { moveToTrash as defaultMoveToTrash } from './profile/trash.js';
 import { createInitialRegistry } from './profile/registry.js';
-import { copyLyricsDirectory } from './profile/migration.js';
 
 const DEFAULT_PROFILE_NAME = 'Main Setlist';
 const LEGACY_DEFAULT_PROFILE_NAME = 'Setlist Principal';
@@ -78,6 +77,12 @@ export function normalizeProfileName(input: unknown): string {
     throw new ProfileError('invalid_profile', 'Profile name must contain 1 to 80 characters without control characters.');
   }
   return normalized;
+}
+
+/** Whether `name` is the default profile's, in either the current or the legacy spelling. */
+export function isDefaultProfileName(name: string): boolean {
+  const key = profileNameKey(name);
+  return key === profileNameKey(DEFAULT_PROFILE_NAME) || key === profileNameKey(LEGACY_DEFAULT_PROFILE_NAME);
 }
 
 export function profileNameKey(name: string): string {

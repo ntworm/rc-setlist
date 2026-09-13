@@ -234,6 +234,16 @@
       gap: 8px;
     }
 
+    .osc-actions {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+    }
+
+    .osc-actions .btn {
+      white-space: nowrap;
+    }
+
     .osc-copy {
       min-width: 0;
     }
@@ -297,8 +307,12 @@
     <div id="oscStatusDot" class="status-dot"></div>
     <div class="osc-copy">
       <span id="oscStatusText" class="status-text inactive">Start the server to test AbletonOSC</span>
+      <div id="oscBridgeText" class="setting-hint" hidden></div>
+      <div id="bridgeHint" class="setting-hint"></div>
     </div>
-    <button class="btn" id="btnDiagnoseOsc" onclick="sendAction('diagnose-osc')" data-i18n="panel.checkOsc">Check OSC</button>
+    <div class="osc-actions">
+      <button class="btn" id="btnDiagnoseOsc" onclick="sendAction('diagnose-osc')" data-i18n="panel.checkOsc">Check OSC</button>
+    </div>
   </div>
 
   <div id="durationConfidenceRow" class="osc-diagnostic" style="display: none;">
@@ -388,6 +402,8 @@
     const oscStatusDot = document.getElementById('oscStatusDot');
     const oscStatusText = document.getElementById('oscStatusText');
     const btnDiagnoseOsc = document.getElementById('btnDiagnoseOsc');
+    const oscBridgeText = document.getElementById('oscBridgeText');
+    const bridgeHint = document.getElementById('bridgeHint');
     const durationConfidence = window.INITIAL_DURATION_CONFIDENCE || 'estimated';
     const durationConfidenceRow = document.getElementById('durationConfidenceRow');
     if (durationConfidenceRow && durationConfidence === 'estimated') {
@@ -442,12 +458,40 @@
       oscStatusText.className = `status-text ${stateClass}`;
       oscStatusText.textContent = i18n.t(stateKeys[oscDiagnostics.state] || 'panel.oscNoReply');
       btnDiagnoseOsc.disabled = !isRunning;
+      if (oscBridgeText) {
+        const via = oscDiagnostics.bridge
+          ? i18n.t('panel.oscVia', {
+            name: oscDiagnostics.bridge === 'rcbridge' ? (oscDiagnostics.bridgeVersion || 'RC Bridge') : 'AbletonOSC',
+            port: String(oscDiagnostics.targetPort || ''),
+          })
+          : '';
+        oscBridgeText.textContent = via;
+        oscBridgeText.hidden = !via;
+      }
     }
+
+    // The extension cannot look into Live's User Library (the host sandboxes
+    // the filesystem), so the only truth about RC Bridge is whether it
+    // answered when the server started. That is what this line reports.
+    function renderBridge() {
+      if (!bridgeHint) return;
+      if (!isRunning || !oscDiagnostics.bridge) {
+        bridgeHint.textContent = '';
+        bridgeHint.hidden = true;
+        return;
+      }
+      bridgeHint.hidden = false;
+      bridgeHint.textContent = oscDiagnostics.bridge === 'rcbridge'
+        ? i18n.t('panel.bridgeInUse')
+        : i18n.t('panel.bridgeMissing');
+    }
+    renderBridge();
 
     i18n.subscribe((locale) => {
       renderAutoStart();
       renderStatus();
       renderOscStatus();
+      renderBridge();
       sendAction(`set-language:${locale}`);
     });
 

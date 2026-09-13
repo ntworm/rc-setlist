@@ -26,6 +26,7 @@ function markerBadges(target) {
   if (target.autoClick === true) parts.push(`<span class="click-badge">${ICON_CLICK} CLICK</span>`);
   else if (target.autoClick === false) parts.push(`<span class="click-badge is-off">${ICON_CLICK} CLICK OFF</span>`);
   if (target.skip) parts.push(`<span class="skip-badge">${ICON_SKIP} SKIP</span>`);
+  if (target.jumpTarget) parts.push(`<span class="jump-badge">${ICON_NEXT} JUMP → ${escapeLyricsEditorText(target.jumpTarget)}</span>`);
   return parts.join('');
 }
 
@@ -147,6 +148,12 @@ function showConnectionFailure() {
     ? t('status.panelLost')
     : t('status.noState');
   overlay.classList.add('visible');
+}
+
+/** The generic failure line, plus what the server actually said when it said anything. */
+function failureText(key, payload) {
+  const detail = payload && typeof payload.error === 'string' ? payload.error.trim() : '';
+  return detail ? `${t(key)} — ${detail}` : t(key);
 }
 
 function showToast(message, level = 'info') {
@@ -1327,14 +1334,14 @@ function connect() {
           if (payload.status === 'confirmed') {
             showToast(t('setlist.markerEditSaved'), 'info');
           } else {
-            showToast(t('setlist.markerEditFailed'), 'error');
+            showToast(failureText('setlist.markerEditFailed', payload), 'error');
           }
         }
         const profileCommand = pendingProfileCommands.get(payload.commandId);
         if (profileCommand && ['confirmed', 'failed', 'expired', 'cancelled'].includes(payload.status)) {
           pendingProfileCommands.delete(payload.commandId);
           if (payload.status === 'failed') {
-            showToast(t('setlist.operationFailed'), 'error');
+            showToast(failureText('setlist.operationFailed', payload), 'error');
           }
           requestProfiles();
         }
@@ -1799,7 +1806,7 @@ function renderSongList(state) {
 
   const hasSetlistVersion = Number.isInteger(state.setlistVersion);
   const currentJson = hasSetlistVersion ? '' : JSON.stringify({ songs: state.songs, hidden: state.hidden });
-  const colorSignature = JSON.stringify(state.songColors || {});
+  const colorSignature = JSON.stringify([state.songColors || {}, state.songNotes || {}]);
   const structureUnchanged = (hasSetlistVersion
     ? state.setlistVersion === lastRenderedSetlistVersion
     : currentJson === lastRenderedSongsJson)
@@ -1824,6 +1831,7 @@ function renderSongList(state) {
             <span class="song-index">${songIdx + 1}</span>
             <span class="song-title">${escapeLyricsEditorText(song.title)}</span>
             ${markerBadges(song)}
+            ${songNotes(song) ? `<span class="song-notes">${escapeLyricsEditorText(songNotes(song))}</span>` : ''}
           </div>
           <span class="song-reorder-handle" role="img" aria-label="Reorder song" title="Reorder song">&#8942;</span>
           <span class="song-time">${formatDuration(song.durationSeconds)}</span>
@@ -2652,6 +2660,11 @@ connect();
    the old raw-text editor let a [bpm] tag be deleted by accident, and that tag
    feeds the show duration. */
 
+function songNotes(song) {
+  const notes = lastState && lastState.songNotes ? lastState.songNotes[String(song.time)] : '';
+  return typeof notes === 'string' ? notes : '';
+}
+
 function songColor(song) {
   const color = lastState && lastState.songColors
     ? lastState.songColors[String(song.time)]
@@ -2784,6 +2797,8 @@ function openMarkerEditor(kind, songIndex, sectionIndex, event) {
     next: Boolean(source.autoNext),
     click: clickValue === true ? 'on' : clickValue === false ? 'off' : 'inherit',
     skip: Boolean(source.skip),
+    jump: source.jumpTarget || '',
+    notes: kind === 'song' ? songNotes(song) : '',
     hidden: false,
     ignore: Boolean(section && section.automationOnly),
   };
@@ -2794,6 +2809,7 @@ function openMarkerEditor(kind, songIndex, sectionIndex, event) {
   markerTarget = {
     kind, songIndex, sectionIndex, time, songTitle: song.title, rawName,
     color: kind === 'song' ? songColor(song) : '',
+    notes: kind === 'song' ? songNotes(song) : '',
     backToSong: cameFromSong || (markerTarget && markerTarget.backToSong && kind === 'section'),
   };
 
@@ -2805,6 +2821,8 @@ function openMarkerEditor(kind, songIndex, sectionIndex, event) {
   markerFieldEl('loop-times').value = typeof parsed.loopCount === 'number' && parsed.loopCount > 0
     ? String(parsed.loopCount) : '2';
   markerFieldEl('click').value = parsed.click;
+  markerFieldEl('jump').value = parsed.jump;
+  markerFieldEl('notes').value = parsed.notes;
   syncMarkerLoopTimes();
 
   const currentColor = markerTarget.color;
@@ -2858,6 +2876,7 @@ function renderMarkerSections(kind, songIndex, song) {
     else if (typeof section.loopCount === 'number') bits.push('LOOP ' + section.loopCount + 'x');
     if (section.autoStop) bits.push('STOP');
     if (section.autoNext) bits.push('NEXT');
+    if (section.jumpTarget) bits.push('JUMP → ' + escapeLyricsEditorText(section.jumpTarget));
     return '<button type="button" class="marker-section-row" data-section-index="' + index + '">'
       + '<span>' + escapeLyricsEditorText(section.name) + '</span>'
       + '<span class="marker-section-meta">' + bits.join(' · ') + '</span>'
@@ -2887,7 +2906,7 @@ function buildMarkerName() {
   const fullName = window.RcMarkerEditor.buildLocatorName(
     head, read, markerTarget.kind, markerTarget.rawName,
   );
-  return { fullName, color: read.color };
+  return { fullName, color: read.color, notes: read.notes };
 }
 
 function commitMarkerEditor(event) {
@@ -2902,6 +2921,7 @@ function commitMarkerEditor(event) {
 
   const renaming = !window.RcMarkerEditor.isSameLocatorName(built.fullName, markerTarget.rawName);
   const recolouring = markerTarget.kind === 'song' && (built.color || '') !== markerTarget.color;
+  const renoting = markerTarget.kind === 'song' && (built.notes || '') !== (markerTarget.notes || '');
   // The panel can sit open across a transport start. Re-check at the moment of
   // the write, not only at the moment it opened.
   if (renaming && !canEditMarkers()) return;
@@ -2931,6 +2951,13 @@ function commitMarkerEditor(event) {
       type: 'set_song_color',
       time: markerTarget.time,
       color: built.color || null,
+    }));
+  }
+  if (renoting) {
+    ws.send(JSON.stringify({
+      type: 'set_song_notes',
+      time: markerTarget.time,
+      notes: built.notes || null,
     }));
   }
   closeMarkerEditor();

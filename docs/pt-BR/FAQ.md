@@ -11,11 +11,16 @@ pela OSI.
 
 Não. Instale o `.ablx` da release. O Node.js 24.16.0 serve apenas para desenvolvimento.
 
-## Por que o AbletonOSC é obrigatório?
+## O que é o RC Bridge, e ainda preciso do AbletonOSC?
 
-O Ableton RC Setlist usa o AbletonOSC para transporte e operações do Live Object
-Model. Instale a partir de <https://github.com/ideoforms/AbletonOSC>. Ele não vem
-incluído no pacote.
+O RC Bridge é o Remote Script do Live com que o Ableton RC Setlist conversa
+para transporte e operações do Live Object Model. É um fork do AbletonOSC
+(<https://github.com/ideoforms/AbletonOSC>, MIT) que responde a cada cliente
+na porta dele — assim nunca disputa a porta de resposta com outra extensão RC
+e convive com um AbletonOSC comum. Ele vem dentro da extensão e dentro do kit
+de instalação; o instalador do kit (`Install-RC-Bridge.cmd` /
+`Install RC Bridge.command`) copia para a User Library do Live. Você não precisa do AbletonOSC — mas se já tem,
+o RC Setlist continua funcionando com ele.
 
 ## Por que o navegador mostra um aviso de certificado?
 

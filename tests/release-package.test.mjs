@@ -83,16 +83,28 @@ test('release templates describe the real prerequisites and safe local-network s
   assert.doesNotMatch(combined, /Ableton Setlist Bridge|commercial-song|real setlist/i);
 });
 
-test('release templates prevent the AbletonOSC folder mix-up in both languages', () => {
-  for (const path of [
-    'release-template/README.txt',
-    'release-template/en/TEST-CHECKLIST.md',
-    'release-template/pt-BR/TEST-CHECKLIST.md',
-  ]) {
+test('release templates ship RC Bridge with its installers and the one manual step, in both languages', () => {
+  const readme = read('release-template/README.txt');
+  const bridgeReadme = read('release-template/RC-Bridge/README.txt');
+  for (const content of [readme, bridgeReadme]) {
+    assert.match(content, /Install-RC-Bridge\.cmd/, 'the Windows installer is named');
+    assert.match(content, /Install RC Bridge\.command/, 'the macOS installer is named');
+    assert.match(content, /Link, Tempo & MIDI/, 'the Control Surface step is spelled out');
+    assert.match(content, /RCBridge/);
+  }
+  // Both installers copy the same folder and print the same last step.
+  for (const path of ['release-template/RC-Bridge/Install-RC-Bridge.ps1', 'release-template/RC-Bridge/Install RC Bridge.command']) {
     const content = read(path);
-    assert.match(content, /User Library[\\/]Remote Scripts[\\/]AbletonOSC/i, `${path} must show the exact install target`);
-    assert.match(content, /User Remote Scripts/i, `${path} must distinguish Live's hidden preferences folder`);
-    assert.match(content, /AbletonOSC[\\/]__init__\.py/i, `${path} must show how to detect an extra nested folder`);
+    assert.match(content, /Remote Scripts/);
+    assert.match(content, /RCBridge/);
+    assert.match(content, /Link, Tempo & MIDI/);
+    assert.match(content, /RCBRIDGE_VERSION/, 'reports the version it installed');
+  }
+  for (const path of ['release-template/en/TEST-CHECKLIST.md', 'release-template/pt-BR/TEST-CHECKLIST.md']) {
+    const content = read(path);
+    assert.match(content, /User Library[\\/]Remote Scripts[\\/]RCBridge/i, `${path} must show the exact install target`);
+    assert.match(content, /RCBridge[\\/]__init__\.py/i, `${path} must show how to detect an extra nested folder`);
+    assert.match(content, /via RC Bridge 1\.0\.0/, `${path} must check the panel reports the bridge`);
   }
 });
 
@@ -124,7 +136,7 @@ test('certificate onboarding is explicit in both languages and canonical English
 test('generated installation kit keeps English and Portuguese guides in their language folders', (t) => {
   const tempRoot = mkdtempSync(path.join(tmpdir(), 'rc-setlist-kit-contract-'));
   t.after(() => rmSync(tempRoot, { recursive: true, force: true }));
-  const ablxPath = path.join(tempRoot, 'Ableton-RC-Setlist-0.6.1.ablx');
+  const ablxPath = path.join(tempRoot, 'Ableton-RC-Setlist-0.7.0.ablx');
   const outputRoot = path.join(tempRoot, 'output');
   writeFileSync(ablxPath, '');
 
@@ -133,13 +145,13 @@ test('generated installation kit keeps English and Portuguese guides in their la
     '-NoProfile',
     '-ExecutionPolicy', 'Bypass',
     '-File', path.join(rootPath, 'scripts', 'package-release-candidate.ps1'),
-    '-Version', '0.6.1',
+    '-Version', '0.7.0',
     '-AblxPath', ablxPath,
     '-OutputRoot', outputRoot,
   ], { cwd: rootPath, encoding: 'utf8' });
   assert.equal(result.status, 0, result.error?.message || result.stderr || result.stdout);
 
-  const kitRoot = path.join(outputRoot, 'Ableton-RC-Setlist-0.6.1-Installation-Kit');
+  const kitRoot = path.join(outputRoot, 'Ableton-RC-Setlist-0.7.0-Installation-Kit');
   const expectedGuides = ['INSTALL.md', 'USER-GUIDE.md', 'TROUBLESHOOTING.md', 'FAQ.md', 'TEST-CHECKLIST.md'];
   for (const locale of ['en', 'pt-BR']) {
     for (const guide of expectedGuides) {

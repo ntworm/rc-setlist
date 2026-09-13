@@ -21,7 +21,8 @@ npm ci
 npm run ci:public
 ```
 
-The public gate covers source/static tests, Playwright, a public typecheck,
+The public gate covers source/static tests, the RC Bridge Python tests (a
+stock Python 3 on the PATH is enough), Playwright, a public typecheck,
 licensing, content sanitization and documentation. It does not build an `.ablx`.
 
 ## Full Ableton build
@@ -40,6 +41,7 @@ npm run ci:release
 - `src/integration/`: OSC and external protocol boundaries.
 - `src/server/`: local HTTP(S), certificates and WebSocket transport.
 - `static/`: plain browser clients.
+- `bridge/`: RC Bridge, the Remote Script fork of AbletonOSC, and its tests.
 - `tests/`: source, security, UI and release contracts.
 - `docs/`: public documentation and GitHub Pages landing.
 

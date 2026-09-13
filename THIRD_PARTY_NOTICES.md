@@ -1,6 +1,6 @@
 # Third-party notices
 
-This file covers third-party components bundled in Ableton RC Setlist 0.6.1. It is generated from the installed production dependency tree; run `npm run notices` after dependency changes.
+This file covers third-party components bundled in Ableton RC Setlist 0.7.0. It is generated from the installed production dependency tree; run `npm run notices` after dependency changes.
 
 ## Ableton Extensions SDK
 
@@ -30,6 +30,38 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
+```
+
+## RC Bridge (a fork of AbletonOSC)
+
+Copyright (c) Daniel John Jones and contributors
+
+License: MIT
+
+Source: https://github.com/ideoforms/AbletonOSC — forked at 0ca68214bd62c9b5cb641ca34006cfd70ba94430; the changes are listed in bridge/RCBridge/README.md. Bundled inside the extension package and the installation kit as the Live remote script this extension talks to.
+
+```text
+# MIT License
+
+Copyright (c) Daniel John Jones and contributors
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
 ```
 
 ## Martian Mono 1.0.0

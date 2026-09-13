@@ -87,14 +87,18 @@
       en: 'AbletonOSC connection interrupted',
       'pt-BR': 'Conexão com AbletonOSC interrompida',
     },
-    'panel.oscTraffic': {
-      en: 'UDP {port} · TX {tx} · RX {rx}',
-      'pt-BR': 'UDP {port} · TX {tx} · RX {rx}',
-    },
     'panel.checkOsc': { en: 'Check OSC', 'pt-BR': 'Verificar OSC' },
-    'panel.oscInstallHint': {
-      en: 'Install AbletonOSC directly in User Library/Remote Scripts/AbletonOSC — not the hidden User Remote Scripts preferences folder — and confirm __init__.py is directly inside AbletonOSC. Then select it as a Control Surface and restart Live.',
-      'pt-BR': 'Instale o AbletonOSC diretamente em User Library/Remote Scripts/AbletonOSC — não na pasta oculta User Remote Scripts das preferências — e confirme que __init__.py está diretamente dentro de AbletonOSC. Depois selecione-o como Control Surface e reinicie o Live.',
+    'panel.oscVia': {
+      en: 'via {name} on port {port}',
+      'pt-BR': 'via {name} na porta {port}',
+    },
+    'panel.bridgeInUse': {
+      en: 'RC Bridge is the bundled control surface for this extension. It is in use.',
+      'pt-BR': 'O RC Bridge é a control surface que vem com esta extensão. Está em uso.',
+    },
+    'panel.bridgeMissing': {
+      en: 'RC Bridge is not in use. Install it from the kit (RC-Bridge folder: Install-RC-Bridge.cmd on Windows, Install RC Bridge.command on macOS), then in Live: Settings › Link, Tempo & MIDI › Control Surface: RCBridge, and Restart here.',
+      'pt-BR': 'O RC Bridge não está em uso. Instale pelo kit (pasta RC-Bridge: Install-RC-Bridge.cmd no Windows, Install RC Bridge.command no macOS), depois no Live: Configurações › Link, Tempo & MIDI › Control Surface: RCBridge, e Reiniciar aqui.',
     },
     'panel.durationEstimated': {
       en: 'Setlist duration is estimated (no [bpm] tags in Live markers)',
@@ -126,6 +130,10 @@
     'marker.stop': { en: 'Stop', 'pt-BR': 'Parar' },
     'marker.next': { en: 'Next', 'pt-BR': 'Próxima' },
     'marker.skip': { en: 'Skip', 'pt-BR': 'Pular' },
+    'marker.notes': { en: 'Notes', 'pt-BR': 'Notas' },
+    'marker.notesPlaceholder': { en: 'Key, tuning, who counts in…', 'pt-BR': 'Tom, afinação, quem começa…' },
+    'marker.jump': { en: 'Jump to', 'pt-BR': 'Pular para' },
+    'marker.jumpPlaceholder': { en: 'Marker name, or Song > Section', 'pt-BR': 'Nome do marcador, ou Música > Seção' },
     'marker.sections': { en: 'Sections', 'pt-BR': 'Seções' },
     'marker.invalid': {
       en: 'Check the name and the tempo. The name cannot be empty or contain brackets.',
@@ -144,20 +152,8 @@
       en: 'Prevents conflicts with other RC extensions. This setting persists between sessions.',
       'pt-BR': 'Evita conflitos com outras extensões RC. Esta configuração é mantida entre sessões.',
     },
-    'panel.certificateFirstUse': {
-      en: 'First connection: your browser may show ERR_CERT_AUTHORITY_INVALID because RC Setlist creates a local self-signed certificate. Continue only when the address exactly matches the IP shown in the Live panel and you are on a trusted LAN. Each browser/device may require this once.',
-      'pt-BR': 'Primeira conexão: o navegador pode mostrar ERR_CERT_AUTHORITY_INVALID porque o RC Setlist cria um certificado local autoassinado. Continue somente se o endereço for exatamente o IP mostrado no painel do Live e a rede local for confiável. Cada navegador/aparelho pode exigir isso uma vez.',
-    },
     'panel.on': { en: 'On', 'pt-BR': 'Ligado' },
     'panel.off': { en: 'Off', 'pt-BR': 'Desligado' },
-    'panel.actionFailed': {
-      en: 'Could not run "{action}": {detail}',
-      'pt-BR': 'Não foi possível executar "{action}": {detail}',
-    },
-    'panel.assetsFailed': {
-      en: 'Failed to load panel files: {detail}',
-      'pt-BR': 'Falha ao carregar os arquivos do painel: {detail}',
-    },
 
     'performance.name': { en: 'Performance', 'pt-BR': 'Performance' },
     'performance.brandAria': { en: 'Ableton RC Setlist Performance', 'pt-BR': 'Performance do Ableton RC Setlist' },
@@ -186,10 +182,8 @@
       'pt-BR': '🔒 PAINEL BLOQUEADO. Desbloqueie-o na parte superior para executar esta ação.',
     },
     'setlist.tools': { en: '🛠️ Tools', 'pt-BR': '🛠️ Ferramentas' },
-    'setlist.manageSetlists': { en: '⚙️ Manage setlists', 'pt-BR': '⚙️ Gerenciar setlists' },
 
     'setlist.exportCsv': { en: 'Export CSV', 'pt-BR': 'Exportar CSV' },
-    'setlist.exportCsvTitle': { en: 'Export tracklist as CSV', 'pt-BR': 'Exportar repertório como CSV' },
     'setlist.lyrics': { en: 'Lyrics', 'pt-BR': 'Letras' },
     'setlist.help': { en: 'Help', 'pt-BR': 'Ajuda' },
     'setlist.authenticateTitle': {
@@ -216,12 +210,10 @@
     },
     'setlist.refresh': { en: 'Refresh', 'pt-BR': 'Atualizar' },
     'setlist.refreshTitle': { en: 'Reload the setlist from Ableton Live', 'pt-BR': 'Recarregar o setlist do Ableton Live' },
-    'setlist.previous': { en: 'Previous', 'pt-BR': 'Anterior' },
     'setlist.previousSongHold': { en: 'Previous song — press and hold', 'pt-BR': 'Música anterior — pressione e segure' },
     'setlist.previousSectionHold': { en: 'Previous section — press and hold', 'pt-BR': 'Seção anterior — pressione e segure' },
     'setlist.play': { en: 'Play', 'pt-BR': 'Reproduzir' },
     'setlist.stop': { en: 'Stop — press and hold', 'pt-BR': 'Parar — pressione e segure' },
-    'setlist.next': { en: 'Next', 'pt-BR': 'Próxima' },
     'setlist.nextSectionHold': { en: 'Next section — press and hold', 'pt-BR': 'Próxima seção — pressione e segure' },
     'setlist.nextSongHold': { en: 'Next song — press and hold', 'pt-BR': 'Próxima música — pressione e segure' },
     'setlist.none': { en: 'None', 'pt-BR': 'Nenhuma' },
@@ -488,6 +480,10 @@
     'help.skip': {
       en: 'When the playhead reaches this marker, playback moves to the marker after it: the next section, or the next song if this was the last section. The tagged part is never heard.',
       'pt-BR': 'Quando o playhead alcança este marcador, a reprodução vai para o marcador seguinte: a próxima seção, ou a próxima música se esta era a última seção. O trecho marcado nunca toca.',
+    },
+    'help.jump': {
+      en: 'When the playhead reaches this marker, playback moves to the marker called NAME: a section of this song, a song, or Song > Section. Same timing as [next] and [skip].',
+      'pt-BR': 'Quando o playhead alcança este marcador, a reprodução vai para o marcador chamado NOME: uma seção desta música, uma música, ou Música > Seção. Mesmo timing de [next] e [skip].',
     },
     'help.nextVsSkip': { en: '[next] or [skip]?', 'pt-BR': '[next] ou [skip]?' },
     'help.nextVsSkipNext': {

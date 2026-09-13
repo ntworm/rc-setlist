@@ -36,6 +36,7 @@ Technical cue [ignore]
 | `[bpm N]` | Set the target BPM. |
 | `[click]` / `[click off]` | Enable or disable Live's metronome. |
 | `[skip]` | Skip this section/song: hand playback to the next section (or song) the moment this marker is reached. |
+| `[jump NAME]` | Hand playback to the marker called NAME the moment this marker is reached — a section of this song, a song, or `Song > Section`. Names are matched with tags stripped, case ignored. |
 | `[hidden]` | Keep an automation anchor out of the visible setlist. |
 | `[ignore]` | Technical marker that hides the locator and takes precedence over any action tags. |
 
@@ -63,6 +64,12 @@ a second after the marker is crossed (the position is polled every 100 ms and
 AbletonOSC processes commands every 100 ms), never before it, and the next
 song always starts from its first beat. `[skip]` hands over the same way.
 
+`[jump NAME]` is the same hand-over aimed anywhere: `> Verse 2 [jump Chorus]`
+goes to this song's chorus, `> Coda [jump Song B]` to another song's start,
+`> Solo [jump Song B > Bridge]` to a section of another song. A bare name is
+looked up in this song's sections first, then among song titles, then among
+every section in arrangement order; a name that matches nothing does nothing.
+
 Because the playhead is moved directly, Live's start marker stays where it was.
 Play in RC Setlist resumes from wherever you stopped, so this only shows if you
 press Stop twice in Live, which returns to the start marker.
@@ -73,12 +80,15 @@ Double-click a song row or a section chip in Stage Control to open the marker
 editor. Every tag is a control there — you never type a `[tag]` by hand, and you
 cannot delete one with a stray keystroke.
 
-A **song** carries its name, its colour, its starting tempo, and the `[stop]`,
-`[next]` and `[skip]` behaviours. It also lists its sections; click one to edit
+A **song** carries its name, its colour, its notes, its starting tempo, and the
+`[stop]`, `[next]` and `[skip]` behaviours. Notes are one line for the stage —
+key, tuning, who counts in — shown under the title on the card and on the
+performance display; like the colour they are stored beside your setlist and
+never written into the Live project. It also lists its sections; click one to edit
 it, and the arrow at the top of the panel brings you back to the song.
 
-A **section** carries its name, its tempo, its loop, its click, and the same
-three behaviours. Loop and click live here rather than on the song because that
+A **section** carries its name, its tempo, its loop, its click, the same
+three behaviours, and a jump target (the marker `[jump NAME]` goes to). Loop and click live here rather than on the song because that
 is where the music is structured.
 
 Three things the editor guarantees:

@@ -33,6 +33,12 @@ test('OSC integration: client communicates with mock server', { timeout: 5_000 }
   });
   const mockServer = new MockOSCServer();
   const client = new OSCClient();
+  // A silent socket stands in for a stock AbletonOSC on the bridge port, so the
+  // probe times out and the client takes the legacy path — and never sends a
+  // byte towards the real bridge port on this machine.
+  const silentBridge = dgram.createSocket('udp4');
+  silentBridge.bind(0, '127.0.0.1');
+  await once(silentBridge, 'listening');
   const socket = dgram.createSocket('udp4');
   const previousSocket = globalThis.abletonOSCSocket;
   const previousListeners = globalThis.abletonOSCListeners;
@@ -41,7 +47,7 @@ test('OSC integration: client communicates with mock server', { timeout: 5_000 }
     const port = await mockServer.start();
     assert.ok(Number.isInteger(port) && port > 0, 'mock must return its bound port');
     assert.ok(![11000, 11001, 11101, 11201].includes(port));
-    client['targetPort'] = port;
+    client.configureBridge({ bridgePort: silentBridge.address().port, probeTimeoutMs: 100, legacyTargetPort: port });
 
     // Exercise the existing cooperative socket path with a real test socket;
     // production OSC defaults and Live's sockets are never used by this test.
@@ -85,6 +91,7 @@ test('OSC integration: client communicates with mock server', { timeout: 5_000 }
     await client.stop();
     await mockServer.stop();
     try { socket.close(); } catch {}
+    try { silentBridge.close(); } catch {}
     if (previousSocket === undefined) delete globalThis.abletonOSCSocket;
     else globalThis.abletonOSCSocket = previousSocket;
     if (previousListeners === undefined) delete globalThis.abletonOSCListeners;
@@ -267,6 +274,13 @@ test('OSC send reports whether a bound socket accepted the packet', async () => 
   const client = new OSCClient();
   assert.strictEqual(client.send('/live/song/get/tempo'), false);
 
+  // Never probe the real bridge port: with RC Bridge installed on the
+  // developer's machine this test would otherwise talk to a running Live.
+  const silentBridge = dgram.createSocket('udp4');
+  silentBridge.bind(0, '127.0.0.1');
+  await once(silentBridge, 'listening');
+  client.configureBridge({ bridgePort: silentBridge.address().port, probeTimeoutMs: 100 });
+
   const runtime = globalThis;
   const previousSocket = runtime.abletonOSCSocket;
   const previousListeners = runtime.abletonOSCListeners;
@@ -287,6 +301,7 @@ test('OSC send reports whether a bound socket accepted the packet', async () => 
     assert.ok(runtime.abletonOSCListeners instanceof Set);
   } finally {
     await client.stop();
+    try { silentBridge.close(); } catch {}
     assert.strictEqual(closed, true);
     if (previousSocket === undefined) delete runtime.abletonOSCSocket;
     else runtime.abletonOSCSocket = previousSocket;

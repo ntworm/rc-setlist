@@ -27,15 +27,17 @@ test("CommandBus rejects item 101 without losing the existing 100 queued items",
 
     assert.equal(bus.getQueueLength(), 100);
 
-    // 101st command should throw capacity error
+    // The 101st command fails with a status the client can show; it does not
+    // throw, because the caller is an EventEmitter listener whose rejection
+    // nobody awaits.
     const overflowCmd = bus.registerCommand("cmd-overflow", "test_cmd", {}, "client1");
-
-    assert.throws(
-      () => bus.dispatch(overflowCmd, () => {}),
-      /capacity/i,
-      "should reject command when queue exceeds 100 items"
-    );
+    const settled = [];
+    bus.on('command_settled', (cmd) => settled.push(cmd));
+    assert.doesNotThrow(() => bus.dispatch(overflowCmd, () => {}));
     assert.equal(overflowCmd.status, 'failed');
+    assert.equal(overflowCmd.reason, 'execution_failed');
+    assert.match(overflowCmd.error, /capacity/i);
+    assert.equal(settled.at(-1)?.commandId, 'cmd-overflow');
     assert.equal(bus.getQueueLength(), 100);
     assert.equal(bus.getPending().length, 100);
   } finally {

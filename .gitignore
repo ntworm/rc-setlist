@@ -24,3 +24,6 @@ scratch_test.ts
 .agent-context/generated/
 .worktrees/
 /releases/*-Installation-Kit.zip
+__pycache__/
+*.pyc
+/releases/dev/

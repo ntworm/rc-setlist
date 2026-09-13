@@ -259,6 +259,12 @@ function updateUINonTimeSensitive(state) {
   }
   document.getElementById('songBadges').innerHTML = songBadgeHtml;
 
+  // The operator's one line for this song — key, tuning, who counts in.
+  const songNotesEl = document.getElementById('songNotes');
+  const notes = currentSong && state.songNotes ? state.songNotes[String(currentSong.time)] : '';
+  songNotesEl.textContent = typeof notes === 'string' ? notes : '';
+  songNotesEl.hidden = !songNotesEl.textContent;
+
   // Render Section Badges
   let sectionBadgeHtml = '';
   if (currentSection) {

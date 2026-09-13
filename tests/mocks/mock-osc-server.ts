@@ -20,7 +20,11 @@ export class MockOSCServer {
     { name: '_end', time: 150 }
   ];
 
-  constructor() {
+  /** Answers /live/rcbridge/version like the bundled RC Bridge fork does. */
+  private identifyAsBridge: boolean;
+
+  constructor(options: { identifyAsBridge?: boolean } = {}) {
+    this.identifyAsBridge = Boolean(options.identifyAsBridge);
     this.server = dgram.createSocket('udp4');
     this.client = dgram.createSocket('udp4');
     
@@ -41,7 +45,14 @@ export class MockOSCServer {
     
     const address = oscMsg.address;
     
-    if (address === '/live/song/get/tempo') {
+    if (address === '/live/rcbridge/version') {
+      if (!this.identifyAsBridge) return; // a stock AbletonOSC logs "Unknown OSC address" and stays silent
+      this.sendReply('/live/rcbridge/version', [
+        { type: 'string', value: 'RC Bridge' },
+        { type: 'string', value: '1.0.0' },
+        { type: 'string', value: 'ideoforms/AbletonOSC@0ca6821' },
+      ]);
+    } else if (address === '/live/song/get/tempo') {
       this.sendReply('/live/song/get/tempo', [
         { type: 'float', value: this.tempo }
       ]);

@@ -62,7 +62,6 @@ test('decoder accepts every current browser and server command, including legacy
     { type: 'stop', commandId: 'stop-now' },
     { type: 'refresh' },
     { type: 'export_csv' },
-    { type: 'create_test_session' },
     { type: 'metronome', value: true },
     { type: 'set_pre_roll', value: true },
     { type: 'set_quantization', value: 11 },
@@ -239,4 +238,15 @@ test('the server palette matches the client palette exactly', () => {
     [...scope.RcMarkerEditor.PALETTE_HEXES].sort(),
     'the server would reject a colour the panel offers, or accept one it does not',
   );
+});
+
+test('set_song_notes carries one line of bounded text, or null to clear', () => {
+  assert.deepEqual(decodeClientMessage({ type: 'set_song_notes', time: 1136, notes: 'Sol maior · capo 2' }),
+    { ok: true, message: { type: 'set_song_notes', time: 1136, notes: 'Sol maior · capo 2' } });
+  assert.deepEqual(decodeClientMessage({ type: 'set_song_notes', time: 1136, notes: null }).message,
+    { type: 'set_song_notes', time: 1136, notes: null });
+  assert.equal(decodeClientMessage({ type: 'set_song_notes', time: 1136, notes: '   ' }).message.notes, null, 'blank means clear');
+  assert.equal(decodeClientMessage({ type: 'set_song_notes', time: 1136, notes: 'x'.repeat(201) }).ok, false);
+  assert.equal(decodeClientMessage({ type: 'set_song_notes', time: 1136, notes: 'a\nb' }).ok, false, 'one line');
+  assert.equal(decodeClientMessage({ type: 'set_song_notes', time: -1, notes: 'x' }).ok, false);
 });

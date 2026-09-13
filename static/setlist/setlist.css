@@ -582,6 +582,13 @@ body {
   min-width: 0;
 }
 
+/* The notes line wraps under the title and badges; the handle and the time
+   stay on the header's first row. */
+.song-info {
+  flex-wrap: wrap;
+  row-gap: 0.15rem;
+}
+
 .song-header {
   justify-content: space-between;
   gap: 0.75rem;
@@ -640,6 +647,18 @@ body {
   color: var(--ui-text);
   font-size: 0.82rem;
   font-weight: 850;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* One line the operator wrote for the stage: key, tuning, who counts in. */
+.song-notes {
+  flex: 1 1 100%;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--ui-muted);
+  font-size: 0.74rem;
+  font-weight: 650;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -769,7 +788,8 @@ body {
 .next-badge,
 .bpm-badge,
 .click-badge,
-.skip-badge {
+.skip-badge,
+.jump-badge {
   display: inline-flex;
   align-items: center;
   flex: 0 0 auto;
@@ -825,6 +845,17 @@ body {
   border-color: var(--ui-rule-strong);
   background: transparent;
   color: var(--ui-muted);
+}
+
+/* A jump names its destination, so it reads like NEXT with a label. */
+.jump-badge {
+  border-color: var(--ui-rule-strong);
+  background: transparent;
+  color: var(--ui-text);
+  max-width: 14rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .control-column {

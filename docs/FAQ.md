@@ -10,11 +10,16 @@ is not allowed. PolyForm Noncommercial is not an OSI-approved open-source licens
 
 No. Install the release `.ablx`. Node.js 24.16.0 is for source development.
 
-## Why is AbletonOSC required?
+## What is RC Bridge, and do I still need AbletonOSC?
 
-Ableton RC Setlist uses AbletonOSC for transport and Live Object Model operations that
-form part of its setlist workflow. Install it from
-<https://github.com/ideoforms/AbletonOSC>. It is not included here.
+RC Bridge is the Live Remote Script that Ableton RC Setlist talks to for
+transport and Live Object Model operations. It is a fork of the MIT-licensed
+AbletonOSC (<https://github.com/ideoforms/AbletonOSC>) that answers each client
+on its own port, so it never fights another RC extension for a reply port and
+runs beside a stock AbletonOSC. It ships inside the extension and inside the
+installation kit; the kit's installer (`Install-RC-Bridge.cmd` /
+`Install RC Bridge.command`) copies it into Live's User Library. You do not need AbletonOSC — but if you already
+have it, RC Setlist still works with it.
 
 ## Why does the browser show a certificate warning?
 

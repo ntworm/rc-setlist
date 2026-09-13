@@ -1,4 +1,4 @@
-# Release checklist — Ableton RC Setlist 0.6.1
+# Release checklist — Ableton RC Setlist 0.7.0
 
 Use a copy of a Live Set and a **trusted local network / LAN**. Do not perform
 the first test during a real show.
@@ -6,13 +6,17 @@ the first test during a real show.
 ## Installation
 
 - [ ] Ableton Live 12.4.5+ Suite Beta opens normally.
-- [ ] AbletonOSC is at `User Library/Remote Scripts/AbletonOSC`, not the hidden
-  `User Remote Scripts` preferences folder, and `AbletonOSC/__init__.py` exists
-  directly inside it.
-- [ ] AbletonOSC appears and is selected as a Control Surface.
-- [ ] `Ableton-RC-Setlist-0.6.1.ablx` installs without errors.
+- [ ] `RC-Bridge/Install-RC-Bridge.cmd` (or `Install RC Bridge.command`) runs
+  and reports the install path; `RCBridge/__init__.py` exists directly inside
+  `User Library/Remote Scripts/RCBridge`.
+- [ ] RCBridge appears and is selected as a Control Surface.
+- [ ] After Start, the RC Setlist panel's OSC line reads
+  `via RC Bridge 1.0.0 on port 11020`.
+- [ ] With a stock AbletonOSC selected instead, the OSC line reads
+  `via AbletonOSC on port 11000` and the transport still works.
+- [ ] `Ableton-RC-Setlist-0.7.0.ablx` installs without errors.
 - [ ] With clean data, the first **Start** creates the default profile and starts the server without a persistence error.
-- [ ] **Extensions > Ableton RC Setlist** opens the correct panel and shows version 0.6.1.
+- [ ] **Extensions > Ableton RC Setlist** opens the correct panel and shows version 0.7.0.
 
 ## Language
 
@@ -68,7 +72,7 @@ TEST 02 > CHORUS
 - [ ] A setlist created in this Live Set does not appear after opening another
   saved `.als`; reopening the first Set restores it.
 - [ ] A brief connection loss shows reconnection state without inventing data.
-- [ ] With AbletonOSC unavailable, the interface fails clearly.
+- [ ] With no control surface selected, the interface fails clearly.
 - [ ] **Check OSC** distinguishes stopped, waiting, connected, interrupted and
   OSC return-port-busy states with a compact label.
 - [ ] The full controller token appears in no public screenshot.

@@ -33,7 +33,7 @@ import {
   setHttpAuthToken,
 } from './server/http.js';
 import { McpTcpClient } from './integration/mcp-client.js';
-import { McpFallbackSync } from './integration/mcp-fallback-sync.js';
+import { McpFallbackSync, McpUnavailableError } from './integration/mcp-fallback-sync.js';
 import { syncFromSdkContext } from './sync/sdk-sync.js';
 import { syncFromMcpInfo } from './sync/mcp-sync.js';
 import { registerOscListeners } from './osc/registration.js';
@@ -245,6 +245,7 @@ export async function startServer(options: StartServerOptions = {}): Promise<voi
         commandId: cmd.commandId,
         status: cmd.status,
         ...(cmd.reason ? { reason: cmd.reason } : {}),
+        ...(cmd.error ? { error: cmd.error } : {}),
       });
     });
 
@@ -309,6 +310,12 @@ export async function startServer(options: StartServerOptions = {}): Promise<voi
 
     if (!options.skipOsc) {
       bridgeState.oscClient = new OSCClient();
+
+      // Without a listener, EventEmitter turns every 'error' into a throw from
+      // whichever socket callback raised it.
+      bridgeState.oscClient.on('error', (err: unknown) => {
+        console.error('[OSC]', err instanceof Error ? err.message : String(err));
+      });
 
       bridgeState.oscClient.on('connect', () => {
         console.log('[OSC] Connection established. Registering listeners and fetching cue points...');
@@ -526,6 +533,8 @@ export async function startServer(options: StartServerOptions = {}): Promise<voi
               sourceIdentityKey,
               projectSessionId,
             });
+          } catch (err) {
+            console.error('[Persistence] Failed to promote the Live Set scope:', err);
           } finally {
             bridgeState.profileScopeSwitching = false;
             broadcastProfileState();
@@ -537,8 +546,10 @@ export async function startServer(options: StartServerOptions = {}): Promise<voi
         },
       });
       bridgeState.mcpSyncInterval = setInterval(() => {
-        void bridgeState.mcpFallbackSync?.tick().catch(() => {
-          // MCP is optional. Keep OSC/SDK operation quiet while the bridge is absent.
+        void bridgeState.mcpFallbackSync?.tick().catch((err: unknown) => {
+          // MCP is optional: an absent bridge is silence, not an error. A
+          // failure inside our own callbacks is neither, and must be seen.
+          if (!(err instanceof McpUnavailableError)) console.error('[MCP] tick failed:', err);
         });
       }, 100);
     }
@@ -614,6 +625,7 @@ export async function stopServer(): Promise<void> {
   bridgeState.manager = null;
   bridgeState.scheduler = null;
   bridgeState.profileManager = null;
+  bridgeState.songBook = null;
   bridgeState.projectIdentity = null;
   bridgeState.profileScopeSwitching = false;
   bridgeState.lastSongHandleId = '';

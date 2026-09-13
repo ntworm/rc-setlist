@@ -6,26 +6,32 @@
 - Reopen the `.ablx` and follow Live's installation prompt.
 - Restart Live and check **Extensions > Ableton RC Setlist**.
 
-## AbletonOSC does not appear
+## RCBridge does not appear in the Control Surface list
 
-- Install it at `User Library/Remote Scripts/AbletonOSC`, not Live's hidden
-  `User Remote Scripts` preferences folder.
-- Confirm `AbletonOSC/__init__.py` exists directly inside that folder, with no
-  extra nested `AbletonOSC` directory.
-- Restart Live after copying it.
-- Select AbletonOSC as a Control Surface; its Input and Output can remain
+- Install it at `User Library/Remote Scripts/RCBridge`, not Live's hidden
+  `User Remote Scripts` preferences folder. The kit's `Install-RC-Bridge.cmd`
+  / `Install RC Bridge.command` puts it in the right place.
+- Confirm `RCBridge/__init__.py` exists directly inside that folder, with no
+  extra nested `RCBridge` directory.
+- Close and reopen Live after copying it; Live reads the folder at start-up.
+- Select RCBridge as a Control Surface; its Input and Output can remain
   `None`.
-- Follow the [upstream AbletonOSC instructions](https://github.com/ideoforms/AbletonOSC).
+- The panel's OSC line says which script the extension is actually talking
+  to (`via RC Bridge 1.0.0 on port 11020`, or `via AbletonOSC on port 11000`),
+  and spells out the install steps when RC Bridge is not the one answering.
 
 ## The panel starts but OSC controls or playhead do not respond
 
 - Choose **Check OSC** in the RC Setlist panel.
-- `Live connected` means AbletonOSC replies are reaching RC Setlist.
+- `Live connected` means replies from the remote script are reaching RC Setlist.
 - `Waiting for AbletonOSC` means the local server is running, but no reply has
   arrived. Recheck the exact folder above, the Control Surface selection and
   then restart Live.
 - `AbletonOSC connection interrupted` means replies were received previously
   but have stopped.
+- The extension decides which script to use when the server starts. If you
+  installed and selected RC Bridge with the server already running, press
+  **Restart** in the panel.
 - Play/Stop and the moving playhead are the clearest end-to-end OSC checks.
 
 ## No songs appear
@@ -76,10 +82,15 @@ not delete the old folders or overwrite files already present in the new profile
 
 ## Another extension uses OSC port 11001
 
-AbletonOSC sends every reply to its fixed UDP port `11001`. If another RC
-extension already owns that port, RC Setlist falls back to UDP 11101; it may
-still send commands, but it cannot receive AbletonOSC's replies. The compact
-panel reports this as `Live active · OSC return port busy`.
+This only happens with a stock AbletonOSC. It sends every reply to its fixed
+UDP port `11001`; if another RC extension already owns that port, RC Setlist
+falls back to UDP 11101, may still send commands, but cannot receive
+AbletonOSC's replies. The compact panel reports this as
+`Live active · OSC return port busy`.
+
+The fix is RC Bridge: it answers whichever port asked, so every RC extension
+gets its replies and nothing is shared. Install it (see [INSTALL](INSTALL.md)),
+select it as a Control Surface, and restart the server.
 
 When the local Ableton MCP bridge is also available, the **MCP fallback** keeps
 the playhead, play state and tempo synchronized and supplies **Total Duration**.

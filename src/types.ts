@@ -10,6 +10,8 @@ export interface Section {
   bpm: number | null;
   autoClick: boolean | null; // null = no change, true = click on, false = click off
   skip: boolean;
+  /** `[jump NAME]`: hand over to the marker called NAME when this one is reached. Absent when untagged. */
+  jumpTarget?: string;
 }
 
 export interface Song {
@@ -25,6 +27,8 @@ export interface Song {
   bpm: number | null;
   autoClick: boolean | null;
   skip: boolean;
+  /** `[jump NAME]` on the song's own locator. Absent when untagged. */
+  jumpTarget?: string;
 }
 
 export interface Setlist {
@@ -62,6 +66,8 @@ export interface SetlistState {
   declaredTempo?: number | null;
   /** Song colours keyed by beat position. */
   songColors?: Record<string, string>;
+  /** One-line song notes (key, tuning, who counts in) keyed by beat position. */
+  songNotes?: Record<string, string>;
   /**
    * Confidence level for the set's calculated durations.
    * 'declared': At least one [bpm] tag was authored on a song or section.
@@ -122,7 +128,6 @@ export type ClientMessage =
   | (ClientMessageBase & { type: 'stop' })
   | (ClientMessageBase & { type: 'refresh' })
   | (ClientMessageBase & { type: 'export_csv' })
-  | (ClientMessageBase & { type: 'create_test_session' })
   | (ClientMessageBase & { type: 'metronome'; value: boolean })
   | (ClientMessageBase & { type: 'set_pre_roll'; value: boolean })
   | (ClientMessageBase & { type: 'set_quantization'; value: number })
@@ -139,7 +144,8 @@ export type ClientMessage =
   | (ClientMessageBase & { type: 'profile_rename'; id: string; name: string })
   | (ClientMessageBase & { type: 'profile_delete'; id: string; confirmationName: string })
   | (ClientMessageBase & { type: 'edit_locator'; time: number; name: string })
-  | (ClientMessageBase & { type: 'set_song_color'; time: number; color: string | null });
+  | (ClientMessageBase & { type: 'set_song_color'; time: number; color: string | null })
+  | (ClientMessageBase & { type: 'set_song_notes'; time: number; notes: string | null });
 
 export interface ShowCommand<TPayload = unknown> {
   commandId: string;
@@ -152,6 +158,8 @@ export interface ShowCommand<TPayload = unknown> {
   maxRetries: number;
   timeoutMs: number;
   reason?: CommandFailureReason;
+  /** What the handler said when it threw; shown to the operator beside `reason`. */
+  error?: string;
 }
 
 import { WebSocket } from 'ws';
