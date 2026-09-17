@@ -416,8 +416,8 @@ test('the public CI gate includes browser and release-surface regressions', () =
   assert.equal(typeof publicGate, 'string', 'package.json must define ci:public');
   assert.match(publicGate, /test:ui/);
   assert.match(publicGate, /test:release-surface/);
-  assert.match(workflow, /actions\/checkout@v4/);
-  assert.match(workflow, /actions\/setup-node@v4/);
+  assert.match(workflow, /actions\/checkout@v7/);
+  assert.match(workflow, /actions\/setup-node@v7/);
 });
 
 test('production build cleans generated output and enables minification', () => {
