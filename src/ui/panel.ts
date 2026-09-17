@@ -2,7 +2,7 @@ import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
 
 import { embedPanelAssets } from './panel-embed.js';
-import { initialize } from '@ableton-extensions/sdk';
+import type { ExtensionContext } from '../context.js';
 import {
   startServer,
   stopServer,
@@ -26,7 +26,7 @@ import { buildOscDiagnosticModel } from './osc-diagnostics.js';
 import { log } from '../util/log.js';
 // __dirname is a global in CommonJS, which is our target format
 
-type ModalContext = ReturnType<typeof initialize>;
+type ModalContext = ExtensionContext;
 
 function escapeHtml(value: string): string {
   return value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
@@ -190,7 +190,7 @@ async function renderPanelDialog(context: ModalContext): Promise<string> {
 /**
  * Registers the panel command.
  */
-export function registerPanelCommand(context: ReturnType<typeof initialize>): void {
+export function registerPanelCommand(context: ExtensionContext): void {
   // eslint-disable-next-line @typescript-eslint/no-misused-promises -- registerCommand callback is documented to return Promise<void>
   void context.commands.registerCommand('abletonSetlistBridge.panel', async () => {
     await showPanelDialog(context);

@@ -1,4 +1,4 @@
-import { type initialize } from '@ableton-extensions/sdk';
+import type { initialize } from './ableton-sdk-public.d.ts';
 
 export type ExtensionContext = ReturnType<typeof initialize>;
 
