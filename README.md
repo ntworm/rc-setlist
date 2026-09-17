@@ -4,6 +4,8 @@
 [![Version](https://img.shields.io/badge/version-1.0.0-f97316)](CHANGELOG.md)
 [![CI](https://github.com/ntworm/rc-setlist/actions/workflows/ci.yml/badge.svg)](https://github.com/ntworm/rc-setlist/actions/workflows/ci.yml)
 
+**English** · [Português (Brasil)](README.pt-BR.md)
+
 > **[Landing page and screenshots](https://ntworm.github.io/rc-setlist/)**
 >
 > ![RC Setlist Stage Control](docs/media/en/stage-control.png)
@@ -15,7 +17,7 @@ click feedback, and guarded transport controls for rehearsals and live shows.
 [Landing page](https://ntworm.github.io/rc-setlist/) ·
 [Installation](docs/INSTALL.md) ·
 [User guide](docs/USER-GUIDE.md) ·
-[Português (Brasil)](docs/pt-BR/README.md) ·
+[Português (Brasil)](README.pt-BR.md) ·
 [Latest release](https://github.com/ntworm/rc-setlist/releases/latest)
 
 > **Network safety:** RC Setlist serves browser controls on your local network.

@@ -1,6 +1,7 @@
 # Documentação do RC Setlist
 
-- [English](../README.md)
+- [Visão geral (README em Português)](../../README.pt-BR.md)
+- [English documentation](../README.md)
 - [Primeiros passos](PRIMEIROS-PASSOS.md)
 - [Instalação](INSTALL.md)
 - [O que há de novo na versão 1.0.0](NOTAS-DA-VERSAO-1.0.0.md)
