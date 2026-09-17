@@ -1,4 +1,4 @@
-# Notas locais de teste do Ableton RC Setlist 0.4.2
+﻿# Notas locais de teste do RC Setlist 0.4.2
 
 [English](../RELEASE-NOTES-0.4.2.md)
 

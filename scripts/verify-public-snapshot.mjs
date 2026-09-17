@@ -17,35 +17,61 @@ const required = [
 ];
 const forbiddenPathRules = [
   { label: 'private-archive', pattern: /\.(?:tgz|ablx|zip)$/i },
-  { label: 'internal-context', pattern: /(?:^|[\\/])(?:\.agent-context|\.worktrees|releases?|release-kit)(?:[\\/]|$)/i },
+  {
+    label: 'internal-context',
+    pattern: /(?:^|[\\/])(?:\.agent-context|\.worktrees|releases?|release-kit)(?:[\\/]|$)/i,
+  },
   { label: 'internal-docs', pattern: /(?:^|[\\/])docs[\\/](?:agent|superpowers)(?:[\\/]|$)/i },
   { label: 'internal-scratch', pattern: /^tests[\\/]scratch(?:[\\/]|$)/i },
   { label: 'vendored-remote-script', pattern: /(?:^|[\\/])vendor[\\/]AbletonOSC(?:[\\/]|$)/i },
 ];
-const textExtensions = new Set(['', '.css', '.html', '.js', '.json', '.md', '.mjs', '.ps1', '.svg', '.ts', '.txt', '.yml', '.yaml']);
+const textExtensions = new Set([
+  '',
+  '.css',
+  '.html',
+  '.js',
+  '.json',
+  '.md',
+  '.mjs',
+  '.ps1',
+  '.svg',
+  '.ts',
+  '.txt',
+  '.yml',
+  '.yaml',
+]);
 const contentRules = [
   { label: 'personal-windows-path', pattern: /[A-Z]:[\\/]+Users[\\/]+/i },
   { label: 'private-key', pattern: /-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----/ },
   { label: 'github-token', pattern: /gh(?:p|o|u|s|r)_[A-Za-z0-9]{30,}/ },
   { label: 'stale-product-name', pattern: /Ableton\s+Setlist\s+Bridge/i },
-  { label: 'stale-product-slug', pattern: new RegExp(['ableton', 'setlist', 'bridge'].join('-'), 'i') },
+  {
+    label: 'stale-product-slug',
+    pattern: new RegExp(['ableton', 'setlist', 'bridge'].join('-'), 'i'),
+  },
 ];
 const allowedContentRulePaths = new Map([
-  ['personal-windows-path', new Set([
-    'tests/content-sanitization.test.mjs',
-  ])],
-  ['stale-product-name', new Set([
-    'docs/TROUBLESHOOTING.md',
-    'docs/pt-BR/TROUBLESHOOTING.md',
-    'tests/release-package.test.mjs',
-    'tests/release-surface.test.mjs',
-  ])],
-  ['stale-product-slug', new Set([
-    'src/core/profile-migration.ts',
-    'tests/profile-migration.test.mjs',
-    'tests/project-profile-scope.test.mjs',
-    'tests/release-surface.test.mjs',
-  ])],
+  ['personal-windows-path', new Set(['tests/content-sanitization.test.mjs', 'tests/log.test.mjs'])],
+  [
+    'stale-product-name',
+    new Set([
+      'docs/TROUBLESHOOTING.md',
+      'docs/TROUBLESHOOTING.html',
+      'docs/pt-BR/TROUBLESHOOTING.md',
+      'docs/pt-BR/TROUBLESHOOTING.html',
+      'tests/release-package.test.mjs',
+      'tests/release-surface.test.mjs',
+    ]),
+  ],
+  [
+    'stale-product-slug',
+    new Set([
+      'src/core/profile-migration.ts',
+      'tests/profile-migration.test.mjs',
+      'tests/project-profile-scope.test.mjs',
+      'tests/release-surface.test.mjs',
+    ]),
+  ],
 ]);
 
 const failures = [];
@@ -86,12 +112,18 @@ function walk(directory) {
 
 walk(snapshotRoot);
 
-const sanitization = spawnSync(process.execPath, ['--test', 'tests/content-sanitization.test.mjs'], {
-  cwd: snapshotRoot,
-  encoding: 'utf8',
-});
+const sanitization = spawnSync(
+  process.execPath,
+  ['--test', 'tests/content-sanitization.test.mjs'],
+  {
+    cwd: snapshotRoot,
+    encoding: 'utf8',
+  },
+);
 if (sanitization.status !== 0) {
-  failures.push(`commercial-song/content sanitization gate failed:\n${sanitization.stdout}${sanitization.stderr}`);
+  failures.push(
+    `commercial-song/content sanitization gate failed:\n${sanitization.stdout}${sanitization.stderr}`,
+  );
 }
 
 if (failures.length) {
@@ -101,4 +133,4 @@ if (failures.length) {
 }
 
 const packageJson = JSON.parse(readFileSync(path.join(snapshotRoot, 'package.json'), 'utf8'));
-console.log(`[public-snapshot] Ableton RC Setlist ${packageJson.version}: sanitized snapshot verified.`);
+console.log(`[public-snapshot] RC Setlist ${packageJson.version}: sanitized snapshot verified.`);

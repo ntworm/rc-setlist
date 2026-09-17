@@ -22,7 +22,10 @@ test('an unchanged setlist keeps every id', () => {
     { id: 'b', name: 'JÚLIA', time: 1136 },
   ];
   const { present, tombstoned, pruned } = run(stored, [cue('INTRO', 0), cue('JÚLIA', 1136)]);
-  assert.deepEqual(present.map((s) => s.id), ['a', 'b']);
+  assert.deepEqual(
+    present.map((s) => s.id),
+    ['a', 'b'],
+  );
   assert.deepEqual(tombstoned, []);
   assert.deepEqual(pruned, []);
 });
@@ -49,7 +52,10 @@ test('a bis keeps two separate identities for the same title', () => {
     { id: 'encore', name: 'SOMÁLIA', time: 200 },
   ];
   const { present } = run(stored, [cue('SOMÁLIA', 0), cue('OUTRA', 100), cue('SOMÁLIA', 200)]);
-  assert.deepEqual(present.map((s) => s.id), ['first', 'other', 'encore']);
+  assert.deepEqual(
+    present.map((s) => s.id),
+    ['first', 'other', 'encore'],
+  );
 });
 
 test('renaming one half of a bis does not steal the other half identity', () => {
@@ -59,14 +65,22 @@ test('renaming one half of a bis does not steal the other half identity', () => 
   ];
   const { present } = run(stored, [cue('SOMÁLIA', 0), cue('SOMÁLIA (BIS)', 200)]);
   assert.equal(present[0].id, 'first');
-  assert.equal(present[1].id, 'encore', 'the renamed encore must keep its own id, matched by position');
+  assert.equal(
+    present[1].id,
+    'encore',
+    'the renamed encore must keep its own id, matched by position',
+  );
 });
 
 test('changing the name AND the position is treated as a new song', () => {
   const stored = [{ id: 'a', name: 'INTRO', time: 0 }];
   const { present, tombstoned } = run(stored, [cue('ABERTURA', 240)]);
   assert.notEqual(present[0].id, 'a', 'no algorithm can tell this from delete-plus-add');
-  assert.deepEqual(tombstoned.map((s) => s.id), ['a'], 'the old entry is remembered, not destroyed');
+  assert.deepEqual(
+    tombstoned.map((s) => s.id),
+    ['a'],
+    'the old entry is remembered, not destroyed',
+  );
 });
 
 test('a deleted locator is tombstoned and its identity returns when recreated', () => {
@@ -94,8 +108,11 @@ test('an ambiguous pair is left alone rather than guessed', () => {
     { id: 'y', name: 'VERSO', time: 20 },
   ];
   const { present } = run(stored, [cue('VERSO', 30), cue('VERSO', 40)]);
-  assert.equal(present.every((s) => s.id !== 'x' && s.id !== 'y'), true,
-    'a coin flip would risk putting the colour on the wrong song');
+  assert.equal(
+    present.every((s) => s.id !== 'x' && s.id !== 'y'),
+    true,
+    'a coin flip would risk putting the colour on the wrong song',
+  );
 });
 
 test('new songs get fresh ids and existing ones are untouched', () => {
@@ -108,5 +125,8 @@ test('new songs get fresh ids and existing ones are untouched', () => {
 test('present preserves the order Live reported', () => {
   const stored = [];
   const { present } = run(stored, [cue('C', 300), cue('A', 100), cue('B', 200)]);
-  assert.deepEqual(present.map((s) => s.name), ['C', 'A', 'B']);
+  assert.deepEqual(
+    present.map((s) => s.name),
+    ['C', 'A', 'B'],
+  );
 });

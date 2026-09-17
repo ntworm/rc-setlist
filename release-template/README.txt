@@ -1,5 +1,5 @@
-ABLETON RC SETLIST 0.7.0 — INSTALLATION KIT / KIT DE INSTALAÇÃO
-==============================================================
+RC SETLIST 1.0.0 — INSTALLATION KIT / KIT DE INSTALAÇÃO
+========================================================
 
 START HERE / COMECE AQUI
 ------------------------
@@ -10,7 +10,31 @@ As notas da versão estão em en/RELEASE-NOTES.md e pt-BR/NOTAS-DA-VERSAO.md.
 
 MAIN FILE / ARQUIVO PRINCIPAL
 -----------------------------
-Ableton-RC-Setlist-0.7.0.ablx
+RC-Setlist-1.0.0.ablx
+
+UPDATING FROM 0.X / ATUALIZANDO DE 0.X
+--------------------------------------
+If you used the old "Ableton RC Setlist" 0.x build (any 0.4.x–1.0.0 version),
+run the data migration BEFORE opening Live for the first time with 1.0:
+
+  Windows: double-click Migrate-RC-Setlist-Data.cmd
+  macOS:   double-click "Migrate RC Setlist Data.command"
+
+It copies profiles, project-setlists, token and preferences into the new
+folder without touching the old one. It is idempotent and never overwrites.
+In Live, also remove the old "Ableton RC Setlist" extension from
+Settings › Extensions so the two do not coexist.
+
+Se você usou o antigo "Ableton RC Setlist" 0.x (qualquer 0.4.x–1.0.0),
+rode a migração de dados ANTES de abrir o Live pela primeira vez com a 1.0:
+
+  Windows: clique duas vezes em Migrate-RC-Setlist-Data.cmd
+  macOS:   clique duas vezes em "Migrate RC Setlist Data.command"
+
+Ela copia perfis, project-setlists, token e preferências para a pasta
+nova sem mexer na antiga. É idempotente e nunca sobrescreve. No Live,
+remova também a extensão antiga "Ableton RC Setlist" em Configurações ›
+Extensões para que as duas não coexistam.
 
 REQUIREMENTS / REQUISITOS
 -------------------------

@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>NOTAS-DA-VERSAO-0.5.1 — RC Setlist</title>
+    <style>
+      body {
+        font:
+          16px/1.55 system-ui,
+          sans-serif;
+        max-width: 920px;
+        margin: 2rem auto;
+        padding: 0 1rem;
+        color: #f2f2f2;
+        background: #0e0e0e;
+      }
+      h1,
+      h2,
+      h3,
+      h4 {
+        line-height: 1.25;
+      }
+      h1 {
+        font-size: 2.2rem;
+        margin-top: 0;
+      }
+      h2 {
+        margin-top: 2rem;
+        padding-top: 1rem;
+        border-top: 1px solid #333;
+      }
+      h3 {
+        margin-top: 1.5rem;
+      }
+      code {
+        font:
+          0.92em ui-monospace,
+          Consolas,
+          monospace;
+        background: #1a1a1a;
+        padding: 0.1em 0.35em;
+        border-radius: 0;
+      }
+      pre {
+        background: #1a1a1a;
+        padding: 0.8rem 1rem;
+        overflow-x: auto;
+        border: 1px solid #333;
+      }
+      pre code {
+        background: transparent;
+        padding: 0;
+      }
+      a {
+        color: #ffa133;
+      }
+      ul,
+      ol {
+        padding-left: 1.2em;
+      }
+      blockquote {
+        border-left: 4px solid #ffa133;
+        margin: 1em 0;
+        padding: 0.5em 1em;
+        color: #a0a0a0;
+      }
+      .crumbs {
+        font-size: 0.85em;
+        color: #a0a0a0;
+        margin-bottom: 1rem;
+      }
+      .crumbs a {
+        color: #a0a0a0;
+        text-decoration: none;
+      }
+      .crumbs a:hover {
+        color: #f2f2f2;
+      }
+      .source {
+        font-size: 0.78em;
+        color: #a0a0a0;
+        margin-top: 2rem;
+        border-top: 1px solid #333;
+        padding-top: 0.5rem;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="crumbs">
+      <a href="https://ntworm.github.io/rc-setlist/">RC Setlist</a> · <a href="./">Docs</a>
+    </div>
+    <p>﻿# Notas da Versão 0.5.1</p>
+    <p>
+      O RC Setlist 0.5.1 chegou! Esta versão traz melhorias significativas de usabilidade,
+      particularmente nos controles de transporte do palco, além de correções cruciais de bugs para
+      garantir a máxima confiabilidade da performance ao vivo.
+    </p>
+    <h2 id="novidades">Novidades</h2>
+    <ul>
+      <li>
+        <strong>Suporte a Keyboard Mapping</strong>: Agora você pode mapear teclas (como o Numpad ou
+        alfanuméricas) para os controles de transporte, tornando as mudanças de música e navegação
+        muito mais seguras e fáceis sem depender de toque na tela ou mouse.
+      </li>
+      <li>
+        <strong>Toggle de Count-in Pre-roll</strong>: Você agora pode ativar ou desativar o count-in
+        de pre-roll de 1 compasso diretamente pelo painel Stage Control. Isso permite iniciar o
+        playback sem count-in quando a banda precisar.
+      </li>
+      <li>
+        <strong>Melhorias de &quot;Hold-to-Select&quot; no Mobile</strong>: A navegação pelo
+        transporte em aparelhos mobile agora requer um gesto de &quot;hold&quot; (pressionar e
+        segurar) para saltos seguros entre as músicas, prevenindo toques acidentais durante o show.
+        O threshold foi cuidadosamente balanceado.
+      </li>
+      <li>
+        <strong>Edição de Seção via Double-Click</strong>: Agora você pode fazer um clique duplo
+        para editar as tags da seção diretamente da visualização Setlist no desktop.
+      </li>
+    </ul>
+    <h2 id="corre-es-de-bugs">Correções de Bugs</h2>
+    <ul>
+      <li>
+        <strong>Relógio Desacoplado (Decoupled Show Clock)</strong>: O relógio geral do show e o
+        tempo decorrido da música foram devidamente desacoplados da automação de BPM do Live,
+        garantindo que o seu timecode não sofra saltos repentinos quando o tempo muda.
+      </li>
+      <li>
+        <strong>Rastreamento de Estado Seguro</strong>: Foram resolvidas corridas de sincronização
+        (race conditions) em que o servidor e a UI podiam discordar temporariamente sobre a seção
+        atual sendo reproduzida.
+      </li>
+      <li>
+        <strong>Estabilidade</strong>: Refinamentos nas observações de pre-roll, correção nos
+        limites de WebSocket e estabilização da interface contra cliques sucessivos e rápidos.
+      </li>
+    </ul>
+    <p>
+      _Para detalhes completos de migração da versão 0.4.x, consulte o
+      <a href="../INSTALL.md">Guia de Instalação</a>._
+    </p>
+    <p>
+      _Read these notes in English: <a href="../RELEASE-NOTES-0.5.1.md">RELEASE-NOTES-0.5.1.md</a>._
+    </p>
+    <div class="source">
+      Rendered from <code>docs\pt-BR\NOTAS-DA-VERSAO-0.5.1.md</code> on 2026-09-17.
+    </div>
+  </body>
+</html>

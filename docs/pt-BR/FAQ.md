@@ -1,6 +1,6 @@
 # Perguntas frequentes
 
-## O Ableton RC Setlist é open source?
+## O RC Setlist é open source?
 
 Ele é source-available sob a PolyForm Noncommercial 1.0.0. Uso, modificação e
 redistribuição não comerciais são permitidos conforme a licença; uso comercial
@@ -13,7 +13,7 @@ Não. Instale o `.ablx` da release. O Node.js 24.16.0 serve apenas para desenvol
 
 ## O que é o RC Bridge, e ainda preciso do AbletonOSC?
 
-O RC Bridge é o Remote Script do Live com que o Ableton RC Setlist conversa
+O RC Bridge é o Remote Script do Live com que o RC Setlist conversa
 para transporte e operações do Live Object Model. É um fork do AbletonOSC
 (<https://github.com/ideoforms/AbletonOSC>, MIT) que responde a cada cliente
 na porta dele — assim nunca disputa a porta de resposta com outra extensão RC
@@ -33,24 +33,24 @@ uma vez.
 ## Onde as letras ficam salvas?
 
 No diretório de armazenamento de Ableton Extensions, dentro do perfil ativo do
-Ableton RC Setlist. Use o editor interno em vez de editar os arquivos diretamente.
+RC Setlist. Use o editor interno em vez de editar os arquivos diretamente.
 
 ## Posso usar minhas letras?
 
 Somente se você for o autor ou tiver autorização. O repositório e o kit de
-demonstração usam texto fictício; o Ableton RC Setlist não fornece letras comerciais.
+demonstração usam texto fictício; o RC Setlist não fornece letras comerciais.
 
 ## O macOS funciona?
 
 O código foi projetado para ser portátil, mas a versão 0.5.0 mantém o macOS como
 experimental até existir uma matriz completa em hardware real.
 
-## Posso expor o Ableton RC Setlist na internet?
+## Posso expor o RC Setlist na internet?
 
 Não. Ele foi projetado para uma rede local confiável. Nunca exponha a porta
 `4444` diretamente à internet.
 
-## Posso vender o Ableton RC Setlist ou uma modificação?
+## Posso vender o RC Setlist ou uma modificação?
 
 Não sob a PolyForm Noncommercial 1.0.0. Leia a [licença](../../LICENSE) e procure
 orientação jurídica própria para um caso específico.
@@ -62,6 +62,26 @@ Se o seu projeto no Ableton Live possui automações de andamento desenhadas na 
 Sem tags declaradas, o RC Setlist calcula a duração usando o andamento corrente do Live como estimativa uniforme e exibe a etiqueta `EST.`. Em um setlist real de 21 faixas com andamentos entre 93 e 166 BPM, essa estimativa gerou uma distorção de 16:59 (95:40 contra os 78:41 reais).
 
 Para obter durações exatas, adicione `[bpm N]` no nome do localizador de cada música (ex.: `Nome da Música [bpm 120]`). O RC Setlist passará a usar o modo de confiança declarada com cálculo trecho a trecho e removerá o aviso `EST.`.
+
+## Por que não ouço a contagem?
+
+Por padrão, a contagem de 1 compasso é apenas visual (mostrando `1 2 3 4` no botão Play no
+navegador), para que o celular do operador não apite pelo alto-falante no palco. Se você
+quiser ouvir o click, ative-o por aparelho definindo `rc-setlist.count-in-audio` como `true`
+no `localStorage` do navegador (ex.: via console de desenvolvedor num notebook que alimenta um
+retorno de ouvido). O menu "Count-In" embutido no Live não se aplica ao Play, apenas à gravação.
+
+## Como atualizo da versão 0.x?
+
+O produto foi renomeado de **Ableton RC Setlist** para **RC Setlist** na 1.0.
+Rode o `Migrate-RC-Setlist-Data.cmd` (Windows) ou
+`Migrate RC Setlist Data.command` (macOS) do kit **uma vez, antes de abrir o
+Live** com a 1.0. Ele copia perfis, project-setlists, token e preferências para
+a pasta nova sem mexer na antiga e nunca sobrescreve um arquivo que já existe
+no destino. Em seguida, no Live, abra **Configurações > Extensões** e remova a
+entrada antiga **Ableton RC Setlist**, para que as duas extensões não coexistam
+na mesma máquina. Pular a migração ou deixar as duas instaladas faz os perfis
+antigos ficarem invisíveis para a extensão nova.
 
 ## Automação de tempo desenhada no Live
 

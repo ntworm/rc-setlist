@@ -42,17 +42,22 @@ test('preRollBarBeats uses numerator and denominator in quarter-note beats', () 
 test('calculateSetlistProgress reports first-song show and song elapsed time', () => {
   const { calculateSetlistProgress } = loadRuntime();
 
-  assert.deepEqual(plain(calculateSetlistProgress({
-    songs: [{ durationSeconds: 120 }, { durationSeconds: 180 }],
-    activeSongIndex: 0,
-    totalDurationSeconds: 300,
-    songElapsedSeconds: 30,
-  })), {
-    showElapsedSeconds: 30,
-    showTotalSeconds: 300,
-    songElapsedSeconds: 30,
-    songDurationSeconds: 120,
-  });
+  assert.deepEqual(
+    plain(
+      calculateSetlistProgress({
+        songs: [{ durationSeconds: 120 }, { durationSeconds: 180 }],
+        activeSongIndex: 0,
+        totalDurationSeconds: 300,
+        songElapsedSeconds: 30,
+      }),
+    ),
+    {
+      showElapsedSeconds: 30,
+      showTotalSeconds: 300,
+      songElapsedSeconds: 30,
+      songDurationSeconds: 120,
+    },
+  );
 });
 
 test('calculateSetlistProgress uses the visible song order instead of locator time', () => {
@@ -62,12 +67,15 @@ test('calculateSetlistProgress uses the visible song order instead of locator ti
     { title: 'JULIA', time: 840, durationSeconds: 237 },
   ];
 
-  assert.equal(calculateSetlistProgress({
-    songs,
-    activeSongIndex: 1,
-    totalDurationSeconds: 343,
-    songElapsedSeconds: 0,
-  }).showElapsedSeconds, 106);
+  assert.equal(
+    calculateSetlistProgress({
+      songs,
+      activeSongIndex: 1,
+      totalDurationSeconds: 343,
+      songElapsedSeconds: 0,
+    }).showElapsedSeconds,
+    106,
+  );
 });
 
 test('calculateSetlistProgress recomputes the offset when visible songs are reordered', () => {
@@ -75,18 +83,24 @@ test('calculateSetlistProgress recomputes the offset when visible songs are reor
   const intro = { title: 'INTRO', time: 0, durationSeconds: 106 };
   const julia = { title: 'JULIA', time: 840, durationSeconds: 237 };
 
-  assert.equal(calculateSetlistProgress({
-    songs: [intro, julia],
-    activeSongIndex: 1,
-    totalDurationSeconds: 343,
-    songElapsedSeconds: 10,
-  }).showElapsedSeconds, 116);
-  assert.equal(calculateSetlistProgress({
-    songs: [julia, intro],
-    activeSongIndex: 1,
-    totalDurationSeconds: 343,
-    songElapsedSeconds: 10,
-  }).showElapsedSeconds, 247);
+  assert.equal(
+    calculateSetlistProgress({
+      songs: [intro, julia],
+      activeSongIndex: 1,
+      totalDurationSeconds: 343,
+      songElapsedSeconds: 10,
+    }).showElapsedSeconds,
+    116,
+  );
+  assert.equal(
+    calculateSetlistProgress({
+      songs: [julia, intro],
+      activeSongIndex: 1,
+      totalDurationSeconds: 343,
+      songElapsedSeconds: 10,
+    }).showElapsedSeconds,
+    247,
+  );
 });
 
 test('calculateSetlistProgress clamps song and show elapsed time to known durations', () => {
@@ -130,35 +144,48 @@ test('calculateSetlistProgress keeps calculable song time while unknown duration
 test('calculateSetlistProgress preserves a known total without an active displayed song', () => {
   const { calculateSetlistProgress } = loadRuntime();
 
-  assert.deepEqual(plain(calculateSetlistProgress({
-    songs: [{ durationSeconds: 100 }],
-    activeSongIndex: -1,
-    totalDurationSeconds: 100,
-    songElapsedSeconds: 30,
-  })), {
-    showElapsedSeconds: null,
-    showTotalSeconds: 100,
-    songElapsedSeconds: null,
-    songDurationSeconds: null,
-  });
-  assert.deepEqual(plain(calculateSetlistProgress({
-    songs: null,
-    activeSongIndex: -1,
-    totalDurationSeconds: 180,
-    songElapsedSeconds: 30,
-  })), {
-    showElapsedSeconds: null,
-    showTotalSeconds: 180,
-    songElapsedSeconds: null,
-    songDurationSeconds: null,
-  });
+  assert.deepEqual(
+    plain(
+      calculateSetlistProgress({
+        songs: [{ durationSeconds: 100 }],
+        activeSongIndex: -1,
+        totalDurationSeconds: 100,
+        songElapsedSeconds: 30,
+      }),
+    ),
+    {
+      showElapsedSeconds: null,
+      showTotalSeconds: 100,
+      songElapsedSeconds: null,
+      songDurationSeconds: null,
+    },
+  );
+  assert.deepEqual(
+    plain(
+      calculateSetlistProgress({
+        songs: null,
+        activeSongIndex: -1,
+        totalDurationSeconds: 180,
+        songElapsedSeconds: 30,
+      }),
+    ),
+    {
+      showElapsedSeconds: null,
+      showTotalSeconds: 180,
+      songElapsedSeconds: null,
+      songDurationSeconds: null,
+    },
+  );
 });
 
 test('touch reorder grip is discoverable without becoming a second button', () => {
   const setlistSource = fs.readFileSync(path.join(here, 'setlist.js'), 'utf8');
   const setlistCss = fs.readFileSync(path.join(here, 'setlist.css'), 'utf8');
 
-  assert.match(setlistSource, /class="song-reorder-handle"[^>]*role="img"[^>]*aria-label="Reorder song"[^>]*title="Reorder song"/);
+  assert.match(
+    setlistSource,
+    /class="song-reorder-handle"[^>]*role="img"[^>]*aria-label="Reorder song"[^>]*title="Reorder song"/,
+  );
   assert.doesNotMatch(setlistSource, /song-reorder-handle"[^>]*aria-hidden/);
   assert.match(setlistCss, /\.song-reorder-handle\s*\{[\s\S]*?touch-action:\s*none/);
   assert.match(setlistCss, /\.song-reorder-handle\s*\{[\s\S]*?min-height:\s*56px/);
@@ -167,13 +194,34 @@ test('touch reorder grip is discoverable without becoming a second button', () =
 test('resolveNavigationTarget advances, restarts, and crosses song boundaries', () => {
   const { resolveNavigationTarget } = loadRuntime();
 
-  assert.deepEqual(plain(resolveNavigationTarget(state(0, -1), 'next')), { songIndex: 0, sectionIndex: 0 });
-  assert.deepEqual(plain(resolveNavigationTarget(state(0, 0), 'next')), { songIndex: 0, sectionIndex: 1 });
-  assert.deepEqual(plain(resolveNavigationTarget(state(0, 1), 'next')), { songIndex: 1, sectionIndex: null });
-  assert.deepEqual(plain(resolveNavigationTarget(state(1, -1), 'next')), { songIndex: 2, sectionIndex: 0 });
-  assert.deepEqual(plain(resolveNavigationTarget(state(2, 0), 'previous')), { songIndex: 2, sectionIndex: null });
-  assert.deepEqual(plain(resolveNavigationTarget(state(2, -1), 'previous')), { songIndex: 1, sectionIndex: null });
-  assert.deepEqual(plain(resolveNavigationTarget(state(1, -1), 'previous')), { songIndex: 0, sectionIndex: 1 });
+  assert.deepEqual(plain(resolveNavigationTarget(state(0, -1), 'next')), {
+    songIndex: 0,
+    sectionIndex: 0,
+  });
+  assert.deepEqual(plain(resolveNavigationTarget(state(0, 0), 'next')), {
+    songIndex: 0,
+    sectionIndex: 1,
+  });
+  assert.deepEqual(plain(resolveNavigationTarget(state(0, 1), 'next')), {
+    songIndex: 1,
+    sectionIndex: null,
+  });
+  assert.deepEqual(plain(resolveNavigationTarget(state(1, -1), 'next')), {
+    songIndex: 2,
+    sectionIndex: 0,
+  });
+  assert.deepEqual(plain(resolveNavigationTarget(state(2, 0), 'previous')), {
+    songIndex: 2,
+    sectionIndex: null,
+  });
+  assert.deepEqual(plain(resolveNavigationTarget(state(2, -1), 'previous')), {
+    songIndex: 1,
+    sectionIndex: null,
+  });
+  assert.deepEqual(plain(resolveNavigationTarget(state(1, -1), 'previous')), {
+    songIndex: 0,
+    sectionIndex: 1,
+  });
 });
 
 test('resolveNavigationTarget disables absolute boundaries and invalid state', () => {
@@ -181,7 +229,10 @@ test('resolveNavigationTarget disables absolute boundaries and invalid state', (
 
   assert.equal(resolveNavigationTarget(state(0, -1), 'previous'), null);
   assert.equal(resolveNavigationTarget(state(2, 1), 'next'), null);
-  assert.equal(resolveNavigationTarget({ songs: [], activeSongIndex: -1, activeSectionIndex: -1 }, 'next'), null);
+  assert.equal(
+    resolveNavigationTarget({ songs: [], activeSongIndex: -1, activeSectionIndex: -1 }, 'next'),
+    null,
+  );
   assert.equal(resolveNavigationTarget(null, 'next'), null);
   assert.throws(() => resolveNavigationTarget(state(0, 0), 'sideways'), /direction/i);
 });
@@ -239,22 +290,40 @@ test('resolveNavigationTarget treats a valid adjacent song without sections as a
   const value = state(0, 1);
   value.songs[1] = { title: 'B' };
 
-  assert.deepEqual(plain(resolveNavigationTarget(value, 'next')), { songIndex: 1, sectionIndex: null });
+  assert.deepEqual(plain(resolveNavigationTarget(value, 'next')), {
+    songIndex: 1,
+    sectionIndex: null,
+  });
 });
 
 test('resolveNavigationTarget preserves valid within-song previous navigation', () => {
   const { resolveNavigationTarget } = loadRuntime();
 
-  assert.deepEqual(plain(resolveNavigationTarget(state(0, 1), 'previous')), { songIndex: 0, sectionIndex: 0 });
+  assert.deepEqual(plain(resolveNavigationTarget(state(0, 1), 'previous')), {
+    songIndex: 0,
+    sectionIndex: 0,
+  });
 });
 
 test('resolveNavigationTarget resolves explicit song navigation to adjacent song starts', () => {
   const { resolveNavigationTarget } = loadRuntime();
 
-  assert.deepEqual(plain(resolveNavigationTarget(state(0, 0), 'next', 'song')), { songIndex: 1, sectionIndex: null });
-  assert.deepEqual(plain(resolveNavigationTarget(state(1, -1), 'next', 'song')), { songIndex: 2, sectionIndex: null });
-  assert.deepEqual(plain(resolveNavigationTarget(state(2, 1), 'previous', 'song')), { songIndex: 1, sectionIndex: null });
-  assert.deepEqual(plain(resolveNavigationTarget(state(1, -1), 'previous', 'song')), { songIndex: 0, sectionIndex: null });
+  assert.deepEqual(plain(resolveNavigationTarget(state(0, 0), 'next', 'song')), {
+    songIndex: 1,
+    sectionIndex: null,
+  });
+  assert.deepEqual(plain(resolveNavigationTarget(state(1, -1), 'next', 'song')), {
+    songIndex: 2,
+    sectionIndex: null,
+  });
+  assert.deepEqual(plain(resolveNavigationTarget(state(2, 1), 'previous', 'song')), {
+    songIndex: 1,
+    sectionIndex: null,
+  });
+  assert.deepEqual(plain(resolveNavigationTarget(state(1, -1), 'previous', 'song')), {
+    songIndex: 0,
+    sectionIndex: null,
+  });
 });
 
 test('resolveNavigationTarget disables explicit song navigation at absolute boundaries', () => {
@@ -292,8 +361,12 @@ class FakeTarget {
       target: this,
       defaultPrevented: false,
       immediatePropagationStopped: false,
-      preventDefault() { this.defaultPrevented = true; },
-      stopImmediatePropagation() { this.immediatePropagationStopped = true; },
+      preventDefault() {
+        this.defaultPrevented = true;
+      },
+      stopImmediatePropagation() {
+        this.immediatePropagationStopped = true;
+      },
       ...event,
     };
     for (const listener of this.listeners.get(type) || []) {
@@ -365,8 +438,12 @@ function holdHarness(options = {}) {
     controller,
     documentRef,
     navigations,
-    setAllowed: (value) => { allowed = value; },
-    setState: (value) => { currentState = value; },
+    setAllowed: (value) => {
+      allowed = value;
+    },
+    setState: (value) => {
+      currentState = value;
+    },
     windowRef,
   };
 }
@@ -394,17 +471,23 @@ function targetHoldHarness() {
     container,
     resolveTarget: (node) => node?.resolvedTarget || null,
     canActivate: (target) => allowed && target !== active,
-    onActivate: (target) => activations.push({
-      songIndex: target.songIndex,
-      sectionIndex: target.sectionIndex,
-    }),
+    onActivate: (target) =>
+      activations.push({
+        songIndex: target.songIndex,
+        sectionIndex: target.sectionIndex,
+      }),
     canReorder: (target) => reorderAllowed && target.sectionIndex === null,
     onReorderStart: (target) => reorderEvents.push({ type: 'start', songIndex: target.songIndex }),
-    onReorderMove: (target, event) => reorderEvents.push({ type: 'move', songIndex: target.songIndex, clientY: event.clientY }),
-    onReorderCommit: (target) => reorderEvents.push({ type: 'commit', songIndex: target.songIndex }),
-    onReorderCancel: (target) => reorderEvents.push({ type: 'cancel', songIndex: target.songIndex }),
-    onDirectGestureStart: (target) => directGestures.push({ type: 'start', songIndex: target.songIndex }),
-    onDirectGestureEnd: (target) => directGestures.push({ type: 'end', songIndex: target.songIndex }),
+    onReorderMove: (target, event) =>
+      reorderEvents.push({ type: 'move', songIndex: target.songIndex, clientY: event.clientY }),
+    onReorderCommit: (target) =>
+      reorderEvents.push({ type: 'commit', songIndex: target.songIndex }),
+    onReorderCancel: (target) =>
+      reorderEvents.push({ type: 'cancel', songIndex: target.songIndex }),
+    onDirectGestureStart: (target) =>
+      directGestures.push({ type: 'start', songIndex: target.songIndex }),
+    onDirectGestureEnd: (target) =>
+      directGestures.push({ type: 'end', songIndex: target.songIndex }),
     targetKey: (target) => `${target.songIndex}:${target.sectionIndex ?? 'song'}`,
     documentRef,
     directGestures,
@@ -423,9 +506,15 @@ function targetHoldHarness() {
     reorderEvents,
     sectionElement,
     sectionTarget,
-    setActive: (target) => { active = target; },
-    setAllowed: (value) => { allowed = value; },
-    setReorderAllowed: (value) => { reorderAllowed = value; },
+    setActive: (target) => {
+      active = target;
+    },
+    setAllowed: (value) => {
+      allowed = value;
+    },
+    setReorderAllowed: (value) => {
+      reorderAllowed = value;
+    },
     songElement,
     songTarget,
     windowRef,
@@ -460,15 +549,16 @@ test('direct target hold arms at 500 ms, activates once on release, and suppress
 
 test('direct target hold cancels short touch and pre-hold movement above 12 px', () => {
   const harness = targetHoldHarness();
-  const begin = (pointerId) => harness.container.dispatch('pointerdown', {
-    target: harness.sectionElement,
-    pointerType: 'touch',
-    pointerId,
-    isPrimary: true,
-    button: 0,
-    clientX: 10,
-    clientY: 10,
-  });
+  const begin = (pointerId) =>
+    harness.container.dispatch('pointerdown', {
+      target: harness.sectionElement,
+      pointerType: 'touch',
+      pointerId,
+      isPrimary: true,
+      button: 0,
+      clientX: 10,
+      clientY: 10,
+    });
 
   begin(1);
   harness.clock.tick(100);
@@ -493,7 +583,13 @@ test('direct target hold cancels short touch and pre-hold movement above 12 px',
 test('armed song movement starts and commits one reorder without activation', () => {
   const harness = targetHoldHarness();
   harness.container.dispatch('pointerdown', {
-    target: harness.songElement, pointerType: 'touch', pointerId: 8, isPrimary: true, button: 0, clientX: 10, clientY: 10,
+    target: harness.songElement,
+    pointerType: 'touch',
+    pointerId: 8,
+    isPrimary: true,
+    button: 0,
+    clientX: 10,
+    clientY: 10,
   });
   harness.clock.tick(500);
   harness.windowRef.dispatch('pointermove', { pointerId: 8, clientX: 10, clientY: 23 });
@@ -512,7 +608,13 @@ test('armed song movement starts and commits one reorder without activation', ()
 test('armed section movement cancels safely without activation or reorder', () => {
   const harness = targetHoldHarness();
   harness.container.dispatch('pointerdown', {
-    target: harness.sectionElement, pointerType: 'pen', pointerId: 9, isPrimary: true, button: 0, clientX: 10, clientY: 10,
+    target: harness.sectionElement,
+    pointerType: 'pen',
+    pointerId: 9,
+    isPrimary: true,
+    button: 0,
+    clientX: 10,
+    clientY: 10,
   });
   harness.clock.tick(500);
   harness.windowRef.dispatch('pointermove', { pointerId: 9, clientX: 10, clientY: 23 });
@@ -525,7 +627,13 @@ test('armed section movement cancels safely without activation or reorder', () =
 test('authority loss cancels an active direct-target reorder and clears its classes', () => {
   const harness = targetHoldHarness();
   harness.container.dispatch('pointerdown', {
-    target: harness.songElement, pointerType: 'touch', pointerId: 10, isPrimary: true, button: 0, clientX: 10, clientY: 10,
+    target: harness.songElement,
+    pointerType: 'touch',
+    pointerId: 10,
+    isPrimary: true,
+    button: 0,
+    clientX: 10,
+    clientY: 10,
   });
   harness.clock.tick(500);
   harness.windowRef.dispatch('pointermove', { pointerId: 10, clientX: 10, clientY: 23 });
@@ -550,9 +658,18 @@ test('touch fallback survives the native pointer cancellation after arming and p
   const harness = targetHoldHarness();
   const touch = (clientX, clientY) => ({ identifier: 31, clientX, clientY });
   harness.container.dispatch('pointerdown', {
-    target: harness.songElement, pointerType: 'touch', pointerId: 31, isPrimary: true, button: 0, clientX: 10, clientY: 10,
+    target: harness.songElement,
+    pointerType: 'touch',
+    pointerId: 31,
+    isPrimary: true,
+    button: 0,
+    clientX: 10,
+    clientY: 10,
   });
-  harness.container.dispatch('touchstart', { target: harness.songElement, changedTouches: [touch(10, 10)] });
+  harness.container.dispatch('touchstart', {
+    target: harness.songElement,
+    changedTouches: [touch(10, 10)],
+  });
   harness.clock.tick(500);
   harness.windowRef.dispatch('pointercancel', { pointerId: 31 });
   const move = harness.container.dispatch('touchmove', { changedTouches: [touch(10, 24)] });
@@ -571,7 +688,13 @@ test('direct gesture cleanup callback fires once for pointer leave, visibility, 
   for (const cancellation of ['pointerleave', 'visibilitychange', 'destroy']) {
     const harness = targetHoldHarness();
     harness.container.dispatch('pointerdown', {
-      target: harness.songElement, pointerType: 'touch', pointerId: 32, isPrimary: true, button: 0, clientX: 10, clientY: 10,
+      target: harness.songElement,
+      pointerType: 'touch',
+      pointerId: 32,
+      isPrimary: true,
+      button: 0,
+      clientX: 10,
+      clientY: 10,
     });
     if (cancellation === 'visibilitychange') {
       harness.documentRef.visibilityState = 'hidden';
@@ -581,10 +704,14 @@ test('direct gesture cleanup callback fires once for pointer leave, visibility, 
     } else {
       harness.windowRef.dispatch(cancellation, { pointerId: 32 });
     }
-    assert.deepEqual(harness.directGestures, [
-      { type: 'start', songIndex: 1 },
-      { type: 'end', songIndex: 1 },
-    ], cancellation);
+    assert.deepEqual(
+      harness.directGestures,
+      [
+        { type: 'start', songIndex: 1 },
+        { type: 'end', songIndex: 1 },
+      ],
+      cancellation,
+    );
   }
 });
 
@@ -593,10 +720,19 @@ test('render cancellation preserves logical click suppression across a replaced 
   const replacement = new FakeTarget();
   replacement.resolvedTarget = { element: replacement, songIndex: 1, sectionIndex: 2 };
   harness.container.dispatch('pointerdown', {
-    target: harness.sectionElement, pointerType: 'touch', pointerId: 33, isPrimary: true, button: 0, clientX: 10, clientY: 10,
+    target: harness.sectionElement,
+    pointerType: 'touch',
+    pointerId: 33,
+    isPrimary: true,
+    button: 0,
+    clientX: 10,
+    clientY: 10,
   });
   harness.controller.cancelForRender();
-  const compatibilityClick = harness.container.dispatch('click', { target: replacement, detail: 1 });
+  const compatibilityClick = harness.container.dispatch('click', {
+    target: replacement,
+    detail: 1,
+  });
   assert.equal(compatibilityClick.defaultPrevented, true);
   assert.deepEqual(harness.activations, []);
   assert.deepEqual(harness.directGestures, [
@@ -612,7 +748,13 @@ test('render cancellation preserves logical click suppression across a replaced 
 test('render cancellation of an armed hold sends neither activation nor reorder', () => {
   const harness = targetHoldHarness();
   harness.container.dispatch('pointerdown', {
-    target: harness.songElement, pointerType: 'touch', pointerId: 34, isPrimary: true, button: 0, clientX: 10, clientY: 10,
+    target: harness.songElement,
+    pointerType: 'touch',
+    pointerId: 34,
+    isPrimary: true,
+    button: 0,
+    clientX: 10,
+    clientY: 10,
   });
   harness.clock.tick(500);
   harness.controller.cancelForRender();
@@ -626,7 +768,12 @@ test('every new pointerdown cancels an earlier direct-target hold', () => {
     {
       targetName: 'non-primary touch',
       event: {
-        pointerType: 'touch', pointerId: 2, isPrimary: false, button: 0, clientX: 10, clientY: 10,
+        pointerType: 'touch',
+        pointerId: 2,
+        isPrimary: false,
+        button: 0,
+        clientX: 10,
+        clientY: 10,
       },
     },
     {
@@ -659,7 +806,11 @@ test('every new pointerdown cancels an earlier direct-target hold', () => {
     });
     harness.clock.tick(400);
     assert.deepEqual(harness.activations, [], nextPointer.targetName);
-    assert.equal(harness.songElement.classList.contains('is-touch-holding'), false, nextPointer.targetName);
+    assert.equal(
+      harness.songElement.classList.contains('is-touch-holding'),
+      false,
+      nextPointer.targetName,
+    );
   }
 });
 
@@ -728,7 +879,14 @@ test('direct target hold revalidates active/authority state and cleans lifecycle
   for (const type of ['pointerdown', 'click', 'contextmenu']) {
     assert.equal(harness.container.listeners.get(type)?.size || 0, 0, type);
   }
-  for (const type of ['pointermove', 'pointerup', 'pointercancel', 'pointerleave', 'lostpointercapture', 'blur']) {
+  for (const type of [
+    'pointermove',
+    'pointerup',
+    'pointercancel',
+    'pointerleave',
+    'lostpointercapture',
+    'blur',
+  ]) {
     assert.equal(harness.windowRef.listeners.get(type)?.size || 0, 0, type);
   }
 });
@@ -743,7 +901,9 @@ test('hold button cancels a short pointer press and fires once at 500 ms', () =>
   harness.button.dispatch('pointerdown', { button: 0, pointerId: 2 });
   harness.clock.tick(500);
   harness.button.dispatch('pointerup', { pointerId: 2 });
-  assert.deepEqual(plain(harness.navigations), [{ songIndex: 0, sectionIndex: 1, level: 'section' }]);
+  assert.deepEqual(plain(harness.navigations), [
+    { songIndex: 0, sectionIndex: 1, level: 'section' },
+  ]);
   assert.equal(harness.button.classList.contains('is-holding'), false);
 });
 
@@ -753,7 +913,9 @@ test('hold button resolves the latest state and cancels invalidation', () => {
   harness.setState(state(0, 1));
   harness.clock.tick(500);
   harness.button.dispatch('pointerup', { pointerId: 1 });
-  assert.deepEqual(plain(harness.navigations), [{ songIndex: 1, sectionIndex: null, level: 'section' }]);
+  assert.deepEqual(plain(harness.navigations), [
+    { songIndex: 1, sectionIndex: null, level: 'section' },
+  ]);
 
   harness.button.dispatch('pointerdown', { button: 0, pointerId: 2 });
   harness.setAllowed(false);
@@ -801,7 +963,9 @@ test('hold button fires after holding Space for 500 ms', () => {
   harness.clock.tick(500);
   harness.button.dispatch('keyup', { key: ' ' });
 
-  assert.deepEqual(plain(harness.navigations), [{ songIndex: 0, sectionIndex: 1, level: 'section' }]);
+  assert.deepEqual(plain(harness.navigations), [
+    { songIndex: 0, sectionIndex: 1, level: 'section' },
+  ]);
 });
 
 test('hold button cancels keyboard navigation when the key is released early', () => {
@@ -987,11 +1151,17 @@ test('jump confirmation keeps old state authoritative until target observation',
   controller.pending({ songIndex: 0, sectionIndex: 1 });
   controller.executed({ songIndex: 0, sectionIndex: 1 });
   controller.observeState(state(0, 0));
-  assert.deepEqual(plain(controller.snapshot()), { phase: 'confirming', target: { songIndex: 0, sectionIndex: 1 } });
+  assert.deepEqual(plain(controller.snapshot()), {
+    phase: 'confirming',
+    target: { songIndex: 0, sectionIndex: 1 },
+  });
   controller.observeState(state(0, 1));
   assert.deepEqual(plain(controller.snapshot()), { phase: 'idle', target: null });
   assert.equal(timeouts.length, 0);
-  assert.equal(snapshots.some((snapshot) => snapshot.phase === 'confirming'), true);
+  assert.equal(
+    snapshots.some((snapshot) => snapshot.phase === 'confirming'),
+    true,
+  );
 });
 
 test('jump confirmation replaces targets and times out without inventing state', () => {
@@ -1040,7 +1210,10 @@ test('quantization confirmation keeps the pending target until observed', () => 
     displayValue: 7,
     pending: null,
   });
-  assert.equal(snapshots.some((snapshot) => snapshot.pending?.commandId === 'q-1'), true);
+  assert.equal(
+    snapshots.some((snapshot) => snapshot.pending?.commandId === 'q-1'),
+    true,
+  );
 });
 
 test('quantization confirmation replaces requests and restores confirmed state on failure or timeout', () => {
@@ -1067,7 +1240,10 @@ test('quantization confirmation replaces requests and restores confirmed state o
   assert.equal(controller.snapshot().displayValue, 11);
   clock.tick(1);
   assert.equal(controller.snapshot().displayValue, 4);
-  assert.deepEqual(failures.map((entry) => entry.commandId), ['q-new', 'q-timeout']);
+  assert.deepEqual(
+    failures.map((entry) => entry.commandId),
+    ['q-new', 'q-timeout'],
+  );
 });
 
 test('bar display stabilizer clamps sample jitter but accepts real repositioning', () => {
@@ -1118,7 +1294,9 @@ test('section hold fires once after 500 ms even when held past 1000 ms', () => {
   harness.button.dispatch('pointerdown', { button: 0, isPrimary: true, pointerId: 1 });
   harness.clock.tick(1000);
 
-  assert.deepEqual(plain(harness.navigations), [{ songIndex: 0, sectionIndex: 1, level: 'section' }]);
+  assert.deepEqual(plain(harness.navigations), [
+    { songIndex: 0, sectionIndex: 1, level: 'section' },
+  ]);
   assert.equal(harness.clock.timers.size, 0);
   assert.equal(harness.button.classList.contains('is-holding-section-ready'), true);
 });
@@ -1131,7 +1309,9 @@ test('song hold fires once after 500 ms at the adjacent song start', () => {
   assert.deepEqual(plain(harness.navigations), []);
   harness.clock.tick(1);
 
-  assert.deepEqual(plain(harness.navigations), [{ songIndex: 1, sectionIndex: null, level: 'song' }]);
+  assert.deepEqual(plain(harness.navigations), [
+    { songIndex: 1, sectionIndex: null, level: 'song' },
+  ]);
   harness.clock.tick(500);
   assert.equal(harness.navigations.length, 1);
   assert.equal(harness.clock.timers.size, 0);
@@ -1216,4 +1396,3 @@ test('songElapsedSecondsFromBeats calculates piecewise elapsed time across secti
   // In Part 2: 16 beats at 120 BPM (8s) + 4 beats at 60 BPM (4s) = 12 seconds
   assert.equal(songElapsedSecondsFromBeats(20, song, 120), 12);
 });
-

@@ -4,7 +4,7 @@ import test from 'node:test';
 import { McpFallbackSync } from '../src/integration/mcp-fallback-sync.ts';
 import { SetlistManager } from '../src/core/setlist-manager.ts';
 import { EventEmitter } from 'node:events';
-import { bridgeState } from '../src/core/bridge-state.ts';
+import { bridgeState } from '../src/runtime/bridge-state.ts';
 import { registerOscListeners } from '../src/osc/registration.ts';
 
 function deferred() {
@@ -96,7 +96,8 @@ test('MCP metadata snapshots its request token and continues polling while autho
   const client = {
     async call(type) {
       calls.push(type);
-      if (type === 'get_session_info') return { current_song_time: 0, is_playing: false, tempo: 120 };
+      if (type === 'get_session_info')
+        return { current_song_time: 0, is_playing: false, tempo: 120 };
       if (type === 'get_song_length') return { song_length: 128 };
       if (type === 'get_project_metadata') {
         return { song_name: 'Show', file_path: 'C:\\Shows\\Show\\Show.als' };
@@ -132,7 +133,8 @@ test('MCP metadata callback receives the token captured before a deferred respon
   const sync = new McpFallbackSync({
     client: {
       call(type) {
-        if (type === 'get_session_info') return Promise.resolve({ current_song_time: 0, is_playing: false, tempo: 120 });
+        if (type === 'get_session_info')
+          return Promise.resolve({ current_song_time: 0, is_playing: false, tempo: 120 });
         if (type === 'get_song_length') return Promise.resolve({ song_length: 128 });
         if (type === 'get_project_metadata') return response.promise;
         throw new Error(`unexpected ${type}`);
@@ -142,7 +144,9 @@ test('MCP metadata callback receives the token captured before a deferred respon
     onSessionInfo: () => {},
     onSongLength: () => {},
     getProjectMetadataRequestToken: () => requestToken,
-    onProjectMetadata: (_metadata, token) => { receivedToken = token; },
+    onProjectMetadata: (_metadata, token) => {
+      receivedToken = token;
+    },
   });
 
   const tick = sync.tick();

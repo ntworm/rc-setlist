@@ -5,15 +5,15 @@
 
   function validMidiMapping(value) {
     return Boolean(
-      value
-      && typeof value === 'object'
-      && (value.type === 'note' || value.type === 'cc')
-      && Number.isInteger(value.channel)
-      && value.channel >= 1
-      && value.channel <= 16
-      && Number.isInteger(value.number)
-      && value.number >= 0
-      && value.number <= 127
+      value &&
+      typeof value === 'object' &&
+      (value.type === 'note' || value.type === 'cc') &&
+      Number.isInteger(value.channel) &&
+      value.channel >= 1 &&
+      value.channel <= 16 &&
+      Number.isInteger(value.number) &&
+      value.number >= 0 &&
+      value.number <= 127,
     );
   }
 
@@ -41,6 +41,7 @@
     const historyRef = options.historyRef || globalScope.history;
     const storageRef = options.storageRef || globalScope.localStorage;
     const storageKey = options.storageKey || 'setlist_token';
+    // eslint-disable-next-line no-useless-assignment -- initial value used by the catch branch when storage access throws.
     let storedToken = '';
     try {
       storedToken = storageRef?.getItem?.(storageKey) || '';
@@ -57,10 +58,11 @@
 
     const hadTokenParameter = url.searchParams.has('token');
     const candidate = url.searchParams.get('token');
-    const validCandidate = typeof candidate === 'string'
-      && candidate.length > 0
-      && candidate !== 'null'
-      && candidate !== 'undefined';
+    const validCandidate =
+      typeof candidate === 'string' &&
+      candidate.length > 0 &&
+      candidate !== 'null' &&
+      candidate !== 'undefined';
     if (validCandidate) {
       storedToken = candidate;
       try {
@@ -99,7 +101,12 @@
     }
 
     function begin(entry) {
-      if (!entry || typeof entry.commandId !== 'string' || !entry.commandId || entries.has(entry.commandId)) {
+      if (
+        !entry ||
+        typeof entry.commandId !== 'string' ||
+        !entry.commandId ||
+        entries.has(entry.commandId)
+      ) {
         return false;
       }
       if ([...entries.values()].some((pending) => pending.kind === entry.kind)) return false;
@@ -110,7 +117,11 @@
     }
 
     function settle(message) {
-      if (!message || typeof message.commandId !== 'string' || !TERMINAL_STATUSES.has(message.status)) {
+      if (
+        !message ||
+        typeof message.commandId !== 'string' ||
+        !TERMINAL_STATUSES.has(message.status)
+      ) {
         return false;
       }
       return finish(message.commandId, message.status);
@@ -182,9 +193,10 @@
       songElement = root?.querySelector?.(`.song-item[data-song="${songIndex}"]`) || null;
       songElement?.classList?.add('active');
       if (sectionIndex >= 0) {
-        sectionElement = root?.querySelector?.(
-          `.section-btn[data-song="${songIndex}"][data-section="${sectionIndex}"]`,
-        ) || null;
+        sectionElement =
+          root?.querySelector?.(
+            `.section-btn[data-song="${songIndex}"][data-section="${sectionIndex}"]`,
+          ) || null;
         sectionElement?.classList?.add('active');
       }
     }
@@ -203,12 +215,12 @@
 
   function validKeyMapping(value) {
     return Boolean(
-      value
-      && typeof value === 'object'
-      && typeof value.key === 'string'
-      && value.key.length > 0
-      && typeof value.code === 'string'
-      && value.code.length > 0
+      value &&
+      typeof value === 'object' &&
+      typeof value.key === 'string' &&
+      value.key.length > 0 &&
+      typeof value.code === 'string' &&
+      value.code.length > 0,
     );
   }
 
@@ -230,4 +242,3 @@
     return result;
   }
 })(typeof globalThis !== 'undefined' ? globalThis : this);
-

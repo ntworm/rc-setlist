@@ -15,10 +15,7 @@ import {
   recoverCompatibleLegacyPayload,
 } from '../src/core/project-profile-scope.ts';
 import { ProfileManager, writeJsonAtomic } from '../src/core/profile-manager.ts';
-import {
-  activateProjectProfileScope,
-  bridgeState,
-} from '../src/core/bridge-state.ts';
+import { activateProjectProfileScope, bridgeState } from '../src/runtime/bridge-state.ts';
 import { SetlistManager } from '../src/core/setlist-manager.ts';
 
 function makeRoot(t) {
@@ -39,13 +36,18 @@ function deterministicOptions() {
 function snapshotTree(root) {
   const entries = [];
   const visit = (current) => {
-    for (const entry of fs.readdirSync(current, { withFileTypes: true }).sort((a, b) => a.name.localeCompare(b.name))) {
+    for (const entry of fs
+      .readdirSync(current, { withFileTypes: true })
+      .sort((a, b) => a.name.localeCompare(b.name))) {
       const relative = path.relative(root, path.join(current, entry.name)).replaceAll('\\', '/');
       if (entry.isDirectory()) {
         entries.push(`${relative}/`);
         visit(path.join(current, entry.name));
       } else {
-        entries.push([relative, fs.readFileSync(path.join(current, entry.name)).toString('base64')]);
+        entries.push([
+          relative,
+          fs.readFileSync(path.join(current, entry.name)).toString('base64'),
+        ]);
       }
     }
   };
@@ -54,14 +56,20 @@ function snapshotTree(root) {
 }
 
 test('saved Live Set identity is stable across Windows path case and separators', () => {
-  const first = projectIdentityFromMetadata({
-    song_name: 'Setlist Bridge',
-    file_path: 'C:\\Shows\\Setlist Bridge Project\\SETLIST BRIDGE.als',
-  }, { platform: 'win32' });
-  const second = projectIdentityFromMetadata({
-    song_name: 'SETLIST BRIDGE',
-    file_path: 'c:/shows/setlist bridge project/setlist bridge.ALS',
-  }, { platform: 'win32' });
+  const first = projectIdentityFromMetadata(
+    {
+      song_name: 'Setlist Bridge',
+      file_path: 'C:\\Shows\\Setlist Bridge Project\\SETLIST BRIDGE.als',
+    },
+    { platform: 'win32' },
+  );
+  const second = projectIdentityFromMetadata(
+    {
+      song_name: 'SETLIST BRIDGE',
+      file_path: 'c:/shows/setlist bridge project/setlist bridge.ALS',
+    },
+    { platform: 'win32' },
+  );
 
   assert.ok(first);
   assert.ok(second);
@@ -74,14 +82,20 @@ test('saved Live Set identity is stable across Windows path case and separators'
 
 test('different saved Live Sets receive different project storage roots', async (t) => {
   const storageRoot = makeRoot(t);
-  const alpha = projectIdentityFromMetadata({
-    song_name: 'Alpha',
-    file_path: 'C:\\Shows\\Alpha Project\\Alpha.als',
-  }, { platform: 'win32' });
-  const beta = projectIdentityFromMetadata({
-    song_name: 'Beta',
-    file_path: 'C:\\Shows\\Beta Project\\Beta.als',
-  }, { platform: 'win32' });
+  const alpha = projectIdentityFromMetadata(
+    {
+      song_name: 'Alpha',
+      file_path: 'C:\\Shows\\Alpha Project\\Alpha.als',
+    },
+    { platform: 'win32' },
+  );
+  const beta = projectIdentityFromMetadata(
+    {
+      song_name: 'Beta',
+      file_path: 'C:\\Shows\\Beta Project\\Beta.als',
+    },
+    { platform: 'win32' },
+  );
   assert.ok(alpha);
   assert.ok(beta);
 
@@ -100,8 +114,14 @@ test('different saved Live Sets receive different project storage roots', async 
   assert.notEqual(alphaScope.root, betaScope.root);
   assert.equal(alphaScope.root, path.join(storageRoot, 'project-setlists', alpha.key));
   assert.equal(betaScope.root, path.join(storageRoot, 'project-setlists', beta.key));
-  assert.deepEqual(alphaScope.manager.list().map(({ name }) => name), ['Main Setlist']);
-  assert.deepEqual(betaScope.manager.list().map(({ name }) => name), ['Main Setlist']);
+  assert.deepEqual(
+    alphaScope.manager.list().map(({ name }) => name),
+    ['Main Setlist'],
+  );
+  assert.deepEqual(
+    betaScope.manager.list().map(({ name }) => name),
+    ['Main Setlist'],
+  );
 });
 
 test('identity resolution prefers project metadata and falls back to the Ableton window title', async () => {
@@ -156,11 +176,14 @@ test('unidentified Live Set uses an isolated session scope instead of global pro
   assert.equal(identity.source, 'session');
   assert.equal(identity.persistent, false);
   assert.notEqual(scope.root, storageRoot);
-  assert.deepEqual(scope.manager.list().map(({ name }) => name), ['Main Setlist']);
-  assert.deepEqual(globalManager.list().map(({ name }) => name), [
-    'Main Setlist',
-    'Another Project Setlist',
-  ]);
+  assert.deepEqual(
+    scope.manager.list().map(({ name }) => name),
+    ['Main Setlist'],
+  );
+  assert.deepEqual(
+    globalManager.list().map(({ name }) => name),
+    ['Main Setlist', 'Another Project Setlist'],
+  );
 });
 
 test('temporary project session id is stable for one Live process and Song handle', () => {
@@ -190,16 +213,25 @@ test('delayed saved-project identity promotes all temporary profiles without del
   });
   const main = source.manager.getActive();
   fs.mkdirSync(source.manager.getPaths(main.id).lyrics, { recursive: true });
-  fs.writeFileSync(path.join(source.manager.getPaths(main.id).lyrics, 'Song A.lrc'), '[00:00.00]Main lyric');
+  fs.writeFileSync(
+    path.join(source.manager.getPaths(main.id).lyrics, 'Song A.lrc'),
+    '[00:00.00]Main lyric',
+  );
   const second = await source.manager.create('Second Setlist');
   fs.mkdirSync(source.manager.getPaths(second.id).lyrics, { recursive: true });
-  fs.writeFileSync(path.join(source.manager.getPaths(second.id).lyrics, 'Song A.lrc'), '[00:00.00]Second lyric');
+  fs.writeFileSync(
+    path.join(source.manager.getPaths(second.id).lyrics, 'Song A.lrc'),
+    '[00:00.00]Second lyric',
+  );
   await source.manager.select(second.id);
 
-  const savedIdentity = projectIdentityFromMetadata({
-    song_name: 'Show',
-    file_path: 'C:\\Shows\\Show Project\\Show.als',
-  }, { platform: 'win32' });
+  const savedIdentity = projectIdentityFromMetadata(
+    {
+      song_name: 'Show',
+      file_path: 'C:\\Shows\\Show Project\\Show.als',
+    },
+    { platform: 'win32' },
+  );
   assert.ok(savedIdentity);
   const promoted = await initializeProjectProfileScope({
     storageRoot,
@@ -208,19 +240,31 @@ test('delayed saved-project identity promotes all temporary profiles without del
     promoteFrom: source,
   });
 
-  assert.deepEqual(promoted.manager.list().map(({ name }) => name), ['Main Setlist', 'Second Setlist']);
+  assert.deepEqual(
+    promoted.manager.list().map(({ name }) => name),
+    ['Main Setlist', 'Second Setlist'],
+  );
   assert.equal(promoted.manager.getActive().name, 'Second Setlist');
   const promotedMain = promoted.manager.list().find(({ name }) => name === 'Main Setlist');
   const promotedSecond = promoted.manager.list().find(({ name }) => name === 'Second Setlist');
   assert.equal(
-    fs.readFileSync(path.join(promoted.manager.getPaths(promotedMain.id).lyrics, 'Song A.lrc'), 'utf8'),
+    fs.readFileSync(
+      path.join(promoted.manager.getPaths(promotedMain.id).lyrics, 'Song A.lrc'),
+      'utf8',
+    ),
     '[00:00.00]Main lyric',
   );
   assert.equal(
-    fs.readFileSync(path.join(promoted.manager.getPaths(promotedSecond.id).lyrics, 'Song A.lrc'), 'utf8'),
+    fs.readFileSync(
+      path.join(promoted.manager.getPaths(promotedSecond.id).lyrics, 'Song A.lrc'),
+      'utf8',
+    ),
     '[00:00.00]Second lyric',
   );
-  assert.equal(fs.existsSync(path.join(source.manager.getPaths(second.id).lyrics, 'Song A.lrc')), true);
+  assert.equal(
+    fs.existsSync(path.join(source.manager.getPaths(second.id).lyrics, 'Song A.lrc')),
+    true,
+  );
 
   const repeated = await initializeProjectProfileScope({
     storageRoot,
@@ -228,25 +272,44 @@ test('delayed saved-project identity promotes all temporary profiles without del
     managerOptions: deterministicOptions(),
     promoteFrom: source,
   });
-  assert.deepEqual(repeated.manager.list().map(({ name }) => name), ['Main Setlist', 'Second Setlist']);
+  assert.deepEqual(
+    repeated.manager.list().map(({ name }) => name),
+    ['Main Setlist', 'Second Setlist'],
+  );
 });
 
 test('promotion merges complementary data in a same-named profile without creating a false conflict', async (t) => {
   const storageRoot = makeRoot(t);
   const sessionIdentity = await resolveProjectIdentity({
-    platform: 'linux', sessionId: 'complementary-session', getProjectMetadata: async () => null, readWindowTitle: async () => '',
+    platform: 'linux',
+    sessionId: 'complementary-session',
+    getProjectMetadata: async () => null,
+    readWindowTitle: async () => '',
   });
   const source = await initializeProjectProfileScope({
-    storageRoot, identity: sessionIdentity, managerOptions: deterministicOptions(), adoptOrphanSession: false,
+    storageRoot,
+    identity: sessionIdentity,
+    managerOptions: deterministicOptions(),
+    adoptOrphanSession: false,
   });
-  fs.writeFileSync(source.manager.getActivePaths().customOrder, JSON.stringify(['Song B', 'Song A']));
+  fs.writeFileSync(
+    source.manager.getActivePaths().customOrder,
+    JSON.stringify(['Song B', 'Song A']),
+  );
 
-  const savedIdentity = projectIdentityFromMetadata({
-    song_name: 'Show', file_path: 'C:\\Shows\\Complementary\\Show.als',
-  }, { platform: 'win32' });
+  const savedIdentity = projectIdentityFromMetadata(
+    {
+      song_name: 'Show',
+      file_path: 'C:\\Shows\\Complementary\\Show.als',
+    },
+    { platform: 'win32' },
+  );
   assert.ok(savedIdentity);
   const existing = await initializeProjectProfileScope({
-    storageRoot, identity: savedIdentity, managerOptions: deterministicOptions(), adoptOrphanSession: false,
+    storageRoot,
+    identity: savedIdentity,
+    managerOptions: deterministicOptions(),
+    adoptOrphanSession: false,
   });
   const existingPaths = existing.manager.getActivePaths();
   fs.mkdirSync(existingPaths.lyrics, { recursive: true });
@@ -259,9 +322,15 @@ test('promotion merges complementary data in a same-named profile without creati
     promoteFrom: source,
   });
 
-  assert.deepEqual(promoted.manager.list().map(({ name }) => name), ['Main Setlist']);
+  assert.deepEqual(
+    promoted.manager.list().map(({ name }) => name),
+    ['Main Setlist'],
+  );
   const paths = promoted.manager.getActivePaths();
-  assert.equal(fs.readFileSync(path.join(paths.lyrics, 'Song A.lrc'), 'utf8'), '[00:00.00]Existing lyric');
+  assert.equal(
+    fs.readFileSync(path.join(paths.lyrics, 'Song A.lrc'), 'utf8'),
+    '[00:00.00]Existing lyric',
+  );
   assert.deepEqual(JSON.parse(fs.readFileSync(paths.customOrder, 'utf8')), ['Song B', 'Song A']);
 });
 
@@ -269,34 +338,65 @@ test('repeating a conflicting promotion reuses the recovered profile instead of 
   const storageRoot = makeRoot(t);
   const options = deterministicOptions();
   const sessionIdentity = await resolveProjectIdentity({
-    platform: 'linux', sessionId: 'conflicting-session', getProjectMetadata: async () => null, readWindowTitle: async () => '',
+    platform: 'linux',
+    sessionId: 'conflicting-session',
+    getProjectMetadata: async () => null,
+    readWindowTitle: async () => '',
   });
   const source = await initializeProjectProfileScope({
-    storageRoot, identity: sessionIdentity, managerOptions: options, adoptOrphanSession: false,
+    storageRoot,
+    identity: sessionIdentity,
+    managerOptions: options,
+    adoptOrphanSession: false,
   });
   fs.mkdirSync(source.manager.getActivePaths().lyrics, { recursive: true });
-  fs.writeFileSync(path.join(source.manager.getActivePaths().lyrics, 'Song A.lrc'), '[00:00.00]Temporary lyric');
+  fs.writeFileSync(
+    path.join(source.manager.getActivePaths().lyrics, 'Song A.lrc'),
+    '[00:00.00]Temporary lyric',
+  );
 
-  const savedIdentity = projectIdentityFromMetadata({
-    song_name: 'Show', file_path: 'C:\\Shows\\Conflict\\Show.als',
-  }, { platform: 'win32' });
+  const savedIdentity = projectIdentityFromMetadata(
+    {
+      song_name: 'Show',
+      file_path: 'C:\\Shows\\Conflict\\Show.als',
+    },
+    { platform: 'win32' },
+  );
   assert.ok(savedIdentity);
   const existing = await initializeProjectProfileScope({
-    storageRoot, identity: savedIdentity, managerOptions: options, adoptOrphanSession: false,
+    storageRoot,
+    identity: savedIdentity,
+    managerOptions: options,
+    adoptOrphanSession: false,
   });
   fs.mkdirSync(existing.manager.getActivePaths().lyrics, { recursive: true });
-  fs.writeFileSync(path.join(existing.manager.getActivePaths().lyrics, 'Song A.lrc'), '[00:00.00]Saved lyric');
+  fs.writeFileSync(
+    path.join(existing.manager.getActivePaths().lyrics, 'Song A.lrc'),
+    '[00:00.00]Saved lyric',
+  );
 
   const first = await initializeProjectProfileScope({
-    storageRoot, identity: savedIdentity, managerOptions: options, promoteFrom: source,
+    storageRoot,
+    identity: savedIdentity,
+    managerOptions: options,
+    promoteFrom: source,
   });
   const recoveredId = first.manager.getActive().id;
-  assert.deepEqual(first.manager.list().map(({ name }) => name), ['Main Setlist', 'Main Setlist (Recovered)']);
+  assert.deepEqual(
+    first.manager.list().map(({ name }) => name),
+    ['Main Setlist', 'Main Setlist (Recovered)'],
+  );
 
   const repeated = await initializeProjectProfileScope({
-    storageRoot, identity: savedIdentity, managerOptions: options, promoteFrom: source,
+    storageRoot,
+    identity: savedIdentity,
+    managerOptions: options,
+    promoteFrom: source,
   });
-  assert.deepEqual(repeated.manager.list().map(({ name }) => name), ['Main Setlist', 'Main Setlist (Recovered)']);
+  assert.deepEqual(
+    repeated.manager.list().map(({ name }) => name),
+    ['Main Setlist', 'Main Setlist (Recovered)'],
+  );
   assert.equal(repeated.manager.getActive().id, recoveredId);
   assert.equal(
     fs.readFileSync(path.join(repeated.manager.getActivePaths().lyrics, 'Song A.lrc'), 'utf8'),
@@ -307,23 +407,39 @@ test('repeating a conflicting promotion reuses the recovered profile instead of 
 test('fresh unsaved session never adopts a prior unsaved scope', async (t) => {
   const storageRoot = makeRoot(t);
   const oldIdentity = await resolveProjectIdentity({
-    platform: 'linux', sessionId: 'old-session', getProjectMetadata: async () => null, readWindowTitle: async () => '',
+    platform: 'linux',
+    sessionId: 'old-session',
+    getProjectMetadata: async () => null,
+    readWindowTitle: async () => '',
   });
   const oldScope = await initializeProjectProfileScope({
-    storageRoot, identity: oldIdentity, managerOptions: deterministicOptions(),
+    storageRoot,
+    identity: oldIdentity,
+    managerOptions: deterministicOptions(),
   });
   await oldScope.manager.rename(oldScope.manager.getActive().id, 'First Setlist');
   const second = await oldScope.manager.create('Second Setlist');
   await oldScope.manager.select(second.id);
 
   const newIdentity = await resolveProjectIdentity({
-    platform: 'linux', sessionId: 'new-session', getProjectMetadata: async () => null, readWindowTitle: async () => '',
+    platform: 'linux',
+    sessionId: 'new-session',
+    getProjectMetadata: async () => null,
+    readWindowTitle: async () => '',
   });
   const fresh = await initializeProjectProfileScope({
-    storageRoot, identity: newIdentity, managerOptions: deterministicOptions(),
+    storageRoot,
+    identity: newIdentity,
+    managerOptions: deterministicOptions(),
   });
-  assert.deepEqual(fresh.manager.list().map(({ name }) => name), ['Main Setlist']);
-  assert.deepEqual(oldScope.manager.list().map(({ name }) => name), ['First Setlist', 'Second Setlist']);
+  assert.deepEqual(
+    fresh.manager.list().map(({ name }) => name),
+    ['Main Setlist'],
+  );
+  assert.deepEqual(
+    oldScope.manager.list().map(({ name }) => name),
+    ['First Setlist', 'Second Setlist'],
+  );
   assert.equal(oldScope.manager.getActive().name, 'Second Setlist');
 });
 
@@ -331,55 +447,101 @@ test('same-session promotion preserves profile order identity and active selecti
   const storageRoot = makeRoot(t);
   const options = deterministicOptions();
   const temporaryIdentity = await resolveProjectIdentity({
-    platform: 'linux', sessionId: 'promotion-session', getProjectMetadata: async () => null, readWindowTitle: async () => '',
+    platform: 'linux',
+    sessionId: 'promotion-session',
+    getProjectMetadata: async () => null,
+    readWindowTitle: async () => '',
   });
-  const source = await initializeProjectProfileScope({ storageRoot, identity: temporaryIdentity, managerOptions: options });
+  const source = await initializeProjectProfileScope({
+    storageRoot,
+    identity: temporaryIdentity,
+    managerOptions: options,
+  });
   await source.manager.rename(source.manager.getActive().id, 'First Setlist');
   const second = await source.manager.create('Second Setlist');
   await source.manager.select(second.id);
-  const savedIdentity = projectIdentityFromMetadata({
-    song_name: 'Promotion Show', file_path: 'C:\\Shows\\Promotion Show\\Promotion Show.als',
-  }, { platform: 'win32' });
+  const savedIdentity = projectIdentityFromMetadata(
+    {
+      song_name: 'Promotion Show',
+      file_path: 'C:\\Shows\\Promotion Show\\Promotion Show.als',
+    },
+    { platform: 'win32' },
+  );
   assert.ok(savedIdentity);
 
   const promoted = await initializeProjectProfileScope({
-    storageRoot, identity: savedIdentity, managerOptions: options, promoteFrom: source,
+    storageRoot,
+    identity: savedIdentity,
+    managerOptions: options,
+    promoteFrom: source,
   });
   const promotedIdentity = promoted.manager.list().map(({ id, name }) => ({ id, name }));
   const promotedActiveId = promoted.manager.getActive().id;
-  assert.deepEqual(promotedIdentity.map(({ name }) => name), ['First Setlist', 'Second Setlist']);
+  assert.deepEqual(
+    promotedIdentity.map(({ name }) => name),
+    ['First Setlist', 'Second Setlist'],
+  );
   assert.equal(promoted.manager.getActive().name, 'Second Setlist');
 
   const restarted = await initializeProjectProfileScope({
-    storageRoot, identity: savedIdentity, managerOptions: options,
+    storageRoot,
+    identity: savedIdentity,
+    managerOptions: options,
   });
-  assert.deepEqual(restarted.manager.list().map(({ id, name }) => ({ id, name })), promotedIdentity);
+  assert.deepEqual(
+    restarted.manager.list().map(({ id, name }) => ({ id, name })),
+    promotedIdentity,
+  );
   assert.equal(restarted.manager.getActive().id, promotedActiveId);
   assert.equal(restarted.manager.getActive().name, 'Second Setlist');
-  assert.deepEqual(source.manager.list().map(({ name }) => name), ['First Setlist', 'Second Setlist']);
+  assert.deepEqual(
+    source.manager.list().map(({ name }) => name),
+    ['First Setlist', 'Second Setlist'],
+  );
 });
 
 test('pristine source promotion preserves a non-pristine saved target', async (t) => {
   const storageRoot = makeRoot(t);
   const options = deterministicOptions();
   const sourceIdentity = await resolveProjectIdentity({
-    platform: 'linux', sessionId: 'pristine-source', getProjectMetadata: async () => null, readWindowTitle: async () => '',
+    platform: 'linux',
+    sessionId: 'pristine-source',
+    getProjectMetadata: async () => null,
+    readWindowTitle: async () => '',
   });
-  const source = await initializeProjectProfileScope({ storageRoot, identity: sourceIdentity, managerOptions: options });
-  const targetIdentity = projectIdentityFromMetadata({
-    song_name: 'Existing Show', file_path: 'C:\\Shows\\Existing Show\\Existing Show.als',
-  }, { platform: 'win32' });
+  const source = await initializeProjectProfileScope({
+    storageRoot,
+    identity: sourceIdentity,
+    managerOptions: options,
+  });
+  const targetIdentity = projectIdentityFromMetadata(
+    {
+      song_name: 'Existing Show',
+      file_path: 'C:\\Shows\\Existing Show\\Existing Show.als',
+    },
+    { platform: 'win32' },
+  );
   assert.ok(targetIdentity);
-  const target = await initializeProjectProfileScope({ storageRoot, identity: targetIdentity, managerOptions: options });
+  const target = await initializeProjectProfileScope({
+    storageRoot,
+    identity: targetIdentity,
+    managerOptions: options,
+  });
   const second = await target.manager.create('Second Setlist');
   await target.manager.select(second.id);
   const before = target.manager.list().map(({ id, name }) => ({ id, name }));
   const activeId = target.manager.getActive().id;
 
   const promoted = await initializeProjectProfileScope({
-    storageRoot, identity: targetIdentity, managerOptions: options, promoteFrom: source,
+    storageRoot,
+    identity: targetIdentity,
+    managerOptions: options,
+    promoteFrom: source,
   });
-  assert.deepEqual(promoted.manager.list().map(({ id, name }) => ({ id, name })), before);
+  assert.deepEqual(
+    promoted.manager.list().map(({ id, name }) => ({ id, name })),
+    before,
+  );
   assert.equal(promoted.manager.getActive().id, activeId);
 });
 
@@ -401,10 +563,16 @@ test('compatible legacy lyrics recover only from an exact current-song-set match
   fs.writeFileSync(unrelatedPaths.customOrder, JSON.stringify(['Song A', 'Other Song']));
 
   const sessionIdentity = await resolveProjectIdentity({
-    platform: 'linux', sessionId: 'lyrics-session', getProjectMetadata: async () => null, readWindowTitle: async () => '',
+    platform: 'linux',
+    sessionId: 'lyrics-session',
+    getProjectMetadata: async () => null,
+    readWindowTitle: async () => '',
   });
   const scope = await initializeProjectProfileScope({
-    storageRoot, identity: sessionIdentity, managerOptions: deterministicOptions(), adoptOrphanSession: false,
+    storageRoot,
+    identity: sessionIdentity,
+    managerOptions: deterministicOptions(),
+    adoptOrphanSession: false,
   });
   const result = await recoverCompatibleLegacyPayload({
     storageRoot,
@@ -416,7 +584,10 @@ test('compatible legacy lyrics recover only from an exact current-song-set match
   assert.equal(result.recovered, true);
   assert.deepEqual(result.customOrder, ['Song B', 'Song A']);
   const active = scope.manager.getActivePaths();
-  assert.equal(fs.readFileSync(path.join(active.lyrics, 'Song A.lrc'), 'utf8'), '[00:00.00]Recovered A');
+  assert.equal(
+    fs.readFileSync(path.join(active.lyrics, 'Song A.lrc'), 'utf8'),
+    '[00:00.00]Recovered A',
+  );
   assert.equal(fs.readdirSync(active.lyrics).includes('Song A.lrc'), true);
   assert.equal(fs.readFileSync(path.join(active.lyrics, 'Song B.txt'), 'utf8'), 'Recovered B');
   assert.equal(fs.existsSync(path.join(active.lyrics, 'Other Song.lrc')), false);
@@ -426,7 +597,10 @@ test('compatible legacy recovery refuses conflicting matches and never overwrite
   const storageRoot = makeRoot(t);
   const globalManager = new ProfileManager(storageRoot, deterministicOptions());
   await globalManager.initialize();
-  for (const [name, lyric] of [['Candidate One', 'One'], ['Candidate Two', 'Two']]) {
+  for (const [name, lyric] of [
+    ['Candidate One', 'One'],
+    ['Candidate Two', 'Two'],
+  ]) {
     const profile = await globalManager.create(name);
     const paths = globalManager.getPaths(profile.id);
     fs.mkdirSync(paths.lyrics, { recursive: true });
@@ -434,10 +608,16 @@ test('compatible legacy recovery refuses conflicting matches and never overwrite
     fs.writeFileSync(paths.customOrder, JSON.stringify(['Song A', 'Song B']));
   }
   const sessionIdentity = await resolveProjectIdentity({
-    platform: 'linux', sessionId: 'ambiguous-lyrics', getProjectMetadata: async () => null, readWindowTitle: async () => '',
+    platform: 'linux',
+    sessionId: 'ambiguous-lyrics',
+    getProjectMetadata: async () => null,
+    readWindowTitle: async () => '',
   });
   const scope = await initializeProjectProfileScope({
-    storageRoot, identity: sessionIdentity, managerOptions: deterministicOptions(), adoptOrphanSession: false,
+    storageRoot,
+    identity: sessionIdentity,
+    managerOptions: deterministicOptions(),
+    adoptOrphanSession: false,
   });
   const target = scope.manager.getActivePaths();
   fs.mkdirSync(target.lyrics, { recursive: true });
@@ -450,7 +630,10 @@ test('compatible legacy recovery refuses conflicting matches and never overwrite
     candidateRoots: [storageRoot],
   });
   assert.equal(result.recovered, false);
-  assert.equal(fs.readFileSync(path.join(target.lyrics, 'Song A.lrc'), 'utf8'), '[00:00.00]Keep me');
+  assert.equal(
+    fs.readFileSync(path.join(target.lyrics, 'Song A.lrc'), 'utf8'),
+    '[00:00.00]Keep me',
+  );
   assert.equal(fs.existsSync(target.customOrder), false);
 });
 
@@ -470,10 +653,16 @@ test('compatible legacy recovery preserves an existing project order and ignores
   fs.writeFileSync(registryPath, JSON.stringify(registry));
 
   const sessionIdentity = await resolveProjectIdentity({
-    platform: 'linux', sessionId: 'preserve-order', getProjectMetadata: async () => null, readWindowTitle: async () => '',
+    platform: 'linux',
+    sessionId: 'preserve-order',
+    getProjectMetadata: async () => null,
+    readWindowTitle: async () => '',
   });
   const scope = await initializeProjectProfileScope({
-    storageRoot, identity: sessionIdentity, managerOptions: deterministicOptions(), adoptOrphanSession: false,
+    storageRoot,
+    identity: sessionIdentity,
+    managerOptions: deterministicOptions(),
+    adoptOrphanSession: false,
   });
   const target = scope.manager.getActivePaths();
   fs.writeFileSync(target.customOrder, JSON.stringify(['Song A', 'Song B']));
@@ -488,7 +677,10 @@ test('compatible legacy recovery preserves an existing project order and ignores
   assert.equal(result.recovered, true);
   assert.deepEqual(result.customOrder, ['Song A', 'Song B']);
   assert.deepEqual(JSON.parse(fs.readFileSync(target.customOrder, 'utf8')), ['Song A', 'Song B']);
-  assert.equal(fs.readFileSync(path.join(target.lyrics, 'Song A.lrc'), 'utf8'), '[00:00.00]Recovered');
+  assert.equal(
+    fs.readFileSync(path.join(target.lyrics, 'Song A.lrc'), 'utf8'),
+    '[00:00.00]Recovered',
+  );
 });
 
 test('project scope imports only the exact legacy Ableton Project and remains idempotent', async (t) => {
@@ -501,29 +693,44 @@ test('project scope imports only the exact legacy Ableton Project and remains id
 
   const exactLegacy = path.join(previousRoot, 'projects', exactKey);
   fs.mkdirSync(path.join(exactLegacy, 'lyrics'), { recursive: true });
-  fs.writeFileSync(path.join(exactLegacy, 'project-info.json'), JSON.stringify({
-    projectName: 'Alpha Project',
-    projectPath: 'C:/Shows/Alpha Project',
-    key: exactKey,
-  }));
-  fs.writeFileSync(path.join(exactLegacy, 'lyrics', 'Alpha Song.lrc'), '[00:00.00]Exact project lyric');
+  fs.writeFileSync(
+    path.join(exactLegacy, 'project-info.json'),
+    JSON.stringify({
+      projectName: 'Alpha Project',
+      projectPath: 'C:/Shows/Alpha Project',
+      key: exactKey,
+    }),
+  );
+  fs.writeFileSync(
+    path.join(exactLegacy, 'lyrics', 'Alpha Song.lrc'),
+    '[00:00.00]Exact project lyric',
+  );
   fs.writeFileSync(path.join(exactLegacy, 'custom-order.json'), JSON.stringify(['Alpha Song']));
 
   const unrelatedLegacy = path.join(previousRoot, 'projects', 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa');
   fs.mkdirSync(path.join(unrelatedLegacy, 'lyrics'), { recursive: true });
-  fs.writeFileSync(path.join(unrelatedLegacy, 'project-info.json'), JSON.stringify({
-    projectName: 'Other Project',
-  }));
-  fs.writeFileSync(path.join(unrelatedLegacy, 'lyrics', 'Other Song.lrc'), '[00:00.00]Must stay isolated');
+  fs.writeFileSync(
+    path.join(unrelatedLegacy, 'project-info.json'),
+    JSON.stringify({
+      projectName: 'Other Project',
+    }),
+  );
+  fs.writeFileSync(
+    path.join(unrelatedLegacy, 'lyrics', 'Other Song.lrc'),
+    '[00:00.00]Must stay isolated',
+  );
 
   const globalManager = new ProfileManager(currentRoot, deterministicOptions());
   await globalManager.initialize();
   assert.ok(globalManager.list().some(({ name }) => name === 'Other Project'));
 
-  const identity = projectIdentityFromMetadata({
-    song_name: 'Alpha',
-    file_path: filePath,
-  }, { platform: 'win32' });
+  const identity = projectIdentityFromMetadata(
+    {
+      song_name: 'Alpha',
+      file_path: filePath,
+    },
+    { platform: 'win32' },
+  );
   assert.ok(identity);
 
   const first = await initializeProjectProfileScope({
@@ -532,7 +739,10 @@ test('project scope imports only the exact legacy Ableton Project and remains id
     managerOptions: deterministicOptions(),
   });
   const activePaths = first.manager.getActivePaths();
-  assert.deepEqual(first.manager.list().map(({ name }) => name), ['Main Setlist']);
+  assert.deepEqual(
+    first.manager.list().map(({ name }) => name),
+    ['Main Setlist'],
+  );
   assert.equal(
     fs.readFileSync(path.join(activePaths.lyrics, 'Alpha Song.lrc'), 'utf8'),
     '[00:00.00]Exact project lyric',
@@ -546,7 +756,10 @@ test('project scope imports only the exact legacy Ableton Project and remains id
     identity,
     managerOptions: deterministicOptions(),
   });
-  assert.deepEqual(second.manager.list().map(({ name }) => name), ['Main Setlist']);
+  assert.deepEqual(
+    second.manager.list().map(({ name }) => name),
+    ['Main Setlist'],
+  );
   assert.equal(
     fs.readFileSync(path.join(second.manager.getActivePaths().lyrics, 'Alpha Song.lrc'), 'utf8'),
     '[00:00.00]Exact project lyric',
@@ -555,14 +768,20 @@ test('project scope imports only the exact legacy Ableton Project and remains id
 
 test('activating another Live Set swaps registries and restores each set independently', async (t) => {
   const storageRoot = makeRoot(t);
-  const alpha = projectIdentityFromMetadata({
-    song_name: 'Alpha',
-    file_path: 'C:\\Shows\\Alpha Project\\Alpha.als',
-  }, { platform: 'win32' });
-  const beta = projectIdentityFromMetadata({
-    song_name: 'Beta',
-    file_path: 'C:\\Shows\\Beta Project\\Beta.als',
-  }, { platform: 'win32' });
+  const alpha = projectIdentityFromMetadata(
+    {
+      song_name: 'Alpha',
+      file_path: 'C:\\Shows\\Alpha Project\\Alpha.als',
+    },
+    { platform: 'win32' },
+  );
+  const beta = projectIdentityFromMetadata(
+    {
+      song_name: 'Beta',
+      file_path: 'C:\\Shows\\Beta Project\\Beta.als',
+    },
+    { platform: 'win32' },
+  );
   assert.ok(alpha);
   assert.ok(beta);
 
@@ -579,21 +798,24 @@ test('activating another Live Set swaps registries and restores each set indepen
   try {
     await activateProjectProfileScope(alpha, deterministicOptions());
     await bridgeState.profileManager.create('Alpha Encore');
-    assert.deepEqual(bridgeState.profileManager.list().map(({ name }) => name), [
-      'Main Setlist',
-      'Alpha Encore',
-    ]);
+    assert.deepEqual(
+      bridgeState.profileManager.list().map(({ name }) => name),
+      ['Main Setlist', 'Alpha Encore'],
+    );
 
     await activateProjectProfileScope(beta, deterministicOptions());
     assert.equal(bridgeState.projectIdentity.key, beta.key);
-    assert.deepEqual(bridgeState.profileManager.list().map(({ name }) => name), ['Main Setlist']);
+    assert.deepEqual(
+      bridgeState.profileManager.list().map(({ name }) => name),
+      ['Main Setlist'],
+    );
 
     await activateProjectProfileScope(alpha, deterministicOptions());
     assert.equal(bridgeState.projectIdentity.key, alpha.key);
-    assert.deepEqual(bridgeState.profileManager.list().map(({ name }) => name), [
-      'Main Setlist',
-      'Alpha Encore',
-    ]);
+    assert.deepEqual(
+      bridgeState.profileManager.list().map(({ name }) => name),
+      ['Main Setlist', 'Alpha Encore'],
+    );
   } finally {
     bridgeState.globalPersistenceDir = previous.globalPersistenceDir;
     bridgeState.manager = previous.manager;
@@ -607,14 +829,25 @@ test('profile promotion requires matching source identity and Live session autho
   const storageRoot = makeRoot(t);
   const options = deterministicOptions();
   const sourceIdentity = await resolveProjectIdentity({
-    platform: 'linux', sessionId: 'authorization-source', getProjectMetadata: async () => null, readWindowTitle: async () => '',
+    platform: 'linux',
+    sessionId: 'authorization-source',
+    getProjectMetadata: async () => null,
+    readWindowTitle: async () => '',
   });
-  const matchingTarget = projectIdentityFromMetadata({
-    song_name: 'Matching Target', file_path: 'C:\\Shows\\Matching Target\\Matching Target.als',
-  }, { platform: 'win32' });
-  const blockedTarget = projectIdentityFromMetadata({
-    song_name: 'Blocked Target', file_path: 'C:\\Shows\\Blocked Target\\Blocked Target.als',
-  }, { platform: 'win32' });
+  const matchingTarget = projectIdentityFromMetadata(
+    {
+      song_name: 'Matching Target',
+      file_path: 'C:\\Shows\\Matching Target\\Matching Target.als',
+    },
+    { platform: 'win32' },
+  );
+  const blockedTarget = projectIdentityFromMetadata(
+    {
+      song_name: 'Blocked Target',
+      file_path: 'C:\\Shows\\Blocked Target\\Blocked Target.als',
+    },
+    { platform: 'win32' },
+  );
   assert.ok(matchingTarget);
   assert.ok(blockedTarget);
   const previous = {
@@ -637,14 +870,20 @@ test('profile promotion requires matching source identity and Live session autho
       sourceIdentityKey: sourceIdentity.key,
       projectSessionId: 'session-stale',
     });
-    assert.deepEqual(bridgeState.profileManager.list().map(({ name }) => name), ['Main Setlist']);
+    assert.deepEqual(
+      bridgeState.profileManager.list().map(({ name }) => name),
+      ['Main Setlist'],
+    );
 
     await activateProjectProfileScope(sourceIdentity, options);
     await activateProjectProfileScope(matchingTarget, options, {
       sourceIdentityKey: sourceIdentity.key,
       projectSessionId: 'session-a',
     });
-    assert.deepEqual(bridgeState.profileManager.list().map(({ name }) => name), ['Main Setlist', 'Second Setlist']);
+    assert.deepEqual(
+      bridgeState.profileManager.list().map(({ name }) => name),
+      ['Main Setlist', 'Second Setlist'],
+    );
   } finally {
     bridgeState.globalPersistenceDir = previous.globalPersistenceDir;
     bridgeState.manager = previous.manager;
@@ -658,11 +897,18 @@ test('promotion is cancelled when a new Song session invalidates it during legac
   const storageRoot = makeRoot(t);
   const options = deterministicOptions();
   const sourceIdentity = await resolveProjectIdentity({
-    platform: 'linux', sessionId: 'promotion-race-source', getProjectMetadata: async () => null, readWindowTitle: async () => '',
+    platform: 'linux',
+    sessionId: 'promotion-race-source',
+    getProjectMetadata: async () => null,
+    readWindowTitle: async () => '',
   });
-  const savedIdentity = projectIdentityFromMetadata({
-    song_name: 'Race Target', file_path: 'C:\\Shows\\Race Target\\Race Target.als',
-  }, { platform: 'win32' });
+  const savedIdentity = projectIdentityFromMetadata(
+    {
+      song_name: 'Race Target',
+      file_path: 'C:\\Shows\\Race Target\\Race Target.als',
+    },
+    { platform: 'win32' },
+  );
   assert.ok(savedIdentity);
   const previous = {
     globalPersistenceDir: bridgeState.globalPersistenceDir,
@@ -684,13 +930,18 @@ test('promotion is cancelled when a new Song session invalidates it during legac
   try {
     await activateProjectProfileScope(sourceIdentity, options);
     await bridgeState.profileManager.create('Second Setlist');
-    bridgeState.legacyRecoveryPromise = new Promise((resolve) => { releaseRecovery = resolve; });
+    bridgeState.legacyRecoveryPromise = new Promise((resolve) => {
+      releaseRecovery = resolve;
+    });
     const promotion = activateProjectProfileScope(savedIdentity, options, {
       sourceIdentityKey: sourceIdentity.key,
       projectSessionId: 'session-a',
     });
     const waiting = await Promise.race([
-      promotion.then(() => 'completed', () => 'cancelled'),
+      promotion.then(
+        () => 'completed',
+        () => 'cancelled',
+      ),
       new Promise((resolve) => setTimeout(() => resolve('waiting'), 50)),
     ]);
     assert.equal(waiting, 'waiting');
@@ -701,8 +952,15 @@ test('promotion is cancelled when a new Song session invalidates it during legac
 
     await assert.rejects(promotion, /profile scope promotion was cancelled/i);
     assert.equal(bridgeState.projectIdentity.key, sourceIdentity.key);
-    const target = await initializeProjectProfileScope({ storageRoot, identity: savedIdentity, managerOptions: options });
-    assert.deepEqual(target.manager.list().map(({ name }) => name), ['Main Setlist']);
+    const target = await initializeProjectProfileScope({
+      storageRoot,
+      identity: savedIdentity,
+      managerOptions: options,
+    });
+    assert.deepEqual(
+      target.manager.list().map(({ name }) => name),
+      ['Main Setlist'],
+    );
   } finally {
     releaseRecovery?.();
     bridgeState.globalPersistenceDir = previous.globalPersistenceDir;
@@ -718,28 +976,43 @@ test('promotion is cancelled when a new Song session invalidates it during legac
 test('promotion cancellation during staged payload persistence leaves the real saved target byte-identical', async (t) => {
   const storageRoot = makeRoot(t);
   const sourceIdentity = await resolveProjectIdentity({
-    platform: 'linux', sessionId: 'staged-copy-source', getProjectMetadata: async () => null, readWindowTitle: async () => '',
+    platform: 'linux',
+    sessionId: 'staged-copy-source',
+    getProjectMetadata: async () => null,
+    readWindowTitle: async () => '',
   });
-  const savedIdentity = projectIdentityFromMetadata({
-    song_name: 'Staged Target', file_path: 'C:\\Shows\\Staged Target\\Staged Target.als',
-  }, { platform: 'win32' });
+  const savedIdentity = projectIdentityFromMetadata(
+    {
+      song_name: 'Staged Target',
+      file_path: 'C:\\Shows\\Staged Target\\Staged Target.als',
+    },
+    { platform: 'win32' },
+  );
   assert.ok(savedIdentity);
   const source = await initializeProjectProfileScope({
-    storageRoot, identity: sourceIdentity, managerOptions: deterministicOptions(),
+    storageRoot,
+    identity: sourceIdentity,
+    managerOptions: deterministicOptions(),
   });
   const sourcePaths = source.manager.getActivePaths();
   fs.mkdirSync(sourcePaths.lyrics, { recursive: true });
   fs.writeFileSync(path.join(sourcePaths.lyrics, 'Song A.lrc'), '[00:00.00]Staged source lyric');
   const target = await initializeProjectProfileScope({
-    storageRoot, identity: savedIdentity, managerOptions: deterministicOptions(),
+    storageRoot,
+    identity: savedIdentity,
+    managerOptions: deterministicOptions(),
   });
   const targetRoot = target.root;
   const before = snapshotTree(targetRoot);
   let valid = true;
   let releaseWrite;
   let reachedWrite;
-  const reached = new Promise((resolve) => { reachedWrite = resolve; });
-  const release = new Promise((resolve) => { releaseWrite = resolve; });
+  const reached = new Promise((resolve) => {
+    reachedWrite = resolve;
+  });
+  const release = new Promise((resolve) => {
+    releaseWrite = resolve;
+  });
   const promotionOptions = {
     ...deterministicOptions(),
     writeJsonAtomic: async (filePath, value) => {
@@ -764,7 +1037,8 @@ test('promotion cancellation during staged payload persistence leaves the real s
 
   await assert.rejects(promotion, /profile scope promotion was cancelled/i);
   assert.deepEqual(snapshotTree(targetRoot), before);
-  const transactionDebris = fs.readdirSync(path.join(storageRoot, 'project-setlists'))
+  const transactionDebris = fs
+    .readdirSync(path.join(storageRoot, 'project-setlists'))
     .filter((name) => name.startsWith(`.${savedIdentity.key}.promotion-`));
   assert.deepEqual(transactionDebris, []);
 });
@@ -777,10 +1051,13 @@ test('higher-fidelity MCP path identity promotes profiles created under a window
     getProjectMetadata: async () => null,
     readWindowTitle: async () => 'Setlist Bridge - Ableton Live 12 Suite',
   });
-  const pathIdentity = projectIdentityFromMetadata({
-    song_name: 'Setlist Bridge',
-    file_path: 'C:\\Shows\\Setlist Bridge\\Setlist Bridge.als',
-  }, { platform: 'win32' });
+  const pathIdentity = projectIdentityFromMetadata(
+    {
+      song_name: 'Setlist Bridge',
+      file_path: 'C:\\Shows\\Setlist Bridge\\Setlist Bridge.als',
+    },
+    { platform: 'win32' },
+  );
   assert.equal(titleIdentity.source, 'window-title');
   assert.ok(pathIdentity);
 
@@ -820,11 +1097,18 @@ test('higher-fidelity MCP path identity promotes profiles created under a window
 test('MCP path promotion waits for an in-flight legacy lyric recovery', async (t) => {
   const storageRoot = makeRoot(t);
   const sessionIdentity = await resolveProjectIdentity({
-    platform: 'linux', sessionId: 'recovery-race', getProjectMetadata: async () => null, readWindowTitle: async () => '',
+    platform: 'linux',
+    sessionId: 'recovery-race',
+    getProjectMetadata: async () => null,
+    readWindowTitle: async () => '',
   });
-  const pathIdentity = projectIdentityFromMetadata({
-    song_name: 'Race Show', file_path: 'C:\\Shows\\Race Show\\Race Show.als',
-  }, { platform: 'win32' });
+  const pathIdentity = projectIdentityFromMetadata(
+    {
+      song_name: 'Race Show',
+      file_path: 'C:\\Shows\\Race Show\\Race Show.als',
+    },
+    { platform: 'win32' },
+  );
   assert.ok(pathIdentity);
 
   const previous = {
@@ -848,7 +1132,10 @@ test('MCP path promotion waits for an in-flight legacy lyric recovery', async (t
     bridgeState.legacyRecoveryPromise = new Promise((resolve) => {
       releaseRecovery = () => {
         fs.mkdirSync(sourcePaths.lyrics, { recursive: true });
-        fs.writeFileSync(path.join(sourcePaths.lyrics, 'Song A.lrc'), '[00:00.00]Recovered before promotion');
+        fs.writeFileSync(
+          path.join(sourcePaths.lyrics, 'Song A.lrc'),
+          '[00:00.00]Recovered before promotion',
+        );
         resolve();
       };
     });

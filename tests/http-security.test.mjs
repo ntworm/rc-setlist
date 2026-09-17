@@ -37,7 +37,7 @@ function makeRequest(options, body) {
   return new Promise((resolve, reject) => {
     const req = http.request(options, (res) => {
       let data = '';
-      res.on('data', (chunk) => data += chunk);
+      res.on('data', (chunk) => (data += chunk));
       res.on('end', () => resolve({ status: res.statusCode, headers: res.headers, body: data }));
     });
     req.on('error', reject);
@@ -48,8 +48,14 @@ function makeRequest(options, body) {
 
 test('HTTP Security: sanitizeUrl query token redaction', () => {
   assert.strictEqual(sanitizeUrl('/debug/snapshot?token=secret123'), '/debug/snapshot?token=***');
-  assert.strictEqual(sanitizeUrl('/setlist?param=abc&token=xyz&other=123'), '/setlist?param=abc&token=***&other=123');
-  assert.strictEqual(sanitizeUrl('/debug/snapshot?%74oken=encoded-secret'), '/debug/snapshot?%74oken=***');
+  assert.strictEqual(
+    sanitizeUrl('/setlist?param=abc&token=xyz&other=123'),
+    '/setlist?param=abc&token=***&other=123',
+  );
+  assert.strictEqual(
+    sanitizeUrl('/debug/snapshot?%74oken=encoded-secret'),
+    '/debug/snapshot?%74oken=***',
+  );
   assert.strictEqual(sanitizeUrl('/health'), '/health');
   assert.strictEqual(sanitizeUrl(''), '');
 });
@@ -80,9 +86,11 @@ test('HTTP Security: production debug snapshot requires an explicit true flag', 
 });
 
 test('HTTP Security: rejected async handlers return a controlled 500', async () => {
-  const server = http.createServer(createHttpRequestListener(async () => {
-    throw new Error('sensitive resolver detail');
-  }));
+  const server = http.createServer(
+    createHttpRequestListener(async () => {
+      throw new Error('sensitive resolver detail');
+    }),
+  );
   const port = await startServer(server);
   try {
     const response = await makeRequest({
@@ -102,8 +110,13 @@ test('HTTP Security: rejected async handlers return a controlled 500', async () 
 test('HTTP Security: HEAD response metadata does not read the response body', async () => {
   let readCalled = false;
   const file = await loadResponseFile('virtual.csv', true, {
-    async stat() { return { size: 42, isFile: () => true }; },
-    async readFile() { readCalled = true; return Buffer.from('secret body'); },
+    async stat() {
+      return { size: 42, isFile: () => true };
+    },
+    async readFile() {
+      readCalled = true;
+      return Buffer.from('secret body');
+    },
   });
   assert.deepStrictEqual(file, { length: 42, data: null });
   assert.strictEqual(readCalled, false);
@@ -127,7 +140,7 @@ test('HTTP Security: /debug/snapshot authentication', async () => {
       hostname: '127.0.0.1',
       port,
       path: '/debug/snapshot',
-      method: 'GET'
+      method: 'GET',
     });
     assert.strictEqual(resNoToken.status, 401);
     const jsonNoToken = JSON.parse(resNoToken.body);
@@ -138,7 +151,7 @@ test('HTTP Security: /debug/snapshot authentication', async () => {
       hostname: '127.0.0.1',
       port,
       path: '/debug/snapshot?token=wrong',
-      method: 'GET'
+      method: 'GET',
     });
     assert.strictEqual(resWrongToken.status, 401);
 
@@ -147,12 +160,11 @@ test('HTTP Security: /debug/snapshot authentication', async () => {
       hostname: '127.0.0.1',
       port,
       path: `/debug/snapshot?token=${token}`,
-      method: 'GET'
+      method: 'GET',
     });
     assert.strictEqual(resValidToken.status, 200);
     const jsonValidToken = JSON.parse(resValidToken.body);
     assert.strictEqual(jsonValidToken.dummy, 'data');
-
   } finally {
     await stopServer(server);
   }
@@ -207,13 +219,16 @@ test('HTTP Security: /log route removal', async () => {
   const port = await startServer(server);
 
   try {
-    const res = await makeRequest({
-      hostname: '127.0.0.1',
-      port,
-      path: '/log',
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' }
-    }, JSON.stringify({ level: 'info', parts: ['test'] }));
+    const res = await makeRequest(
+      {
+        hostname: '127.0.0.1',
+        port,
+        path: '/log',
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      },
+      JSON.stringify({ level: 'info', parts: ['test'] }),
+    );
 
     assert.strictEqual(res.status, 405);
     assert.strictEqual(res.body, 'method not allowed\n');
@@ -233,7 +248,7 @@ test('HTTP Security: HEAD method support', async () => {
       hostname: '127.0.0.1',
       port,
       path: '/health',
-      method: 'HEAD'
+      method: 'HEAD',
     });
     assert.strictEqual(resHealth.status, 200);
     assert.strictEqual(resHealth.headers['content-type'], 'application/json; charset=utf-8');
@@ -244,7 +259,7 @@ test('HTTP Security: HEAD method support', async () => {
       hostname: '127.0.0.1',
       port,
       path: `/debug/snapshot?token=${token}`,
-      method: 'HEAD'
+      method: 'HEAD',
     });
     assert.strictEqual(resSnapshot.status, 200);
     assert.strictEqual(resSnapshot.headers['content-type'], 'application/json; charset=utf-8');
@@ -256,11 +271,10 @@ test('HTTP Security: HEAD method support', async () => {
       hostname: '127.0.0.1',
       port,
       path: '/static/non-existent-file-xyz.html',
-      method: 'HEAD'
+      method: 'HEAD',
     });
     assert.strictEqual(resStatic404.status, 404);
     assert.strictEqual(resStatic404.body, '');
-
   } finally {
     await stopServer(server);
   }
@@ -276,11 +290,10 @@ test('HTTP Security: malformed percent encoding path robustness', async () => {
       hostname: '127.0.0.1',
       port,
       path: '/static/%C1abc',
-      method: 'GET'
+      method: 'GET',
     });
     assert.strictEqual(resMalformed.status, 400);
     assert.ok(resMalformed.body.includes('bad request'));
-
   } finally {
     await stopServer(server);
   }

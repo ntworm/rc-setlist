@@ -1,4 +1,4 @@
-# Ableton RC Setlist 0.4.2 local test notes
+﻿# RC Setlist 0.4.2 local test notes
 
 [Português (Brasil)](pt-BR/NOTAS-DA-VERSAO-0.4.2.md)
 

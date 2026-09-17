@@ -10,11 +10,16 @@ test('Setlist shows relative show and song time for first and later songs', asyn
   await expect(page.locator('#hudSongTime')).toHaveText('Song 0:00 / 3:57');
 });
 
-test('Setlist recomputes relative show time after a visible-order state update', async ({ page, request }) => {
+test('Setlist recomputes relative show time after a visible-order state update', async ({
+  page,
+  request,
+}) => {
   await page.goto('/setlist/?scenario=relative-later');
   await expect(page.locator('#hudTime')).toHaveText('1:46 / 5:43');
 
-  const fixture = await request.get('/__test__/state?scenario=relative-later').then((response) => response.json());
+  const fixture = await request
+    .get('/__test__/state?scenario=relative-later')
+    .then((response) => response.json());
   const [intro, julia] = fixture.state.songs;
   await request.post('/__test__/emit', {
     data: {
@@ -32,9 +37,14 @@ test('Setlist recomputes relative show time after a visible-order state update',
   await expect(page.locator('#hudSongTime')).toHaveText('Song 0:00 / 3:57');
 });
 
-test('Setlist show and song time stay put when the live tempo changes', async ({ page, request }) => {
+test('Setlist show and song time stay put when the live tempo changes', async ({
+  page,
+  request,
+}) => {
   await page.goto('/setlist/?scenario=relative-later');
-  const fixture = await request.get('/__test__/state?scenario=relative-later').then((response) => response.json());
+  const fixture = await request
+    .get('/__test__/state?scenario=relative-later')
+    .then((response) => response.json());
   const advanced = {
     ...fixture,
     state: { ...fixture.state, currentSongTime: fixture.state.songs[1].time + 60 },
@@ -61,7 +71,9 @@ test('Setlist keeps its known total visible when no song is active', async ({ pa
   await expect(page.locator('#hudSongTime')).toHaveText('Song — / —');
 });
 
-test('Setlist localizes the empty song-time fallback before any state arrives', async ({ page }) => {
+test('Setlist localizes the empty song-time fallback before any state arrives', async ({
+  page,
+}) => {
   await page.goto('/setlist/?scenario=never-connected');
   await expect(page.locator('#hudSongTime')).toHaveText('Song — / —');
 
@@ -69,7 +81,10 @@ test('Setlist localizes the empty song-time fallback before any state arrives', 
   await expect(page.locator('#hudSongTime')).toHaveText('Música — / —');
 });
 
-for (const viewport of [{ width: 390, height: 844 }, { width: 1024, height: 768 }]) {
+for (const viewport of [
+  { width: 390, height: 844 },
+  { width: 1024, height: 768 },
+]) {
   test(`Setlist relative time card stays contained at ${viewport.width}px`, async ({ page }) => {
     await page.setViewportSize(viewport);
     await page.goto('/setlist/?scenario=relative-later');
@@ -98,12 +113,21 @@ for (const viewport of [{ width: 390, height: 844 }, { width: 1024, height: 768 
   });
 }
 
-for (const viewport of [{ width: 390, height: 844 }, { width: 1024, height: 768 }, { width: 1366, height: 768 }]) {
-  test(`Setlist contains hour-long show progress at ${viewport.width}px`, async ({ page, request }) => {
+for (const viewport of [
+  { width: 390, height: 844 },
+  { width: 1024, height: 768 },
+  { width: 1366, height: 768 },
+]) {
+  test(`Setlist contains hour-long show progress at ${viewport.width}px`, async ({
+    page,
+    request,
+  }) => {
     await page.setViewportSize(viewport);
     await page.goto('/setlist/?scenario=relative-later');
     await expect(page.locator('#hudTime')).toHaveText('1:46 / 5:43');
-    const fixture = await request.get('/__test__/state?scenario=relative-later').then((response) => response.json());
+    const fixture = await request
+      .get('/__test__/state?scenario=relative-later')
+      .then((response) => response.json());
     await request.post('/__test__/emit', {
       data: {
         ...fixture,

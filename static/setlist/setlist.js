@@ -1,7 +1,8 @@
 // Badge icons as inline currentColor SVG. The glyphs these replace (U+21BB,
 // U+25A0, U+23ED, U+2669) fall outside the shipped Martian Mono subsets and
 // would render from a fallback face at the wrong width.
-const BADGE_ICON_ATTRS = 'viewBox="0 0 24 24" aria-hidden="true" focusable="false" class="badge-icon"';
+const BADGE_ICON_ATTRS =
+  'viewBox="0 0 24 24" aria-hidden="true" focusable="false" class="badge-icon"';
 const ICON_LOOP = `<svg ${BADGE_ICON_ATTRS}><path d="M12 5V2L8 6l4 4V7a5 5 0 1 1-5 5H5a7 7 0 1 0 7-7Z"/></svg>`;
 const ICON_STOP = `<svg ${BADGE_ICON_ATTRS}><rect x="6" y="6" width="12" height="12"/></svg>`;
 const ICON_NEXT = `<svg ${BADGE_ICON_ATTRS}><path d="M5 5v14l9-7-9-7Zm11 0h3v14h-3V5Z"/></svg>`;
@@ -18,26 +19,30 @@ const ICON_CLICK = `<svg ${BADGE_ICON_ATTRS}><path d="M12 2 4 20h3l5-11 5 11h3L1
 function markerBadges(target) {
   const parts = [];
   if (target.loopCount !== null && target.loopCount !== undefined) {
-    parts.push(`<span class="loop-badge">${ICON_LOOP} ${target.loopCount === -1 ? 'LOOP' : `LOOP ${target.loopCount}x`}</span>`);
+    parts.push(
+      `<span class="loop-badge">${ICON_LOOP} ${target.loopCount === -1 ? 'LOOP' : `LOOP ${target.loopCount}x`}</span>`,
+    );
   }
   if (target.autoStop) parts.push(`<span class="stop-badge">${ICON_STOP} STOP</span>`);
   if (target.autoNext) parts.push(`<span class="next-badge">${ICON_NEXT} NEXT</span>`);
-  if (typeof target.bpm === 'number') parts.push(`<span class="bpm-badge">${ICON_BEAT} ${target.bpm} BPM</span>`);
+  if (typeof target.bpm === 'number')
+    parts.push(`<span class="bpm-badge">${ICON_BEAT} ${target.bpm} BPM</span>`);
   if (target.autoClick === true) parts.push(`<span class="click-badge">${ICON_CLICK} CLICK</span>`);
-  else if (target.autoClick === false) parts.push(`<span class="click-badge is-off">${ICON_CLICK} CLICK OFF</span>`);
+  else if (target.autoClick === false)
+    parts.push(`<span class="click-badge is-off">${ICON_CLICK} CLICK OFF</span>`);
   if (target.skip) parts.push(`<span class="skip-badge">${ICON_SKIP} SKIP</span>`);
-  if (target.jumpTarget) parts.push(`<span class="jump-badge">${ICON_NEXT} JUMP → ${escapeLyricsEditorText(target.jumpTarget)}</span>`);
+  if (target.jumpTarget)
+    parts.push(
+      `<span class="jump-badge">${ICON_NEXT} JUMP → ${escapeLyricsEditorText(target.jumpTarget)}</span>`,
+    );
   return parts.join('');
 }
-
 
 const i18n = RcSetlistI18n;
 const t = (key, params) => i18n.t(key, params);
 const controllerRuntime = RcSetlistControllerRuntime;
 const languageSelect = document.getElementById('languageSelect');
 i18n.bindSelector(languageSelect);
-
-
 
 let ws;
 
@@ -126,7 +131,7 @@ let profileState = {
   projectName: '',
 };
 const pendingProfileCommands = new Map();
-const markerEditTracker = new Map();  // commandId -> { songIndex, sectionIndex, originalName, time }
+const markerEditTracker = new Map(); // commandId -> { songIndex, sectionIndex, originalName, time }
 /**
  * Locator renames the client has sent and Live has not confirmed back yet, by
  * beat position.
@@ -136,17 +141,17 @@ const markerEditTracker = new Map();  // commandId -> { songIndex, sectionIndex,
  * like it had been silently dropped. Which of the two the user hit depended
  * only on how fast they were, which is why it read as random.
  */
-const pendingLocatorEdits = new Map();  // time -> name awaiting confirmation
+const pendingLocatorEdits = new Map(); // time -> name awaiting confirmation
 
 function showConnectionFailure() {
   const hasState = Boolean(lastState);
   const overlay = document.getElementById('networkErrorOverlay');
   document.body.classList.toggle('connection-stale', hasState);
   document.body.classList.toggle('connection-empty', !hasState);
-  overlay.querySelector('h2').textContent = t(hasState ? 'status.reconnecting' : 'status.bridgeUnavailable');
-  overlay.querySelector('p').textContent = hasState
-    ? t('status.panelLost')
-    : t('status.noState');
+  overlay.querySelector('h2').textContent = t(
+    hasState ? 'status.reconnecting' : 'status.bridgeUnavailable',
+  );
+  overlay.querySelector('p').textContent = hasState ? t('status.panelLost') : t('status.noState');
   overlay.classList.add('visible');
 }
 
@@ -171,15 +176,15 @@ function showToast(message, level = 'info') {
 // MIDI Mapping State
 let midiAccess = null;
 const midiMappingDefaults = {
-  'play': null,
-  'stop': null,
-  'next_song': null,
-  'prev_song': null,
-  'next_section': null,
-  'prev_section': null,
-  'toggle_click': null,
-  'toggle_lock': null,
-  'toggle_count_in': null,
+  play: null,
+  stop: null,
+  next_song: null,
+  prev_song: null,
+  next_section: null,
+  prev_section: null,
+  toggle_click: null,
+  toggle_lock: null,
+  toggle_count_in: null,
 };
 let midiMappings = controllerRuntime.readMidiMappings(
   localStorage,
@@ -191,15 +196,15 @@ let currentMidiInputId = localStorage.getItem('bridge_midi_input_id') || '';
 
 // Keyboard Mapping State
 const keyMappingDefaults = {
-  'play': null,
-  'stop': null,
-  'next_song': null,
-  'prev_song': null,
-  'next_section': null,
-  'prev_section': null,
-  'toggle_click': null,
-  'toggle_lock': null,
-  'toggle_count_in': null,
+  play: null,
+  stop: null,
+  next_song: null,
+  prev_song: null,
+  next_section: null,
+  prev_section: null,
+  toggle_click: null,
+  toggle_lock: null,
+  toggle_count_in: null,
 };
 let keyMappings = controllerRuntime.readKeyMappings(
   localStorage,
@@ -307,12 +312,7 @@ function profileCommandId(type) {
 }
 
 function canMutateProfiles() {
-  return Boolean(
-    isController &&
-    profileState.canMutate &&
-    ws &&
-    ws.readyState === WebSocket.OPEN
-  );
+  return Boolean(isController && profileState.canMutate && ws && ws.readyState === WebSocket.OPEN);
 }
 
 function requestProfiles() {
@@ -347,8 +347,8 @@ function updateProfileMutationAvailability() {
   profileManageModal.querySelectorAll('.profile-delete-group').forEach((group) => {
     const confirmation = group.querySelector('.profile-delete-confirmation');
     const deleteButton = group.querySelector('.profile-delete-button');
-    deleteButton.disabled = !mutable ||
-      confirmation.value.normalize('NFKC').trim() !== confirmation.dataset.expectedName;
+    deleteButton.disabled =
+      !mutable || confirmation.value.normalize('NFKC').trim() !== confirmation.dataset.expectedName;
   });
 }
 
@@ -372,7 +372,11 @@ function appendProfileName(container, profile, deleted = false) {
 function profileRegistryFingerprint(state) {
   return JSON.stringify({
     activeProfileId: state.activeProfileId,
-    deletedProfiles: (state.deletedProfiles || []).map(({ id, name, deletedAt }) => ({ id, name, deletedAt })),
+    deletedProfiles: (state.deletedProfiles || []).map(({ id, name, deletedAt }) => ({
+      id,
+      name,
+      deletedAt,
+    })),
     profiles: (state.profiles || []).map(({ id, name }) => ({ id, name })),
     projectName: state.projectName || '',
     version: state.version,
@@ -399,10 +403,11 @@ function captureProfileFieldFocus() {
 function restoreProfileFieldFocus(snapshot) {
   if (!snapshot) return;
   const rows = Array.from(profileManageModal.querySelectorAll('.profile-row'));
-  const row = rows.find((candidate) => (
-    (candidate.dataset.profileId || '') === snapshot.profileId &&
-    (candidate.dataset.deletedProfileId || '') === snapshot.deletedProfileId
-  ));
+  const row = rows.find(
+    (candidate) =>
+      (candidate.dataset.profileId || '') === snapshot.profileId &&
+      (candidate.dataset.deletedProfileId || '') === snapshot.deletedProfileId,
+  );
   const field = row?.querySelector(`.${snapshot.className}`);
   if (!field || field.disabled) return;
   field.value = snapshot.value;
@@ -470,13 +475,17 @@ function renderProfileState() {
       confirmation.autocomplete = 'off';
       confirmation.dataset.expectedName = profile.name;
       confirmation.placeholder = t('setlist.confirmationName', { name: profile.name });
-      confirmation.setAttribute('aria-label', t('setlist.confirmationName', { name: profile.name }));
+      confirmation.setAttribute(
+        'aria-label',
+        t('setlist.confirmationName', { name: profile.name }),
+      );
       const deleteButton = document.createElement('button');
       deleteButton.className = 'btn btn-danger profile-delete-button profile-mutation-control';
       deleteButton.type = 'button';
       deleteButton.textContent = t('setlist.delete');
       const updateDeleteButton = () => {
-        deleteButton.disabled = !canMutateProfiles() || confirmation.value.normalize('NFKC').trim() !== profile.name;
+        deleteButton.disabled =
+          !canMutateProfiles() || confirmation.value.normalize('NFKC').trim() !== profile.name;
       };
       confirmation.addEventListener('input', updateDeleteButton);
       deleteButton.addEventListener('click', () => {
@@ -493,7 +502,9 @@ function renderProfileState() {
   }
 
   deletedProfileList.textContent = '';
-  const deletedProfiles = Array.isArray(profileState.deletedProfiles) ? profileState.deletedProfiles : [];
+  const deletedProfiles = Array.isArray(profileState.deletedProfiles)
+    ? profileState.deletedProfiles
+    : [];
   deletedProfileSection.hidden = deletedProfiles.length === 0;
   for (const profile of deletedProfiles) {
     const row = document.createElement('article');
@@ -532,7 +543,9 @@ function toggleManagedModal(modal, onOpen) {
   modal.classList.add('open');
   modal.setAttribute('aria-hidden', 'false');
   onOpen?.();
-  const focusTarget = modal.querySelector('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
+  const focusTarget = modal.querySelector(
+    'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
+  );
   focusTarget?.focus?.({ preventScroll: true });
 }
 
@@ -565,13 +578,14 @@ function initMidi() {
     return;
   }
 
-  navigator.requestMIDIAccess()
-    .then(access => {
+  navigator
+    .requestMIDIAccess()
+    .then((access) => {
       midiAccess = access;
       updateMidiDevices();
       midiAccess.onstatechange = updateMidiDevices;
     })
-    .catch(err => {
+    .catch((err) => {
       console.warn('[MIDI] MIDI access denied:', err);
       midiInputSelect.innerHTML = `<option value="">${escapeLyricsEditorText(t('midi.permissionDenied'))}</option>`;
     });
@@ -588,7 +602,7 @@ function updateMidiDevices() {
     return;
   }
 
-  inputs.forEach(input => {
+  inputs.forEach((input) => {
     const option = document.createElement('option');
     option.value = input.id;
     option.textContent = input.name;
@@ -611,11 +625,12 @@ function bindMidiListeners() {
   if (!midiAccess) return;
 
   // Unbind all inputs first
-  midiAccess.inputs.forEach(input => {
+  midiAccess.inputs.forEach((input) => {
     input.onmidimessage = null;
   });
 
-  const selectedInput = midiAccess.inputs.get(currentMidiInputId) || Array.from(midiAccess.inputs.values())[0];
+  const selectedInput =
+    midiAccess.inputs.get(currentMidiInputId) || Array.from(midiAccess.inputs.values())[0];
   if (selectedInput) {
     currentMidiInputId = selectedInput.id;
     localStorage.setItem('bridge_midi_input_id', currentMidiInputId);
@@ -634,8 +649,8 @@ function onMidiMessage(event) {
   const value = data.length > 2 ? data[2] : 0;
 
   // Detect Note On (with velocity > 0) or Control Change (with value > 0)
-  const isNoteOn = (type === 0x90 && value > 0);
-  const isCC = (type === 0xb0 && value > 0);
+  const isNoteOn = type === 0x90 && value > 0;
+  const isCC = type === 0xb0 && value > 0;
 
   if (!isNoteOn && !isCC) return;
 
@@ -646,7 +661,7 @@ function onMidiMessage(event) {
     midiMappings[activeMidiMappingKey] = {
       type: midiType,
       channel: channel,
-      number: number
+      number: number,
     };
     localStorage.setItem('bridge_midi_mappings', JSON.stringify(midiMappings));
     activeMidiMappingKey = null;
@@ -656,7 +671,12 @@ function onMidiMessage(event) {
 
   // Check if matches any active mapping
   for (const [actionKey, mapping] of Object.entries(midiMappings)) {
-    if (mapping && mapping.type === midiType && mapping.channel === channel && mapping.number === number) {
+    if (
+      mapping &&
+      mapping.type === midiType &&
+      mapping.channel === channel &&
+      mapping.number === number
+    ) {
       executeMidiAction(actionKey);
       break;
     }
@@ -664,27 +684,27 @@ function onMidiMessage(event) {
 }
 
 const actionLabelKeys = {
-  'play': 'midi.play',
-  'stop': 'midi.stop',
-  'next_song': 'midi.nextSong',
-  'prev_song': 'midi.previousSong',
-  'next_section': 'midi.nextSection',
-  'prev_section': 'midi.previousSection',
-  'toggle_click': 'midi.toggleClick',
-  'toggle_lock': 'midi.toggleLock',
-  'toggle_count_in': 'midi.toggleCountIn',
+  play: 'midi.play',
+  stop: 'midi.stop',
+  next_song: 'midi.nextSong',
+  prev_song: 'midi.previousSong',
+  next_section: 'midi.nextSection',
+  prev_section: 'midi.previousSection',
+  toggle_click: 'midi.toggleClick',
+  toggle_lock: 'midi.toggleLock',
+  toggle_count_in: 'midi.toggleCountIn',
 };
 
 const keyActionLabelKeys = {
-  'play': 'keyboard.play',
-  'stop': 'keyboard.stop',
-  'next_song': 'keyboard.nextSong',
-  'prev_song': 'keyboard.previousSong',
-  'next_section': 'keyboard.nextSection',
-  'prev_section': 'keyboard.previousSection',
-  'toggle_click': 'keyboard.toggleClick',
-  'toggle_lock': 'keyboard.toggleLock',
-  'toggle_count_in': 'keyboard.toggleCountIn',
+  play: 'keyboard.play',
+  stop: 'keyboard.stop',
+  next_song: 'keyboard.nextSong',
+  prev_song: 'keyboard.previousSong',
+  next_section: 'keyboard.nextSection',
+  prev_section: 'keyboard.previousSection',
+  toggle_click: 'keyboard.toggleClick',
+  toggle_lock: 'keyboard.toggleLock',
+  toggle_count_in: 'keyboard.toggleCountIn',
 };
 
 function renderMidiMappings() {
@@ -847,11 +867,11 @@ function onGlobalKeyDown(event) {
   // Check if this key matches any stored mapping
   for (const [actionKey, mapping] of Object.entries(keyMappings)) {
     if (
-      mapping
-      && mapping.code === event.code
-      && Boolean(mapping.ctrlKey) === event.ctrlKey
-      && Boolean(mapping.altKey) === event.altKey
-      && Boolean(mapping.shiftKey) === event.shiftKey
+      mapping &&
+      mapping.code === event.code &&
+      Boolean(mapping.ctrlKey) === event.ctrlKey &&
+      Boolean(mapping.altKey) === event.altKey &&
+      Boolean(mapping.shiftKey) === event.shiftKey
     ) {
       event.preventDefault();
       executeSetlistAction(actionKey);
@@ -1042,9 +1062,21 @@ function cancelCountIn() {
   countInBeatTimers.forEach((id) => clearTimeout(id));
   countInBeatTimers = [];
   countInVoices.forEach(({ oscillator, gain }) => {
-    try { oscillator.stop(); } catch { /* already finished */ }
-    try { oscillator.disconnect(); } catch { /* already detached */ }
-    try { gain.disconnect(); } catch { /* already detached */ }
+    try {
+      oscillator.stop();
+    } catch {
+      /* already finished */
+    }
+    try {
+      oscillator.disconnect();
+    } catch {
+      /* already detached */
+    }
+    try {
+      gain.disconnect();
+    } catch {
+      /* already detached */
+    }
   });
   countInVoices = [];
   btnPlay.classList.remove('is-counting');
@@ -1086,9 +1118,8 @@ function requestPlay() {
     return;
   }
 
-  const wantsCountIn = canUseTransport()
-    && lastState?.preRollEnabled === true
-    && lastState.isPlaying === false;
+  const wantsCountIn =
+    canUseTransport() && lastState?.preRollEnabled === true && lastState.isPlaying === false;
   if (!wantsCountIn) {
     sendControl('play');
     return;
@@ -1102,30 +1133,52 @@ function requestPlay() {
     ),
     latencyMs: latencyCompensationMs,
   });
-  const ctx = plan ? countInContext() : null;
-  if (!plan || !ctx) {
-    // No usable tempo, signature or audio device: start rather than invent a
-    // count the operator cannot hear.
+  if (!plan) {
+    // No usable tempo or signature: start rather than invent a count.
     sendControl('play');
     return;
   }
-  if (ctx.state === 'suspended') ctx.resume();
 
-  const startedAt = ctx.currentTime + 0.06;   // a beat of headroom to schedule in
+  // Delegate the orchestration to the server so all clients play the count-in audio
+  ws.send(JSON.stringify({ type: 'trigger_count_in', sendPlayOffsetMs: plan.sendPlayOffsetMs }));
+}
+
+function playCountInStarted(sendPlayOffsetMs) {
+  if (isCountingIn()) cancelCountIn();
+
+  const plan = window.RcCountIn.planCountIn({
+    bpm: window.RcCountIn.countInTempo(lastState),
+    beatsPerBar: SetlistTransportRuntime.preRollBarBeats(
+      lastState.signatureNumerator,
+      lastState.signatureDenominator,
+    ),
+    latencyMs: latencyCompensationMs,
+  });
+  if (!plan) return;
+
+  const audioOn = window.RcCountIn.browserCountInAudioEnabled(window.localStorage);
+  const ctx = audioOn ? countInContext() : null;
+  if (ctx && ctx.state === 'suspended') ctx.resume();
+
+  const startedAt = ctx ? ctx.currentTime + 0.06 : 0; // a beat of headroom to schedule in
   plan.beats.forEach((beat) => {
-    scheduleCountInBlip(ctx, startedAt + beat.offsetMs / 1000, beat.accent);
-    countInBeatTimers.push(setTimeout(() => {
-      btnPlay.dataset.count = String(beat.index + 1);
-    }, beat.offsetMs));
+    if (ctx) {
+      scheduleCountInBlip(ctx, startedAt + beat.offsetMs / 1000, beat.accent);
+    }
+    countInBeatTimers.push(
+      setTimeout(() => {
+        btnPlay.dataset.count = String(beat.index + 1);
+      }, beat.offsetMs),
+    );
   });
 
   btnPlay.classList.add('is-counting');
   btnPlay.dataset.count = '1';
+  // The server sends the play command, but the client must clean up its UI
   countInTimer = setTimeout(() => {
     countInTimer = null;
     cancelCountIn();
-    sendControl('play');
-  }, plan.sendPlayOffsetMs);
+  }, sendPlayOffsetMs);
 }
 
 function mountTransportControls() {
@@ -1140,19 +1193,26 @@ function mountTransportControls() {
     { button: btnNext, direction: 'next', level: 'section' },
     { button: btnNextSong, direction: 'next', level: 'song' },
   ];
-  transportHoldControllers = controls.map((control) => SetlistTransportRuntime.mountHoldButton({
-    ...shared,
-    ...control,
-  }));
+  transportHoldControllers = controls.map((control) =>
+    SetlistTransportRuntime.mountHoldButton({
+      ...shared,
+      ...control,
+    }),
+  );
   // Stop is the most expensive mistake this interface allows: it halts the band
   // mid-song, and it sits a thumb's width from Play on a fixed bottom bar. It
   // gets the same 500 ms gate as its four neighbours.
-  transportHoldControllers.push(SetlistTransportRuntime.mountHoldButton({
-    ...shared,
-    button: btnStop,
-    resolveTarget: () => (canUseTransport() ? { control: 'stop' } : null),
-    onComplete: () => { cancelCountIn(); sendControl('stop'); },
-  }));
+  transportHoldControllers.push(
+    SetlistTransportRuntime.mountHoldButton({
+      ...shared,
+      button: btnStop,
+      resolveTarget: () => (canUseTransport() ? { control: 'stop' } : null),
+      onComplete: () => {
+        cancelCountIn();
+        sendControl('stop');
+      },
+    }),
+  );
   btnPlay.addEventListener('click', requestPlay);
   updateTransportAvailability();
 }
@@ -1178,10 +1238,12 @@ function connect() {
     document.getElementById('networkErrorOverlay').classList.remove('visible');
 
     // Send handshake
-    ws.send(JSON.stringify({
-      type: 'handshake',
-      clientId: 'browser-setlist-' + Math.random().toString(36).substring(7)
-    }));
+    ws.send(
+      JSON.stringify({
+        type: 'handshake',
+        clientId: 'browser-setlist-' + Math.random().toString(36).substring(7),
+      }),
+    );
   };
 
   ws.onerror = (event) => {
@@ -1211,12 +1273,15 @@ function connect() {
     renderProfileState();
     showConnectionFailure();
     if (event.code !== 1000 && event.code !== 1001) {
-      appendLog(t('feedback.wsClosed', { code: event.code, reason: event.reason || '(none)' }), 'warn');
+      appendLog(
+        t('feedback.wsClosed', { code: event.code, reason: event.reason || '(none)' }),
+        'warn',
+      );
     }
     setTimeout(connect, 3000); // Reconnect
   };
 
-  let lastActiveSongIdx = -2;  // sentinel != any real index → forces fetch on first state
+  let lastActiveSongIdx = -2; // sentinel != any real index → forces fetch on first state
   let lyricsFetchInFlight = false;
 
   ws.onmessage = (e) => {
@@ -1267,7 +1332,9 @@ function connect() {
           if (!lyricsFetchInFlight) {
             lyricsFetchInFlight = true;
             ws.send(JSON.stringify({ type: 'get_lyrics' }));
-            setTimeout(() => { lyricsFetchInFlight = false; }, 250);
+            setTimeout(() => {
+              lyricsFetchInFlight = false;
+            }, 250);
           }
         }
       } else if (payload.type === 'log') {
@@ -1281,7 +1348,7 @@ function connect() {
           currentLyrics = {
             song: payload.song || '',
             format: payload.format || 'none',
-            lines: Array.isArray(payload.lines) ? payload.lines : []
+            lines: Array.isArray(payload.lines) ? payload.lines : [],
           };
           currentLyricsIdx = -1; // force re-evaluation against the new lines
           renderActiveLyric();
@@ -1313,7 +1380,8 @@ function connect() {
       } else if (payload.type === 'profiles_state') {
         const nextProfileState = {
           version: payload.version,
-          activeProfileId: typeof payload.activeProfileId === 'string' ? payload.activeProfileId : '',
+          activeProfileId:
+            typeof payload.activeProfileId === 'string' ? payload.activeProfileId : '',
           profiles: Array.isArray(payload.profiles) ? payload.profiles : [],
           deletedProfiles: Array.isArray(payload.deletedProfiles) ? payload.deletedProfiles : [],
           canMutate: Boolean(payload.canMutate),
@@ -1328,7 +1396,10 @@ function connect() {
         lyricsSaveTracker.settle(payload);
         quantizationConfirmation.settle(payload);
         const markerEdit = markerEditTracker.get(payload.commandId);
-        if (markerEdit && ['confirmed', 'failed', 'expired', 'cancelled'].includes(payload.status)) {
+        if (
+          markerEdit &&
+          ['confirmed', 'failed', 'expired', 'cancelled'].includes(payload.status)
+        ) {
           markerEditTracker.delete(payload.commandId);
           if (markerEdit.time !== undefined) pendingLocatorEdits.delete(markerEdit.time);
           if (payload.status === 'confirmed') {
@@ -1338,13 +1409,18 @@ function connect() {
           }
         }
         const profileCommand = pendingProfileCommands.get(payload.commandId);
-        if (profileCommand && ['confirmed', 'failed', 'expired', 'cancelled'].includes(payload.status)) {
+        if (
+          profileCommand &&
+          ['confirmed', 'failed', 'expired', 'cancelled'].includes(payload.status)
+        ) {
           pendingProfileCommands.delete(payload.commandId);
           if (payload.status === 'failed') {
             showToast(failureText('setlist.operationFailed', payload), 'error');
           }
           requestProfiles();
         }
+      } else if (payload.type === 'count_in_started') {
+        playCountInStarted(payload.sendPlayOffsetMs);
       } else if (payload.type === 'error') {
         lyricsSaveTracker.failAll('server_error');
         const message = t('feedback.serverError', { detail: payload.message });
@@ -1367,7 +1443,7 @@ function formatBeatsAsTime(beats, bpmSource) {
   } else if (lastState && lastState.tempo) {
     bpm = lastState.tempo;
   }
-  const seconds = beats * 60 / bpm;
+  const seconds = (beats * 60) / bpm;
   const m = Math.floor(seconds / 60);
   const s = Math.floor(seconds % 60);
   const ms = Math.floor((seconds % 1) * 100);
@@ -1385,8 +1461,6 @@ function formatDuration(seconds, includeHours = false) {
   }
   return `${minutes}:${String(secs).padStart(2, '0')}`;
 }
-
-
 
 function renderActiveLyric() {
   const el = document.getElementById('hudLyric');
@@ -1460,15 +1534,13 @@ const barDisplayStabilizer = SetlistTransportRuntime.createBarDisplayStabilizer(
 
 function sectionDisplayName(section) {
   if (!section) return t('common.none');
-  return section.automationOnly || !section.name
-    ? t('setlist.automationMarker')
-    : section.name;
+  return section.automationOnly || !section.name ? t('setlist.automationMarker') : section.name;
 }
 
 function getEstimatedBeats() {
   if (!lastState) return 0;
   if (!lastState.isPlaying) return lastState.currentSongTime;
-  const elapsedMs = (performance.now() - lastReceivedTime) + latencyCompensationMs;
+  const elapsedMs = performance.now() - lastReceivedTime + latencyCompensationMs;
   const elapsedBeats = (elapsedMs / 1000) * (lastState.tempo / 60);
   return lastState.currentSongTime + elapsedBeats;
 }
@@ -1496,9 +1568,10 @@ function tick() {
 
     // Update Next Song / Section
     const nextSongObj = lastState.songs[lastState.activeSongIndex + 1];
-    setTextIfChanged(hudNextSong, nextSongObj
-      ? t('setlist.nextValue', { name: nextSongObj.title })
-      : t('setlist.nextEndSet'));
+    setTextIfChanged(
+      hudNextSong,
+      nextSongObj ? t('setlist.nextValue', { name: nextSongObj.title }) : t('setlist.nextEndSet'),
+    );
 
     let nextSectionObj = null;
     let nextIsCurrent = false;
@@ -1521,18 +1594,28 @@ function tick() {
     }
 
     if (nextIsCurrent && nextSectionObj) {
-      setTextIfChanged(hudNextSection, t('setlist.nextRepeat', { name: sectionDisplayName(nextSectionObj) }));
+      setTextIfChanged(
+        hudNextSection,
+        t('setlist.nextRepeat', { name: sectionDisplayName(nextSectionObj) }),
+      );
     } else {
-      setTextIfChanged(hudNextSection, nextSectionObj
-        ? t('setlist.nextValue', { name: sectionDisplayName(nextSectionObj) })
-        : t('setlist.nextEnd'));
+      setTextIfChanged(
+        hudNextSection,
+        nextSectionObj
+          ? t('setlist.nextValue', { name: sectionDisplayName(nextSectionObj) })
+          : t('setlist.nextEnd'),
+      );
     }
 
     const estimatedBeats = getEstimatedBeats();
     const songElapsedBeats = calculateSongElapsedBeats(estimatedBeats, activeSong);
     const formattedInternalTime = formatBeatsAsTime(estimatedBeats, lastState.tempo);
     const songElapsedSeconds = activeSong
-      ? SetlistTransportRuntime.songElapsedSecondsFromBeats(songElapsedBeats, activeSong, lastState.durationBpm ?? lastState.tempo)
+      ? SetlistTransportRuntime.songElapsedSecondsFromBeats(
+          songElapsedBeats,
+          activeSong,
+          lastState.durationBpm ?? lastState.tempo,
+        )
       : null;
     const setlistProgress = SetlistTransportRuntime.calculateSetlistProgress({
       songs: lastState.songs,
@@ -1540,19 +1623,28 @@ function tick() {
       totalDurationSeconds: lastState.totalDurationSeconds,
       songElapsedSeconds,
     });
-    const showUsesHours = setlistProgress.showTotalSeconds !== null
-      && setlistProgress.showTotalSeconds >= 3600;
-    const songUsesHours = setlistProgress.songDurationSeconds !== null
-      && setlistProgress.songDurationSeconds >= 3600;
-    setTextIfChanged(hudTime, `${formatDuration(setlistProgress.showElapsedSeconds, showUsesHours)} / ${formatDuration(setlistProgress.showTotalSeconds, showUsesHours)}`);
+    const showUsesHours =
+      setlistProgress.showTotalSeconds !== null && setlistProgress.showTotalSeconds >= 3600;
+    const songUsesHours =
+      setlistProgress.songDurationSeconds !== null && setlistProgress.songDurationSeconds >= 3600;
+    setTextIfChanged(
+      hudTime,
+      `${formatDuration(setlistProgress.showElapsedSeconds, showUsesHours)} / ${formatDuration(setlistProgress.showTotalSeconds, showUsesHours)}`,
+    );
     const isEstimated = lastState.durationConfidence === 'estimated';
-    setDisplayIfChanged(hudTimeBadge, isEstimated && setlistProgress.showTotalSeconds !== null ? 'inline-block' : 'none');
+    setDisplayIfChanged(
+      hudTimeBadge,
+      isEstimated && setlistProgress.showTotalSeconds !== null ? 'inline-block' : 'none',
+    );
 
     if (hudSongTime) {
-      setTextIfChanged(hudSongTime, t('setlist.songTime', {
-        elapsed: formatDuration(setlistProgress.songElapsedSeconds, songUsesHours),
-        duration: formatDuration(setlistProgress.songDurationSeconds, songUsesHours),
-      }));
+      setTextIfChanged(
+        hudSongTime,
+        t('setlist.songTime', {
+          elapsed: formatDuration(setlistProgress.songElapsedSeconds, songUsesHours),
+          duration: formatDuration(setlistProgress.songDurationSeconds, songUsesHours),
+        }),
+      );
       setDisplayIfChanged(hudSongTime, 'inline-block');
     }
 
@@ -1610,7 +1702,10 @@ function tick() {
 
     // Update Loop Iteration display
     if (lastState.loopIteration) {
-      setTextIfChanged(hudLoopIter, `LOOP: ${lastState.loopIteration.current}/${lastState.loopIteration.total}`);
+      setTextIfChanged(
+        hudLoopIter,
+        `LOOP: ${lastState.loopIteration.current}/${lastState.loopIteration.total}`,
+      );
       setDisplayIfChanged(hudLoopIter, 'inline-block');
     } else {
       setDisplayIfChanged(hudLoopIter, 'none');
@@ -1621,13 +1716,16 @@ function tick() {
 requestAnimationFrame(tick);
 
 function clearReorderPreview() {
-  songListDiv.querySelectorAll('.song-item.is-reordering, .song-item.drop-before, .song-item.drop-after')
+  songListDiv
+    .querySelectorAll('.song-item.is-reordering, .song-item.drop-before, .song-item.drop-after')
     .forEach((element) => element.classList.remove('is-reordering', 'drop-before', 'drop-after'));
   draggedDropSlot = null;
 }
 
 function insertionSlotForClientY(clientY) {
-  const items = [...songListDiv.children].filter((element) => element.classList.contains('song-item'));
+  const items = [...songListDiv.children].filter((element) =>
+    element.classList.contains('song-item'),
+  );
   for (let index = 0; index < items.length; index += 1) {
     const rect = items[index].getBoundingClientRect();
     if (clientY < rect.top + rect.height / 2) return index;
@@ -1642,7 +1740,9 @@ function isNoopReorderSlot(sourceIndex, slot) {
 function updateReorderPreview(clientY) {
   if (!Number.isInteger(draggedSongIdx)) return;
   clearReorderPreview();
-  const items = [...songListDiv.children].filter((element) => element.classList.contains('song-item'));
+  const items = [...songListDiv.children].filter((element) =>
+    element.classList.contains('song-item'),
+  );
   const source = items[draggedSongIdx];
   if (!source) return;
   source.classList.add('is-reordering');
@@ -1661,7 +1761,13 @@ function completeReorder() {
   const slot = draggedDropSlot;
   clearReorderPreview();
   draggedSongIdx = null;
-  if (!canReorderSetlist() || !Number.isInteger(sourceIndex) || !Number.isInteger(slot) || !lastState?.songs) return;
+  if (
+    !canReorderSetlist() ||
+    !Number.isInteger(sourceIndex) ||
+    !Number.isInteger(slot) ||
+    !lastState?.songs
+  )
+    return;
   if (isNoopReorderSlot(sourceIndex, slot)) return;
   const order = [...lastState.songs];
   const [moved] = order.splice(sourceIndex, 1);
@@ -1728,14 +1834,14 @@ function handleDrop(e) {
 
 function sendReorder(songTitles) {
   if (ws && ws.readyState === WebSocket.OPEN) {
-    ws.send(JSON.stringify({
-      type: 'reorder',
-      songTitles
-    }));
+    ws.send(
+      JSON.stringify({
+        type: 'reorder',
+        songTitles,
+      }),
+    );
   }
 }
-
-
 
 function resolveSetlistJumpTarget(node) {
   const element = node?.closest?.('.song-header, .section-btn');
@@ -1758,8 +1864,10 @@ function setlistTargetKey(target) {
 function canHoldSetlistTarget(target) {
   if (!target?.element?.isConnected || !canUseTransport() || !lastState) return false;
   if (target.sectionIndex === null) return lastState.activeSongIndex !== target.songIndex;
-  return lastState.activeSongIndex !== target.songIndex
-    || lastState.activeSectionIndex !== target.sectionIndex;
+  return (
+    lastState.activeSongIndex !== target.songIndex ||
+    lastState.activeSectionIndex !== target.sectionIndex
+  );
 }
 
 function mountSetlistTargetControls() {
@@ -1769,11 +1877,14 @@ function mountSetlistTargetControls() {
     canActivate: canHoldSetlistTarget,
     targetKey: setlistTargetKey,
     onActivate: (target) => jumpTo(target.songIndex, target.sectionIndex),
-    canReorder: (target) => target?.sectionIndex === null && canHoldSetlistTarget(target) && canReorderSetlist(),
+    canReorder: (target) =>
+      target?.sectionIndex === null && canHoldSetlistTarget(target) && canReorderSetlist(),
     onReorderStart: (target) => {
       draggedSongIdx = target.songIndex;
       draggedDropSlot = null;
-      songListDiv.querySelector(`.song-item[data-song="${target.songIndex}"]`)?.classList.add('is-reordering');
+      songListDiv
+        .querySelector(`.song-item[data-song="${target.songIndex}"]`)
+        ?.classList.add('is-reordering');
     },
     onReorderMove: (_target, event) => updateReorderPreview(event.clientY),
     onReorderCommit: () => completeReorder(),
@@ -1785,13 +1896,15 @@ function mountSetlistTargetControls() {
 
 function renderSongList(state) {
   totalSetlistDuration.textContent = formatDuration(state.totalDurationSeconds);
-  totalSetlistDuration.title = typeof state.totalDurationSeconds === 'number'
-    ? t('setlist.totalDuration')
-    : t('setlist.unknownDuration');
+  totalSetlistDuration.title =
+    typeof state.totalDurationSeconds === 'number'
+      ? t('setlist.totalDuration')
+      : t('setlist.unknownDuration');
   const isEstimated = state.durationConfidence === 'estimated';
   const totalEstBadge = document.getElementById('totalDurationBadge');
   if (totalEstBadge) {
-    totalEstBadge.style.display = isEstimated && typeof state.totalDurationSeconds === 'number' ? 'inline-block' : 'none';
+    totalEstBadge.style.display =
+      isEstimated && typeof state.totalDurationSeconds === 'number' ? 'inline-block' : 'none';
   }
   if (!state.songs || state.songs.length === 0) {
     setlistTargetHoldController?.cancelForRender();
@@ -1805,12 +1918,14 @@ function renderSongList(state) {
   }
 
   const hasSetlistVersion = Number.isInteger(state.setlistVersion);
-  const currentJson = hasSetlistVersion ? '' : JSON.stringify({ songs: state.songs, hidden: state.hidden });
+  const currentJson = hasSetlistVersion
+    ? ''
+    : JSON.stringify({ songs: state.songs, hidden: state.hidden });
   const colorSignature = JSON.stringify([state.songColors || {}, state.songNotes || {}]);
-  const structureUnchanged = (hasSetlistVersion
-    ? state.setlistVersion === lastRenderedSetlistVersion
-    : currentJson === lastRenderedSongsJson)
-    && colorSignature === lastRenderedColorSignature;
+  const structureUnchanged =
+    (hasSetlistVersion
+      ? state.setlistVersion === lastRenderedSetlistVersion
+      : currentJson === lastRenderedSongsJson) && colorSignature === lastRenderedColorSignature;
 
   if (structureUnchanged) {
     updateActiveClasses(state.activeSongIndex, state.activeSectionIndex);
@@ -1837,19 +1952,25 @@ function renderSongList(state) {
           <span class="song-time">${formatDuration(song.durationSeconds)}</span>
         </div>
 
-        ${song.sections && song.sections.length > 0 ? `
+        ${
+          song.sections && song.sections.length > 0
+            ? `
           <div class="song-sections">
-            ${song.sections.map((sec, secIdx) => {
-              const isActiveSection = isActiveSong && secIdx === state.activeSectionIndex;
-              return `
+            ${song.sections
+              .map((sec, secIdx) => {
+                const isActiveSection = isActiveSong && secIdx === state.activeSectionIndex;
+                return `
                 <button class="section-btn ${isActiveSection ? 'active' : ''}" data-song="${songIdx}" data-section="${secIdx}" ondblclick="openMarkerEditor('section', ${songIdx}, ${secIdx}, event)">
                   <span class="section-name">${escapeLyricsEditorText(sectionDisplayName(sec))}</span>
                   ${markerBadges(sec)}
                 </button>
               `;
-            }).join('')}
+              })
+              .join('')}
           </div>
-        ` : ''}
+        `
+            : ''
+        }
       </div>
     `;
   });
@@ -1878,7 +1999,9 @@ function jumpTargetElement(target) {
   if (target.sectionIndex === null) {
     return document.querySelector(`.song-header[data-song="${target.songIndex}"]`);
   }
-  return document.querySelector(`.section-btn[data-song="${target.songIndex}"][data-section="${target.sectionIndex}"]`);
+  return document.querySelector(
+    `.section-btn[data-song="${target.songIndex}"][data-section="${target.sectionIndex}"]`,
+  );
 }
 
 function renderJumpFeedback(snapshot) {
@@ -1917,7 +2040,11 @@ function jumpTo(songIndex, sectionIndex) {
   if (!canUseTransport()) return;
 
   const now = Date.now();
-  if (now - lastJumpTime < 300 && lastJumpTarget.song === songIndex && lastJumpTarget.section === sectionIndex) {
+  if (
+    now - lastJumpTime < 300 &&
+    lastJumpTarget.song === songIndex &&
+    lastJumpTarget.section === sectionIndex
+  ) {
     console.log('[Jump] Throttled rapid duplicate click');
     return;
   }
@@ -1925,11 +2052,13 @@ function jumpTo(songIndex, sectionIndex) {
   lastJumpTarget = { song: songIndex, section: sectionIndex };
 
   if (ws && ws.readyState === WebSocket.OPEN) {
-    ws.send(JSON.stringify({
-      type: 'jump',
-      songIndex,
-      sectionIndex
-    }));
+    ws.send(
+      JSON.stringify({
+        type: 'jump',
+        songIndex,
+        sectionIndex,
+      }),
+    );
   }
 }
 
@@ -1991,17 +2120,18 @@ function handleCsvReady(url, count, fileName) {
     });
 }
 
-
 function toggleMetronome() {
   if (isLocked) {
     showLockWarning();
     return;
   }
   if (!canUseTransport()) return;
-  ws.send(JSON.stringify({
-    type: 'metronome',
-    value: !lastState.metronome
-  }));
+  ws.send(
+    JSON.stringify({
+      type: 'metronome',
+      value: !lastState.metronome,
+    }),
+  );
 }
 
 function togglePreRoll() {
@@ -2010,10 +2140,12 @@ function togglePreRoll() {
     return;
   }
   if (!canUseTransport()) return;
-  ws.send(JSON.stringify({
-    type: 'set_pre_roll',
-    value: lastState.preRollEnabled !== true,
-  }));
+  ws.send(
+    JSON.stringify({
+      type: 'set_pre_roll',
+      value: lastState.preRollEnabled !== true,
+    }),
+  );
 }
 
 const logPanel = document.getElementById('logPanel');
@@ -2027,11 +2159,13 @@ function changeQuantization(val) {
   const value = Number.parseInt(val, 10);
   const commandId = `quantization-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
   if (!quantizationConfirmation.begin({ value, commandId })) return;
-  ws.send(JSON.stringify({
-    type: 'set_quantization',
-    value,
-    commandId,
-  }));
+  ws.send(
+    JSON.stringify({
+      type: 'set_quantization',
+      value,
+      commandId,
+    }),
+  );
 }
 function appendLog(message, level = 'info', timestamp = Date.now()) {
   const timeStr = new Date(timestamp).toLocaleTimeString(i18n.getLocale(), { hour12: false });
@@ -2169,12 +2303,7 @@ function lyricsSaveCommandId(kind) {
 }
 
 function canPersistLyrics() {
-  return Boolean(
-    isController
-    && isSynchronized
-    && ws
-    && ws.readyState === WebSocket.OPEN
-  );
+  return Boolean(isController && isSynchronized && ws && ws.readyState === WebSocket.OPEN);
 }
 
 function beginLyricsSave(kind, message, metadata) {
@@ -2269,11 +2398,13 @@ function applyLyricsLoadToEditor(payload) {
     lyricsCreateDrafts.set(song, { text, dirty: false });
     lyricsRawText.value = text;
   }
-  lyricsEditLines = (Array.isArray(payload.lines) ? payload.lines : [])
-    .map((line) => ({
-      timestamp: typeof line.time === 'number' && line.time >= 0 ? formatSecondsToLrcTime(line.time) : NO_TIMESTAMP,
-      text: line.text || '',
-    }));
+  lyricsEditLines = (Array.isArray(payload.lines) ? payload.lines : []).map((line) => ({
+    timestamp:
+      typeof line.time === 'number' && line.time >= 0
+        ? formatSecondsToLrcTime(line.time)
+        : NO_TIMESTAMP,
+    text: line.text || '',
+  }));
   markLyricsDirty(false);
   renderLyricsEditList();
 }
@@ -2290,7 +2421,8 @@ function renderLyricsEditList() {
   lyricsEditList.style.display = 'flex';
   lyricsEditLines.forEach((line, idx) => {
     const card = document.createElement('div');
-    card.style.cssText = 'display: flex; align-items: center; gap: 0.5rem; background: rgba(255,255,255,0.02); border: 1px solid var(--card-border); border-radius: 8px; padding: 0.4rem 0.6rem;';
+    card.style.cssText =
+      'display: flex; align-items: center; gap: 0.5rem; background: rgba(255,255,255,0.02); border: 1px solid var(--card-border); border-radius: 8px; padding: 0.4rem 0.6rem;';
     const hasTs = line.timestamp !== NO_TIMESTAMP;
     const dimStyle = hasTs ? '' : 'color: var(--text-muted); opacity: 0.7;';
     card.innerHTML = `
@@ -2335,7 +2467,8 @@ function beginInlineLyricEdit(idx, el) {
   const input = document.createElement('input');
   input.type = 'text';
   input.value = original.text;
-  input.style.cssText = 'flex: 1; background: rgba(0,0,0,0.4); border: 1px solid var(--accent); border-radius: 6px; color: var(--text); font-family: inherit; font-size: 0.9rem; padding: 0.3rem 0.5rem; outline: none;';
+  input.style.cssText =
+    'flex: 1; background: rgba(0,0,0,0.4); border: 1px solid var(--accent); border-radius: 6px; color: var(--text); font-family: inherit; font-size: 0.9rem; padding: 0.3rem 0.5rem; outline: none;';
   el.replaceWith(input);
   input.focus({ preventScroll: true });
   input.select();
@@ -2349,8 +2482,13 @@ function beginInlineLyricEdit(idx, el) {
     renderLyricsEditList();
   };
   input.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') { e.preventDefault(); commit(); }
-    else if (e.key === 'Escape') { e.preventDefault(); cancel(); }
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      commit();
+    } else if (e.key === 'Escape') {
+      e.preventDefault();
+      cancel();
+    }
   });
   input.addEventListener('blur', commit);
 }
@@ -2362,7 +2500,8 @@ function beginInlineLyricTsEdit(idx, el) {
   input.type = 'text';
   input.value = original.timestamp === NO_TIMESTAMP ? '' : original.timestamp;
   input.placeholder = '[mm:ss.xx]';
-  input.style.cssText = 'width: 78px; font-family: \'JetBrains Mono\', monospace; font-size: 0.7rem; background: rgba(0,0,0,0.4); border: 1px solid var(--accent); border-radius: 4px; color: var(--text); padding: 0.2rem 0.3rem; text-align: center; outline: none; box-sizing: border-box;';
+  input.style.cssText =
+    "width: 78px; font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; background: rgba(0,0,0,0.4); border: 1px solid var(--accent); border-radius: 4px; color: var(--text); padding: 0.2rem 0.3rem; text-align: center; outline: none; box-sizing: border-box;";
   el.replaceWith(input);
   input.focus({ preventScroll: true });
   input.select();
@@ -2388,8 +2527,13 @@ function beginInlineLyricTsEdit(idx, el) {
     renderLyricsEditList();
   };
   input.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') { e.preventDefault(); commit(); }
-    else if (e.key === 'Escape') { e.preventDefault(); cancel(); }
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      commit();
+    } else if (e.key === 'Escape') {
+      e.preventDefault();
+      cancel();
+    }
   });
   input.addEventListener('blur', commit);
 }
@@ -2421,9 +2565,7 @@ function saveLyricsEdit() {
     showToast(t('lyrics.missingTimecodes'), 'error');
     return;
   }
-  const lrcBody = lyricsEditLines
-    .map((l) => `${l.timestamp} ${l.text}`)
-    .join('\n');
+  const lrcBody = lyricsEditLines.map((l) => `${l.timestamp} ${l.text}`).join('\n');
   const count = lyricsEditLines.length;
   beginLyricsSave(
     'edit',
@@ -2468,7 +2610,7 @@ function populateLyricsSongs() {
   lyricsSongSelect.innerHTML = '';
   const titles = [];
   if (Array.isArray(lastState?.songs)) {
-    lastState.songs.forEach(song => {
+    lastState.songs.forEach((song) => {
       titles.push(song.title);
       const option = document.createElement('option');
       option.value = song.title;
@@ -2504,7 +2646,10 @@ function startLyricsSyncWorkflow() {
     return;
   }
 
-  lyricsLinesToSync = rawText.split(/\n/).map(line => line.trim()).filter(line => line.length > 0);
+  lyricsLinesToSync = rawText
+    .split(/\n/)
+    .map((line) => line.trim())
+    .filter((line) => line.length > 0);
   if (lyricsLinesToSync.length === 0) {
     alert(t('lyrics.noValidLines'));
     return;
@@ -2545,10 +2690,10 @@ function resetLyricsSyncWorkflow() {
 
 function getEstimatedSeconds() {
   if (!lastState) return 0;
-  if (!lastState.isPlaying) return lastState.currentSongTime * 60 / lastState.tempo;
-  const elapsedMs = (performance.now() - lastReceivedTime) + latencyCompensationMs;
+  if (!lastState.isPlaying) return (lastState.currentSongTime * 60) / lastState.tempo;
+  const elapsedMs = performance.now() - lastReceivedTime + latencyCompensationMs;
   const elapsedBeats = (elapsedMs / 1000) * (lastState.tempo / 60);
-  return (lastState.currentSongTime + elapsedBeats) * 60 / lastState.tempo;
+  return ((lastState.currentSongTime + elapsedBeats) * 60) / lastState.tempo;
 }
 
 function tapLyricTime() {
@@ -2558,10 +2703,10 @@ function tapLyricTime() {
   let relativeSeconds = absoluteSeconds;
   if (lastState && lastState.songs) {
     const selectedTitle = lyricsSongSelect.value;
-    const song = lastState.songs.find(s => s.title === selectedTitle);
+    const song = lastState.songs.find((s) => s.title === selectedTitle);
     if (song) {
       const bpm = lastState.tempo || 120;
-      const songStartSeconds = song.time * 60 / bpm;
+      const songStartSeconds = (song.time * 60) / bpm;
       relativeSeconds = Math.max(0, absoluteSeconds - songStartSeconds);
     }
   }
@@ -2586,7 +2731,9 @@ function updateLyricsSyncUI() {
     lyricsSyncActiveLine.textContent = lyricsLinesToSync[lyricsSyncActiveIndex];
 
     const upcoming = lyricsLinesToSync.slice(lyricsSyncActiveIndex + 1);
-    lyricsSyncUpcomingLines.innerHTML = upcoming.map((line, idx) => `<div>${idx + 1}. ${escapeLyricsEditorText(line)}</div>`).join('');
+    lyricsSyncUpcomingLines.innerHTML = upcoming
+      .map((line, idx) => `<div>${idx + 1}. ${escapeLyricsEditorText(line)}</div>`)
+      .join('');
   } else {
     lyricsSyncActiveLine.textContent = t('lyrics.end');
     lyricsSyncUpcomingLines.innerHTML = `<div style="font-style: italic; color: var(--success);">${escapeLyricsEditorText(t('lyrics.readySave'))}</div>`;
@@ -2595,14 +2742,14 @@ function updateLyricsSyncUI() {
 
 function saveSyncLyrics() {
   const selectedSong = lyricsSongSelect.value;
-  const fileContent = lyricsSyncedLines.map(l => `${l.timestamp} ${l.text}`).join('\n');
+  const fileContent = lyricsSyncedLines.map((l) => `${l.timestamp} ${l.text}`).join('\n');
 
   beginLyricsSave(
     'sync',
     {
       type: 'save_lyrics',
       song: selectedSong,
-      text: fileContent
+      text: fileContent,
     },
     { song: selectedSong },
   );
@@ -2666,9 +2813,8 @@ function songNotes(song) {
 }
 
 function songColor(song) {
-  const color = lastState && lastState.songColors
-    ? lastState.songColors[String(song.time)]
-    : undefined;
+  const color =
+    lastState && lastState.songColors ? lastState.songColors[String(song.time)] : undefined;
   return window.RcMarkerEditor.isPaletteColor(color) ? color : '';
 }
 
@@ -2685,8 +2831,14 @@ const SONG_COLOR_WASH_ALPHA = '26'; // ~15%
 function songColorAttr(song) {
   const color = songColor(song);
   if (!color) return '';
-  return ' data-color="1" style="--song-color: ' + color
-    + '; --song-color-wash: ' + color + SONG_COLOR_WASH_ALPHA + '"';
+  return (
+    ' data-color="1" style="--song-color: ' +
+    color +
+    '; --song-color-wash: ' +
+    color +
+    SONG_COLOR_WASH_ALPHA +
+    '"'
+  );
 }
 
 const markerEditor = document.getElementById('markerEditor');
@@ -2722,9 +2874,16 @@ function renderMarkerToggles(kind, parsed) {
     .filter((field) => fields.indexOf(field) !== -1)
     .map((field) => {
       const on = Boolean(parsed[field]);
-      return '<button type="button" class="marker-toggle" data-toggle="' + field + '"'
-        + ' aria-pressed="' + (on ? 'true' : 'false') + '">'
-        + i18n.t(MARKER_TOGGLE_LABELS[field]) + '</button>';
+      return (
+        '<button type="button" class="marker-toggle" data-toggle="' +
+        field +
+        '"' +
+        ' aria-pressed="' +
+        (on ? 'true' : 'false') +
+        '">' +
+        i18n.t(MARKER_TOGGLE_LABELS[field]) +
+        '</button>'
+      );
     })
     .join('');
   markerToggles.querySelectorAll('[data-toggle]').forEach((button) => {
@@ -2783,9 +2942,7 @@ function openMarkerEditor(kind, songIndex, sectionIndex, event) {
   // real name and not one we reconstructed: tags the panel does not show are
   // carried through from it, and the section's prefix — `> VERSO` or
   // `JÚLIA > VERSO`, both valid — is preserved instead of being rewritten.
-  const rawName = section
-    ? (section.rawName || ('> ' + section.name))
-    : (song.rawName || song.title);
+  const rawName = section ? section.rawName || '> ' + section.name : song.rawName || song.title;
   const source = section || song;
   const clickValue = section ? section.autoClick : song.autoClick;
 
@@ -2804,10 +2961,18 @@ function openMarkerEditor(kind, songIndex, sectionIndex, event) {
   };
 
   // Coming from the song panel, the way back is the song we came from.
-  const cameFromSong = kind === 'section' && markerTarget && markerTarget.kind === 'song'
-    && markerTarget.songIndex === songIndex;
+  const cameFromSong =
+    kind === 'section' &&
+    markerTarget &&
+    markerTarget.kind === 'song' &&
+    markerTarget.songIndex === songIndex;
   markerTarget = {
-    kind, songIndex, sectionIndex, time, songTitle: song.title, rawName,
+    kind,
+    songIndex,
+    sectionIndex,
+    time,
+    songTitle: song.title,
+    rawName,
     color: kind === 'song' ? songColor(song) : '',
     notes: kind === 'song' ? songNotes(song) : '',
     backToSong: cameFromSong || (markerTarget && markerTarget.backToSong && kind === 'section'),
@@ -2816,13 +2981,21 @@ function openMarkerEditor(kind, songIndex, sectionIndex, event) {
   markerFieldEl('name').value = parsed.name;
   markerFieldEl('bpm').value = typeof parsed.bpm === 'number' ? String(parsed.bpm) : '';
   const mode = markerFieldEl('loop-mode');
-  mode.value = parsed.loopCount === -1 ? 'infinite'
-    : typeof parsed.loopCount === 'number' ? 'count' : 'off';
-  markerFieldEl('loop-times').value = typeof parsed.loopCount === 'number' && parsed.loopCount > 0
-    ? String(parsed.loopCount) : '2';
+  mode.value =
+    parsed.loopCount === -1 ? 'infinite' : typeof parsed.loopCount === 'number' ? 'count' : 'off';
+  markerFieldEl('loop-times').value =
+    typeof parsed.loopCount === 'number' && parsed.loopCount > 0 ? String(parsed.loopCount) : '2';
   markerFieldEl('click').value = parsed.click;
   markerFieldEl('jump').value = parsed.jump;
   markerFieldEl('notes').value = parsed.notes;
+  const jumpDatalist = document.getElementById('jumpTargetsList');
+  if (jumpDatalist) {
+    jumpDatalist.replaceChildren(
+      ...window.RcMarkerEditor.jumpTargets(lastState?.songs).map((v) =>
+        Object.assign(document.createElement('option'), { value: v }),
+      ),
+    );
+  }
   syncMarkerLoopTimes();
 
   const currentColor = markerTarget.color;
@@ -2869,19 +3042,29 @@ function renderMarkerSections(kind, songIndex, song) {
     return;
   }
   const sections = song.sections || [];
-  host.innerHTML = sections.map((section, index) => {
-    const bits = [];
-    if (typeof section.bpm === 'number') bits.push(section.bpm + ' BPM');
-    if (section.loopCount === -1) bits.push('LOOP');
-    else if (typeof section.loopCount === 'number') bits.push('LOOP ' + section.loopCount + 'x');
-    if (section.autoStop) bits.push('STOP');
-    if (section.autoNext) bits.push('NEXT');
-    if (section.jumpTarget) bits.push('JUMP → ' + escapeLyricsEditorText(section.jumpTarget));
-    return '<button type="button" class="marker-section-row" data-section-index="' + index + '">'
-      + '<span>' + escapeLyricsEditorText(section.name) + '</span>'
-      + '<span class="marker-section-meta">' + bits.join(' · ') + '</span>'
-      + '</button>';
-  }).join('');
+  host.innerHTML = sections
+    .map((section, index) => {
+      const bits = [];
+      if (typeof section.bpm === 'number') bits.push(section.bpm + ' BPM');
+      if (section.loopCount === -1) bits.push('LOOP');
+      else if (typeof section.loopCount === 'number') bits.push('LOOP ' + section.loopCount + 'x');
+      if (section.autoStop) bits.push('STOP');
+      if (section.autoNext) bits.push('NEXT');
+      if (section.jumpTarget) bits.push('JUMP → ' + escapeLyricsEditorText(section.jumpTarget));
+      return (
+        '<button type="button" class="marker-section-row" data-section-index="' +
+        index +
+        '">' +
+        '<span>' +
+        escapeLyricsEditorText(section.name) +
+        '</span>' +
+        '<span class="marker-section-meta">' +
+        bits.join(' · ') +
+        '</span>' +
+        '</button>'
+      );
+    })
+    .join('');
   host.querySelectorAll('[data-section-index]').forEach((row) => {
     row.addEventListener('click', () => {
       openMarkerEditor('section', songIndex, Number(row.dataset.sectionIndex), null);
@@ -2900,11 +3083,15 @@ function buildMarkerName() {
   // A section keeps whatever prefix its locator already had. Composing
   // `songTitle + ' > '` instead rewrote every `> VERSO` in the set into
   // `JÚLIA > VERSO` the moment the panel touched it.
-  const head = markerTarget.kind === 'song'
-    ? read.name
-    : (window.RcMarkerEditor.sectionPrefix(markerTarget.rawName) + read.name);
+  const head =
+    markerTarget.kind === 'song'
+      ? read.name
+      : window.RcMarkerEditor.sectionPrefix(markerTarget.rawName) + read.name;
   const fullName = window.RcMarkerEditor.buildLocatorName(
-    head, read, markerTarget.kind, markerTarget.rawName,
+    head,
+    read,
+    markerTarget.kind,
+    markerTarget.rawName,
   );
   return { fullName, color: read.color, notes: read.notes };
 }
@@ -2921,7 +3108,8 @@ function commitMarkerEditor(event) {
 
   const renaming = !window.RcMarkerEditor.isSameLocatorName(built.fullName, markerTarget.rawName);
   const recolouring = markerTarget.kind === 'song' && (built.color || '') !== markerTarget.color;
-  const renoting = markerTarget.kind === 'song' && (built.notes || '') !== (markerTarget.notes || '');
+  const renoting =
+    markerTarget.kind === 'song' && (built.notes || '') !== (markerTarget.notes || '');
   // The panel can sit open across a transport start. Re-check at the moment of
   // the write, not only at the moment it opened.
   if (renaming && !canEditMarkers()) return;
@@ -2941,24 +3129,33 @@ function commitMarkerEditor(event) {
       time: markerTarget.time,
     });
     pendingLocatorEdits.set(markerTarget.time, built.fullName);
-    ws.send(JSON.stringify({
-      type: 'edit_locator', time: markerTarget.time, name: built.fullName, commandId,
-    }));
+    ws.send(
+      JSON.stringify({
+        type: 'edit_locator',
+        time: markerTarget.time,
+        name: built.fullName,
+        commandId,
+      }),
+    );
   }
   if (recolouring) {
     // Colour is RC Setlist's own memory and never touches the Live project.
-    ws.send(JSON.stringify({
-      type: 'set_song_color',
-      time: markerTarget.time,
-      color: built.color || null,
-    }));
+    ws.send(
+      JSON.stringify({
+        type: 'set_song_color',
+        time: markerTarget.time,
+        color: built.color || null,
+      }),
+    );
   }
   if (renoting) {
-    ws.send(JSON.stringify({
-      type: 'set_song_notes',
-      time: markerTarget.time,
-      notes: built.notes || null,
-    }));
+    ws.send(
+      JSON.stringify({
+        type: 'set_song_notes',
+        time: markerTarget.time,
+        notes: built.notes || null,
+      }),
+    );
   }
   closeMarkerEditor();
 }

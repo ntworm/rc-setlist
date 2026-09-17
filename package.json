@@ -1,8 +1,8 @@
 {
   "name": "rc-setlist",
-  "version": "0.7.0",
+  "version": "1.0.0",
   "private": true,
-  "description": "Source-available setlist extension for Ableton Live.",
+  "description": "RC Setlist: source-available setlist extension for Ableton Live.",
   "author": "ntworm",
   "license": "PolyForm-Noncommercial-1.0.0",
   "type": "module",
@@ -36,9 +36,9 @@
     "ci:release": "npm run verify:ableton && npm run ci:public && npm run build:prod",
     "watch": "npm run verify:ableton && tsx scripts/build.ts --watch",
     "test:ui": "playwright test",
-    "test:static": "node --test --test-force-exit static/ui.test.mjs static/setlist/marker-editor.test.mjs static/setlist/count-in.test.mjs static/shared/i18n.test.mjs static/shared/stage-runtime.test.mjs static/setlist/controller-runtime.test.mjs static/setlist/transport-runtime.test.mjs tests/documentation-contract.test.mjs",
-    "test:src": "node --import tsx --test --test-force-exit tests/atomic-write.test.mjs tests/binpack-build.test.mjs tests/cert.test.mjs tests/core.test.mjs tests/song-identity.test.mjs tests/song-book.test.mjs tests/song-book-handlers.test.mjs tests/event-log-redaction.test.mjs tests/logger-rotation.test.mjs tests/osc.test.mjs tests/osc-diagnostics.test.mjs tests/next-downbeat-jump.test.mjs tests/sdk-sync.test.mjs tests/pre-roll-integration.test.mjs tests/automation-transition.test.mjs tests/osc-transition.test.mjs tests/osc-bridge.test.mjs tests/setlist-metrics.test.mjs tests/csv.test.mjs tests/click-preview.test.mjs tests/client-message.test.mjs tests/command-bus.test.mjs tests/command-bus-bounds.test.mjs tests/ws-auth.test.mjs tests/ws-liveness.test.mjs tests/ws-sync-race.test.mjs tests/server-lifecycle.test.mjs tests/preferences.test.mjs tests/http-security.test.mjs tests/profile-manager.test.mjs tests/profile-migration.test.mjs tests/project-profile-scope.test.mjs tests/no-project-probe.test.mjs tests/profile-ws.test.mjs tests/jump-authority.test.mjs tests/mcp-client.test.mjs tests/mcp-fallback-sync.test.mjs",
-    "test:release-surface": "node --test --test-force-exit tests/ableton-deps.test.mjs tests/content-sanitization.test.mjs tests/documentation-contract.test.mjs tests/license-compliance.test.mjs tests/public-export.test.mjs tests/release-package.test.mjs tests/release-surface.test.mjs",
+    "test:static": "node --test --test-force-exit static/ui.test.mjs static/setlist/marker-editor.test.mjs static/setlist/count-in.test.mjs static/shared/i18n.test.mjs static/shared/stage-runtime.test.mjs static/setlist/controller-runtime.test.mjs static/setlist/transport-runtime.test.mjs tests/documentation-contract.test.mjs tests/i18n-parity.test.mjs tests/installer-legacy-cleanup.test.mjs",
+    "test:src": "node --import tsx --test --test-force-exit tests/atomic-write.test.mjs tests/binpack-build.test.mjs tests/cert.test.mjs tests/core.test.mjs tests/song-identity.test.mjs tests/song-book.test.mjs tests/song-book-handlers.test.mjs tests/event-log-redaction.test.mjs tests/logger-rotation.test.mjs tests/osc.test.mjs tests/osc-diagnostics.test.mjs tests/next-downbeat-jump.test.mjs tests/sdk-sync.test.mjs tests/pre-roll-integration.test.mjs tests/automation-transition.test.mjs tests/osc-transition.test.mjs tests/osc-bridge.test.mjs tests/setlist-metrics.test.mjs tests/csv.test.mjs tests/click-preview.test.mjs tests/client-message.test.mjs tests/command-bus.test.mjs tests/command-bus-bounds.test.mjs tests/ws-auth.test.mjs tests/ws-liveness.test.mjs tests/ws-sync-race.test.mjs tests/server-lifecycle.test.mjs tests/preferences.test.mjs tests/http-security.test.mjs tests/profile-manager.test.mjs tests/profile-migration.test.mjs tests/project-profile-scope.test.mjs tests/no-project-probe.test.mjs tests/profile-ws.test.mjs tests/jump-authority.test.mjs tests/mcp-client.test.mjs tests/mcp-fallback-sync.test.mjs tests/panel-embed.test.mjs",
+    "test:release-surface": "node --import tsx --test --test-force-exit tests/ableton-deps.test.mjs tests/content-sanitization.test.mjs tests/documentation-contract.test.mjs tests/installers.test.mjs tests/license-compliance.test.mjs tests/public-export.test.mjs tests/release-contracts.test.mjs tests/release-package.test.mjs tests/release-surface.test.mjs",
     "test": "npm run test:src",
     "setup:ableton": "node scripts/install-ableton-deps.mjs",
     "verify:ableton": "node scripts/verify-ableton-deps.mjs",
@@ -52,7 +52,17 @@
     "start": "npm run build && npx --no-install extensions-cli run",
     "package:release": "npm run build:prod && npx --no-install extensions-cli package -i dist/static -i dist/bridge",
     "test:bridge": "node scripts/run-bridge-tests.mjs",
-    "package:kit": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/package-release-candidate.ps1"
+    "package:kit": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/package-release-candidate.ps1",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "deadcode": "knip --no-progress",
+    "deps:check": "depcruise --config .dependency-cruiser.cjs src static/shared static/setlist static/performance",
+    "lint:py": "ruff check bridge",
+    "coverage": "c8 --reporter=text --reporter=html --reports-dir test-results/coverage npm run test:src",
+    "version:check": "node scripts/sync-version.mjs --check",
+    "gates:quality": "npm run lint && npm run format:check && npm run deadcode && npm run deps:check && npm run lint:py"
   },
   "dependencies": {
     "osc-min": "^2.1.2",
@@ -60,12 +70,24 @@
     "ws": "^8.21.1"
   },
   "devDependencies": {
+    "@axe-core/playwright": "4.13.0",
+    "@eslint/js": "10.0.1",
     "@playwright/test": "^1.62.0",
     "@types/node": "^24.13.3",
     "@types/ws": "^8.5.13",
+    "c8": "12.0.0",
+    "dependency-cruiser": "18.3.0",
     "esbuild": "^0.28.1",
+    "eslint": "10.10.0",
+    "eslint-config-prettier": "10.1.8",
+    "eslint-plugin-jsdoc": "64.4.0",
+    "globals": "17.12.0",
+    "html-validate": "11.15.0",
+    "knip": "6.35.1",
+    "prettier": "3.9.6",
     "tsx": "^4.23.1",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "typescript-eslint": "8.70.0"
   },
   "overrides": {
     "brace-expansion": "5.0.8"

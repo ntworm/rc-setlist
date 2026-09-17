@@ -40,7 +40,10 @@ function stopServerAndWS(server, wsServer) {
 
 function nextMessage(ws, predicate) {
   return new Promise((resolve, reject) => {
-    const timer = setTimeout(() => reject(new Error('Timed out waiting for WebSocket message')), 1000);
+    const timer = setTimeout(
+      () => reject(new Error('Timed out waiting for WebSocket message')),
+      1000,
+    );
     ws.on('message', (data) => {
       const message = JSON.parse(data.toString());
       if (!predicate(message)) return;
@@ -79,7 +82,9 @@ test('WebSocket Hardening: invalid decoded messages are sanitized and never emit
   const { wsServer, server } = createServerAndWS('token123');
   const port = await startServer(server);
   let emitted = false;
-  wsServer.on('client_message', () => { emitted = true; });
+  wsServer.on('client_message', () => {
+    emitted = true;
+  });
 
   try {
     const ws = new WebSocket(`ws://127.0.0.1:${port}/ws`);
@@ -89,11 +94,13 @@ test('WebSocket Hardening: invalid decoded messages are sanitized and never emit
     });
 
     const errorPromise = nextMessage(ws, (message) => message.code === 'invalid_message');
-    ws.send(JSON.stringify({
-      type: 'destroy_everything',
-      commandId: 'unsafe-command-1',
-      raw: 'do-not-reflect',
-    }));
+    ws.send(
+      JSON.stringify({
+        type: 'destroy_everything',
+        commandId: 'unsafe-command-1',
+        raw: 'do-not-reflect',
+      }),
+    );
 
     assert.deepStrictEqual(await errorPromise, {
       type: 'error',
@@ -120,11 +127,13 @@ test('WebSocket Hardening: emitted commands omit unexpected hostile properties',
     });
 
     const emittedPromise = new Promise((resolve) => wsServer.once('client_message', resolve));
-    ws.send(JSON.stringify({
-      type: 'play',
-      commandId: 'play-canonical-1',
-      raw: 'hostile\nvalue',
-    }));
+    ws.send(
+      JSON.stringify({
+        type: 'play',
+        commandId: 'play-canonical-1',
+        raw: 'hostile\nvalue',
+      }),
+    );
 
     assert.deepStrictEqual(await emittedPromise, {
       type: 'play',
@@ -163,8 +172,8 @@ test('WebSocket Hardening: origin header upgrade validation', async () => {
     const wsValid = new WebSocket(`ws://127.0.0.1:${port}/ws`, {
       headers: {
         Host: `127.0.0.1:${port}`,
-        Origin: `http://127.0.0.1:${port}`
-      }
+        Origin: `http://127.0.0.1:${port}`,
+      },
     });
     await new Promise((resolve, reject) => {
       wsValid.on('open', () => {
@@ -179,8 +188,8 @@ test('WebSocket Hardening: origin header upgrade validation', async () => {
     const wsInvalidPort = new WebSocket(`ws://127.0.0.1:${port}/ws`, {
       headers: {
         Host: `127.0.0.1:${port}`,
-        Origin: `http://127.0.0.1:8080`
-      }
+        Origin: `http://127.0.0.1:8080`,
+      },
     });
     await new Promise((resolve, reject) => {
       wsInvalidPort.on('open', () => {
@@ -201,7 +210,6 @@ test('WebSocket Hardening: origin header upgrade validation', async () => {
       wsAbsent.on('error', reject);
       setTimeout(() => reject(new Error('Timeout on absent origin')), 1000);
     });
-
   } finally {
     await stopServerAndWS(server, wsServer);
   }
@@ -402,7 +410,6 @@ test('WebSocket Hardening: rate limiting rules', async () => {
     });
     assert.strictEqual(successRes.success, true);
     wsManualNoToken.close();
-
   } finally {
     await stopServerAndWS(server, wsServer);
   }
@@ -428,7 +435,7 @@ test('WebSocket Hardening: max payload size restriction', async () => {
     const largeMessage = JSON.stringify({
       type: 'save_lyrics',
       song: 'test',
-      lyrics: 'a'.repeat(110 * 1024)
+      lyrics: 'a'.repeat(110 * 1024),
     });
 
     const isClosed = await new Promise((resolve) => {
@@ -441,8 +448,11 @@ test('WebSocket Hardening: max payload size restriction', async () => {
       setTimeout(() => resolve(false), 2000);
     });
 
-    assert.strictEqual(isClosed, true, 'Connection should be closed/dropped due to excessive payload size');
-
+    assert.strictEqual(
+      isClosed,
+      true,
+      'Connection should be closed/dropped due to excessive payload size',
+    );
   } finally {
     await stopServerAndWS(server, wsServer);
   }
@@ -482,13 +492,20 @@ test('WebSocket Hardening: console.log/console.warn sentinel token leakage preve
 
     for (const msg of messages) {
       const msgStr = JSON.stringify(msg);
-      assert.strictEqual(msgStr.includes(sentinelToken), false, 'WS message sent to client must not contain the sentinel token');
+      assert.strictEqual(
+        msgStr.includes(sentinelToken),
+        false,
+        'WS message sent to client must not contain the sentinel token',
+      );
     }
 
     for (const logLine of capturedLogs) {
-      assert.strictEqual(logLine.includes(sentinelToken), false, `Console log line must not contain the sentinel token: ${logLine}`);
+      assert.strictEqual(
+        logLine.includes(sentinelToken),
+        false,
+        `Console log line must not contain the sentinel token: ${logLine}`,
+      );
     }
-
   } finally {
     console.log = originalLog;
     console.warn = originalWarn;
@@ -519,7 +536,7 @@ test('WebSocket backpressure: healthy clients remain connected during ordinary t
     assert.strictEqual(
       wsServer['clients'].has(clientSocket),
       true,
-      'A healthy client must not be disconnected below the backpressure thresholds'
+      'A healthy client must not be disconnected below the backpressure thresholds',
     );
 
     ws.close();

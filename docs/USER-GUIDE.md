@@ -1,6 +1,6 @@
-# Ableton RC Setlist user guide
+# RC Setlist user guide
 
-Ableton RC Setlist converts Ableton Live Arrangement locators into a setlist and stage
+RC Setlist converts Ableton Live Arrangement locators into a setlist and stage
 display. Read [INSTALL.md](INSTALL.md) before this guide.
 
 ## Interface language
@@ -27,18 +27,18 @@ Song A [bpm 122] [click]
 Technical cue [ignore]
 ```
 
-| Tag | Effect |
-| --- | --- |
-| `[loop]` | Loop the current section until disabled. |
-| `[loop Nx]` | Loop the section N times. |
-| `[stop]` | Stop when the locator is reached. |
-| `[next]` | Hand playback to the next song the moment this marker is reached. Written on a section it still leaves the song — it does not advance to the next section. |
-| `[bpm N]` | Set the target BPM. |
-| `[click]` / `[click off]` | Enable or disable Live's metronome. |
-| `[skip]` | Skip this section/song: hand playback to the next section (or song) the moment this marker is reached. |
-| `[jump NAME]` | Hand playback to the marker called NAME the moment this marker is reached — a section of this song, a song, or `Song > Section`. Names are matched with tags stripped, case ignored. |
-| `[hidden]` | Keep an automation anchor out of the visible setlist. |
-| `[ignore]` | Technical marker that hides the locator and takes precedence over any action tags. |
+| Tag                       | Effect                                                                                                                                                                               |
+| ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `[loop]`                  | Loop the current section until disabled.                                                                                                                                             |
+| `[loop Nx]`               | Loop the section N times.                                                                                                                                                            |
+| `[stop]`                  | Stop when the locator is reached.                                                                                                                                                    |
+| `[next]`                  | Hand playback to the next song the moment this marker is reached. Written on a section it still leaves the song — it does not advance to the next section.                           |
+| `[bpm N]`                 | Set the target BPM.                                                                                                                                                                  |
+| `[click]` / `[click off]` | Enable or disable Live's metronome.                                                                                                                                                  |
+| `[skip]`                  | Skip this section/song: hand playback to the next section (or song) the moment this marker is reached.                                                                               |
+| `[jump NAME]`             | Hand playback to the marker called NAME the moment this marker is reached — a section of this song, a song, or `Song > Section`. Names are matched with tags stripped, case ignored. |
+| `[hidden]`                | Keep an automation anchor out of the visible setlist.                                                                                                                                |
+| `[ignore]`                | Technical marker that hides the locator and takes precedence over any action tags.                                                                                                   |
 
 Tags are case-insensitive and removed from the display name. The `[ignore]` tag takes precedence over automation tags, hiding the marker and ignoring any action tags on that locator without creating songs, sections, or automations.
 
@@ -173,6 +173,7 @@ in the locator name using `[bpm N]` (e.g. `Song A [bpm 122]` or `> Chorus [bpm 1
 ### Empirical measurement example
 
 In a measured 21-song production set with tempo automations spanning 93 to 166 BPM:
+
 - **Exact piecewise duration**: **78:41** (4,721 seconds).
 - **Single-tempo fallback at 99 BPM**: 95:40 — **a 16:59 (+21.6%) distortion**.
 - **Single-tempo fallback at 136 BPM**: 69:38 — **a 9:03 (-11.5%) distortion**.
@@ -209,10 +210,15 @@ for sample-accurate transitions.
 
 ### One-bar count-in
 
-`COUNT-IN 1 BAR` sounds one bar in the browser before Play is sent, when Play
-is requested while the transport is stopped. Live's playhead does not move and
-Live's metronome is not touched: the count is browser audio, and the transport
-starts on the beat it was already sitting on.
+`COUNT-IN 1 BAR` visually counts one bar on the Play button before Play is sent, when Play
+is requested while the transport is stopped. Live's playhead does not move, Live's
+transport is not touched until the count ends, and Live's metronome is not touched.
+Live's built-in "Count-In" menu only applies to recording, not to playback.
+
+By default, the count is visual only. The browser click is optional and can be turned on
+per device by setting `rc-setlist.count-in-audio` to `true` in the browser's `localStorage`
+(e.g., via the developer console for a notebook feeding an in-ear monitor). This is off by
+default so the operator's phone does not beep through its speaker on stage.
 
 The count runs at the tempo **the setlist declares** for that point — the last
 `[bpm]` at or before the playhead — and only falls back to Live's current tempo
@@ -223,9 +229,6 @@ speed for the song about to start.
 Play is sent shortly before the last beat so the transport arrives on the
 downbeat rather than after it. Pressing Play again during the count starts
 immediately instead of counting again, and Stop cancels it.
-
-Because the count no longer borrows Live's Click, a click you have switched off
-stays off through the count-in, and one you have switched on is unaffected.
 
 This rehearsal control does not enter Record and does not arm tracks. It also
 does not change live jump quantization. When Live is already playing, Play and
@@ -251,7 +254,7 @@ while stage fullscreen is active and released when you leave it.
 
 Use original, licensed or otherwise authorized text only.
 
-Ableton RC Setlist accepts timed LRC lines:
+RC Setlist accepts timed LRC lines:
 
 ```text
 [00:00.00] The room wakes under amber light
@@ -286,7 +289,7 @@ during rehearsals/shows.
 
 - Rehearse the exact Live Set and extension build before a performance.
 - Keep the host and controller on a dedicated trusted network.
-- Save a fallback setlist outside Ableton RC Setlist.
+- Save a fallback setlist outside RC Setlist.
 - Do not change profiles, network or AbletonOSC installation during a show.
 - Verify the active profile and transport lock before enabling control.
 

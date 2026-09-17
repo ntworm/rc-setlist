@@ -140,7 +140,9 @@ test('Stage runtime ignores the F shortcut while editing text', async () => {
   await controller.handleKeydown({
     key: 'f',
     target: { tagName: 'DIV' },
-    preventDefault: () => { prevented = true; },
+    preventDefault: () => {
+      prevented = true;
+    },
   });
   assert.equal(prevented, true);
   assert.equal(harness.documentRef.fullscreenElement, harness.documentRef.documentElement);

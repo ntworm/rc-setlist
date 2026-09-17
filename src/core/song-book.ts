@@ -2,7 +2,11 @@
 // SPDX-License-Identifier: PolyForm-Noncommercial-1.0.0
 // Source: https://github.com/ntworm/ableton-rc-setlist
 
-import { reconcileSongIdentities, type IdentifiedSong, type IncomingSong } from './song-identity.js';
+import {
+  reconcileSongIdentities,
+  type IdentifiedSong,
+  type IncomingSong,
+} from './song-identity.js';
 
 /**
  * Everything RC Setlist remembers about a song that Ableton does not store.
@@ -38,6 +42,9 @@ export interface SongBook {
   data: Record<string, SongSideData>;
 }
 
+/**
+ * EmptySongBook — implementation detail.
+ */
 export function emptySongBook(): SongBook {
   return { version: 1, reloadCount: 0, present: [], tombstoned: [], data: {} };
 }
@@ -45,11 +52,13 @@ export function emptySongBook(): SongBook {
 function isIdentity(value: unknown): value is IdentifiedSong {
   if (typeof value !== 'object' || value === null) return false;
   const entry = value as Record<string, unknown>;
-  return typeof entry.id === 'string'
-    && typeof entry.name === 'string'
-    && typeof entry.time === 'number'
-    && Number.isFinite(entry.time)
-    && (entry.missingSince === undefined || typeof entry.missingSince === 'number');
+  return (
+    typeof entry.id === 'string' &&
+    typeof entry.name === 'string' &&
+    typeof entry.time === 'number' &&
+    Number.isFinite(entry.time) &&
+    (entry.missingSince === undefined || typeof entry.missingSince === 'number')
+  );
 }
 
 /**
@@ -63,10 +72,13 @@ export function parseSongBook(raw: unknown): SongBook {
   if (candidate.version !== 1) return emptySongBook();
 
   const present = Array.isArray(candidate.present) ? candidate.present.filter(isIdentity) : [];
-  const tombstoned = Array.isArray(candidate.tombstoned) ? candidate.tombstoned.filter(isIdentity) : [];
-  const reloadCount = typeof candidate.reloadCount === 'number' && Number.isFinite(candidate.reloadCount)
-    ? candidate.reloadCount
-    : 0;
+  const tombstoned = Array.isArray(candidate.tombstoned)
+    ? candidate.tombstoned.filter(isIdentity)
+    : [];
+  const reloadCount =
+    typeof candidate.reloadCount === 'number' && Number.isFinite(candidate.reloadCount)
+      ? candidate.reloadCount
+      : 0;
 
   const data: Record<string, SongSideData> = {};
   if (typeof candidate.data === 'object' && candidate.data !== null) {
@@ -93,11 +105,10 @@ export function applyCues(
   makeId: () => string,
 ): SongBook {
   const reloadCount = book.reloadCount + 1;
-  const result = reconcileSongIdentities(
-    [...book.present, ...book.tombstoned],
-    cues,
-    { reloadCount, makeId },
-  );
+  const result = reconcileSongIdentities([...book.present, ...book.tombstoned], cues, {
+    reloadCount,
+    makeId,
+  });
 
   const data = { ...book.data };
   for (const id of result.pruned) delete data[id];
@@ -111,6 +122,9 @@ export function applyCues(
   };
 }
 
+/**
+ * Returns the song color.
+ */
 export function getSongColor(book: SongBook, songId: string): string | undefined {
   return book.data[songId]?.color;
 }
@@ -137,6 +151,9 @@ export function setSongColor(book: SongBook, songId: string, color: string | und
   return setSideField(book, songId, 'color', color);
 }
 
+/**
+ * Returns the song notes.
+ */
 export function getSongNotes(book: SongBook, songId: string): string | undefined {
   return book.data[songId]?.notes;
 }

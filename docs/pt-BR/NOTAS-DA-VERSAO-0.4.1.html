@@ -1,0 +1,189 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>NOTAS-DA-VERSAO-0.4.1 — RC Setlist</title>
+    <style>
+      body {
+        font:
+          16px/1.55 system-ui,
+          sans-serif;
+        max-width: 920px;
+        margin: 2rem auto;
+        padding: 0 1rem;
+        color: #f2f2f2;
+        background: #0e0e0e;
+      }
+      h1,
+      h2,
+      h3,
+      h4 {
+        line-height: 1.25;
+      }
+      h1 {
+        font-size: 2.2rem;
+        margin-top: 0;
+      }
+      h2 {
+        margin-top: 2rem;
+        padding-top: 1rem;
+        border-top: 1px solid #333;
+      }
+      h3 {
+        margin-top: 1.5rem;
+      }
+      code {
+        font:
+          0.92em ui-monospace,
+          Consolas,
+          monospace;
+        background: #1a1a1a;
+        padding: 0.1em 0.35em;
+        border-radius: 0;
+      }
+      pre {
+        background: #1a1a1a;
+        padding: 0.8rem 1rem;
+        overflow-x: auto;
+        border: 1px solid #333;
+      }
+      pre code {
+        background: transparent;
+        padding: 0;
+      }
+      a {
+        color: #ffa133;
+      }
+      ul,
+      ol {
+        padding-left: 1.2em;
+      }
+      blockquote {
+        border-left: 4px solid #ffa133;
+        margin: 1em 0;
+        padding: 0.5em 1em;
+        color: #a0a0a0;
+      }
+      .crumbs {
+        font-size: 0.85em;
+        color: #a0a0a0;
+        margin-bottom: 1rem;
+      }
+      .crumbs a {
+        color: #a0a0a0;
+        text-decoration: none;
+      }
+      .crumbs a:hover {
+        color: #f2f2f2;
+      }
+      .source {
+        font-size: 0.78em;
+        color: #a0a0a0;
+        margin-top: 2rem;
+        border-top: 1px solid #333;
+        padding-top: 0.5rem;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="crumbs">
+      <a href="https://ntworm.github.io/rc-setlist/">RC Setlist</a> · <a href="./">Docs</a>
+    </div>
+    <p>﻿# Notas da versão RC Setlist 0.4.1</p>
+    <p><a href="../RELEASE-NOTES-0.4.1.md">English</a></p>
+    <p>
+      Lançada em 29 de julho de 2026. A versão 0.4.1 é uma atualização compatível com o fluxo
+      existente baseado no Arrangement.
+    </p>
+    <h2 id="o-que-h-de-novo">O que há de novo</h2>
+    <ul>
+      <li>Cada cartão mostra a duração da música, e o cabeçalho mostra a duração total do</li>
+    </ul>
+    <p>setlist quando o Live fornece o final do Arrangement.</p>
+    <ul>
+      <li>
+        <strong>Gerenciar setlists</strong> permite criar, selecionar, renomear, excluir de forma
+      </li>
+    </ul>
+    <p>
+      recuperável e restaurar vários setlists do Live Set atual. Setlists de outros projetos ficam
+      ocultos.
+    </p>
+    <ul>
+      <li>A área de letras agora tem um seletor de música compartilhado acima de Criar,</li>
+    </ul>
+    <p>
+      Sincronizar e Editar. Abrir o editor não substitui mais as letras sincronizadas na tela do
+      show, e edições não salvas sobrevivem ao fechamento do diálogo.
+    </p>
+    <ul>
+      <li>O painel do Live ganhou um diagnóstico compacto da conexão com AbletonOSC,</li>
+    </ul>
+    <p>sem ocupar a interface com textos longos de instalação.</p>
+    <h2 id="corre-es">Correções</h2>
+    <ul>
+      <li>
+        Marcadores <code>[stop]</code> e <code>[loop]</code> continuam como seções da música
+        anterior, e
+      </li>
+    </ul>
+    <p>músicas novas entram no setlist salvo na posição correta do Arrangement.</p>
+    <ul>
+      <li>Saltos quantizados e sem quantização respeitam a opção escolhida no Live mesmo</li>
+    </ul>
+    <p>quando outra extensão RC ocupa a porta fixa de resposta do AbletonOSC.</p>
+    <ul>
+      <li>Duração Total, posição de reprodução e confirmação de salto usam um fallback</li>
+    </ul>
+    <p>MCP serializado, sem acumular requisições atrasadas.</p>
+    <ul>
+      <li>O valor de compasso em Barras/Batidas/Semicolcheias não pisca mais para trás</li>
+    </ul>
+    <p>
+      nas viradas normais, mas saltos, loops, parar/iniciar e reconexões continuam atualizando
+      imediatamente.
+    </p>
+    <ul>
+      <li>O rename de setlist no celular mantém o foco e o teclado durante atualizações.</li>
+      <li>A troca de idioma fica desativada enquanto o Live toca ou o painel está</li>
+    </ul>
+    <p>bloqueado; o aviso de bloqueio aparece no idioma ativo.</p>
+    <ul>
+      <li>
+        O painel embutido no Live mantém as duas ações <strong>Abrir neste computador</strong>
+      </li>
+    </ul>
+    <p>visíveis e clicáveis no tamanho suportado.</p>
+    <h2 id="notas-de-instala-o">Notas de instalação</h2>
+    <ul>
+      <li>Instale o AbletonOSC diretamente em</li>
+    </ul>
+    <p>
+      <code>User Library/Remote Scripts/AbletonOSC</code> e confirme que
+      <code>AbletonOSC/__init__.py</code> está dentro dessa pasta. Não use a pasta oculta
+      <code>User Remote Scripts</code> das preferências.
+    </p>
+    <ul>
+      <li>
+        Na primeira conexão pelo navegador, <code>ERR_CERT_AUTHORITY_INVALID</code> é esperado
+      </li>
+    </ul>
+    <p>
+      por causa do certificado local autoassinado. Continue somente se o endereço for exatamente o
+      IP mostrado no painel do Live e a LAN for confiável.
+    </p>
+    <ul>
+      <li>O Session View não faz parte desta versão. A 0.4.1 continua usando</li>
+    </ul>
+    <p>localizadores do Arrangement.</p>
+    <p>
+      Consulte o <a href="INSTALL.html">guia de instalação</a>, o
+      <a href="USER-GUIDE.html">guia do usuário</a> e a
+      <a href="TROUBLESHOOTING.html">solução de problemas</a> para o fluxo completo.
+    </p>
+    <div class="source">
+      Rendered from <code>docs\pt-BR\NOTAS-DA-VERSAO-0.4.1.md</code> on 2026-09-17.
+    </div>
+  </body>
+</html>

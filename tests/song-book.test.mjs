@@ -90,7 +90,7 @@ test('clearing a colour removes the entry rather than storing an empty object', 
 test('colours are exposed to the client keyed by beat position', () => {
   let book = applyCues(emptySongBook(), [cue('A', 0), cue('B', 240)], idFactory());
   book = setSongColor(book, book.present[1].id, '#c9c9c9');
-  assert.deepEqual(colorsByTime(book), { '240': '#c9c9c9' });
+  assert.deepEqual(colorsByTime(book), { 240: '#c9c9c9' });
 });
 
 test('a corrupt book degrades to empty instead of throwing', () => {
@@ -121,7 +121,11 @@ test('a round trip through JSON preserves the book', () => {
 
 test('notes are stored beside the colour and follow the song through a rename', async () => {
   const { setSongNotes, getSongNotes, notesByTime } = await import('../src/core/song-book.ts');
-  let book = applyCues(emptySongBook(), [cue('JÚLIA [bpm 160]', 1136), cue('DERRETE', 772)], idFactory());
+  let book = applyCues(
+    emptySongBook(),
+    [cue('JÚLIA [bpm 160]', 1136), cue('DERRETE', 772)],
+    idFactory(),
+  );
   const julia = book.present.find((s) => s.name.startsWith('JÚLIA'));
   book = setSongColor(book, julia.id, '#d9c7a7');
   book = setSongNotes(book, julia.id, 'Sol maior · afinação Eb · começa a bateria');
@@ -129,7 +133,7 @@ test('notes are stored beside the colour and follow the song through a rename', 
   assert.equal(getSongColor(book, julia.id), '#d9c7a7', 'the colour is untouched');
 
   book = applyCues(book, [cue('JÚLIA (nova) [bpm 160]', 1136), cue('DERRETE', 772)], idFactory());
-  assert.deepEqual(notesByTime(book), { '1136': 'Sol maior · afinação Eb · começa a bateria' });
+  assert.deepEqual(notesByTime(book), { 1136: 'Sol maior · afinação Eb · começa a bateria' });
 });
 
 test('clearing the notes removes them without touching the colour, and an emptied entry is dropped', async () => {
@@ -147,7 +151,10 @@ test('clearing the notes removes them without touching the colour, and an emptie
 
 test('a stored book keeps its notes across a reload, and ignores notes that are not text', () => {
   const stored = {
-    version: 1, reloadCount: 3, present: [{ id: 'x', name: 'A', time: 0 }], tombstoned: [],
+    version: 1,
+    reloadCount: 3,
+    present: [{ id: 'x', name: 'A', time: 0 }],
+    tombstoned: [],
     data: { x: { color: '#9db8d4', notes: 'capo 2' }, y: { notes: 42 } },
   };
   const book = parseSongBook(JSON.parse(JSON.stringify(stored)));

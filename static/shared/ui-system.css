@@ -9,27 +9,28 @@
    is why the previous tokens passed on paper and failed on stage. */
 
 @font-face {
-  font-family: "Martian Mono";
+  font-family: 'Martian Mono';
   font-style: normal;
   font-weight: 100 800;
   font-stretch: 75% 112.5%;
   font-display: swap;
-  src: url("../fonts/MartianMono-latin.woff2") format("woff2");
-  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
-    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193,
-    U+2212, U+2215, U+FEFF, U+FFFD;
+  src: url('../fonts/MartianMono-latin.woff2') format('woff2');
+  unicode-range:
+    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329,
+    U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
 }
 
 @font-face {
-  font-family: "Martian Mono";
+  font-family: 'Martian Mono';
   font-style: normal;
   font-weight: 100 800;
   font-stretch: 75% 112.5%;
   font-display: swap;
-  src: url("../fonts/MartianMono-latin-ext.woff2") format("woff2");
-  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7,
-    U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF,
-    U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+  src: url('../fonts/MartianMono-latin-ext.woff2') format('woff2');
+  unicode-range:
+    U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329,
+    U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F,
+    U+A720-A7FF;
 }
 
 :root {
@@ -87,7 +88,7 @@
   --ui-transition: 180ms ease;
 
   /* ===== Type ===== */
-  --ui-font: "Martian Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  --ui-font: 'Martian Mono', ui-monospace, 'SF Mono', Menlo, monospace;
   --ui-mono: var(--ui-font);
   /* Lyrics are the one place a mono is the wrong tool, and the stage test said
      so with a number: Martian Mono advances 0.70em per character, which is 21
@@ -95,7 +96,7 @@
      Barlow Semi Condensed advances 0.471em — the same line now holds ~31 — and
      covers Latin-1 completely, so every accent and the cedilla are real glyphs.
      The interface stays mono; only sung text changes face. */
-  --ui-font-lyric: "Barlow Semi Condensed", "Martian Mono", ui-sans-serif, system-ui, sans-serif;
+  --ui-font-lyric: 'Barlow Semi Condensed', 'Martian Mono', ui-sans-serif, system-ui, sans-serif;
 
   --ui-wdth-dense: 87.5;
   --ui-wdth-base: 100;
@@ -170,7 +171,7 @@ body {
      every font-weight declaration in the app inert — including the weight that
      separates the active lyric line from the inactive ones. Force what the font
      gets wrong (its default wdth is the wide extreme) and nothing else. */
-  font-variation-settings: "wdth" var(--ui-wdth-base);
+  font-variation-settings: 'wdth' var(--ui-wdth-base);
 }
 
 /* Without this every control falls back to Arial. */
@@ -183,7 +184,7 @@ textarea {
 }
 
 button,
-[role="button"] {
+[role='button'] {
   -webkit-tap-highlight-color: transparent;
 }
 
@@ -197,7 +198,7 @@ button,
 [data-tabular] {
   font-variant-numeric: tabular-nums;
   font-weight: var(--ui-wght-display);
-  font-variation-settings: "wdth" var(--ui-wdth-display);
+  font-variation-settings: 'wdth' var(--ui-wdth-display);
 }
 
 .ui-button {
@@ -208,9 +209,13 @@ button,
   color: var(--ui-text);
   padding: 0.62rem 0.85rem;
   font-weight: var(--ui-wght-strong);
-  font-variation-settings: "wdth" var(--ui-wdth-dense);
+  font-variation-settings: 'wdth' var(--ui-wdth-dense);
   cursor: pointer;
-  transition: border-color 140ms ease, background 140ms ease, color 140ms ease, transform 140ms ease;
+  transition:
+    border-color 140ms ease,
+    background 140ms ease,
+    color 140ms ease,
+    transform 140ms ease;
 }
 
 .ui-button:hover {
@@ -224,12 +229,12 @@ button,
 }
 
 /* Block inversion is the Live idiom for "this is the chosen one". */
-.ui-button[aria-pressed="true"] {
+.ui-button[aria-pressed='true'] {
   border-color: var(--ui-accent);
   background: var(--ui-accent);
   color: var(--ui-bg);
   font-weight: var(--ui-wght-display);
-  font-variation-settings: "wdth" var(--ui-wdth-dense);
+  font-variation-settings: 'wdth' var(--ui-wdth-dense);
 }
 
 .ui-surface {
@@ -244,7 +249,7 @@ button,
   color: var(--ui-text-2);
   font-size: var(--t-stage-micro);
   font-weight: var(--ui-wght-strong);
-  font-variation-settings: "wdth" var(--ui-wdth-dense);
+  font-variation-settings: 'wdth' var(--ui-wdth-dense);
   letter-spacing: 0;
   text-transform: uppercase;
 }
@@ -254,7 +259,7 @@ button,
   font-family: var(--ui-mono);
   font-size: var(--t-stage-micro);
   font-weight: var(--ui-wght-strong);
-  font-variation-settings: "wdth" var(--ui-wdth-dense);
+  font-variation-settings: 'wdth' var(--ui-wdth-dense);
   letter-spacing: 0;
   text-transform: uppercase;
   color: var(--ui-accent-ink);
@@ -304,7 +309,7 @@ button,
   color: var(--ui-text-2);
   font-size: var(--t-stage-micro);
   font-weight: var(--ui-wght-strong);
-  font-variation-settings: "wdth" var(--ui-wdth-dense);
+  font-variation-settings: 'wdth' var(--ui-wdth-dense);
   letter-spacing: 0;
   text-transform: uppercase;
 }
@@ -387,25 +392,25 @@ select optgroup {
 }
 
 @font-face {
-  font-family: "Barlow Semi Condensed";
+  font-family: 'Barlow Semi Condensed';
   font-style: normal;
   font-weight: 500;
   font-display: swap;
-  src: url("../fonts/BarlowSemiCondensed-500-latin.woff2") format("woff2");
-  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
-    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193,
-    U+2212, U+2215, U+FEFF, U+FFFD;
+  src: url('../fonts/BarlowSemiCondensed-500-latin.woff2') format('woff2');
+  unicode-range:
+    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329,
+    U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
 }
 
 @font-face {
-  font-family: "Barlow Semi Condensed";
+  font-family: 'Barlow Semi Condensed';
   font-style: normal;
   font-weight: 700;
   font-display: swap;
-  src: url("../fonts/BarlowSemiCondensed-700-latin.woff2") format("woff2");
-  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
-    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193,
-    U+2212, U+2215, U+FEFF, U+FFFD;
+  src: url('../fonts/BarlowSemiCondensed-700-latin.woff2') format('woff2');
+  unicode-range:
+    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329,
+    U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
 }
 
 /* Badge icons replace Unicode glyphs that fall outside the shipped subsets. */

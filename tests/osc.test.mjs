@@ -47,7 +47,11 @@ test('OSC integration: client communicates with mock server', { timeout: 5_000 }
     const port = await mockServer.start();
     assert.ok(Number.isInteger(port) && port > 0, 'mock must return its bound port');
     assert.ok(![11000, 11001, 11101, 11201].includes(port));
-    client.configureBridge({ bridgePort: silentBridge.address().port, probeTimeoutMs: 100, legacyTargetPort: port });
+    client.configureBridge({
+      bridgePort: silentBridge.address().port,
+      probeTimeoutMs: 100,
+      legacyTargetPort: port,
+    });
 
     // Exercise the existing cooperative socket path with a real test socket;
     // production OSC defaults and Live's sockets are never used by this test.
@@ -86,12 +90,19 @@ test('OSC integration: client communicates with mock server', { timeout: 5_000 }
     client.stopPlaying();
     const [stopped] = await stoppedPromise;
     assert.strictEqual(stopped, false);
-
   } finally {
     await client.stop();
     await mockServer.stop();
-    try { socket.close(); } catch {}
-    try { silentBridge.close(); } catch {}
+    try {
+      socket.close();
+    } catch {
+      // swallow: nothing to do here on purpose
+    }
+    try {
+      silentBridge.close();
+    } catch {
+      // swallow: nothing to do here on purpose
+    }
     if (previousSocket === undefined) delete globalThis.abletonOSCSocket;
     else globalThis.abletonOSCSocket = previousSocket;
     if (previousListeners === undefined) delete globalThis.abletonOSCListeners;
@@ -101,34 +112,38 @@ test('OSC integration: client communicates with mock server', { timeout: 5_000 }
 
 test('OSC integration: tracks connection status', () => {
   const client = new OSCClient();
-  
+
   // Initially disconnected
   assert.strictEqual(client.isConnected, false);
-  
+
   // Mock incoming message
   let connectEmitted = false;
   client.on('connect', () => {
     connectEmitted = true;
   });
-  
+
   // Trigger handleIncoming manually
-  client['handleIncoming']({ oscType: 'message', address: '/live/song/get/tempo', args: [{ value: 120 }] });
-  
+  client['handleIncoming']({
+    oscType: 'message',
+    address: '/live/song/get/tempo',
+    args: [{ value: 120 }],
+  });
+
   assert.strictEqual(client.isConnected, true);
   assert.strictEqual(connectEmitted, true);
-  
+
   // Test disconnect detection
   let disconnectEmitted = false;
   client.on('disconnect', () => {
     disconnectEmitted = true;
   });
-  
+
   // Manually force lastMessageTime to 4 seconds ago
   client['lastMessageTime'] = Date.now() - 4000;
-  
+
   // Call private checkConnection
   client['checkConnection']();
-  
+
   assert.strictEqual(client.isConnected, false);
   assert.strictEqual(disconnectEmitted, true);
 });
@@ -173,10 +188,9 @@ test('OSC sets current song time with a float beat value', () => {
 
   client.setCurrentSongTime(28);
 
-  assert.deepStrictEqual(sent, [[
-    '/live/song/set/current_song_time',
-    [{ type: 'float', value: 28 }],
-  ]]);
+  assert.deepStrictEqual(sent, [
+    ['/live/song/set/current_song_time', [{ type: 'float', value: 28 }]],
+  ]);
 });
 
 test('OSC exposes every is_playing sample while deduplicating public transport changes', () => {
@@ -288,8 +302,12 @@ test('OSC send reports whether a bound socket accepted the packet', async () => 
   let closed = false;
   runtime.abletonOSCSocket = {
     address: () => ({ address: '127.0.0.1', family: 'IPv4', port: 11101 }),
-    send: (...args) => { sends.push(args); },
-    close: () => { closed = true; },
+    send: (...args) => {
+      sends.push(args);
+    },
+    close: () => {
+      closed = true;
+    },
   };
   delete runtime.abletonOSCListeners;
 
@@ -301,7 +319,11 @@ test('OSC send reports whether a bound socket accepted the packet', async () => 
     assert.ok(runtime.abletonOSCListeners instanceof Set);
   } finally {
     await client.stop();
-    try { silentBridge.close(); } catch {}
+    try {
+      silentBridge.close();
+    } catch {
+      // swallow: nothing to do here on purpose
+    }
     assert.strictEqual(closed, true);
     if (previousSocket === undefined) delete runtime.abletonOSCSocket;
     else runtime.abletonOSCSocket = previousSocket;

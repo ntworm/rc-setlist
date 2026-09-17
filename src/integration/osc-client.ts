@@ -3,18 +3,34 @@ import { EventEmitter } from 'node:events';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { TextDecoder as NodeTextDecoder, TextEncoder as NodeTextEncoder } from 'node:util';
-// @ts-ignore
 import * as osc from 'osc-min';
+import { log } from '../util/log.js';
+import { isOscMessage, parseOsc, type OscArg } from './osc-types.js';
+
+/**
+ * The legacy AbletonOSC path shares one UDP socket across every RC
+ * extension on the machine so each does not bind its own 11001.
+ * Both ends of that handshake hang values off `globalThis`; this
+ * interface narrows those values so the unsafe `any` no longer leaks
+ * into every call site.
+ */
+interface SharedOscGlobals {
+  abletonOSCSocket?: dgram.Socket | null;
+  abletonOSCListeners?: Set<(msg: Buffer) => void> | null;
+}
 
 const DEBUG_LOG = process.env.SETLIST_OSC_DEBUG === '1';
-const DEBUG_LOG_PATH = process.env.SETLIST_OSC_DEBUG_LOG
-  || path.join(process.env.TEMP || process.env.TMP || '/tmp', 'setlist-osc.log');
+const DEBUG_LOG_PATH =
+  process.env.SETLIST_OSC_DEBUG_LOG ||
+  path.join(process.env.TEMP || process.env.TMP || '/tmp', 'setlist-osc.log');
 
 function dbg(tag: string, payload: string): void {
   if (!DEBUG_LOG) return;
   try {
     fs.appendFileSync(DEBUG_LOG_PATH, `[${new Date().toISOString()}] ${tag} ${payload}\n`);
-  } catch { /* best effort */ }
+  } catch {
+    /* best effort */
+  }
 }
 
 function ensureTextEncodingGlobals(): void {
@@ -24,7 +40,7 @@ function ensureTextEncodingGlobals(): void {
   };
 
   if (typeof runtime.TextEncoder !== 'function') {
-    runtime.TextEncoder = NodeTextEncoder as typeof TextEncoder;
+    runtime.TextEncoder = NodeTextEncoder;
   }
   if (typeof runtime.TextDecoder !== 'function') {
     runtime.TextDecoder = NodeTextDecoder as typeof TextDecoder;
@@ -67,6 +83,9 @@ export interface OscBridgeOptions {
 export const RC_BRIDGE_PORT = 11020;
 export const ABLETON_OSC_PORT = 11000;
 
+/**
+ * Manages the lifecycle and public surface of OSCClient.
+ */
 export class OSCClient extends EventEmitter {
   private server: dgram.Socket | null = null;
   private targetPort: number = 11000;
@@ -113,13 +132,22 @@ export class OSCClient extends EventEmitter {
     this.rxCount++;
     dbg('RX', `#${this.rxCount} len=${msg.length} hex=${msg.toString('hex').slice(0, 80)}`);
     try {
-      const oscMsg = osc.fromBuffer(msg);
-      if (oscMsg.oscType === 'message') {
-        dbg('RX-PARSED', `oscType=message address=${oscMsg.address} args=${JSON.stringify(oscMsg.args)}`);
-      } else {
-        dbg('RX-PARSED', `oscType=bundle elements=${oscMsg.elements.length}`);
+      const oscNode = parseOsc(msg);
+      if (oscNode === null) {
+        dbg('RX-PARSE-ERR', 'parseOsc returned null');
+        this.emit('error', new Error(`OSC parse failed (${msg.length} bytes)`));
+        return;
       }
-      this.handleIncoming(oscMsg);
+      if (isOscMessage(oscNode)) {
+        dbg(
+          'RX-PARSED',
+          `oscType=message address=${oscNode.address} args=${JSON.stringify(oscNode.args)}`,
+        );
+      } else {
+        const packetCount = oscNode.packets?.length ?? 0;
+        dbg('RX-PARSED', `oscType=bundle packets=${packetCount}`);
+      }
+      this.handleIncoming(oscNode);
     } catch (err) {
       // osc-min is permissive and rarely throws, but keep the safety net
       // so a future parser swap that DOES throw doesn't kill the listener.
@@ -151,23 +179,22 @@ export class OSCClient extends EventEmitter {
     const now = Date.now();
     if (this.isConnected && (this.lastMessageTime === 0 || now - this.lastMessageTime > 3000)) {
       this.isConnected = false;
-      console.log('[OSC] Connection to Ableton Live lost.');
+      log.info('osc', 'Connection to Ableton Live lost.');
       this.emit('disconnect');
     }
   }
 
-  private handleIncoming(oscMsg: any): void {
+  private handleIncoming(oscMsg: unknown): void {
+    if (!isOscMessage(oscMsg)) return;
     this.lastMessageTime = Date.now();
     if (!this.isConnected) {
       this.isConnected = true;
-      console.log('[OSC] Connection to Ableton Live established.');
+      log.info('osc', 'Connection to Ableton Live established.');
       this.emit('connect');
     }
 
-    if (oscMsg.oscType !== 'message') return;
-
     const address = oscMsg.address;
-    const args = oscMsg.args || [];
+    const args = oscMsg.args ?? [];
 
     // Log any address that DOESN'T match the known set so we can spot
     // what AbletonOSC actually sends vs what we expected.
@@ -199,7 +226,7 @@ export class OSCClient extends EventEmitter {
     } else if (address === '/live/song/get/tempo') {
       const bpm = args[0]?.value;
       if (typeof bpm === 'number') {
-        console.log(`[OSC] tempo reply: ${bpm}`);
+        log.info('osc', 'tempo reply', { bpm });
         if (this.shouldEmit(address, bpm)) {
           this.emit('tempo', bpm);
         }
@@ -213,7 +240,10 @@ export class OSCClient extends EventEmitter {
       }
     } else if (address === '/live/song/get/current_song_time') {
       const time = args[0]?.value;
-      if (typeof time === 'number' && this.shouldEmit(address, time, this.consumeRequestedConfirmation(address))) {
+      if (
+        typeof time === 'number' &&
+        this.shouldEmit(address, time, this.consumeRequestedConfirmation(address))
+      ) {
         this.emit('current_song_time', time);
       }
     } else if (address === '/live/song/get/cue_points') {
@@ -226,7 +256,10 @@ export class OSCClient extends EventEmitter {
         }
       }
       this.emit('cue_points', cues);
-      console.log(`[OSC] cue_points reply: ${cues.length} cue(s) — ${cues.map(c => c.name).join(', ')}`);
+      log.info('osc', 'cue_points reply', {
+        count: cues.length,
+        names: cues.map((c) => c.name).join(', '),
+      });
     } else if (address === '/live/song/get/last_event_time') {
       const value = args[0]?.value;
       if (typeof value === 'number' && Number.isFinite(value) && this.shouldEmit(address, value)) {
@@ -235,7 +268,7 @@ export class OSCClient extends EventEmitter {
     } else if (address === '/live/song/get/metronome') {
       const val = args[0]?.value;
       const metronome = val === 1 || val === true || val === 'true';
-      console.log(`[OSC] metronome reply: ${metronome}`);
+      log.info('osc', 'metronome reply', { metronome });
       if (this.shouldEmit(address, metronome, this.consumeRequestedConfirmation(address))) {
         this.emit('metronome', metronome);
       }
@@ -249,7 +282,7 @@ export class OSCClient extends EventEmitter {
       if (typeof val === 'number' && this.shouldEmit(address, val)) {
         this.emit('signature_denominator', val);
       }
-        } else if (address === '/live/song/get/clip_trigger_quantization') {
+    } else if (address === '/live/song/get/clip_trigger_quantization') {
       const val = args[0]?.value;
       if (typeof val === 'number' && this.shouldEmit(address, val)) {
         this.emit('clip_trigger_quantization', val);
@@ -257,33 +290,43 @@ export class OSCClient extends EventEmitter {
     }
   }
 
-  public send(address: string, args: any[] = []): boolean {
+  public send(address: string, args: readonly OscArg[] = []): boolean {
     // A malformed address or an unencodable argument is a programming error
     // on this side, not a transport failure: report it and return false as
     // the signature promises rather than raising 'error' at the caller.
     if (typeof address !== 'string' || !address.startsWith('/')) {
-      console.error(`[OSC] send: invalid address ${JSON.stringify(address)}`);
+      log.error('osc', 'send: invalid address', { address: JSON.stringify(address) });
       return false;
     }
-    const safeArgs = Array.isArray(args) ? args : [];
+    const baseArgs: readonly OscArg[] = Array.isArray(args) ? args : [];
+    const safeArgs: OscArg[] = [...baseArgs];
     const oscMsg = {
-      oscType: 'message',
+      oscType: 'message' as const,
       address,
-      args: safeArgs
+      args: safeArgs,
     };
     let buffer: Buffer;
     try {
       ensureTextEncodingGlobals();
-      const encoded = osc.toBuffer(oscMsg);
+      // Cast: my OscArg uses open string `type`; osc-min expects a discriminated
+      // union of literal types. The wire format is the same; the cast lives
+      // here, at the boundary, instead of widening the public type.
+      const encoded = osc.toBuffer(oscMsg as unknown as osc.OscPacketInput);
       buffer = Buffer.from(encoded.buffer, encoded.byteOffset, encoded.byteLength);
     } catch (err) {
-      console.error(`[OSC] send: could not encode ${address}:`, err);
+      log.error('osc', 'send: could not encode', {
+        address,
+        error: err instanceof Error ? err.message : String(err),
+      });
       return false;
     }
     const socket = this.server;
     if (!socket) return false;
     this.txCount++;
-    dbg('TX', `#${this.txCount} ${address} args=${JSON.stringify(safeArgs)} → ${this.targetHost}:${this.targetPort} via socket listenPort=${this.listenPort}`);
+    dbg(
+      'TX',
+      `#${this.txCount} ${address} args=${JSON.stringify(safeArgs)} → ${this.targetHost}:${this.targetPort} via socket listenPort=${this.listenPort}`,
+    );
     socket.send(buffer, this.targetPort, this.targetHost, (err) => {
       if (err) {
         dbg('TX-ERR', `${address} ${err.message}`);
@@ -315,7 +358,13 @@ export class OSCClient extends EventEmitter {
     const probe = await this.probeBridge();
     if (generation !== this.generation) {
       // stop() ran while the probe was out; whatever answered is not ours to keep.
-      if (probe) { try { probe.socket.close(); } catch { /* ignore */ } }
+      if (probe) {
+        try {
+          probe.socket.close();
+        } catch {
+          /* ignore */
+        }
+      }
       return;
     }
     if (probe) {
@@ -329,20 +378,28 @@ export class OSCClient extends EventEmitter {
       this.bridge = 'rcbridge';
       probe.socket.removeAllListeners('error');
       probe.socket.on('error', (err) => {
-        console.error('[OSC] RC Bridge socket error:', err);
+        log.error('osc', 'RC Bridge socket error', {
+          error: err instanceof Error ? err.message : String(err),
+        });
         if (this.isConnected) {
           this.isConnected = false;
           this.emit('disconnect');
         }
       });
       this.handleMessage(probe.versionReply);
-      console.log(`[OSC] ${this.bridgeVersion ?? 'RC Bridge'} answered on port ${this.targetPort}; replies arrive on port ${this.listenPort}`);
+      log.info('osc', `${this.bridgeVersion ?? 'RC Bridge'} answered`, {
+        targetPort: this.targetPort,
+        listenPort: this.listenPort,
+      });
       return;
     }
 
     this.targetPort = this.bridgeOptions.legacyTargetPort;
     this.bridge = 'abletonosc';
-    console.log(`[OSC] No RC Bridge on port ${this.bridgeOptions.bridgePort}; using AbletonOSC on port ${this.targetPort}`);
+    log.info('osc', 'No RC Bridge; using AbletonOSC', {
+      bridgePort: this.bridgeOptions.bridgePort,
+      targetPort: this.targetPort,
+    });
     await this.startLegacy();
   }
 
@@ -366,7 +423,11 @@ export class OSCClient extends EventEmitter {
         if (versionReply) {
           resolve({ socket, versionReply });
         } else {
-          try { socket.close(); } catch { /* ignore */ }
+          try {
+            socket.close();
+          } catch {
+            /* ignore */
+          }
           resolve(null);
         }
       };
@@ -375,12 +436,14 @@ export class OSCClient extends EventEmitter {
       socket.on('message', (msg) => {
         if (!settled) {
           try {
-            const parsed = osc.fromBuffer(msg);
-            if (parsed.oscType === 'message' && parsed.address === '/live/rcbridge/version') {
+            const oscNode = parseOsc(msg);
+            if (isOscMessage(oscNode) && oscNode.address === '/live/rcbridge/version') {
               finish(msg);
               return;
             }
-          } catch { /* not the answer being waited for */ }
+          } catch {
+            /* not the answer being waited for */
+          }
           return;
         }
         if (found && this.onMessageCallback) this.onMessageCallback(msg);
@@ -389,8 +452,12 @@ export class OSCClient extends EventEmitter {
         let buffer: Buffer;
         try {
           ensureTextEncodingGlobals();
-          const probe = { oscType: 'message', address: '/live/rcbridge/version', args: [] as any[] };
-          const encoded = osc.toBuffer(probe);
+          const probe = {
+            oscType: 'message' as const,
+            address: '/live/rcbridge/version',
+            args: [] as OscArg[],
+          };
+          const encoded = osc.toBuffer(probe as unknown as osc.OscPacketInput);
           buffer = Buffer.from(encoded.buffer, encoded.byteOffset, encoded.byteLength);
         } catch {
           finish(null);
@@ -405,20 +472,29 @@ export class OSCClient extends EventEmitter {
 
   private startLegacy(): Promise<void> {
     return new Promise((resolve, reject) => {
-      const g = globalThis as any;
+      const g = globalThis as unknown as SharedOscGlobals;
 
       if (g.abletonOSCSocket) {
         this.server = g.abletonOSCSocket;
         if (!(g.abletonOSCListeners instanceof Set)) {
           g.abletonOSCListeners = new Set();
         }
-        g.abletonOSCListeners.add(this.onMessageCallback);
-        const addr = (g.abletonOSCSocket.address && typeof g.abletonOSCSocket.address === 'function') ? g.abletonOSCSocket.address() : null;
+        const sharedCb = this.onMessageCallback;
+        if (sharedCb) g.abletonOSCListeners.add(sharedCb);
+        const addr =
+          g.abletonOSCSocket.address && typeof g.abletonOSCSocket.address === 'function'
+            ? g.abletonOSCSocket.address()
+            : null;
         if (addr && typeof addr === 'object' && Number.isInteger(addr.port) && addr.port > 0) {
           this.listenPort = addr.port;
         }
-        dbg('START', `reused shared socket addr=${JSON.stringify(addr)} listenersCount=${g.abletonOSCListeners.size}`);
-        console.log(`[OSC] Shared OSC listening socket reused on port ${this.listenPort || 'unknown'}`);
+        dbg(
+          'START',
+          `reused shared socket addr=${JSON.stringify(addr)} listenersCount=${g.abletonOSCListeners.size}`,
+        );
+        log.info('osc', 'Shared OSC listening socket reused', {
+          port: this.listenPort || 'unknown',
+        });
         resolve();
         return;
       }
@@ -433,12 +509,19 @@ export class OSCClient extends EventEmitter {
 
       const tryBindOn = (port: number): void => {
         const serverSocket = dgram.createSocket('udp4');
-        const onError = (_err: any) => {
+        const onError = (_err: Error) => {
           serverSocket.removeListener('error', onError);
-          try { serverSocket.close(); } catch { /* ignore */ }
+          try {
+            serverSocket.close();
+          } catch {
+            /* ignore */
+          }
           const idx = OSC_PORT_CANDIDATES.indexOf(port);
           if (idx >= 0 && idx + 1 < OSC_PORT_CANDIDATES.length) {
-            console.log(`[OSC] Port ${port} in use, trying ${OSC_PORT_CANDIDATES[idx + 1]}`);
+            log.info('osc', 'Port in use, trying next candidate', {
+              port,
+              next: OSC_PORT_CANDIDATES[idx + 1],
+            });
             tryBindOn(OSC_PORT_CANDIDATES[idx + 1]!);
           } else {
             reject(new Error(`[OSC] Could not bind any of ${OSC_PORT_CANDIDATES.join(', ')}`));
@@ -450,25 +533,34 @@ export class OSCClient extends EventEmitter {
           serverSocket.off('error', onError);
 
           serverSocket.on('error', (err) => {
-            console.error('[OSC] Bound server socket error:', err);
+            log.error('osc', 'Bound server socket error', {
+              error: err instanceof Error ? err.message : String(err),
+            });
             g.abletonOSCSocket = null;
           });
 
           g.abletonOSCSocket = serverSocket;
           g.abletonOSCListeners = new Set();
-          g.abletonOSCListeners.add(this.onMessageCallback);
+          const sharedCb = this.onMessageCallback;
+          if (sharedCb) g.abletonOSCListeners.add(sharedCb);
 
           serverSocket.on('message', (msg) => {
             if (g.abletonOSCListeners) {
               for (const cb of g.abletonOSCListeners) {
-                try { cb(msg); } catch (err) { console.error('[OSC] Listener error:', err); }
+                try {
+                  cb(msg);
+                } catch (err) {
+                  log.error('osc', 'Listener error', {
+                    error: err instanceof Error ? err.message : String(err),
+                  });
+                }
               }
             }
           });
 
           this.server = serverSocket;
           this.listenPort = port;
-          console.log(`[OSC] OSC listening socket created and bound on port ${port}`);
+          log.info('osc', 'OSC listening socket created and bound', { port });
           resolve();
         });
       };
@@ -488,20 +580,28 @@ export class OSCClient extends EventEmitter {
     if (this.bridge === 'rcbridge') {
       // Bridge mode owns its socket outright.
       if (this.server) {
-        try { this.server.close(); } catch { /* ignore */ }
+        try {
+          this.server.close();
+        } catch {
+          /* ignore */
+        }
       }
       this.server = null;
       this.onMessageCallback = null;
       this.bridge = null;
       return Promise.resolve();
     }
-    const g = globalThis as any;
+    const g = globalThis as unknown as SharedOscGlobals;
     if (this.onMessageCallback) {
       if (g.abletonOSCListeners) {
         g.abletonOSCListeners.delete(this.onMessageCallback);
         if (g.abletonOSCListeners.size === 0) {
           if (g.abletonOSCSocket) {
-            try { g.abletonOSCSocket.close(); } catch {}
+            try {
+              g.abletonOSCSocket.close();
+            } catch {
+              // swallow: nothing to do here on purpose
+            }
             g.abletonOSCSocket = null;
           }
           g.abletonOSCListeners = null;
@@ -513,8 +613,12 @@ export class OSCClient extends EventEmitter {
     return Promise.resolve();
   }
 
-  public getTempo(): void { this.send('/live/song/get/tempo'); }
-  public getIsPlaying(): void { this.send('/live/song/get/is_playing'); }
+  public getTempo(): void {
+    this.send('/live/song/get/tempo');
+  }
+  public getIsPlaying(): void {
+    this.send('/live/song/get/is_playing');
+  }
   public getCurrentSongTime(requireConfirmation = false): void {
     const address = '/live/song/get/current_song_time';
     if (this.send(address) && requireConfirmation) this.requestConfirmation(address);
@@ -522,8 +626,12 @@ export class OSCClient extends EventEmitter {
   public setCurrentSongTime(value: number): void {
     this.send('/live/song/set/current_song_time', [{ type: 'float', value }]);
   }
-  public getCuePoints(): void { this.send('/live/song/get/cue_points'); }
-  public getLastEventTime(): void { this.send('/live/song/get/last_event_time'); }
+  public getCuePoints(): void {
+    this.send('/live/song/get/cue_points');
+  }
+  public getLastEventTime(): void {
+    this.send('/live/song/get/last_event_time');
+  }
   /**
    * Live has two ways to start, and neither is "from the playhead":
    * `start_playing` begins at the start marker (which a cue jump or a click
@@ -532,9 +640,15 @@ export class OSCClient extends EventEmitter {
    * while stopped). Which one Play means is decided in the command handler
    * from what the playhead did since the transport stopped.
    */
-  public startPlaying(): void { this.send('/live/song/start_playing'); }
-  public continuePlaying(): void { this.send('/live/song/continue_playing'); }
-  public stopPlaying(): void { this.send('/live/song/stop_playing'); }
+  public startPlaying(): void {
+    this.send('/live/song/start_playing');
+  }
+  public continuePlaying(): void {
+    this.send('/live/song/continue_playing');
+  }
+  public stopPlaying(): void {
+    this.send('/live/song/stop_playing');
+  }
   public getMetronome(requireConfirmation = false): void {
     const address = '/live/song/get/metronome';
     if (this.send(address) && requireConfirmation) this.requestConfirmation(address);
@@ -546,10 +660,16 @@ export class OSCClient extends EventEmitter {
     }
     for (const address of addresses) this.requestedConfirmations.delete(address);
   }
-  public getSignatureNumerator(): void { this.send('/live/song/get/signature_numerator'); }
-  public getSignatureDenominator(): void { this.send('/live/song/get/signature_denominator'); }
-  public getClipTriggerQuantization(): void { this.send('/live/song/get/clip_trigger_quantization'); }
-  
+  public getSignatureNumerator(): void {
+    this.send('/live/song/get/signature_numerator');
+  }
+  public getSignatureDenominator(): void {
+    this.send('/live/song/get/signature_denominator');
+  }
+  public getClipTriggerQuantization(): void {
+    this.send('/live/song/get/clip_trigger_quantization');
+  }
+
   public setMetronome(value: boolean): void {
     this.send('/live/song/set/metronome', [{ type: 'integer', value: value ? 1 : 0 }]);
   }
@@ -572,7 +692,7 @@ export class OSCClient extends EventEmitter {
       oscBridgeVersion: this.bridgeVersion,
     };
   }
-  
+
   public jumpToCuePoint(indexOrName: number | string): void {
     const type = typeof indexOrName === 'number' ? 'integer' : 'string';
     this.send('/live/song/cue_point/jump', [{ type, value: indexOrName }]);

@@ -5,7 +5,17 @@ import { fileURLToPath } from 'node:url';
 import { test } from 'node:test';
 
 const root = fileURLToPath(new URL('../', import.meta.url));
-const textExtensions = new Set(['.css', '.html', '.js', '.json', '.md', '.mjs', '.svg', '.ts', '.txt']);
+const textExtensions = new Set([
+  '.css',
+  '.html',
+  '.js',
+  '.json',
+  '.md',
+  '.mjs',
+  '.svg',
+  '.ts',
+  '.txt',
+]);
 const blocked = [
   /Wonderwall/i,
   /\bOasis\b/i,
@@ -70,6 +80,67 @@ test('public-facing prose contains no commercial-song or personal-path fixture',
     'docs/TROUBLESHOOTING.md',
   ].filter((entry) => existsSync(path.join(root, entry)));
   assertClean(files);
+});
+
+test('runtime and static surfaces use the "RC Setlist" product name', () => {
+  // Per Ableton trademark guidelines the product must not include "Ableton"
+  // in its name. Two tiers:
+  //   1. Strict (product identity): must mention "RC Setlist" and must NOT
+  //      contain "Ableton RC Setlist".
+  //   2. Migration context (INSTALL/TROUBLESHOOTING/FAQ/START-HERE): may
+  //      mention "Ableton RC Setlist" when documenting the rename, but must
+  //      also mention "RC Setlist" so the new name is the visible identity.
+  const strict = [
+    'README.md',
+    'docs/README.md',
+    'docs/USER-GUIDE.md',
+    'docs/TESTER-GUIDE.md',
+    'docs/DEVELOPMENT.md',
+    'docs/index.html',
+    'docs/media-kit.html',
+    'docs/site-i18n.js',
+    'docs/pt-BR/README.md',
+    'docs/pt-BR/USER-GUIDE.md',
+    'manifest.json',
+    'package.json',
+    'src/server/http.ts',
+    'src/ui/panel.ts',
+    'static/panel/index.html',
+    'static/performance/index.html',
+    'static/setlist/index.html',
+    'static/shared/i18n.js',
+    'release-template/RC-Bridge/Install-RC-Bridge.ps1',
+    'release-template/RC-Bridge/Install RC Bridge.command',
+    'release-template/RC-Bridge/README.txt',
+  ];
+  const migrationDocs = [
+    'docs/INSTALL.md',
+    'docs/TROUBLESHOOTING.md',
+    'docs/FAQ.md',
+    'docs/pt-BR/INSTALL.md',
+    'docs/pt-BR/TROUBLESHOOTING.md',
+    'docs/pt-BR/FAQ.md',
+    'release-template/START-HERE.html',
+    'release-template/README.txt',
+  ];
+  const findings = [];
+  for (const relative of strict) {
+    const absolute = path.join(root, relative);
+    if (!existsSync(absolute)) continue;
+    const content = readFileSync(absolute, 'utf8');
+    if (/\bAbleton RC Setlist\b/.test(content))
+      findings.push(`${relative}: contains "Ableton RC Setlist"`);
+    if (!/\bRC Setlist\b/.test(content))
+      findings.push(`${relative}: does not mention "RC Setlist"`);
+  }
+  for (const relative of migrationDocs) {
+    const absolute = path.join(root, relative);
+    if (!existsSync(absolute)) continue;
+    const content = readFileSync(absolute, 'utf8');
+    if (!/\bRC Setlist\b/.test(content))
+      findings.push(`${relative}: does not mention "RC Setlist"`);
+  }
+  assert.deepEqual(findings, []);
 });
 
 test('marketing surfaces do not promote fictional fixtures or hidden diagnostics', () => {

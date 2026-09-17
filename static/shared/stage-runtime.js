@@ -4,7 +4,12 @@
   function isEditingTarget(target) {
     if (!target) return false;
     const tagName = String(target.tagName || '').toUpperCase();
-    return target.isContentEditable === true || tagName === 'INPUT' || tagName === 'TEXTAREA' || tagName === 'SELECT';
+    return (
+      target.isContentEditable === true ||
+      tagName === 'INPUT' ||
+      tagName === 'TEXTAREA' ||
+      tagName === 'SELECT'
+    );
   }
 
   function mount(options = {}) {
@@ -33,27 +38,45 @@
       if (!button) return;
       const fullscreen = Boolean(documentRef.fullscreenElement);
       button.setAttribute('aria-pressed', fullscreen ? 'true' : 'false');
-      button.setAttribute('aria-label', fullscreen
-        ? t('fullscreen.exit', 'Exit full screen')
-        : t('fullscreen.enterAria', 'Enter full screen'));
-      button.setAttribute('title', fullscreen
-        ? t('fullscreen.exitTitle', 'Exit full screen (F)')
-        : t('fullscreen.enterTitle', 'Enter full screen (F)'));
+      button.setAttribute(
+        'aria-label',
+        fullscreen
+          ? t('fullscreen.exit', 'Exit full screen')
+          : t('fullscreen.enterAria', 'Enter full screen'),
+      );
+      button.setAttribute(
+        'title',
+        fullscreen
+          ? t('fullscreen.exitTitle', 'Exit full screen (F)')
+          : t('fullscreen.enterTitle', 'Enter full screen (F)'),
+      );
       button.textContent = fullscreen
         ? t('fullscreen.exit', 'Exit full screen')
         : t('fullscreen.enter', 'Full screen');
     }
 
     async function acquireWakeLock() {
-      if (destroyed || wakeLock || wakeLockRequest || !documentRef.fullscreenElement || documentRef.visibilityState === 'hidden') {
+      if (
+        destroyed ||
+        wakeLock ||
+        wakeLockRequest ||
+        !documentRef.fullscreenElement ||
+        documentRef.visibilityState === 'hidden'
+      ) {
         return wakeLock;
       }
       if (!navigatorRef.wakeLock?.request) {
-        showNotice(t('fullscreen.wakeUnsupported', 'Full screen is active, but this browser does not support Screen Wake Lock.'));
+        showNotice(
+          t(
+            'fullscreen.wakeUnsupported',
+            'Full screen is active, but this browser does not support Screen Wake Lock.',
+          ),
+        );
         return null;
       }
 
-      wakeLockRequest = navigatorRef.wakeLock.request('screen')
+      wakeLockRequest = navigatorRef.wakeLock
+        .request('screen')
         .then((lock) => {
           wakeLock = lock;
           lock.addEventListener?.('release', () => {
@@ -62,7 +85,12 @@
           return lock;
         })
         .catch(() => {
-          showNotice(t('fullscreen.wakeDenied', 'Full screen is active, but the browser did not allow the screen to stay awake.'));
+          showNotice(
+            t(
+              'fullscreen.wakeDenied',
+              'Full screen is active, but the browser did not allow the screen to stay awake.',
+            ),
+          );
           return null;
         })
         .finally(() => {
@@ -104,13 +132,25 @@
           showNotice(t('fullscreen.unavailable', 'Full screen is not available in this browser.'));
         }
       } catch {
-        showNotice(t('fullscreen.failed', 'Could not enter full screen. The page remains available in normal mode.'));
+        showNotice(
+          t(
+            'fullscreen.failed',
+            'Could not enter full screen. The page remains available in normal mode.',
+          ),
+        );
       }
       await sync();
     }
 
     async function handleKeydown(event) {
-      if (destroyed || event.defaultPrevented || event.altKey || event.ctrlKey || event.metaKey || isEditingTarget(event.target)) {
+      if (
+        destroyed ||
+        event.defaultPrevented ||
+        event.altKey ||
+        event.ctrlKey ||
+        event.metaKey ||
+        isEditingTarget(event.target)
+      ) {
         return false;
       }
       if (String(event.key || '').toLowerCase() !== 'f') return false;

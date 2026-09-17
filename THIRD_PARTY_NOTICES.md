@@ -1,10 +1,10 @@
 # Third-party notices
 
-This file covers third-party components bundled in Ableton RC Setlist 0.7.0. It is generated from the installed production dependency tree; run `npm run notices` after dependency changes.
+This file covers third-party components bundled in RC Setlist 1.0.0. It is generated from the installed production dependency tree; run `npm run notices` after dependency changes.
 
 ## Ableton Extensions SDK
 
-The Ableton Extensions SDK and CLI are licensed separately by Ableton AG. Their development archives are not redistributed in this source repository. Authorized SDK runtime components may be included only inside the packaged Ableton RC Setlist application under the applicable Ableton terms.
+The Ableton Extensions SDK and CLI are licensed separately by Ableton AG. Their development archives are not redistributed in this source repository. Authorized SDK runtime components may be included only inside the packaged RC Setlist application under the applicable Ableton terms.
 
 ## QRCode for JavaScript
 
@@ -302,7 +302,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 ```
 
-## @peculiar/asn1-cms 2.8.0
+## @peculiar/asn1-cms 2.9.4
 
 License: MIT
 
@@ -332,7 +332,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-## @peculiar/asn1-csr 2.8.0
+## @peculiar/asn1-csr 2.9.4
 
 License: MIT
 
@@ -362,7 +362,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-## @peculiar/asn1-ecc 2.8.0
+## @peculiar/asn1-ecc 2.9.4
 
 License: MIT
 
@@ -392,7 +392,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-## @peculiar/asn1-pfx 2.8.0
+## @peculiar/asn1-pfx 2.9.4
 
 License: MIT
 
@@ -422,7 +422,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-## @peculiar/asn1-pkcs8 2.8.0
+## @peculiar/asn1-pkcs8 2.9.4
 
 License: MIT
 
@@ -452,7 +452,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-## @peculiar/asn1-pkcs9 2.8.0
+## @peculiar/asn1-pkcs9 2.9.4
 
 License: MIT
 
@@ -482,7 +482,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-## @peculiar/asn1-rsa 2.8.0
+## @peculiar/asn1-rsa 2.9.4
 
 License: MIT
 
@@ -512,7 +512,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-## @peculiar/asn1-schema 2.8.0
+## @peculiar/asn1-schema 2.9.4
 
 License: MIT
 
@@ -542,7 +542,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-## @peculiar/asn1-x509 2.8.0
+## @peculiar/asn1-x509 2.9.4
 
 License: MIT
 
@@ -572,7 +572,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-## @peculiar/asn1-x509-attr 2.8.0
+## @peculiar/asn1-x509-attr 2.9.4
 
 License: MIT
 
@@ -832,7 +832,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-## pvutils 1.1.5
+## pvutils 1.2.0
 
 License: MIT
 
@@ -1031,7 +1031,7 @@ MIT License
     SOFTWARE
 ```
 
-## ws 8.21.1
+## ws 8.21.3
 
 License: MIT
 

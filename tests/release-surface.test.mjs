@@ -1,4 +1,4 @@
-import assert from 'node:assert/strict';
+﻿import assert from 'node:assert/strict';
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -11,15 +11,15 @@ function read(path) {
   return readFileSync(new URL(path, rootUrl), 'utf8');
 }
 
-test('machine-readable metadata identifies the Ableton RC Setlist 0.7.0 release', () => {
+test('machine-readable metadata identifies the RC Setlist 0.7.0 release', () => {
   const packageJson = JSON.parse(read('package.json'));
   const packageLock = JSON.parse(read('package-lock.json'));
   const manifest = JSON.parse(read('manifest.json'));
 
   assert.equal(packageJson.name, 'rc-setlist');
-  assert.equal(packageJson.version, '0.7.0');
-  assert.equal(packageLock.version, '0.7.0');
-  assert.equal(packageLock.packages?.['']?.version, '0.7.0');
+  assert.equal(packageJson.version, '1.0.0');
+  assert.equal(packageLock.version, '1.0.0');
+  assert.equal(packageLock.packages?.['']?.version, '1.0.0');
   assert.equal(packageJson.author, 'ntworm');
   assert.equal(packageJson.private, true);
   assert.equal(packageJson.license, 'PolyForm-Noncommercial-1.0.0');
@@ -28,9 +28,9 @@ test('machine-readable metadata identifies the Ableton RC Setlist 0.7.0 release'
   assert.equal(packageJson.engines?.node, '>=24.16.0 <25');
   assert.equal(packageJson.packageManager, 'npm@11.8.0');
 
-  assert.equal(manifest.name, 'Ableton RC Setlist');
+  assert.equal(manifest.name, 'RC Setlist');
   assert.equal(manifest.author, 'ntworm');
-  assert.equal(manifest.version, '0.7.0');
+  assert.equal(manifest.version, '1.0.0');
 });
 
 test('project license is PolyForm Noncommercial with the required notice', () => {
@@ -67,7 +67,7 @@ test('package manifest has no repository-local Ableton SDK or CLI archive', () =
   assert.doesNotMatch(serialized, /file:\.\/vendor/i);
 });
 
-test('runtime and static surfaces use only the Ableton RC Setlist product name', () => {
+test('runtime and static surfaces use only the RC Setlist product name', () => {
   const files = ['src', 'static'].flatMap((directory) =>
     readdirSync(path.join(rootPath, directory), { recursive: true })
       .map((entry) => path.join(directory, entry))
@@ -83,7 +83,7 @@ test('runtime and static surfaces use only the Ableton RC Setlist product name',
     return /Ableton Setlist Bridge|ableton-setlist-bridge|worm\.ableton/i.test(content);
   });
   assert.deepEqual(stale, []);
-  assert.match(read('static/panel/index.html'), />Ableton RC Setlist</);
-  assert.match(read('static/setlist/index.html'), /<title>Ableton RC Setlist\b/);
-  assert.match(read('static/performance/index.html'), /<title>Ableton RC Setlist\b/);
+  assert.match(read('static/panel/index.html'), />RC Setlist</);
+  assert.match(read('static/setlist/index.html'), /<title>RC Setlist\b/);
+  assert.match(read('static/performance/index.html'), /<title>RC Setlist\b/);
 });

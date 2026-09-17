@@ -35,8 +35,10 @@
    * so Live's tempo is only the fallback for a set that declares nothing.
    */
   function countInTempo(state) {
-    const usable = (value) => (typeof value === 'number' && Number.isFinite(value)
-      && value >= MIN_BPM && value <= MAX_BPM ? value : null);
+    const usable = (value) =>
+      typeof value === 'number' && Number.isFinite(value) && value >= MIN_BPM && value <= MAX_BPM
+        ? value
+        : null;
     if (!state) return null;
     const declared = usable(state.declaredTempo);
     return declared !== null ? declared : usable(state.tempo);
@@ -67,8 +69,10 @@
     const beatsPerBar = Math.round(raw);
     if (beatsPerBar < MIN_BEATS || beatsPerBar > MAX_BEATS) return null;
 
-    const latencyMs = typeof opts.latencyMs === 'number' && Number.isFinite(opts.latencyMs)
-      && opts.latencyMs >= 0 ? opts.latencyMs : 0;
+    const latencyMs =
+      typeof opts.latencyMs === 'number' && Number.isFinite(opts.latencyMs) && opts.latencyMs >= 0
+        ? opts.latencyMs
+        : 0;
 
     const intervalMs = 60000 / bpm;
     const beats = [];
@@ -82,5 +86,24 @@
     return { bpm, beatsPerBar, intervalMs, beats, downbeatOffsetMs, sendPlayOffsetMs };
   }
 
-  globalScope.RcCountIn = { countInTempo, planCountIn, MIN_BPM, MAX_BPM };
-}(typeof globalThis !== 'undefined' ? globalThis : this));
+  const AUDIO_STORAGE_KEY = 'rc-setlist.count-in-audio';
+  function browserCountInAudioEnabled(storage) {
+    if (!storage) return true;
+    try {
+      const val = storage.getItem(AUDIO_STORAGE_KEY);
+      // Default ON; only disabled when explicitly set to 'false'
+      return val !== 'false';
+    } catch (e) {
+      return true;
+    }
+  }
+
+  globalScope.RcCountIn = {
+    countInTempo,
+    planCountIn,
+    MIN_BPM,
+    MAX_BPM,
+    AUDIO_STORAGE_KEY,
+    browserCountInAudioEnabled,
+  };
+})(typeof globalThis !== 'undefined' ? globalThis : this);

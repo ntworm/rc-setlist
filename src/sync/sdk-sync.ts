@@ -1,7 +1,16 @@
 import { type ExtensionContext } from '../context.js';
-import { attemptCompatibleLegacyRecovery, bridgeState, broadcastState, refreshSongBook } from '../core/bridge-state.js';
+import {
+  attemptCompatibleLegacyRecovery,
+  bridgeState,
+  broadcastState,
+  refreshSongBook,
+} from '../runtime/bridge-state.js';
 import { computeCuesFingerprint } from '../core/locator-parser.js';
+import { log } from '../util/log.js';
 
+/**
+ * SyncFromSdkContext — implementation detail.
+ */
 export function syncFromSdkContext(context: ExtensionContext): void {
   if (!bridgeState.manager) return;
 
@@ -13,7 +22,9 @@ export function syncFromSdkContext(context: ExtensionContext): void {
       if (typeof song.tempo === 'number') {
         bridgeState.manager.updateTempo(song.tempo);
       }
-    } catch {}
+    } catch {
+      // swallow: nothing to do here on purpose
+    }
 
     try {
       const sdkCues = song.cuePoints;
@@ -22,7 +33,7 @@ export function syncFromSdkContext(context: ExtensionContext): void {
         // deleted). Only unavailable/non-array data may retain the old cues.
         const cues = sdkCues.map((c: { name?: string; time?: number }) => ({
           name: c.name || '',
-          time: c.time || 0
+          time: c.time || 0,
         }));
         const fingerprint = computeCuesFingerprint(cues);
         if (fingerprint !== bridgeState.lastCuesFingerprint) {
@@ -33,7 +44,9 @@ export function syncFromSdkContext(context: ExtensionContext): void {
         }
       }
     } catch (err) {
-      console.error('[SDK-Sync] Failed to sync cue points:', err);
+      log.error('sdk', 'Failed to sync cue points', {
+        error: err instanceof Error ? err.message : String(err),
+      });
     }
   }
 

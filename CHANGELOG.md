@@ -4,6 +4,45 @@ All notable public changes to Ableton RC Setlist are recorded here.
 
 ## [Unreleased]
 
+## [1.0.0] - 2026-09-14
+
+### Added
+
+- **Renamed to "RC Setlist"** following Ableton's brand guidelines, which prohibit "Ableton" in the name of a third-party product.
+- **One-time migration** for users upgrading from 0.x: `Migrate-RC-Setlist-Data.cmd` (Windows) and `Migrate RC Setlist Data.command` (macOS) copy profiles, project-setlists, token and preferences into the new layout without touching the old one.
+- **High-contrast panel frame**: 2px amber border (`rgba(255, 168, 38, 0.45)`) with subtle glow ensures readability on dark and light Live themes.
+- **Contracts document** (`docs/CONTRACTS.md` and `docs/pt-BR/CONTRATOS.md`) describes the WS protocol v3, on-disk formats, locator grammar, OSC addresses, HTTP endpoints and SemVer policy. Every contract is enforced by `tests/release-contracts.test.mjs`.
+- **Quality gates**: ESLint, Prettier, knip, dependency-cruiser, ruff, html-validate and `@axe-core/playwright` are part of `ci:public`. The `gates:quality` script collects them for manual runs.
+- **Security review** (`internal/SECURITY-REVIEW-1.0.md`) documents per-item threats, decisions and the tests that enforce them.
+- **Performance baseline** (`internal/PERFORMANCE-BASELINE-1.0.md`) records the broadcast-path numbers and the thresholds that gate regressions.
+
+### Changed
+
+- **Cycle and layer cleanup**: 5 dependency cycles removed, `bridgeState` moved from `src/core/` to `src/runtime/`, `commands/handlers.ts` split into a dispatcher plus six per-family modules, `setlist-manager.ts` delegates tag evaluation and transport tracking to dedicated helpers.
+- **Static analysis strictness**: `verbatimModuleSyntax` is on; the TypeScript build resolves the SDK only through a checked-in type boundary.
+- **Release artefact naming**: `RC-Setlist-0.7.1.ablx` and `RC-Setlist-0.7.1-Installation-Kit.zip` replace the `Ableton-RC-Setlist-<version>` convention.
+
+### Fixed
+
+- **Stage acceptance fixes (2026-09-16 rehearsal)**:
+  - **Panel CSS loading**: restored styles by removing the HTML `<link>` self-closing slash, which caused the browser to ignore the stylesheet.
+  - **Telemetry cards layout**: fixed clipping in mobile portrait orientation by introducing a wrapping layout constraint and 58/42 proportion.
+  - **Count-in audio**: muted the metronome on mobile devices by default. It is now an opt-in browser setting via the `rc-setlist.count-in-audio` local storage key.
+  - **Jump target autocomplete**: the marker editor now cleanly displays target names without duplicate `[jump]` or `[loop]` tags in the dropdown.
+- **Installer removes legacy 0.x package automatically**: `Install-RC-Bridge.ps1` (Windows) and `Install RC Bridge.command` (macOS) clean up pre-0.7.1 packages from legacy User Library / Extensions locations so Live only displays one RC Setlist entry in the Extensions menu.
+- Kit migration scripts are idempotent and never overwrite a file at the destination.
+- The panel now prompts the operator to run the migration when the new data folder is empty.
+
+### Removed
+
+- The `Ableton RC Setlist` product name in all public surfaces (CHANGELOG historical entries and migration-context prose retain it).
+- Dead code reported by `knip` and unreachable exports from the `no-explicit-any` narrowing pass.
+- `console.*` calls in user-facing paths; all such logs now go through `src/util/log.ts` with the operator-facing message and a machine-readable scope.
+
+### Security
+
+- See `internal/SECURITY-REVIEW-1.0.md` for the per-item review and `SECURITY.md` for the supported-version line and how to report issues.
+
 ## [0.7.0] - 2026-09-13
 
 ### Added

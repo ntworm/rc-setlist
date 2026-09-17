@@ -3,23 +3,21 @@ import * as https from 'node:https';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { randomBytes } from 'node:crypto';
-import { StartServerOptions } from './index.js';
+import type { StartServerOptions, AugmentedWebSocket } from './types.js';
 import {
   bridgeState,
   activateProjectProfileScope,
   broadcastState,
   broadcastProfileState,
-  checkAndBroadcastLyrics,
   getActiveProfilePaths,
-  requireProfileManager,
   profileStatePayload,
-  selectProfile,
   loadLyricsForSong,
   runPreflightCheck,
-} from './core/bridge-state.js';
+} from './runtime/bridge-state.js';
 import { getExtensionContext } from './context.js';
 import { SetlistManager } from './core/setlist-manager.js';
 import { JumpScheduler, type PendingJump } from './core/next-downbeat-jump.js';
+import { isStringArray, parseJson } from './util/json.js';
 import { EventLogger } from './core/event-log.js';
 import { CommandBus } from './core/command-bus.js';
 import { OSCClient } from './integration/osc-client.js';
@@ -37,7 +35,7 @@ import { McpFallbackSync, McpUnavailableError } from './integration/mcp-fallback
 import { syncFromSdkContext } from './sync/sdk-sync.js';
 import { syncFromMcpInfo } from './sync/mcp-sync.js';
 import { registerOscListeners } from './osc/registration.js';
-import { executeCommandAction } from './commands/handlers.js';
+import { executeCommandAction } from './commands/handlers/index.js';
 import { applyJumpTargetTempo } from './commands/jump-tempo.js';
 import type { ClientMessage } from './types.js';
 import {
@@ -50,6 +48,9 @@ import {
 const PORT = 4444;
 let projectRefreshPending = false;
 
+/**
+ * Closes the http server.
+ */
 export async function closeHttpServer(server: http.Server | https.Server): Promise<void> {
   const closed = new Promise<void>((resolve) => {
     server.close(() => resolve());
@@ -83,10 +84,14 @@ function invalidateProjectPromotionForSongHandle(songHandleId: string): void {
   bridgeState.promotionBlockedProjectSessionId = bridgeState.projectSessionId;
 }
 
+/**
+ * Returns the project metadata request token.
+ */
 export function getProjectMetadataRequestToken(): string | null {
   const identity = bridgeState.projectIdentity;
   const sessionId = bridgeState.projectSessionId;
-  if (!identity || !sessionId || bridgeState.promotionBlockedProjectSessionId === sessionId) return null;
+  if (!identity || !sessionId || bridgeState.promotionBlockedProjectSessionId === sessionId)
+    return null;
   return `${sessionId}:${identity.key}`;
 }
 
@@ -96,8 +101,8 @@ async function resolveActiveProjectIdentity(options: StartServerOptions): Promis
     return resolveProjectIdentity({
       platform: 'linux',
       sessionId: bridgeState.projectSessionId,
-      getProjectMetadata: async () => null,
-      readWindowTitle: async () => '',
+      getProjectMetadata: () => Promise.resolve(null),
+      readWindowTitle: () => Promise.resolve(''),
     });
   }
   return resolveProjectIdentity({
@@ -120,12 +125,19 @@ async function refreshProjectScope(options: StartServerOptions): Promise<void> {
     const identity = await resolveProjectIdentity({
       platform: 'linux',
       sessionId,
-      getProjectMetadata: async () => null,
-      readWindowTitle: async () => '',
+      getProjectMetadata: () => Promise.resolve(null),
+      readWindowTitle: () => Promise.resolve(''),
     });
     if (bridgeState.projectSessionId !== sessionId) return;
-    console.log(`[Persistence] Live Set scope changed to temporary session: ${identity.displayName}`);
-    await activateProjectProfileScope(identity, undefined, undefined, () => bridgeState.projectSessionId === sessionId);
+    console.log(
+      `[Persistence] Live Set scope changed to temporary session: ${identity.displayName}`,
+    );
+    await activateProjectProfileScope(
+      identity,
+      undefined,
+      undefined,
+      () => bridgeState.projectSessionId === sessionId,
+    );
   } catch {
     console.error('[Persistence] Failed to switch Live Set scope.');
   } finally {
@@ -162,7 +174,13 @@ function getOrGenerateToken(): string {
   return token;
 }
 
-export function handleJumpSchedulerEvent(event: { type: 'replaced' | 'executed'; pending: PendingJump }): void {
+/**
+ * Handles the jump scheduler event.
+ */
+export function handleJumpSchedulerEvent(event: {
+  type: 'replaced' | 'executed';
+  pending: PendingJump;
+}): void {
   if (!bridgeState.oscClient || !bridgeState.manager) return;
   if (event.type === 'replaced') {
     bridgeState.wsServer?.broadcast({
@@ -183,11 +201,18 @@ export function handleJumpSchedulerEvent(event: { type: 'replaced' | 'executed';
     const song = bridgeState.manager.getState().songs[event.pending.songIndex];
     const section = song?.sections[event.pending.sectionIndex];
     if (section && section.loopCount !== null) {
-      const loopRegion = bridgeState.manager.getLoopRegion(event.pending.songIndex, event.pending.sectionIndex);
+      const loopRegion = bridgeState.manager.getLoopRegion(
+        event.pending.songIndex,
+        event.pending.sectionIndex,
+      );
       if (loopRegion) {
         bridgeState.oscClient.send('/live/song/set/loop', [{ type: 'integer', value: 1 }]);
-        bridgeState.oscClient.send('/live/song/set/loop_start', [{ type: 'float', value: loopRegion.start }]);
-        bridgeState.oscClient.send('/live/song/set/loop_length', [{ type: 'float', value: loopRegion.duration }]);
+        bridgeState.oscClient.send('/live/song/set/loop_start', [
+          { type: 'float', value: loopRegion.start },
+        ]);
+        bridgeState.oscClient.send('/live/song/set/loop_length', [
+          { type: 'float', value: loopRegion.duration },
+        ]);
       }
     } else {
       bridgeState.oscClient.send('/live/song/set/loop', [{ type: 'integer', value: 0 }]);
@@ -205,6 +230,9 @@ export function handleJumpSchedulerEvent(event: { type: 'replaced' | 'executed';
   });
 }
 
+/**
+ * Starts the server.
+ */
 export async function startServer(options: StartServerOptions = {}): Promise<void> {
   if (bridgeState.server) return;
 
@@ -221,7 +249,8 @@ export async function startServer(options: StartServerOptions = {}): Promise<voi
       bridgeState.globalPersistenceDir = context.environment.storageDirectory;
       console.log('[Persistence] Storage directory available.');
     } else {
-      bridgeState.globalPersistenceDir = typeof __dirname !== 'undefined' ? path.join(__dirname, '../.setlist') : './.setlist';
+      bridgeState.globalPersistenceDir =
+        typeof __dirname !== 'undefined' ? path.join(__dirname, '../.setlist') : './.setlist';
     }
     bridgeState.authToken = getOrGenerateToken();
     setHttpAuthToken(bridgeState.authToken);
@@ -239,15 +268,18 @@ export async function startServer(options: StartServerOptions = {}): Promise<voi
     bridgeState.eventLogger = new EventLogger(bridgeState.globalPersistenceDir);
     bridgeState.commandBus = new CommandBus(bridgeState.manager, bridgeState.eventLogger);
 
-    bridgeState.commandBus.on('command_settled', (cmd) => {
-      bridgeState.wsServer?.broadcast({
-        type: 'command_status',
-        commandId: cmd.commandId,
-        status: cmd.status,
-        ...(cmd.reason ? { reason: cmd.reason } : {}),
-        ...(cmd.error ? { error: cmd.error } : {}),
-      });
-    });
+    bridgeState.commandBus.on(
+      'command_settled',
+      (cmd: { commandId: string; status: string; reason?: string; error?: string }) => {
+        bridgeState.wsServer?.broadcast({
+          type: 'command_status',
+          commandId: cmd.commandId,
+          status: cmd.status,
+          ...(cmd.reason ? { reason: cmd.reason } : {}),
+          ...(cmd.error ? { error: cmd.error } : {}),
+        });
+      },
+    );
 
     const hasContext = Boolean(context);
     bridgeState.manager?.setConnectionStatus('ableton', hasContext ? 'synced' : 'disconnected');
@@ -259,16 +291,18 @@ export async function startServer(options: StartServerOptions = {}): Promise<voi
     try {
       if (fs.existsSync(orderFilePath)) {
         const raw = fs.readFileSync(orderFilePath, 'utf-8');
-        const order = JSON.parse(raw) as string[];
-        bridgeState.manager.setCustomOrder(order);
-        console.log('[Persistence] Custom song order loaded.');
+        const order = parseJson(raw, isStringArray);
+        if (order) {
+          bridgeState.manager.setCustomOrder(order);
+          console.log('[Persistence] Custom song order loaded.');
+        }
       }
     } catch {
       console.error('[Persistence] Failed to load custom song order.');
     }
 
     setCsvExportResolver(async (rawName: string) => {
-      const safeName = rawName.replace(/[^A-Za-z0-9_.\-]/g, '_');
+      const safeName = rawName.replace(/[^A-Za-z0-9_.-]/g, '_');
       if (!safeName.endsWith('.csv')) return null;
       const p = path.join(getActiveProfilePaths().exports, safeName);
       try {
@@ -291,7 +325,9 @@ export async function startServer(options: StartServerOptions = {}): Promise<voi
     });
 
     setDebugSnapshotProvider(() => {
-      const osc = bridgeState.oscClient?.getDebugSnapshot() ?? { error: 'osc client not initialized' };
+      const osc = bridgeState.oscClient?.getDebugSnapshot() ?? {
+        error: 'osc client not initialized',
+      };
       const state = bridgeState.manager?.getState();
       return {
         ...osc,
@@ -302,7 +338,8 @@ export async function startServer(options: StartServerOptions = {}): Promise<voi
         managerClipTriggerQuantization: state?.clipTriggerQuantization ?? null,
         managerArrangementEndTime: state?.arrangementEndTime ?? null,
         managerActiveSong: state?.songs[state.activeSongIndex]?.title ?? null,
-        managerActiveSection: state?.songs[state.activeSongIndex]?.sections[state.activeSectionIndex]?.name ?? null,
+        managerActiveSection:
+          state?.songs[state.activeSongIndex]?.sections[state.activeSectionIndex]?.name ?? null,
         pendingJump: bridgeState.scheduler?.getPending() ?? null,
         mcp: bridgeState.mcpFallbackSync?.getSnapshot() ?? null,
       };
@@ -318,7 +355,9 @@ export async function startServer(options: StartServerOptions = {}): Promise<voi
       });
 
       bridgeState.oscClient.on('connect', () => {
-        console.log('[OSC] Connection established. Registering listeners and fetching cue points...');
+        console.log(
+          '[OSC] Connection established. Registering listeners and fetching cue points...',
+        );
         bridgeState.wsServer?.broadcastLog('Connected to Ableton Live.', 'info');
 
         bridgeState.oscClient?.startPropertyListeners();
@@ -327,21 +366,30 @@ export async function startServer(options: StartServerOptions = {}): Promise<voi
         bridgeState.oscClient?.getCuePoints();
 
         bridgeState.manager?.setConnectionStatus('osc', 'synced');
-        bridgeState.eventLogger?.log({ type: 'osc_connected', message: 'OSC connection to Ableton Live established' });
+        bridgeState.eventLogger?.log({
+          type: 'osc_connected',
+          message: 'OSC connection to Ableton Live established',
+        });
       });
 
       bridgeState.oscClient.on('disconnect', () => {
         console.warn('[OSC] Connection to Ableton Live lost.');
         bridgeState.lastCuesFingerprint = '__init__';
-        bridgeState.wsServer?.broadcastLog('⚠ Lost connection to Ableton Live. Reconnecting...', 'warn');
+        bridgeState.wsServer?.broadcastLog(
+          '⚠ Lost connection to Ableton Live. Reconnecting...',
+          'warn',
+        );
 
         bridgeState.manager?.setConnectionStatus('osc', 'disconnected');
-        bridgeState.eventLogger?.log({ type: 'osc_disconnected', message: 'OSC connection to Ableton Live lost' });
+        bridgeState.eventLogger?.log({
+          type: 'osc_disconnected',
+          message: 'OSC connection to Ableton Live lost',
+        });
       });
 
       await bridgeState.oscClient.start();
 
-      registerOscListeners(options);
+      registerOscListeners();
 
       bridgeState.pollInterval = setInterval(() => {
         bridgeState.oscClient?.getCurrentSongTime();
@@ -355,9 +403,10 @@ export async function startServer(options: StartServerOptions = {}): Promise<voi
       await loadCerts();
     }
 
-    const srv = (useHttps && httpsOptions && !options.skipCerts)
-      ? https.createServer(httpsOptions, createHttpRequestListener())
-      : http.createServer(createHttpRequestListener());
+    const srv =
+      useHttps && httpsOptions && !options.skipCerts
+        ? https.createServer(httpsOptions, createHttpRequestListener())
+        : http.createServer(createHttpRequestListener());
     bridgeState.server = srv;
 
     srv.on('upgrade', (req, socket, head) => {
@@ -365,17 +414,16 @@ export async function startServer(options: StartServerOptions = {}): Promise<voi
     });
 
     await new Promise<void>((resolve, reject) => {
-      let onError: (err: Error) => void;
-      let onListening: () => void;
-
-      onError = (err: Error) => {
+      const onError = (err: Error): void => {
         srv.off('listening', onListening);
         reject(err);
       };
 
-      onListening = () => {
+      const onListening = (): void => {
         srv.off('error', onError);
-        console.log(`[HTTP] Server running over ${useHttps && httpsOptions && !options.skipCerts ? 'HTTPS' : 'HTTP'} on port ${listenPort}`);
+        console.log(
+          `[HTTP] Server running over ${useHttps && httpsOptions && !options.skipCerts ? 'HTTPS' : 'HTTP'} on port ${listenPort}`,
+        );
         resolve();
       };
 
@@ -385,15 +433,22 @@ export async function startServer(options: StartServerOptions = {}): Promise<voi
       srv.listen(listenPort);
     });
 
-    bridgeState.wsServer.on('client_message', async (msg: ClientMessage, ws) => {
+    bridgeState.wsServer.on('client_message', (msg: ClientMessage, ws: AugmentedWebSocket) => {
       if (!bridgeState.manager) return;
 
       const isController = ws.isController === true;
-      const isSynchronized = ws.synchronized === true || ws.skipHandshakeCheck || process.env.NODE_ENV === 'test';
+      const isSynchronized =
+        ws.synchronized === true || ws.skipHandshakeCheck || process.env.NODE_ENV === 'test';
       const allowedBeforeSync = new Set(['handshake', 'sync_confirm', 'auth', 'get_lyrics']);
 
       if (!allowedBeforeSync.has(msg.type) && !isSynchronized) {
-        ws.send(JSON.stringify({ type: 'error', code: 'not_synchronized', message: 'Client is not synchronized.' }));
+        ws.send(
+          JSON.stringify({
+            type: 'error',
+            code: 'not_synchronized',
+            message: 'Client is not synchronized.',
+          }),
+        );
         return;
       }
 
@@ -402,11 +457,13 @@ export async function startServer(options: StartServerOptions = {}): Promise<voi
         ws.synchronized = false;
         const state = bridgeState.manager.getState();
         ws.handshakeStateVersion = state.stateVersion;
-        ws.send(JSON.stringify({
-          type: 'handshake_ack',
-          stateVersion: state.stateVersion,
-          state,
-        }));
+        ws.send(
+          JSON.stringify({
+            type: 'handshake_ack',
+            stateVersion: state.stateVersion,
+            state,
+          }),
+        );
         if (isController) {
           ws.send(JSON.stringify(profileStatePayload()));
         }
@@ -416,38 +473,55 @@ export async function startServer(options: StartServerOptions = {}): Promise<voi
       if (msg.type === 'sync_confirm') {
         if (msg.stateVersion === ws.handshakeStateVersion) {
           ws.synchronized = true;
-          ws.handshakeStateVersion = undefined;
-          bridgeState.eventLogger?.log({ type: 'client_synchronized', clientId: ws.clientId, message: `Client synchronized at state version ${msg.stateVersion}` });
+          delete ws.handshakeStateVersion;
+          bridgeState.eventLogger?.log({
+            type: 'client_synchronized',
+            clientId: ws.clientId,
+            message: `Client synchronized at state version ${msg.stateVersion}`,
+          });
         }
         return;
       }
 
       const readOnlyTypes = new Set(['get_lyrics', 'profiles_get', 'preflight_check']);
       if (!readOnlyTypes.has(msg.type) && !isController) {
-        console.warn(`[Security] WS client tried to execute command '${msg.type}' without controller permissions.`);
-        ws.send(JSON.stringify({ type: 'error', code: 'unauthorized', message: 'Unauthorized: controller permission is required.' }));
+        console.warn(
+          `[Security] WS client tried to execute command '${msg.type}' without controller permissions.`,
+        );
+        ws.send(
+          JSON.stringify({
+            type: 'error',
+            code: 'unauthorized',
+            message: 'Unauthorized: controller permission is required.',
+          }),
+        );
         return;
       }
 
       if (msg.type === 'get_lyrics') {
-        const requestedTitle = (typeof msg.song === 'string' && msg.song.length)
-          ? msg.song
-          : bridgeState.manager.getState().songs[bridgeState.manager.getState().activeSongIndex]?.title;
+        const requestedTitle =
+          typeof msg.song === 'string' && msg.song.length
+            ? msg.song
+            : bridgeState.manager.getState().songs[bridgeState.manager.getState().activeSongIndex]
+                ?.title;
         if (!requestedTitle) {
           ws.send(JSON.stringify({ type: 'lyrics', song: '', format: 'none', lines: [] }));
           return;
         }
         const lyrics = loadLyricsForSong(requestedTitle);
-        ws.send(JSON.stringify({
-          type: 'lyrics',
-          song: requestedTitle,
-          format: lyrics.type,
-          lines: lyrics.lines
-        }));
+        ws.send(
+          JSON.stringify({
+            type: 'lyrics',
+            song: requestedTitle,
+            format: lyrics.type,
+            lines: lyrics.lines,
+          }),
+        );
         return;
       }
 
-      const commandId = msg.commandId || `legacy-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+      const commandId =
+        msg.commandId || `legacy-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
       if (bridgeState.commandBus?.isDuplicate(commandId)) {
         console.warn(`[CommandBus] Discarding duplicate command ID: ${commandId}`);
         return;
@@ -457,7 +531,7 @@ export async function startServer(options: StartServerOptions = {}): Promise<voi
         commandId,
         msg.type,
         msg,
-        ws.clientId || ws.remoteAddress || 'unknown'
+        ws.clientId || ws.remoteAddress || 'unknown',
       );
 
       if (command) {
@@ -468,11 +542,13 @@ export async function startServer(options: StartServerOptions = {}): Promise<voi
           }
           if (command.type === 'preflight_check') {
             const preflight = runPreflightCheck();
-            ws.send(JSON.stringify({
-              type: 'preflight_result',
-              status: preflight.status,
-              reports: preflight.reports,
-            }));
+            ws.send(
+              JSON.stringify({
+                type: 'preflight_result',
+                status: preflight.status,
+                reports: preflight.reports,
+              }),
+            );
             return;
           }
 
@@ -525,7 +601,9 @@ export async function startServer(options: StartServerOptions = {}): Promise<voi
           bridgeState.profileScopeSwitching = true;
           broadcastProfileState();
           try {
-            console.log(`[Persistence] Delayed Live Set metadata resolved: ${identity.displayName}`);
+            console.log(
+              `[Persistence] Delayed Live Set metadata resolved: ${identity.displayName}`,
+            );
             const sourceIdentityKey = bridgeState.projectIdentity?.key;
             const projectSessionId = bridgeState.projectSessionId;
             if (!sourceIdentityKey || requestToken !== getProjectMetadataRequestToken()) return;
@@ -562,6 +640,9 @@ export async function startServer(options: StartServerOptions = {}): Promise<voi
   }
 }
 
+/**
+ * Stops the server.
+ */
 export async function stopServer(): Promise<void> {
   if (bridgeState.pollInterval) {
     clearInterval(bridgeState.pollInterval);
@@ -582,10 +663,11 @@ export async function stopServer(): Promise<void> {
   if (bridgeState.mcpClient) {
     try {
       bridgeState.mcpClient.stop();
-    } catch {}
+    } catch {
+      // swallow: nothing to do here on purpose
+    }
     bridgeState.mcpClient = null;
   }
-
 
   if (bridgeState.wsServer) {
     bridgeState.wsServer.stop();

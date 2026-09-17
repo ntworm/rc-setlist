@@ -10,14 +10,14 @@ export class MockOSCServer {
   private currentSongTime: number = 0;
   private lastClientPort: number = 0;
   private lastClientAddress: string = '127.0.0.1';
-  
+
   // Mock cues corresponding to the unit test setup
   private cues = [
     { name: 'Song A', time: 0 },
     { name: 'Song A > Verse', time: 30 },
     { name: 'Song A > Chorus [loop 4x]', time: 60 },
     { name: 'Song B', time: 100 },
-    { name: '_end', time: 150 }
+    { name: '_end', time: 150 },
   ];
 
   /** Answers /live/rcbridge/version like the bundled RC Bridge fork does. */
@@ -27,7 +27,7 @@ export class MockOSCServer {
     this.identifyAsBridge = Boolean(options.identifyAsBridge);
     this.server = dgram.createSocket('udp4');
     this.client = dgram.createSocket('udp4');
-    
+
     this.server.on('message', (msg, rinfo) => {
       try {
         this.lastClientPort = rinfo.port;
@@ -42,9 +42,9 @@ export class MockOSCServer {
 
   private handleMessage(oscMsg: any): void {
     if (oscMsg.oscType !== 'message') return;
-    
+
     const address = oscMsg.address;
-    
+
     if (address === '/live/rcbridge/version') {
       if (!this.identifyAsBridge) return; // a stock AbletonOSC logs "Unknown OSC address" and stays silent
       this.sendReply('/live/rcbridge/version', [
@@ -53,16 +53,14 @@ export class MockOSCServer {
         { type: 'string', value: 'ideoforms/AbletonOSC@0ca6821' },
       ]);
     } else if (address === '/live/song/get/tempo') {
-      this.sendReply('/live/song/get/tempo', [
-        { type: 'float', value: this.tempo }
-      ]);
+      this.sendReply('/live/song/get/tempo', [{ type: 'float', value: this.tempo }]);
     } else if (address === '/live/song/get/is_playing') {
       this.sendReply('/live/song/get/is_playing', [
-        { type: 'integer', value: this.isPlaying ? 1 : 0 }
+        { type: 'integer', value: this.isPlaying ? 1 : 0 },
       ]);
     } else if (address === '/live/song/get/current_song_time') {
       this.sendReply('/live/song/get/current_song_time', [
-        { type: 'float', value: this.currentSongTime }
+        { type: 'float', value: this.currentSongTime },
       ]);
     } else if (address === '/live/song/get/cue_points') {
       // Return flat array: [name0, time0, name1, time1, ...]
@@ -72,16 +70,15 @@ export class MockOSCServer {
         args.push({ type: 'float', value: cue.time });
       }
       this.sendReply('/live/song/get/cue_points', args);
-    } else if (address === '/live/song/start_playing' || address === '/live/song/continue_playing') {
+    } else if (
+      address === '/live/song/start_playing' ||
+      address === '/live/song/continue_playing'
+    ) {
       this.isPlaying = true;
-      this.sendReply('/live/song/get/is_playing', [
-        { type: 'integer', value: 1 }
-      ]);
+      this.sendReply('/live/song/get/is_playing', [{ type: 'integer', value: 1 }]);
     } else if (address === '/live/song/stop_playing') {
       this.isPlaying = false;
-      this.sendReply('/live/song/get/is_playing', [
-        { type: 'integer', value: 0 }
-      ]);
+      this.sendReply('/live/song/get/is_playing', [{ type: 'integer', value: 0 }]);
     } else if (address === '/live/song/cue_point/jump') {
       const idxOrName = oscMsg.args[0]?.value;
       if (typeof idxOrName === 'number') {
@@ -90,14 +87,14 @@ export class MockOSCServer {
           this.currentSongTime = cue.time;
         }
       } else if (typeof idxOrName === 'string') {
-        const cue = this.cues.find(c => c.name === idxOrName);
+        const cue = this.cues.find((c) => c.name === idxOrName);
         if (cue) {
           this.currentSongTime = cue.time;
         }
       }
       // Notify client of the new time
       this.sendReply('/live/song/get/current_song_time', [
-        { type: 'float', value: this.currentSongTime }
+        { type: 'float', value: this.currentSongTime },
       ]);
     } else if (address === '/live/song/cue_point/add_or_delete') {
       // Mirrors AbletonOSC's `set_or_delete_cue` toggle semantics: if a
@@ -136,7 +133,9 @@ export class MockOSCServer {
       if (prop === 'tempo') {
         this.sendReply('/live/song/get/tempo', [{ type: 'float', value: this.tempo }]);
       } else if (prop === 'is_playing') {
-        this.sendReply('/live/song/get/is_playing', [{ type: 'integer', value: this.isPlaying ? 1 : 0 }]);
+        this.sendReply('/live/song/get/is_playing', [
+          { type: 'integer', value: this.isPlaying ? 1 : 0 },
+        ]);
       } else if (prop === 'metronome') {
         this.sendReply('/live/song/get/metronome', [{ type: 'integer', value: 0 }]);
       } else if (prop === 'signature_numerator') {
@@ -156,7 +155,7 @@ export class MockOSCServer {
     const oscMsg = {
       oscType: 'message',
       address,
-      args
+      args,
     };
     const buffer = osc.toBuffer(oscMsg);
     this.client.send(buffer, this.lastClientPort, this.lastClientAddress);
@@ -179,8 +178,17 @@ export class MockOSCServer {
   }
 
   public async stop(): Promise<void> {
-    await Promise.all([this.server, this.client].map((socket) => new Promise<void>((resolve) => {
-      try { socket.close(() => resolve()); } catch { resolve(); }
-    })));
+    await Promise.all(
+      [this.server, this.client].map(
+        (socket) =>
+          new Promise<void>((resolve) => {
+            try {
+              socket.close(() => resolve());
+            } catch {
+              resolve();
+            }
+          }),
+      ),
+    );
   }
 }

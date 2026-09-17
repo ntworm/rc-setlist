@@ -29,10 +29,7 @@ test('patchBinpackSource is idempotent', () => {
 });
 
 test('patchBinpackSource rejects an unknown dependency shape', () => {
-  assert.throws(
-    () => patchBinpackSource('module.exports = {};'),
-    /binpack source shape/,
-  );
+  assert.throws(() => patchBinpackSource('module.exports = {};'), /binpack source shape/);
 });
 
 test('production builds define NODE_ENV and missing static input is fatal', () => {

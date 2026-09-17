@@ -1,560 +1,700 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Ableton RC Setlist &mdash; Control Panel</title>
-  <link rel="stylesheet" href="../shared/ui-system.css">
-  <style>
-    :root {
-      --bg: var(--ui-bg);
-      --card-bg: var(--ui-surface);
-      --border: var(--ui-rule);
-      --text: var(--ui-text);
-      --text-muted: var(--ui-text-2);
-      /* Amber marks RC focus only. Live already spends amber on "this is the
-         chosen object"; selection here uses block inversion, the native idiom. */
-      --accent: var(--ui-accent);
-      --success: var(--ui-success);
-      --warning: var(--ui-accent);
-      --danger: var(--ui-danger);
-    }
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>RC Setlist &mdash; Control Panel</title>
+    <link rel="stylesheet" href="../shared/ui-system.css" />
+    <style>
+      :root {
+        --ui-bg: #1c1c1e;
+        --ui-surface: rgba(255, 255, 255, 0.04);
+        --ui-surface-raised: #252529;
+        --ui-rule: rgba(255, 255, 255, 0.08);
+        --ui-rule-strong: rgba(255, 255, 255, 0.16);
+        --ui-text: #f4f4f7;
+        --ui-text-2: #8e8e9f;
+        --ui-accent: #ffa826;
+        --ui-success: #30d158;
+        --ui-danger: #ff453a;
 
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
+        --bg: var(--ui-bg, #1c1c1e);
+        --card-bg: var(--ui-surface, rgba(255, 255, 255, 0.04));
+        --border: var(--ui-rule, rgba(255, 255, 255, 0.08));
+        --border-strong: var(--ui-rule-strong, rgba(255, 255, 255, 0.16));
+        --text: var(--ui-text, #f4f4f7);
+        --text-muted: var(--ui-text-2, #8e8e9f);
+        --accent: var(--ui-accent, #ffa826);
+        --success: var(--ui-success, #30d158);
+        --warning: var(--ui-accent, #ffa826);
+        --danger: var(--ui-danger, #ff453a);
+      }
 
-    body {
-      background-color: var(--bg, #0e0e0e);
-      color: var(--text, #f2f2f2);
-      font-family: var(--ui-font, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif);
-      font-variation-settings: "wdth" var(--ui-wdth-dense), "wght" var(--ui-wght-body);
-      font-size: var(--t-panel-body);
-      /* Own 1px frame: this reads as an embedded plate, not a broken Live pane —
-         and it holds up against a light Live theme too. */
-      border: 1px solid var(--ui-rule, #333333);
-      padding: 12px;
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-      height: 100vh;
-      overflow: hidden;
-    }
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
 
-    h2 {
-      font-size: var(--t-panel-title);
-      font-variation-settings: "wdth" var(--ui-wdth-dense), "wght" var(--ui-wght-display);
-      color: var(--ui-text);
-      margin-bottom: 4px;
-    }
+      body {
+        background-color: var(--bg, #1c1c1e);
+        color: var(--text, #f4f4f7);
+        font-family:
+          -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        font-size: 12px;
+        border: 1px solid var(--border, rgba(255, 255, 255, 0.08));
+        padding: 10px 12px;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        height: 100vh;
+        min-height: 0;
+        overflow: hidden;
+      }
 
-    .subtitle {
-      font-size: 11px;
-      color: var(--text-muted);
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-    }
+      h2 {
+        font-size: 15px;
+        font-weight: 700;
+        color: #fff;
+        margin-bottom: 2px;
+      }
 
-    .panel-heading {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-    }
+      .subtitle {
+        font-size: 10px;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+      }
 
-    .language-select {
-      min-height: 32px;
-      border: 1px solid var(--border);
-      border-radius: 0;
-      background: #252529;
-      color: var(--text);
-      padding: 4px 8px;
-      font-size: 11px;
-    }
+      .panel-heading {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+      }
 
-    /* QR Codes Grid */
-    .qr-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 12px;
-      flex: 1;
-      min-height: 0;
-    }
+      .language-select {
+        min-height: 28px;
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        background: #252529;
+        color: var(--text);
+        padding: 4px 8px;
+        font-size: 11px;
+      }
 
-    .qr-card {
-      background: var(--card-bg);
-      border: 1px solid var(--border);
-      border-radius: 0;
-      padding: 12px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      text-align: center;
-    }
+      /* QR Codes Grid */
+      .qr-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+        flex: 1;
+        min-height: 0;
+      }
 
-    .qr-label {
-      font-weight: 700;
-      font-size: 12px;
-      color: #fff;
-    }
+      .qr-card {
+        background: var(--card-bg);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 10px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: space-between;
+        gap: 6px;
+        text-align: center;
+        overflow: hidden;
+      }
 
-    .qr-frame {
-      background: #fff;
-      padding: 8px;
-      border-radius: 0;
-      width: 144px;
-      height: 144px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
+      .qr-label {
+        font-weight: 700;
+        font-size: 11px;
+        color: #fff;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+      }
 
-    .qr-url {
-      font-family: monospace;
-      font-size: 10px;
-      color: var(--text-muted);
-      word-break: break-all;
-      max-width: 100%;
-      user-select: all;
-    }
+      .qr-frame {
+        background: #fff;
+        padding: 4px;
+        border-radius: 6px;
+        width: 104px;
+        height: 104px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+      }
 
-    .qr-actions {
-      display: flex;
-      gap: 8px;
-      width: 100%;
-    }
+      .qr-frame canvas,
+      .qr-frame img {
+        width: 96px !important;
+        height: 96px !important;
+        max-width: 100% !important;
+        max-height: 100% !important;
+        display: block;
+      }
 
-    .btn {
-      background: rgba(255, 255, 255, 0.05);
-      color: #fff;
-      border: 1px solid var(--border);
-      padding: 6px 12px;
-      border-radius: 0;
-      cursor: pointer;
-      font-size: 11px;
-      font-weight: 600;
-      text-decoration: none;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      flex: 1;
-      height: 28px;
-      transition: all 0.2s;
-    }
+      .qr-url {
+        font-family: ui-monospace, Consolas, monospace;
+        font-size: 10px;
+        color: var(--text-muted);
+        word-break: break-all;
+        max-width: 100%;
+        user-select: all;
+        line-height: 1.2;
+      }
 
-    .btn:hover {
-      background: rgba(255, 255, 255, 0.1);
-      border-color: rgba(255, 255, 255, 0.2);
-    }
+      .qr-actions {
+        display: flex;
+        gap: 8px;
+        width: 100%;
+      }
 
-    .btn.primary {
-      background: var(--accent);
-      color: #121214;
-      border-color: transparent;
-    }
+      .btn {
+        background: rgba(255, 255, 255, 0.06);
+        color: #fff;
+        border: 1px solid var(--border);
+        padding: 6px 12px;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 11px;
+        font-weight: 600;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        flex: 1;
+        height: 28px;
+        transition: all 0.2s;
+      }
 
-    .btn.primary:hover {
-      background: hsl(32, 100%, 60%);
-    }
+      .btn:hover:not(:disabled) {
+        background: rgba(255, 255, 255, 0.12);
+        border-color: rgba(255, 255, 255, 0.2);
+      }
 
-    .btn.danger {
-      background: var(--danger);
-      border-color: transparent;
-    }
+      .btn:disabled {
+        opacity: 0.35;
+        cursor: not-allowed;
+      }
 
-    /* Connection status bar */
-    .status-bar {
-      background: var(--card-bg);
-      border: 1px solid var(--border);
-      border-radius: 0;
-      padding: 8px 12px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
+      .btn.primary {
+        background: var(--accent, #ffa826);
+        color: #121214;
+        border-color: transparent;
+        font-weight: 700;
+      }
 
-    .status-indicator {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
+      .btn.primary:hover:not(:disabled) {
+        background: #ffb84d;
+      }
 
-    .status-dot {
-      width: 8px;
-      height: 8px;
-      background-color: var(--danger);
-      border-radius: 50%;
-    }
+      .btn.danger {
+        background: var(--danger);
+        border-color: transparent;
+      }
 
-    .status-dot.active {
-      background-color: var(--success);
-    }
+      /* Connection status bar */
+      .status-bar {
+        background: var(--card-bg);
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        padding: 7px 12px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
 
-    .status-dot.warning {
-      background-color: var(--warning);
-    }
+      .status-indicator {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
 
-    .status-dot.neutral {
-      background-color: var(--text-muted);
-    }
+      .status-dot {
+        width: 8px;
+        height: 8px;
+        background-color: var(--danger);
+        border-radius: 50%;
+        flex-shrink: 0;
+      }
 
-    .status-text {
-      font-weight: 700;
-      font-size: 11px;
-    }
+      .status-dot.active {
+        background-color: var(--success);
+      }
 
-    .status-text.active {
-      color: var(--success);
-    }
+      .status-dot.warning {
+        background-color: var(--warning);
+      }
 
-    .status-text.inactive {
-      color: var(--danger);
-    }
+      .status-dot.neutral {
+        background-color: var(--text-muted);
+      }
 
-    .status-text.warning {
-      color: var(--warning);
-    }
+      .status-text {
+        font-weight: 700;
+        font-size: 11px;
+      }
 
-    .status-text.neutral {
-      color: var(--text-muted);
-    }
+      .status-text.active {
+        color: var(--success);
+      }
 
-    .osc-diagnostic {
-      background: var(--card-bg);
-      border: 1px solid var(--border);
-      border-radius: 0;
-      padding: 8px 10px;
-      display: grid;
-      grid-template-columns: auto minmax(0, 1fr) auto;
-      align-items: center;
-      gap: 8px;
-    }
+      .status-text.inactive {
+        color: var(--danger);
+      }
 
-    .osc-actions {
-      display: flex;
-      gap: 6px;
-      align-items: center;
-    }
+      .status-text.warning {
+        color: var(--warning);
+      }
 
-    .osc-actions .btn {
-      white-space: nowrap;
-    }
+      .status-text.neutral {
+        color: var(--text-muted);
+      }
 
-    .osc-copy {
-      min-width: 0;
-    }
+      .osc-diagnostic {
+        background: var(--card-bg);
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        padding: 6px 10px;
+        display: grid;
+        grid-template-columns: auto minmax(0, 1fr) auto;
+        align-items: center;
+        gap: 8px;
+      }
 
-    /* Footer Buttons */
-    .footer {
-      display: flex;
-      gap: 8px;
-      border-top: 1px solid var(--border);
-      padding-top: 8px;
-    }
+      .osc-actions {
+        display: flex;
+        gap: 6px;
+        align-items: center;
+      }
 
-    /* Two settings rows now share the height one used to have: the panel has
+      .osc-actions .btn {
+        white-space: nowrap;
+      }
+
+      .osc-copy {
+        min-width: 0;
+      }
+
+      /* Footer Buttons */
+      .footer {
+        display: flex;
+        gap: 8px;
+        border-top: 1px solid var(--border);
+        padding-top: 8px;
+      }
+
+      /* Two settings rows now share the height one used to have: the panel has
        to fit the SDK modal, and tests/ui/layout.spec.mjs holds it to that. */
-    .auto-start-row {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-      padding: 5px 4px 2px;
-      border-top: 1px solid var(--border);
-    }
-
-    .auto-start-row + .auto-start-row {
-      padding-top: 4px;
-    }
-
-    .auto-start-row .setting-hint {
-      font-size: 10px;
-      color: var(--text-muted);
-      margin-top: 1px;
-      line-height: 1.3;
-    }
-  </style>
-</head>
-<body>
-  <div class="panel-heading">
-    <div>
-      <span class="subtitle">Ableton RC Setlist</span>
-      <h2 data-i18n="panel.title">Web Panel Access</h2>
-    </div>
-    <label>
-      <span data-i18n="common.language" style="display:block;color:var(--text-muted);font-size:10px;margin-bottom:3px;">Language</span>
-      <select id="languageSelect" class="language-select" aria-label="Language" data-i18n-aria-label="common.language">
-        <option value="en">English</option>
-        <option value="pt-BR">Português (Brasil)</option>
-      </select>
-    </label>
-  </div>
-
-  <!-- Connection Status Bar -->
-  <div class="status-bar">
-    <div class="status-indicator">
-      <div id="statusDot" class="status-dot"></div>
-      <span id="statusText" class="status-text inactive">Server stopped</span>
-    </div>
-    <div id="infoPort" style="font-size: 11px; color: var(--text-muted)">Port: &mdash;</div>
-  </div>
-
-  <div class="osc-diagnostic" aria-live="polite">
-    <div id="oscStatusDot" class="status-dot"></div>
-    <div class="osc-copy">
-      <span id="oscStatusText" class="status-text inactive">Start the server to test AbletonOSC</span>
-      <div id="oscBridgeText" class="setting-hint" hidden></div>
-      <div id="bridgeHint" class="setting-hint"></div>
-    </div>
-    <div class="osc-actions">
-      <button class="btn" id="btnDiagnoseOsc" onclick="sendAction('diagnose-osc')" data-i18n="panel.checkOsc">Check OSC</button>
-    </div>
-  </div>
-
-  <div id="durationConfidenceRow" class="osc-diagnostic" style="display: none;">
-    <span class="duration-est-badge" style="font-size: 10px; padding: 2px 4px;">EST.</span>
-    <div class="osc-copy">
-      <span class="status-text warning" data-i18n="panel.durationEstimated">Setlist duration is estimated (no [bpm] tags in Live markers)</span>
-    </div>
-  </div>
-
-  <!-- QR Codes Grid -->
-  <div class="qr-grid" id="qrGrid">
-    <!-- Setlist Controller -->
-    <div class="qr-card">
-      <span class="qr-label" data-i18n="panel.stageControl">Stage Control</span>
-      <div class="qr-frame" id="qrSetlist"></div>
-      <span class="qr-url" id="urlSetlist">http://localhost:4444/setlist</span>
-      <div class="qr-actions">
-        <a class="btn" id="openSetlist" href="#" target="_blank" data-i18n="panel.openComputer">Open on this computer</a>
-      </div>
-    </div>
-
-    <!-- Stage View -->
-    <div class="qr-card">
-      <span class="qr-label" data-i18n="panel.performanceDisplay">Performance Display</span>
-      <div class="qr-frame" id="qrStage"></div>
-      <span class="qr-url" id="urlStage">http://localhost:4444/performance</span>
-      <div class="qr-actions">
-        <a class="btn" id="openStage" href="#" target="_blank" data-i18n="panel.openComputer">Open on this computer</a>
-      </div>
-    </div>
-  </div>
-
-  <div id="placeholderText" style="display: none; text-align: center; color: var(--text-muted); padding: 40px;">
-    <span data-i18n="panel.startPrompt">Start the server to generate access links and QR codes.</span>
-  </div>
-
-  <!-- Footer Actions -->
-  <div class="footer">
-    <button class="btn primary" id="btnStart" onclick="sendAction('start')" data-i18n="panel.start">Start</button>
-    <button class="btn" id="btnStop" onclick="sendAction('stop')" data-i18n="panel.stop">Stop</button>
-    <button class="btn" id="btnRestart" onclick="sendAction('restart')" data-i18n="panel.restart">Restart</button>
-    <button class="btn" style="flex: 0; min-width: 80px;" onclick="sendAction('close')" data-i18n="common.close">Close</button>
-  </div>
-
-  <!-- Auto-start toggle (persisted in .setlist/auto-start) -->
-  <div class="auto-start-row">
-    <div>
-      <div style="font-weight: 600; font-size: 11px;" data-i18n="panel.autoStart">Start automatically with Live</div>
-      <div class="setting-hint" id="autoStartHint" data-i18n="panel.autoStartHint">Prevents conflicts with other RC extensions. This setting persists between sessions.</div>
-    </div>
-    <button class="btn" id="btnToggleAutoStart" style="flex: 0; min-width: 80px;" onclick="sendAction('toggle-auto-start')">Off</button>
-  </div>
-
-  <!-- Tempo write on jump (persisted in .setlist/write-tempo-on-jump) -->
-  <div class="auto-start-row">
-    <div>
-      <div style="font-weight: 600; font-size: 11px;" data-i18n="panel.writeTempoOnJump">Set Live tempo on jump</div>
-      <div class="setting-hint" id="writeTempoHint" data-i18n="panel.writeTempoOnJumpHint">Off by default. Writing the tempo overrides tempo automation drawn in the Arrangement, and Live stops following it until you press Re-Enable Automation.</div>
-    </div>
-    <button class="btn" id="btnToggleWriteTempo" style="flex: 0; min-width: 80px;" onclick="sendAction('toggle-write-tempo')">Off</button>
-  </div>
-
-  <script src="../shared/i18n.js"></script>
-  <script src="qrcode.js"></script>
-  <script>
-    // These window variables are injected by panel.ts when rendering the template
-    const isRunning = window.INITIAL_IS_RUNNING || false;
-    const port = window.INITIAL_PORT || 4444;
-    const primaryIp = window.INITIAL_PRIMARY_IP || '127.0.0.1';
-    let autoStart = !!window.INITIAL_AUTO_START;
-    let writeTempoOnJump = !!window.INITIAL_WRITE_TEMPO_ON_JUMP;
-    const oscDiagnostics = window.INITIAL_OSC_DIAGNOSTICS || {
-      state: 'stopped',
-      listenPort: null,
-      rxCount: 0,
-      txCount: 0,
-      lastReplyAgeMs: null
-    };
-    const i18n = RcSetlistI18n;
-    const languageSelect = document.getElementById('languageSelect');
-    i18n.setLocale(window.INITIAL_LOCALE || 'en');
-    i18n.bindSelector(languageSelect);
-
-    const statusDot = document.getElementById('statusDot');
-    const statusText = document.getElementById('statusText');
-    const infoPort = document.getElementById('infoPort');
-    const oscStatusDot = document.getElementById('oscStatusDot');
-    const oscStatusText = document.getElementById('oscStatusText');
-    const btnDiagnoseOsc = document.getElementById('btnDiagnoseOsc');
-    const oscBridgeText = document.getElementById('oscBridgeText');
-    const bridgeHint = document.getElementById('bridgeHint');
-    const durationConfidence = window.INITIAL_DURATION_CONFIDENCE || 'estimated';
-    const durationConfidenceRow = document.getElementById('durationConfidenceRow');
-    if (durationConfidenceRow && durationConfidence === 'estimated') {
-      durationConfidenceRow.style.display = 'grid';
-    }
-    const qrGrid = document.getElementById('qrGrid');
-    const placeholderText = document.getElementById('placeholderText');
-
-    const urlSetlist = document.getElementById('urlSetlist');
-    const urlStage = document.getElementById('urlStage');
-    const openSetlist = document.getElementById('openSetlist');
-    const openStage = document.getElementById('openStage');
-
-    const btnStart = document.getElementById('btnStart');
-    const btnStop = document.getElementById('btnStop');
-    const btnRestart = document.getElementById('btnRestart');
-    const btnToggleAutoStart = document.getElementById('btnToggleAutoStart');
-    const btnToggleWriteTempo = document.getElementById('btnToggleWriteTempo');
-
-    function renderAutoStart() {
-      if (!btnToggleAutoStart) return;
-      btnToggleAutoStart.textContent = i18n.t(autoStart ? 'panel.on' : 'panel.off');
-      btnToggleAutoStart.style.background = autoStart ? 'var(--accent)' : '';
-      btnToggleAutoStart.style.color = autoStart ? '#121214' : '';
-      if (btnToggleWriteTempo) {
-        btnToggleWriteTempo.textContent = i18n.t(writeTempoOnJump ? 'panel.on' : 'panel.off');
-        btnToggleWriteTempo.style.background = writeTempoOnJump ? 'var(--accent)' : '';
-        btnToggleWriteTempo.style.color = writeTempoOnJump ? '#121214' : '';
+      .auto-start-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 5px 4px 2px;
+        border-top: 1px solid var(--border);
       }
-    }
-    renderAutoStart();
 
-    function renderStatus() {
-      statusText.textContent = i18n.t(isRunning ? 'panel.serverRunning' : 'panel.serverStopped');
-      infoPort.textContent = isRunning
-        ? i18n.t('panel.port', { port: `${port} (HTTPS)` })
-        : i18n.t('panel.port', { port: '\u2014' });
-    }
+      .auto-start-row + .auto-start-row {
+        padding-top: 4px;
+      }
 
-    function renderOscStatus() {
-      const stateKeys = {
-        'stopped': 'panel.oscStopped',
-        'port-conflict': 'panel.oscPortConflict',
-        'no-reply': 'panel.oscNoReply',
-        'responding': 'panel.oscResponding',
-        'stale': 'panel.oscStale'
+      .auto-start-row .setting-hint {
+        font-size: 10px;
+        color: var(--text-muted);
+        margin-top: 1px;
+        line-height: 1.25;
+        display: -webkit-box;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 2;
+        line-clamp: 2;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="panel-heading">
+      <div>
+        <span class="subtitle">RC Setlist</span>
+        <h2 data-i18n="panel.title">Web Panel Access</h2>
+      </div>
+      <label>
+        <span
+          data-i18n="common.language"
+          style="display: block; color: var(--text-muted); font-size: 10px; margin-bottom: 3px"
+          >Language</span
+        >
+        <select
+          id="languageSelect"
+          class="language-select"
+          aria-label="Language"
+          data-i18n-aria-label="common.language"
+        >
+          <option value="en">English</option>
+          <option value="pt-BR">Português (Brasil)</option>
+        </select>
+      </label>
+    </div>
+
+    <!-- Connection Status Bar -->
+    <div class="status-bar">
+      <div class="status-indicator">
+        <div id="statusDot" class="status-dot"></div>
+        <span id="statusText" class="status-text inactive">Server stopped</span>
+      </div>
+      <div id="infoPort" style="font-size: 11px; color: var(--text-muted)">Port: &mdash;</div>
+    </div>
+
+    <div class="osc-diagnostic" aria-live="polite">
+      <div id="oscStatusDot" class="status-dot"></div>
+      <div class="osc-copy">
+        <span id="oscStatusText" class="status-text inactive"
+          >Start the server to test AbletonOSC</span
+        >
+        <div id="oscBridgeText" class="setting-hint" hidden></div>
+        <div id="bridgeHint" class="setting-hint"></div>
+      </div>
+      <div class="osc-actions">
+        <button
+          class="btn"
+          id="btnDiagnoseOsc"
+          onclick="sendAction('diagnose-osc')"
+          data-i18n="panel.checkOsc"
+        >
+          Check OSC
+        </button>
+      </div>
+    </div>
+
+    <div id="durationConfidenceRow" class="osc-diagnostic" style="display: none">
+      <span class="duration-est-badge" style="font-size: 10px; padding: 2px 4px">EST.</span>
+      <div class="osc-copy">
+        <span class="status-text warning" data-i18n="panel.durationEstimated"
+          >Setlist duration is estimated (no [bpm] tags in Live markers)</span
+        >
+      </div>
+    </div>
+
+    <!-- One-time migration hint for users upgrading from 0.x. Shown only when
+       the new data folder is empty: the panel cannot see the old folder
+       (ExtensionHost sandbox), so the trigger is the absence of profiles. -->
+    <div
+      id="migrationPrompt"
+      class="osc-diagnostic"
+      style="display: none; padding: 6px 10px; margin: 0"
+    >
+      <span
+        class="duration-est-badge"
+        style="font-size: 10px; padding: 2px 4px"
+        data-i18n="panel.migrationBadge"
+        >0.x</span
+      >
+      <div class="osc-copy">
+        <span class="status-text" data-i18n="panel.migrationPrompt"
+          >Migrating from a 0.x version? Run the "Migrate RC Setlist Data" script from the kit
+          before opening Live.</span
+        >
+        <div class="setting-hint" data-i18n="panel.migrationHint">
+          The kit ships with a copy-and-skip migration that leaves your 0.x data untouched.
+        </div>
+      </div>
+    </div>
+
+    <!-- QR Codes Grid -->
+    <div class="qr-grid" id="qrGrid">
+      <!-- Setlist Controller -->
+      <div class="qr-card">
+        <span class="qr-label" data-i18n="panel.stageControl">Stage Control</span>
+        <div class="qr-frame" id="qrSetlist"></div>
+        <span class="qr-url" id="urlSetlist">http://localhost:4444/setlist</span>
+        <div class="qr-actions">
+          <a class="btn" id="openSetlist" href="#" target="_blank" data-i18n="panel.openComputer"
+            >Open on this computer</a
+          >
+        </div>
+      </div>
+
+      <!-- Stage View -->
+      <div class="qr-card">
+        <span class="qr-label" data-i18n="panel.performanceDisplay">Performance Display</span>
+        <div class="qr-frame" id="qrStage"></div>
+        <span class="qr-url" id="urlStage">http://localhost:4444/performance</span>
+        <div class="qr-actions">
+          <a class="btn" id="openStage" href="#" target="_blank" data-i18n="panel.openComputer"
+            >Open on this computer</a
+          >
+        </div>
+      </div>
+    </div>
+
+    <div
+      id="placeholderText"
+      style="display: none; text-align: center; color: var(--text-muted); padding: 16px 12px"
+    >
+      <span data-i18n="panel.startPrompt"
+        >Start the server to generate access links and QR codes.</span
+      >
+    </div>
+
+    <!-- Footer Actions -->
+    <div class="footer">
+      <button
+        class="btn primary"
+        id="btnStart"
+        onclick="sendAction('start')"
+        data-i18n="panel.start"
+      >
+        Start
+      </button>
+      <button class="btn" id="btnStop" onclick="sendAction('stop')" data-i18n="panel.stop">
+        Stop
+      </button>
+      <button class="btn" id="btnRestart" onclick="sendAction('restart')" data-i18n="panel.restart">
+        Restart
+      </button>
+      <button
+        class="btn"
+        style="flex: 0; min-width: 80px"
+        onclick="sendAction('close')"
+        data-i18n="common.close"
+      >
+        Close
+      </button>
+    </div>
+
+    <!-- Auto-start toggle (persisted in .setlist/auto-start) -->
+    <div class="auto-start-row">
+      <div>
+        <div style="font-weight: 600; font-size: 11px" data-i18n="panel.autoStart">
+          Start automatically with Live
+        </div>
+        <div class="setting-hint" id="autoStartHint" data-i18n="panel.autoStartHint">
+          Prevents conflicts with other RC extensions. This setting persists between sessions.
+        </div>
+      </div>
+      <button
+        class="btn"
+        id="btnToggleAutoStart"
+        style="flex: 0; min-width: 80px"
+        onclick="sendAction('toggle-auto-start')"
+      >
+        Off
+      </button>
+    </div>
+
+    <!-- Tempo write on jump (persisted in .setlist/write-tempo-on-jump) -->
+    <div class="auto-start-row">
+      <div>
+        <div style="font-weight: 600; font-size: 11px" data-i18n="panel.writeTempoOnJump">
+          Set Live tempo on jump
+        </div>
+        <div class="setting-hint" id="writeTempoHint" data-i18n="panel.writeTempoOnJumpHint">
+          Off by default. Writing the tempo overrides tempo automation drawn in the Arrangement, and
+          Live stops following it until you press Re-Enable Automation.
+        </div>
+      </div>
+      <button
+        class="btn"
+        id="btnToggleWriteTempo"
+        style="flex: 0; min-width: 80px"
+        onclick="sendAction('toggle-write-tempo')"
+      >
+        Off
+      </button>
+    </div>
+
+    <script src="../shared/i18n.js"></script>
+    <script src="qrcode.js"></script>
+    <script>
+      // These window variables are injected by panel.ts when rendering the template
+      const isRunning = window.INITIAL_IS_RUNNING || false;
+      const port = window.INITIAL_PORT || 4444;
+      const primaryIp = window.INITIAL_PRIMARY_IP || '127.0.0.1';
+      let autoStart = !!window.INITIAL_AUTO_START;
+      let writeTempoOnJump = !!window.INITIAL_WRITE_TEMPO_ON_JUMP;
+      const oscDiagnostics = window.INITIAL_OSC_DIAGNOSTICS || {
+        state: 'stopped',
+        listenPort: null,
+        rxCount: 0,
+        txCount: 0,
+        lastReplyAgeMs: null,
       };
-      const responding = oscDiagnostics.state === 'responding';
-      const warning = ['port-conflict', 'no-reply', 'stale'].includes(oscDiagnostics.state);
-      const stateClass = responding ? 'active' : warning ? 'warning' : 'neutral';
-      oscStatusDot.className = `status-dot ${stateClass}`;
-      oscStatusText.className = `status-text ${stateClass}`;
-      oscStatusText.textContent = i18n.t(stateKeys[oscDiagnostics.state] || 'panel.oscNoReply');
-      btnDiagnoseOsc.disabled = !isRunning;
-      if (oscBridgeText) {
-        const via = oscDiagnostics.bridge
-          ? i18n.t('panel.oscVia', {
-            name: oscDiagnostics.bridge === 'rcbridge' ? (oscDiagnostics.bridgeVersion || 'RC Bridge') : 'AbletonOSC',
-            port: String(oscDiagnostics.targetPort || ''),
-          })
-          : '';
-        oscBridgeText.textContent = via;
-        oscBridgeText.hidden = !via;
-      }
-    }
+      const i18n = RcSetlistI18n;
+      const languageSelect = document.getElementById('languageSelect');
+      i18n.setLocale(window.INITIAL_LOCALE || 'en');
+      i18n.bindSelector(languageSelect);
 
-    // The extension cannot look into Live's User Library (the host sandboxes
-    // the filesystem), so the only truth about RC Bridge is whether it
-    // answered when the server started. That is what this line reports.
-    function renderBridge() {
-      if (!bridgeHint) return;
-      if (!isRunning || !oscDiagnostics.bridge) {
-        bridgeHint.textContent = '';
-        bridgeHint.hidden = true;
-        return;
+      const statusDot = document.getElementById('statusDot');
+      const statusText = document.getElementById('statusText');
+      const infoPort = document.getElementById('infoPort');
+      const oscStatusDot = document.getElementById('oscStatusDot');
+      const oscStatusText = document.getElementById('oscStatusText');
+      const btnDiagnoseOsc = document.getElementById('btnDiagnoseOsc');
+      const oscBridgeText = document.getElementById('oscBridgeText');
+      const bridgeHint = document.getElementById('bridgeHint');
+      const durationConfidence = window.INITIAL_DURATION_CONFIDENCE || 'estimated';
+      const durationConfidenceRow = document.getElementById('durationConfidenceRow');
+      if (durationConfidenceRow && durationConfidence === 'estimated') {
+        durationConfidenceRow.style.display = 'grid';
       }
-      bridgeHint.hidden = false;
-      bridgeHint.textContent = oscDiagnostics.bridge === 'rcbridge'
-        ? i18n.t('panel.bridgeInUse')
-        : i18n.t('panel.bridgeMissing');
-    }
-    renderBridge();
+      const storageInitialized = !!window.INITIAL_STORAGE_INITIALIZED;
+      const migrationPrompt = document.getElementById('migrationPrompt');
+      if (migrationPrompt && !storageInitialized) {
+        migrationPrompt.style.display = 'grid';
+      }
+      const qrGrid = document.getElementById('qrGrid');
+      const placeholderText = document.getElementById('placeholderText');
 
-    i18n.subscribe((locale) => {
+      const urlSetlist = document.getElementById('urlSetlist');
+      const urlStage = document.getElementById('urlStage');
+      const openSetlist = document.getElementById('openSetlist');
+      const openStage = document.getElementById('openStage');
+
+      const btnStart = document.getElementById('btnStart');
+      const btnStop = document.getElementById('btnStop');
+      const btnRestart = document.getElementById('btnRestart');
+      const btnToggleAutoStart = document.getElementById('btnToggleAutoStart');
+      const btnToggleWriteTempo = document.getElementById('btnToggleWriteTempo');
+
+      function renderAutoStart() {
+        if (!btnToggleAutoStart) return;
+        btnToggleAutoStart.textContent = i18n.t(autoStart ? 'panel.on' : 'panel.off');
+        btnToggleAutoStart.style.background = autoStart ? 'var(--accent)' : '';
+        btnToggleAutoStart.style.color = autoStart ? '#121214' : '';
+        if (btnToggleWriteTempo) {
+          btnToggleWriteTempo.textContent = i18n.t(writeTempoOnJump ? 'panel.on' : 'panel.off');
+          btnToggleWriteTempo.style.background = writeTempoOnJump ? 'var(--accent)' : '';
+          btnToggleWriteTempo.style.color = writeTempoOnJump ? '#121214' : '';
+        }
+      }
       renderAutoStart();
-      renderStatus();
-      renderOscStatus();
-      renderBridge();
-      sendAction(`set-language:${locale}`);
-    });
 
-    function sendAction(action) {
-      const msg = { method: 'close_and_send', params: [action] };
-      if (window.webkit?.messageHandlers?.live) {
-        window.webkit.messageHandlers.live.postMessage(msg);
-      } else if (window.chrome?.webview) {
-        window.chrome.webview.postMessage(msg);
+      function renderStatus() {
+        statusText.textContent = i18n.t(isRunning ? 'panel.serverRunning' : 'panel.serverStopped');
+        infoPort.textContent = isRunning
+          ? i18n.t('panel.port', { port: `${port} (HTTPS)` })
+          : i18n.t('panel.port', { port: '\u2014' });
       }
-    }
 
-    // Update UI based on server status
-    if (isRunning) {
-      statusDot.className = 'status-dot active';
-      statusText.className = 'status-text active';
-      renderStatus();
-      qrGrid.style.display = 'grid';
-      placeholderText.style.display = 'none';
+      function renderOscStatus() {
+        const stateKeys = {
+          stopped: 'panel.oscStopped',
+          'port-conflict': 'panel.oscPortConflict',
+          'no-reply': 'panel.oscNoReply',
+          responding: 'panel.oscResponding',
+          stale: 'panel.oscStale',
+        };
+        const responding = oscDiagnostics.state === 'responding';
+        const warning = ['port-conflict', 'no-reply', 'stale'].includes(oscDiagnostics.state);
+        const stateClass = responding ? 'active' : warning ? 'warning' : 'neutral';
+        oscStatusDot.className = `status-dot ${stateClass}`;
+        oscStatusText.className = `status-text ${stateClass}`;
+        oscStatusText.textContent = i18n.t(stateKeys[oscDiagnostics.state] || 'panel.oscNoReply');
+        btnDiagnoseOsc.disabled = !isRunning;
+        if (oscBridgeText) {
+          const via = oscDiagnostics.bridge
+            ? i18n.t('panel.oscVia', {
+                name:
+                  oscDiagnostics.bridge === 'rcbridge'
+                    ? oscDiagnostics.bridgeVersion || 'RC Bridge'
+                    : 'AbletonOSC',
+                port: String(oscDiagnostics.targetPort || ''),
+              })
+            : '';
+          oscBridgeText.textContent = via;
+          oscBridgeText.hidden = !via;
+        }
+      }
 
-      btnStart.disabled = true;
-      btnStop.disabled = false;
-      btnRestart.disabled = false;
+      // The extension cannot look into Live's User Library (the host sandboxes
+      // the filesystem), so the only truth about RC Bridge is whether it
+      // answered when the server started. That is what this line reports.
+      function renderBridge() {
+        if (!bridgeHint) return;
+        if (!isRunning || !oscDiagnostics.bridge) {
+          bridgeHint.textContent = '';
+          bridgeHint.hidden = true;
+          return;
+        }
+        bridgeHint.hidden = false;
+        bridgeHint.textContent =
+          oscDiagnostics.bridge === 'rcbridge'
+            ? i18n.t('panel.bridgeInUse')
+            : i18n.t('panel.bridgeMissing');
+      }
+      renderBridge();
 
-      // URLs
-      const setlistUrl = `https://${primaryIp}:${port}/setlist?token=${window.INITIAL_TOKEN || ''}`;
-      const stageUrl = `https://${primaryIp}:${port}/performance`;
-
-      urlSetlist.textContent = setlistUrl;
-      urlStage.textContent = stageUrl;
-      openSetlist.href = setlistUrl;
-      openStage.href = stageUrl;
-
-      // Draw QR Codes
-      new QRCode(document.getElementById('qrSetlist'), {
-        text: setlistUrl,
-        width: 128,
-        height: 128,
-        colorDark: '#000000',
-        colorLight: '#ffffff',
-        correctLevel: QRCode.CorrectLevel.M
+      i18n.subscribe((locale) => {
+        renderAutoStart();
+        renderStatus();
+        renderOscStatus();
+        renderBridge();
+        sendAction(`set-language:${locale}`);
       });
 
-      new QRCode(document.getElementById('qrStage'), {
-        text: stageUrl,
-        width: 128,
-        height: 128,
-        colorDark: '#000000',
-        colorLight: '#ffffff',
-        correctLevel: QRCode.CorrectLevel.M
-      });
-    } else {
-      statusDot.className = 'status-dot';
-      statusText.className = 'status-text inactive';
-      renderStatus();
-      qrGrid.style.display = 'none';
-      placeholderText.style.display = 'block';
+      function sendAction(action) {
+        const msg = { method: 'close_and_send', params: [action] };
+        if (window.webkit?.messageHandlers?.live) {
+          window.webkit.messageHandlers.live.postMessage(msg);
+        } else if (window.chrome?.webview) {
+          window.chrome.webview.postMessage(msg);
+        }
+      }
 
-      btnStart.disabled = false;
-      btnStop.disabled = true;
-      btnRestart.disabled = true;
-    }
-    renderOscStatus();
-  </script>
-</body>
+      // Update UI based on server status
+      if (isRunning) {
+        statusDot.className = 'status-dot active';
+        statusText.className = 'status-text active';
+        renderStatus();
+        qrGrid.style.display = 'grid';
+        placeholderText.style.display = 'none';
+
+        btnStart.disabled = true;
+        btnStop.disabled = false;
+        btnRestart.disabled = false;
+
+        // URLs
+        const setlistUrl = `https://${primaryIp}:${port}/setlist?token=${window.INITIAL_TOKEN || ''}`;
+        const stageUrl = `https://${primaryIp}:${port}/performance`;
+
+        urlSetlist.textContent = setlistUrl;
+        urlStage.textContent = stageUrl;
+        openSetlist.href = setlistUrl;
+        openStage.href = stageUrl;
+
+        // Draw QR Codes
+        new QRCode(document.getElementById('qrSetlist'), {
+          text: setlistUrl,
+          width: 96,
+          height: 96,
+          colorDark: '#000000',
+          colorLight: '#ffffff',
+          correctLevel: QRCode.CorrectLevel.M,
+        });
+
+        new QRCode(document.getElementById('qrStage'), {
+          text: stageUrl,
+          width: 96,
+          height: 96,
+          colorDark: '#000000',
+          colorLight: '#ffffff',
+          correctLevel: QRCode.CorrectLevel.M,
+        });
+      } else {
+        statusDot.className = 'status-dot';
+        statusText.className = 'status-text inactive';
+        renderStatus();
+        qrGrid.style.display = 'none';
+        placeholderText.style.display = 'block';
+
+        btnStart.disabled = false;
+        btnStop.disabled = true;
+        btnRestart.disabled = true;
+      }
+      renderOscStatus();
+    </script>
+  </body>
 </html>

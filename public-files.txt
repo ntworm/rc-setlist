@@ -1,4 +1,4 @@
-# Ableton RC Setlist public snapshot allowlist
+# RC Setlist public snapshot allowlist
 #
 # One repository-relative file or directory per line. Directories end with `/`.
 # Anything not listed here stays out of the sanitized public repository.
@@ -26,12 +26,19 @@ docs/DEVELOPMENT.md
 docs/FAQ.md
 docs/INSTALL.md
 docs/README.md
+docs/CONTRACTS.md
+docs/GETTING-STARTED.md
+docs/THEME_CONTRACT.md
+docs/HISTORY.md
+docs/pt-BR/CONTRATOS.md
 docs/RELEASE-NOTES-0.4.1.md
 docs/RELEASE-NOTES-0.4.2.md
 docs/RELEASE-NOTES-0.5.1.md
 docs/RELEASE-NOTES-0.6.0.md
 docs/RELEASE-NOTES-0.6.1.md
 docs/RELEASE-NOTES-0.7.0.md
+docs/RELEASE-NOTES-0.7.1.md
+docs/RELEASE-NOTES-1.0.0.md
 docs/TESTER-GUIDE.md
 docs/TROUBLESHOOTING.md
 docs/USER-GUIDE.md

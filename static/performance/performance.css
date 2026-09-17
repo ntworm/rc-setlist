@@ -30,11 +30,8 @@ body {
   height: 100dvh;
   min-width: 0;
   min-height: 0;
-  padding:
-    max(0.65rem, env(safe-area-inset-top))
-    max(0.65rem, env(safe-area-inset-right))
-    max(0.65rem, env(safe-area-inset-bottom))
-    max(0.65rem, env(safe-area-inset-left));
+  padding: max(0.65rem, env(safe-area-inset-top)) max(0.65rem, env(safe-area-inset-right))
+    max(0.65rem, env(safe-area-inset-bottom)) max(0.65rem, env(safe-area-inset-left));
 }
 
 .stage-topbar {
@@ -201,6 +198,12 @@ body {
 .card-main {
   min-width: 0;
   min-height: 0;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
   overflow: hidden;
 }
 
@@ -209,9 +212,10 @@ body {
   color: var(--ui-muted);
   font-size: clamp(0.75rem, 0.9vw, 0.76rem);
   font-weight: 850;
-  letter-spacing: 0;
+  letter-spacing: 0.05em;
   line-height: var(--ui-line-accent-safe);
   text-transform: uppercase;
+  text-align: center;
 }
 
 .card-value {
@@ -220,10 +224,11 @@ body {
   margin-top: clamp(0.4rem, 1vh, 0.72rem);
   overflow: hidden;
   color: var(--ui-text);
-  font-size: clamp(1.55rem, 3.15vw, 3.45rem);
+  font-size: clamp(2rem, 4vw, 4.2rem);
   font-weight: 900;
   letter-spacing: -0.035em;
   line-height: var(--ui-line-accent-safe);
+  text-align: center;
   overflow-wrap: anywhere;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 3;
@@ -259,21 +264,24 @@ body {
 .card-notes {
   display: -webkit-box;
   min-width: 0;
-  margin-top: clamp(0.3rem, 0.8vh, 0.55rem);
+  margin-top: clamp(0.4rem, 1vh, 0.75rem);
   overflow: hidden;
   color: var(--ui-muted);
-  font-size: clamp(0.85rem, 1.4vw, 1.25rem);
+  font-size: clamp(0.95rem, 1.6vw, 1.4rem);
   font-weight: 650;
-  line-height: 1.25;
+  line-height: 1.3;
+  text-align: center;
   -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
 }
 
 .perf-badges {
   display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
   min-width: 0;
   margin-top: clamp(0.45rem, 1vh, 0.72rem);
-  gap: 0.35rem;
+  gap: 0.4rem;
   overflow: hidden;
 }
 
@@ -459,7 +467,9 @@ body {
   pointer-events: none;
   opacity: 0;
   transform: translateY(0.5rem);
-  transition: opacity 160ms ease, transform 160ms ease;
+  transition:
+    opacity 160ms ease,
+    transform 160ms ease;
 }
 
 .network-overlay.visible {
@@ -500,9 +510,6 @@ body {
   line-height: 1.35;
 }
 
-  100% { border-color: var(--ui-rule); }
-}
-
 @media (min-width: 901px) and (max-width: 1400px) {
   .performance-page.has-lyrics .stage-grid {
     grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
@@ -527,11 +534,8 @@ body {
 @media (max-width: 600px) and (orientation: portrait) {
   .stage-shell {
     gap: 0.45rem;
-    padding:
-      max(0.45rem, env(safe-area-inset-top))
-      max(0.45rem, env(safe-area-inset-right))
-      max(0.45rem, env(safe-area-inset-bottom))
-      max(0.45rem, env(safe-area-inset-left));
+    padding: max(0.45rem, env(safe-area-inset-top)) max(0.45rem, env(safe-area-inset-right))
+      max(0.45rem, env(safe-area-inset-bottom)) max(0.45rem, env(safe-area-inset-left));
   }
 
   .stage-brand-copy {
@@ -557,12 +561,13 @@ body {
   .stage-grid,
   .performance-page.has-lyrics .stage-grid {
     grid-template-columns: minmax(0, 1fr);
-    grid-template-rows: minmax(7.8rem, 22vh) minmax(0, 1fr) 4.65rem;
+    grid-template-rows: minmax(7.5rem, 20vh) minmax(0, 1fr) clamp(8.5rem, 26vh, 11rem);
     gap: 0.45rem;
   }
 
   .performance-page:not(.has-lyrics) .stage-grid {
-    grid-template-rows: minmax(0, 1fr) 4.65rem;
+    grid-template-rows: minmax(0, 1.25fr) clamp(8.5rem, 26vh, 11rem);
+    gap: 0.5rem;
   }
 
   .left-stage-column {
@@ -575,14 +580,23 @@ body {
     gap: 0.45rem;
   }
 
+  .performance-page:not(.has-lyrics) .now-playing {
+    grid-row: 1;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1.2fr) minmax(0, 0.85fr);
+    gap: 0.45rem;
+  }
+
   .lyrics-card {
     grid-row: 2;
   }
 
   .performance-footer {
     grid-row: 3;
-    grid-template-columns: minmax(0, 1.25fr) minmax(0, 0.82fr) minmax(0, 0.78fr);
-    gap: 0.4rem;
+    grid-template-columns: minmax(0, 1.35fr) minmax(0, 0.95fr) minmax(0, 0.95fr);
+    gap: 0.45rem;
+    height: 100%;
+    min-height: 0;
   }
 
   .performance-page:not(.has-lyrics) .performance-footer {
@@ -590,27 +604,36 @@ body {
   }
 
   .display-card {
-    border-radius: 0;
-    padding: 0.55rem;
+    border-radius: var(--ui-radius-md, 6px);
+    padding: 0.6rem 0.75rem;
+  }
+
+  .card-main {
+    padding: 0.2rem 0;
   }
 
   .card-label {
-    font-size: 0.75rem;
-    letter-spacing: 0;
+    font-size: 0.72rem;
+    letter-spacing: 0.04em;
   }
 
   .card-value {
-    margin-top: 0.25rem;
-    /* The song outranks the clock. This is what the player reads mid-song. */
-    font-size: var(--t-stage-display);
+    margin-top: 0.18rem;
+    font-size: clamp(1.5rem, 5.2vw, 2.2rem);
     line-height: var(--ui-line-accent-safe);
     -webkit-line-clamp: 2;
+    overflow-wrap: break-word;
+    word-break: normal;
+  }
+
+  .active-section .card-value {
+    font-size: clamp(1.3rem, 4.4vw, 1.8rem);
   }
 
   .card-footer {
     gap: 0.3rem;
-    padding-top: 0.3rem;
-    font-size: 0.75rem;
+    padding-top: 0.25rem;
+    font-size: 0.72rem;
   }
 
   .perf-badges {
@@ -646,38 +669,97 @@ body {
   }
 
   .telemetry-card {
-    border-radius: 0;
-    padding: 0.35rem;
+    border-radius: var(--ui-radius-md, 6px);
+    padding: 0.65rem 0.35rem 0.55rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
+    box-sizing: border-box;
+    overflow: hidden;
+    text-align: center;
   }
 
   .telemetry-card .card-label {
-    top: 0.35rem;
-    left: 0.42rem;
+    position: static;
+    top: auto;
+    left: auto;
+    display: block;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    font-size: 0.7rem;
+    font-weight: 850;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--ui-muted);
+    text-align: center;
+    line-height: 1.1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .timecode-card > div {
+    display: flex;
+    align-items: baseline;
+    justify-content: center;
+    width: 100%;
+    overflow: hidden;
   }
 
   .timecode-display {
-    font-size: var(--t-stage-value);
+    font-size: clamp(1.15rem, 4.4vw, 1.55rem);
+    line-height: 1.15;
+    margin: 0.15rem 0;
+    text-align: center;
   }
 
-  .bar-card .timecode-display,
+  .bar-card .timecode-display {
+    font-size: clamp(1.35rem, 5.8vw, 1.95rem);
+    line-height: 1.15;
+    margin: 0.15rem 0;
+    color: var(--ui-accent-strong);
+    text-align: center;
+  }
+
   .bpm-display {
-    font-size: clamp(1rem, 5.7vw, 1.42rem);
+    font-size: clamp(1.35rem, 5.8vw, 1.95rem);
+    line-height: 1.15;
+    margin: 0.15rem 0;
+    text-align: center;
   }
 
-  .song-timecode,
+  .song-timecode {
+    display: block;
+    margin: 0;
+    font-size: 0.76rem;
+    font-weight: 800;
+    line-height: 1.1;
+    color: var(--ui-accent-strong);
+    white-space: nowrap;
+    text-align: center;
+  }
+
   .click-state {
-    font-size: 0.75rem;
+    display: block;
+    margin: 0;
+    font-size: 0.74rem;
+    font-weight: 850;
+    line-height: 1.1;
+    color: var(--ui-muted);
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    white-space: nowrap;
+    text-align: center;
   }
 }
 
 @media (max-height: 500px) and (orientation: landscape) {
   .stage-shell {
     gap: 0.35rem;
-    padding:
-      max(0.35rem, env(safe-area-inset-top))
-      max(0.35rem, env(safe-area-inset-right))
-      max(0.35rem, env(safe-area-inset-bottom))
-      max(0.35rem, env(safe-area-inset-left));
+    padding: max(0.35rem, env(safe-area-inset-top)) max(0.35rem, env(safe-area-inset-right))
+      max(0.35rem, env(safe-area-inset-bottom)) max(0.35rem, env(safe-area-inset-left));
   }
 
   .stage-topbar {
@@ -755,17 +837,28 @@ body {
 
   .display-card {
     border-radius: 0;
-    padding: 0.45rem 0.55rem;
+    padding: 0.35rem 0.5rem;
+  }
+
+  .card-main {
+    padding: 0.15rem 0;
   }
 
   .card-label {
-    font-size: 0.75rem;
+    font-size: 0.68rem;
   }
 
   .card-value {
-    margin-top: 0.18rem;
-    font-size: clamp(0.88rem, 2.8vw, 1.3rem);
+    margin-top: 0.15rem;
+    font-size: clamp(1.2rem, 5.5vh, 1.9rem);
+    line-height: 1.15;
     -webkit-line-clamp: 2;
+  }
+
+  .card-notes {
+    font-size: clamp(0.75rem, 3.2vh, 0.95rem);
+    margin-top: 0.15rem;
+    -webkit-line-clamp: 1;
   }
 
   .card-footer {
@@ -798,24 +891,86 @@ body {
 
   .telemetry-card {
     border-radius: 0;
-    padding: 0.25rem;
+    padding: 0.2rem 0.25rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
+    box-sizing: border-box;
+    overflow: hidden;
+    text-align: center;
   }
 
   .telemetry-card .card-label {
-    top: 0.26rem;
-    left: 0.35rem;
-    font-size: 0.75rem;
+    position: static;
+    top: auto;
+    left: auto;
+    display: block;
+    width: 100%;
+    margin: 0 0 0.08rem 0;
+    padding: 0;
+    font-size: 0.62rem;
+    font-weight: 850;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--ui-muted);
+    text-align: center;
+    line-height: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
-  .timecode-display,
-  .bar-card .timecode-display,
+  .timecode-card > div {
+    display: flex;
+    align-items: baseline;
+    justify-content: center;
+    width: 100%;
+    overflow: hidden;
+  }
+
+  .timecode-display {
+    font-size: clamp(0.85rem, 3.8vh, 1.2rem);
+    line-height: 1.1;
+    margin: 0;
+    text-align: center;
+  }
+
+  .bar-card .timecode-display {
+    font-size: clamp(1rem, 4.5vh, 1.45rem);
+    line-height: 1.1;
+    margin: 0;
+    color: var(--ui-accent-strong);
+    text-align: center;
+  }
+
   .bpm-display {
-    font-size: clamp(1rem, 3.8vw, 1.5rem);
+    font-size: clamp(1rem, 4.5vh, 1.45rem);
+    line-height: 1.1;
+    margin: 0;
+    text-align: center;
   }
 
-  .song-timecode,
+  .song-timecode {
+    display: block;
+    margin: 0.08rem 0 0 0;
+    font-size: clamp(0.62rem, 2.5vh, 0.72rem);
+    line-height: 1;
+    color: var(--ui-accent-strong);
+    white-space: nowrap;
+    text-align: center;
+  }
+
   .click-state {
-    font-size: 0.75rem;
+    display: block;
+    margin: 0.08rem 0 0 0;
+    font-size: clamp(0.62rem, 2.5vh, 0.72rem);
+    line-height: 1;
+    color: var(--ui-muted);
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+    white-space: nowrap;
+    text-align: center;
   }
 }
 
@@ -825,7 +980,7 @@ body {
 .card-label,
 .language-control > span {
   font-weight: var(--ui-wght-strong);
-  font-variation-settings: "wdth" 75;
+  font-variation-settings: 'wdth' 75;
   letter-spacing: 0;
 }
 

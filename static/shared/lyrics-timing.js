@@ -9,7 +9,7 @@ function calculateSongElapsedBeats(estimatedBeats, activeSong) {
 
 function convertBeatsToSeconds(beats, bpm) {
   const activeBpm = bpm || 120;
-  return beats * 60 / activeBpm;
+  return (beats * 60) / activeBpm;
 }
 
 function formatSecondsToLrcTime(seconds) {
@@ -30,7 +30,8 @@ function findActiveLyricLine(currentLyrics, currentTimeSec) {
   for (let i = 0; i < currentLyrics.lines.length; i++) {
     const l = currentLyrics.lines[i];
     const t = typeof l.time === 'number' ? l.time : 0;
-    if (t <= currentTimeSec + 0.05) { // 50ms leeway matching production behavior
+    if (t <= currentTimeSec + 0.05) {
+      // 50ms leeway matching production behavior
       bestIdx = i;
     } else {
       break;

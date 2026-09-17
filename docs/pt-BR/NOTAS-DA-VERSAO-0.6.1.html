@@ -1,0 +1,239 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>NOTAS-DA-VERSAO-0.6.1 — RC Setlist</title>
+    <style>
+      body {
+        font:
+          16px/1.55 system-ui,
+          sans-serif;
+        max-width: 920px;
+        margin: 2rem auto;
+        padding: 0 1rem;
+        color: #f2f2f2;
+        background: #0e0e0e;
+      }
+      h1,
+      h2,
+      h3,
+      h4 {
+        line-height: 1.25;
+      }
+      h1 {
+        font-size: 2.2rem;
+        margin-top: 0;
+      }
+      h2 {
+        margin-top: 2rem;
+        padding-top: 1rem;
+        border-top: 1px solid #333;
+      }
+      h3 {
+        margin-top: 1.5rem;
+      }
+      code {
+        font:
+          0.92em ui-monospace,
+          Consolas,
+          monospace;
+        background: #1a1a1a;
+        padding: 0.1em 0.35em;
+        border-radius: 0;
+      }
+      pre {
+        background: #1a1a1a;
+        padding: 0.8rem 1rem;
+        overflow-x: auto;
+        border: 1px solid #333;
+      }
+      pre code {
+        background: transparent;
+        padding: 0;
+      }
+      a {
+        color: #ffa133;
+      }
+      ul,
+      ol {
+        padding-left: 1.2em;
+      }
+      blockquote {
+        border-left: 4px solid #ffa133;
+        margin: 1em 0;
+        padding: 0.5em 1em;
+        color: #a0a0a0;
+      }
+      .crumbs {
+        font-size: 0.85em;
+        color: #a0a0a0;
+        margin-bottom: 1rem;
+      }
+      .crumbs a {
+        color: #a0a0a0;
+        text-decoration: none;
+      }
+      .crumbs a:hover {
+        color: #f2f2f2;
+      }
+      .source {
+        font-size: 0.78em;
+        color: #a0a0a0;
+        margin-top: 2rem;
+        border-top: 1px solid #333;
+        padding-top: 0.5rem;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="crumbs">
+      <a href="https://ntworm.github.io/rc-setlist/">RC Setlist</a> · <a href="./">Docs</a>
+    </div>
+    <h1 id="notas-da-vers-o-0-6-1">Notas da Versão 0.6.1</h1>
+    <p>
+      O Ableton RC Setlist 0.6.1 é a passada de palco sobre a 0.6.0. Tudo aqui saiu de rodar a
+      extensão contra um Live Set de verdade: a contagem, o jeito como uma música passa para a
+      outra, o que Play significa depois de um Stop, e um punhado de coisas que só aparecem num
+      celular em sala escura.
+    </p>
+    <h2 id="o-que-h-de-novo">O que há de novo</h2>
+    <ul>
+      <li><strong>A contagem toca no navegador.</strong> Ela rebobinava o playhead do Live um</li>
+    </ul>
+    <p>
+      compasso e começava o transporte ali — tempo real do arranjo, pertencente à música anterior,
+      então a contagem tocava no andamento daquela música e o áudio dela tocava junto. Para ser
+      audível, ainda ligava o metrônomo do Live, passando por cima de um click que você tinha
+      desligado de propósito. Agora a contagem é áudio do navegador, no andamento que o setlist
+      declara para o playhead. O Live começa no tempo em que estava, e o transporte e o metrônomo
+      dele nunca são tocados para produzi-la. O Play é enviado um pouco antes do último tempo, para
+      o transporte chegar no tempo forte; apertar Play de novo durante a contagem começa na hora, e
+      Stop cancela.
+    </p>
+    <ul>
+      <li>
+        <strong>A ajuda distingue <code>[next]</code> de <code>[skip]</code></strong> e mostra o
+        caso de emenda: um
+      </li>
+    </ul>
+    <p>marcador de fim com <code>[next]</code>, seguido da próxima música.</p>
+    <h2 id="corre-es">Correções</h2>
+    <ul>
+      <li>
+        <strong>Um marcador <code>[next]</code> no fim da música pula o vão de verdade.</strong>
+        <code>[next]</code> e
+      </li>
+    </ul>
+    <p>
+      <code>[skip]</code> eram executados pelo salto de cue do Live, que o Live quantiza pela
+      quantização global: medido num set real, o marcador disparou no tempo 872.3 e o Live saltou em
+      876.0, a linha de compasso seguinte. Para um <code>[next]</code> posto onde o áudio da música
+      termina, seguido de um compasso vazio — a razão de a tag existir — o salto caía exatamente
+      onde a próxima música já começava, e o marcador parecia não fazer nada. As duas tags agora
+      movem o playhead diretamente: a passagem acontece cerca de um décimo de segundo depois de o
+      marcador ser cruzado, nunca antes, e a próxima música começa do primeiro tempo.
+    </p>
+    <ul>
+      <li>
+        <strong>O Play toca de onde você vê o playhead.</strong> O Live oferece dois inícios, e
+      </li>
+    </ul>
+    <p>
+      nenhum é &quot;a partir do playhead&quot;: um começa no marcador de início, o outro retoma de
+      onde o transporte parou pela última vez e ignora tudo o que foi feito com o playhead desde
+      então — inclusive um salto para uma seção com o transporte parado. O Play agora retoma quando
+      o playhead não se moveu desde que o transporte parou, e começa do marcador de início quando um
+      salto ou um clique o moveu.
+    </p>
+    <ul>
+      <li>
+        <strong>Um salto quantizado chega no tempo que a página anuncia.</strong> O salto de cue
+      </li>
+    </ul>
+    <p>
+      era enviado quando o relógio do próprio RC Setlist passava o tempo de chegada — logo depois da
+      linha da grade do Live — e o Live, que quantiza saltos de cue para a próxima linha da grade, o
+      executava um compasso inteiro depois do mostrado. O salto agora é entregue ao Live no instante
+      do pedido, e o Live o executa na linha da grade que a página mostra.
+    </p>
+    <ul>
+      <li>
+        <strong>O primeiro Play depois de abrir retoma de onde o Live está</strong>, em vez de
+      </li>
+    </ul>
+    <p>
+      ler os relatos de andamento que chegam antes de qualquer posição como um playhead parado no
+      zero.
+    </p>
+    <ul>
+      <li><strong>O Stop não dispara mais um salto abandonado.</strong> Um salto esperando a</li>
+    </ul>
+    <p>
+      quantização ficava armado através do Stop e podia levar o transporte para uma seção da qual
+      você já tinha desistido, segundos depois.
+    </p>
+    <ul>
+      <li><strong>Um salto com o transporte parado move o playhead na hora</strong>, então a</li>
+    </ul>
+    <p>
+      contagem lê o andamento da seção que você acabou de escolher, e não de onde o playhead estava.
+    </p>
+    <ul>
+      <li>
+        <strong>Tags de música voltam a disparar.</strong> Um <code>[stop]</code>,
+        <code>[next]</code>, <code>[skip]</code>,
+      </li>
+    </ul>
+    <p>
+      <code>[loop]</code>, <code>[bpm]</code> ou <code>[click]</code> escrito numa música nunca era
+      lido quando o playhead estava dentro de qualquer seção dela — o que, com uma seção começando
+      no mesmo tempo da música, era sempre. Tags de música e de seção agora são avaliadas de forma
+      independente.
+    </p>
+    <ul>
+      <li>
+        <strong>Um Live Set vazio limpa as músicas anteriores</strong>, inclusive quando o último
+      </li>
+    </ul>
+    <p>localizador é apagado.</p>
+    <ul>
+      <li><strong>A lista de músicas não se reconstrói mais a cada dois segundos</strong>, e o</li>
+    </ul>
+    <p>piscar do tempo não força mais um layout inteiro da página a cada batida.</p>
+    <ul>
+      <li><strong>O dígito da contagem substitui o triângulo de Play</strong> em vez de ser</li>
+    </ul>
+    <p>
+      desenhado por cima, e um segundo toque silencia a contagem em vez de deixar o compasso soando
+      embaixo da reprodução que ele iniciou.
+    </p>
+    <ul>
+      <li>
+        <strong>O menu Ferramentas cabe nos seus rótulos.</strong> &quot;Mapeamento de Teclado&quot;
+      </li>
+    </ul>
+    <p>empurrava todos os botões para fora do popover.</p>
+    <ul>
+      <li>
+        <strong>As listas de seleção nativas ficaram legíveis.</strong> O seletor de setlist abria
+      </li>
+    </ul>
+    <p>como uma lista branca com texto quase branco.</p>
+    <p>
+      <em
+        >Para detalhes completos sobre a instalação, consulte o
+        <a href="INSTALL.html">Guia de Instalação</a>.</em
+      >
+    </p>
+    <p>
+      <em
+        >Read these notes in English:
+        <a href="../RELEASE-NOTES-0.6.1.md">RELEASE-NOTES-0.6.1.md</a>.</em
+      >
+    </p>
+    <div class="source">
+      Rendered from <code>docs\pt-BR\NOTAS-DA-VERSAO-0.6.1.md</code> on 2026-09-17.
+    </div>
+  </body>
+</html>

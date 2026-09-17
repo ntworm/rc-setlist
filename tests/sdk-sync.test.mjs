@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { bridgeState } from '../src/core/bridge-state.ts';
+import { bridgeState } from '../src/runtime/bridge-state.ts';
 import { SetlistManager } from '../src/core/setlist-manager.ts';
 import { syncFromSdkContext } from '../src/sync/sdk-sync.ts';
 
@@ -87,7 +87,9 @@ test('SDK read errors do not erase the last valid snapshot', (t) => {
   const errors = [];
   t.mock.method(console, 'error', (...args) => errors.push(args));
   Object.defineProperty(context.application.song, 'cuePoints', {
-    get() { throw new Error('document temporarily unavailable'); },
+    get() {
+      throw new Error('document temporarily unavailable');
+    },
   });
   syncFromSdkContext(context);
   assert.equal(manager.getState().songs[0].title, 'Previous Set Song');

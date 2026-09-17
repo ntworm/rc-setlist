@@ -1,4 +1,4 @@
-# Support
+﻿# Support
 
 Use the following channel for each kind of request:
 
@@ -11,5 +11,5 @@ Before asking, check [docs/FAQ.md](docs/FAQ.md) and
 [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md). Include version and platform,
 but remove tokens, private paths and real setlist/lyrics content from logs.
 
-Ableton RC Setlist is maintained without a service-level agreement. Support is provided
+RC Setlist is maintained without a service-level agreement. Support is provided
 on a best-effort basis for the newest release.

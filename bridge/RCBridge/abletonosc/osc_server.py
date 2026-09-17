@@ -1,15 +1,17 @@
-from typing import Tuple, Any, Callable
-from .constants import OSC_LISTEN_PORT, OSC_RESPONSE_PORT
-from ..pythonosc.osc_message import OscMessage, ParseError
-from ..pythonosc.osc_bundle import OscBundle
-from ..pythonosc.osc_message_builder import OscMessageBuilder, BuildError
+"""RC Bridge protocol layer: OSC surface for Ableton Live."""
 
-import re
-import time
 import errno
-import socket
 import logging
+import re
+import socket
+import time
 import traceback
+from collections.abc import Callable
+
+from ..pythonosc.osc_bundle import OscBundle
+from ..pythonosc.osc_message import OscMessage, ParseError
+from ..pythonosc.osc_message_builder import BuildError, OscMessageBuilder
+from .constants import OSC_LISTEN_PORT, OSC_RESPONSE_PORT
 
 #--------------------------------------------------------------------------------
 # A subscriber that has not sent anything for this long is dropped. Every RC
@@ -19,25 +21,25 @@ import traceback
 #--------------------------------------------------------------------------------
 SUBSCRIBER_LEASE_SECONDS = 60.0
 
-class OSCServer:
-    def __init__(self,
-                 local_addr: Tuple[str, int] = ('0.0.0.0', OSC_LISTEN_PORT),
-                 remote_addr: Tuple[str, int] = ('127.0.0.1', OSC_RESPONSE_PORT)):
-        """
-        Class that handles OSC server responsibilities, including support for sending
-        reply messages.
 
-        Implemented because pythonosc's OSC server causes a beachball when handling
-        incoming messages. To investigate, as it would be ultimately better not to have
-        to roll our own.
+class OSCServer:
+    """Bespoke OSC UDP server (replaces pythonosc's blocking one) with subscribers."""
+
+    def __init__(
+        self,
+        local_addr: tuple[str, int] = ('0.0.0.0', OSC_LISTEN_PORT),
+        remote_addr: tuple[str, int] = ('127.0.0.1', OSC_RESPONSE_PORT),
+    ):
+        """Bind the server socket and remember the default reply target.
+
+        Implemented because pythonosc's OSC server causes a beachball when
+        handling incoming messages.
 
         Args:
-            local_addr: Local address and port to listen on.
-                        By default, binds to the wildcard address 0.0.0.0, which means listening on
-                        every available local IPv4 interface (including 127.0.0.1).
-            remote_addr: Remote address to send replies to, by default. Can be overridden in send().
+            local_addr: Local (host, port) to bind. ``0.0.0.0`` listens on every
+                IPv4 interface, including loopback.
+            remote_addr: Default (host, port) for replies when not overridden.
         """
-
         self._local_addr = local_addr
         self._remote_addr = remote_addr
         self._response_port = remote_addr[1]
@@ -61,33 +63,25 @@ class OSCServer:
         self._clock = time.monotonic
 
         self.logger = logging.getLogger("abletonosc")
-        self.logger.info("Starting OSC server (local %s, response port %d)",
-                         str(self._local_addr), self._response_port)
+        self.logger.info(
+            "Starting OSC server (local %s, response port %d)",
+            str(self._local_addr),
+            self._response_port,
+        )
 
     def add_handler(self, address: str, handler: Callable) -> None:
-        """
-        Add an OSC handler.
-
-        Args:
-            address: The OSC address string
-            handler: A handler function, with signature:
-                     params: Tuple[Any, ...]
-        """
+        """Register ``handler`` for OSC ``address`` (wildcard ``*`` supported)."""
         self._callbacks[address] = handler
 
     def clear_handlers(self) -> None:
-        """
-        Remove all existing OSC handlers.
-        """
+        """Drop every registered handler."""
         self._callbacks = {}
 
     #--------------------------------------------------------------------------------
     # Subscriptions (RC Bridge)
     #--------------------------------------------------------------------------------
-    def subscribe(self, topic: str, remote_addr: Tuple[str, int]) -> int:
-        """
-        Add remote_addr to the subscribers of topic. Returns the subscriber count.
-        """
+    def subscribe(self, topic: str, remote_addr: tuple[str, int]) -> int:
+        """Add a client to the subscriber set for ``topic``; returns the new size."""
         if remote_addr is None:
             return len(self._subscribers.get(topic, ()))
         remote_addr = tuple(remote_addr)
@@ -95,10 +89,8 @@ class OSCServer:
         self._last_seen.setdefault(remote_addr, self._clock())
         return len(self._subscribers[topic])
 
-    def unsubscribe(self, topic: str, remote_addr: Tuple[str, int]) -> int:
-        """
-        Remove remote_addr from the subscribers of topic. Returns how many remain.
-        """
+    def unsubscribe(self, topic: str, remote_addr: tuple[str, int]) -> int:
+        """Drop a client from a topic; returns how many subscribers remain."""
         subscribers = self._subscribers.get(topic)
         if not subscribers:
             return 0
@@ -109,17 +101,19 @@ class OSCServer:
             return 0
         return len(subscribers)
 
-    def subscribers(self, topic: str) -> Tuple[Tuple[str, int], ...]:
+    def subscribers(self, topic: str) -> tuple[tuple[str, int], ...]:
+        """Return every currently-subscribed (host, port) for ``topic``."""
         return tuple(sorted(self._subscribers.get(topic, ())))
 
     def clear_subscriptions(self) -> None:
+        """Forget every subscriber across every topic (used on reload)."""
         self._subscribers = {}
 
-    def publish(self, topic: str, address: str, params: Tuple = ()) -> int:
-        """
-        Send one OSC message to every subscriber of topic. A subscriber whose
-        socket has gone away is dropped rather than left to raise on every
-        update. Returns how many subscribers were sent to.
+    def publish(self, topic: str, address: str, params: tuple = ()) -> int:
+        """Send one OSC update to every active subscriber of ``topic``.
+
+        Returns how many subscribers were reached (expired or dead clients
+        are dropped, not reported).
         """
         sent = 0
         now = self._clock()
@@ -134,22 +128,22 @@ class OSCServer:
                 self.unsubscribe(topic, remote_addr)
         return sent
 
-    def touch(self, remote_addr: Tuple[str, int]) -> None:
+    def touch(self, remote_addr: tuple[str, int]) -> None:
         """Renew the lease of a client that just sent something."""
         self._last_seen[tuple(remote_addr)] = self._clock()
 
-    def send(self,
-             address: str,
-             params: Tuple = (),
-             remote_addr: Tuple[str, int] = None) -> None:
-        """
-        Send an OSC message.
+    def send(
+        self,
+        address: str,
+        params: tuple = (),
+        remote_addr: tuple[str, int] = None,
+    ) -> None:
+        """Send one OSC message to ``remote_addr`` (default reply target).
 
         Args:
-            address: The OSC address (e.g. /frequency)
-            params: A tuple of zero or more OSC params
-            remote_addr: The remote address to send to, as a 2-tuple (hostname, port).
-                         If None, uses the default remote address.
+            address: OSC address (e.g. ``/frequency``).
+            params: Tuple of zero or more OSC args.
+            remote_addr: (host, port); falls back to the default reply target.
         """
         msg_builder = OscMessageBuilder(address)
         for param in params:
@@ -161,9 +155,10 @@ class OSCServer:
                 remote_addr = self._remote_addr
             self._socket.sendto(msg.dgram, remote_addr)
         except BuildError:
-            self.logger.error("AbletonOSC: OSC build error: %s" % (traceback.format_exc()))
+            self.logger.error(f"AbletonOSC: OSC build error: {traceback.format_exc()}")
 
     def process_message(self, message, remote_addr):
+        """Set the current sender, dispatch, then clear it."""
         #--------------------------------------------------------------------------------
         # RC Bridge: a reply goes back to the socket that asked - host and port -
         # not to a fixed response port. Handlers see the sender through
@@ -183,9 +178,11 @@ class OSCServer:
 
             if rv is not None:
                 assert isinstance(rv, tuple)
-                self.send(address=message.address,
-                          params=rv,
-                          remote_addr=response_addr)
+                self.send(
+                    address=message.address,
+                    params=rv,
+                    remote_addr=response_addr,
+                )
         elif "*" in message.address:
             regex = message.address.replace("*", "[^/]+")
             for callback_address, callback in self._callbacks.items():
@@ -200,19 +197,23 @@ class OSCServer:
                         continue
                     except AttributeError:
                         #--------------------------------------------------------------------------------
-                        # Don't throw errors when trying to create listeners for properties that can't
-                        # be listened for (e.g. can_be_armed, is_foldable)
+                        # Don't throw errors when trying to create listeners
+                        # for properties that can't be listened for
+                        # (e.g. can_be_armed, is_foldable)
                         #--------------------------------------------------------------------------------
                         continue
                     if rv is not None:
                         assert isinstance(rv, tuple)
-                        self.send(address=callback_address,
-                                  params=rv,
-                                  remote_addr=response_addr)
+                        self.send(
+                            address=callback_address,
+                            params=rv,
+                            remote_addr=response_addr,
+                        )
         else:
-            self.logger.error("AbletonOSC: Unknown OSC address: %s" % message.address)
+            self.logger.error(f"AbletonOSC: Unknown OSC address: {message.address}")
 
     def process_bundle(self, bundle, remote_addr):
+        """Recurse into ``bundle`` and process each element (message or nested bundle)."""
         for i in bundle:
             if OscBundle.dgram_is_bundle(i.dgram):
                 self.process_bundle(i, remote_addr)
@@ -220,23 +221,26 @@ class OSCServer:
                 self.process_message(i, remote_addr)
 
     def parse_bundle(self, data, remote_addr):
+        """Decode one datagram (message or bundle) and dispatch it."""
         if OscBundle.dgram_is_bundle(data):
             try:
                 bundle = OscBundle(data)
                 self.process_bundle(bundle, remote_addr)
             except ParseError:
-                self.logger.error("AbletonOSC: Error parsing OSC bundle: %s" % (traceback.format_exc()))
+                self.logger.error(
+                    f"AbletonOSC: Error parsing OSC bundle: {traceback.format_exc()}"
+                )
         else:
             try:
                 message = OscMessage(data)
                 self.process_message(message, remote_addr)
             except ParseError:
-                self.logger.error("AbletonOSC: Error parsing OSC message: %s" % (traceback.format_exc()))
+                self.logger.error(
+                    f"AbletonOSC: Error parsing OSC message: {traceback.format_exc()}"
+                )
 
     def process(self) -> None:
-        """
-        Synchronously process all data queued on the OSC socket.
-        """
+        """Synchronously drain the OSC socket of every pending datagram."""
         resets = 0
         while True:
             try:
@@ -244,7 +248,7 @@ class OSCServer:
                 # Loop until no more data is available.
                 #--------------------------------------------------------------------------------
                 data, remote_addr = self._socket.recvfrom(65536)
-            except socket.error as e:
+            except OSError as e:
                 if e.errno == errno.ECONNRESET and resets < 64:
                     #--------------------------------------------------------------------------------
                     # Windows reports a UDP send to a closed port as a reset on the next
@@ -259,12 +263,14 @@ class OSCServer:
                     #--------------------------------------------------------------------------------
                     return
                 if e.errno == errno.ECONNRESET:
-                    self.logger.warning("RC Bridge: too many resets from closed client ports in one tick")
+                    self.logger.warning(
+                        "RC Bridge: too many resets from closed client ports in one tick"
+                    )
                     return
                 #--------------------------------------------------------------------------------
                 # Something more serious has happened
                 #--------------------------------------------------------------------------------
-                self.logger.error("RC Bridge: Socket error: %s" % (traceback.format_exc()))
+                self.logger.error(f"RC Bridge: Socket error: {traceback.format_exc()}")
                 return
             try:
                 #--------------------------------------------------------------------------------
@@ -276,11 +282,9 @@ class OSCServer:
                 self.touch(remote_addr)
                 self.parse_bundle(data, remote_addr)
             except Exception as e:
-                self.logger.error("RC Bridge: Error handling OSC message: %s" % e)
-                self.logger.warning("RC Bridge: %s" % traceback.format_exc())
+                self.logger.error(f"RC Bridge: Error handling OSC message: {e}")
+                self.logger.warning(f"RC Bridge: {traceback.format_exc()}")
 
     def shutdown(self) -> None:
-        """
-        Shutdown the server network sockets.
-        """
+        """Close the server socket."""
         self._socket.close()

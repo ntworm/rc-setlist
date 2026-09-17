@@ -1,0 +1,224 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>FAQ — RC Setlist</title>
+    <style>
+      body {
+        font:
+          16px/1.55 system-ui,
+          sans-serif;
+        max-width: 920px;
+        margin: 2rem auto;
+        padding: 0 1rem;
+        color: #f2f2f2;
+        background: #0e0e0e;
+      }
+      h1,
+      h2,
+      h3,
+      h4 {
+        line-height: 1.25;
+      }
+      h1 {
+        font-size: 2.2rem;
+        margin-top: 0;
+      }
+      h2 {
+        margin-top: 2rem;
+        padding-top: 1rem;
+        border-top: 1px solid #333;
+      }
+      h3 {
+        margin-top: 1.5rem;
+      }
+      code {
+        font:
+          0.92em ui-monospace,
+          Consolas,
+          monospace;
+        background: #1a1a1a;
+        padding: 0.1em 0.35em;
+        border-radius: 0;
+      }
+      pre {
+        background: #1a1a1a;
+        padding: 0.8rem 1rem;
+        overflow-x: auto;
+        border: 1px solid #333;
+      }
+      pre code {
+        background: transparent;
+        padding: 0;
+      }
+      a {
+        color: #ffa133;
+      }
+      ul,
+      ol {
+        padding-left: 1.2em;
+      }
+      blockquote {
+        border-left: 4px solid #ffa133;
+        margin: 1em 0;
+        padding: 0.5em 1em;
+        color: #a0a0a0;
+      }
+      .crumbs {
+        font-size: 0.85em;
+        color: #a0a0a0;
+        margin-bottom: 1rem;
+      }
+      .crumbs a {
+        color: #a0a0a0;
+        text-decoration: none;
+      }
+      .crumbs a:hover {
+        color: #f2f2f2;
+      }
+      .source {
+        font-size: 0.78em;
+        color: #a0a0a0;
+        margin-top: 2rem;
+        border-top: 1px solid #333;
+        padding-top: 0.5rem;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="crumbs">
+      <a href="https://ntworm.github.io/rc-setlist/">RC Setlist</a> · <a href="./">Docs</a>
+    </div>
+    <h1 id="perguntas-frequentes">Perguntas frequentes</h1>
+    <h2 id="o-rc-setlist-open-source">O RC Setlist é open source?</h2>
+    <p>
+      Ele é source-available sob a PolyForm Noncommercial 1.0.0. Uso, modificação e redistribuição
+      não comerciais são permitidos conforme a licença; uso comercial não é permitido. A PolyForm
+      Noncommercial não é uma licença open source aprovada pela OSI.
+    </p>
+    <h2 id="o-usu-rio-final-precisa-de-node-js">O usuário final precisa de Node.js?</h2>
+    <p>
+      Não. Instale o <code>.ablx</code> da release. O Node.js 24.16.0 serve apenas para
+      desenvolvimento.
+    </p>
+    <h2 id="o-que-o-rc-bridge-e-ainda-preciso-do-abletonosc">
+      O que é o RC Bridge, e ainda preciso do AbletonOSC?
+    </h2>
+    <p>
+      O RC Bridge é o Remote Script do Live com que o RC Setlist conversa para transporte e
+      operações do Live Object Model. É um fork do AbletonOSC
+      (&lt;https://github.com/ideoforms/AbletonOSC&gt;, MIT) que responde a cada cliente na porta
+      dele — assim nunca disputa a porta de resposta com outra extensão RC e convive com um
+      AbletonOSC comum. Ele vem dentro da extensão e dentro do kit de instalação; o instalador do
+      kit (<code>Install-RC-Bridge.cmd</code> / <code>Install RC Bridge.command</code>) copia para a
+      User Library do Live. Você não precisa do AbletonOSC — mas se já tem, o RC Setlist continua
+      funcionando com ele.
+    </p>
+    <h2 id="por-que-o-navegador-mostra-um-aviso-de-certificado">
+      Por que o navegador mostra um aviso de certificado?
+    </h2>
+    <p>
+      Na primeira conexão, o navegador pode mostrar <code>ERR_CERT_AUTHORITY_INVALID</code> porque o
+      RC Setlist cria um certificado local autoassinado para WebSockets seguros. Continue somente se
+      o endereço for exatamente o IP mostrado no painel do Live e a rede local for confiável. Cada
+      navegador/aparelho pode exigir isso uma vez.
+    </p>
+    <h2 id="onde-as-letras-ficam-salvas">Onde as letras ficam salvas?</h2>
+    <p>
+      No diretório de armazenamento de Ableton Extensions, dentro do perfil ativo do RC Setlist. Use
+      o editor interno em vez de editar os arquivos diretamente.
+    </p>
+    <h2 id="posso-usar-minhas-letras">Posso usar minhas letras?</h2>
+    <p>
+      Somente se você for o autor ou tiver autorização. O repositório e o kit de demonstração usam
+      texto fictício; o RC Setlist não fornece letras comerciais.
+    </p>
+    <h2 id="o-macos-funciona">O macOS funciona?</h2>
+    <p>
+      O código foi projetado para ser portátil, mas a versão 0.5.0 mantém o macOS como experimental
+      até existir uma matriz completa em hardware real.
+    </p>
+    <h2 id="posso-expor-o-rc-setlist-na-internet">Posso expor o RC Setlist na internet?</h2>
+    <p>
+      Não. Ele foi projetado para uma rede local confiável. Nunca exponha a porta
+      <code>4444</code> diretamente à internet.
+    </p>
+    <h2 id="posso-vender-o-rc-setlist-ou-uma-modifica-o">
+      Posso vender o RC Setlist ou uma modificação?
+    </h2>
+    <p>
+      Não sob a PolyForm Noncommercial 1.0.0. Leia a <a href="../../LICENSE">licença</a> e procure
+      orientação jurídica própria para um caso específico.
+    </p>
+    <h2 id="por-que-a-dura-o-total-do-meu-setlist-est-diferente-do-esperado">
+      Por que a duração total do meu setlist está diferente do esperado?
+    </h2>
+    <p>
+      Se o seu projeto no Ableton Live possui automações de andamento desenhadas na faixa master do
+      Arrangement e os localizadores não contêm a tag <code>[bpm N]</code>, a extensão não consegue
+      ler a curva de automação. Nem o Live Object Model nem o Extensions SDK expõem os pontos de
+      automação da linha do tempo remotamente.
+    </p>
+    <p>
+      Sem tags declaradas, o RC Setlist calcula a duração usando o andamento corrente do Live como
+      estimativa uniforme e exibe a etiqueta <code>EST.</code>. Em um setlist real de 21 faixas com
+      andamentos entre 93 e 166 BPM, essa estimativa gerou uma distorção de 16:59 (95:40 contra os
+      78:41 reais).
+    </p>
+    <p>
+      Para obter durações exatas, adicione <code>[bpm N]</code> no nome do localizador de cada
+      música (ex.: <code>Nome da Música [bpm 120]</code>). O RC Setlist passará a usar o modo de
+      confiança declarada com cálculo trecho a trecho e removerá o aviso <code>EST.</code>.
+    </p>
+    <h2 id="por-que-n-o-ou-o-a-contagem">Por que não ouço a contagem?</h2>
+    <p>
+      Por padrão, a contagem de 1 compasso é apenas visual (mostrando <code>1 2 3 4</code> no botão
+      Play no navegador), para que o celular do operador não apite pelo alto-falante no palco. Se
+      você quiser ouvir o click, ative-o por aparelho definindo
+      <code>rc-setlist.count-in-audio</code> como <code>true</code> no <code>localStorage</code> do
+      navegador (ex.: via console de desenvolvedor num notebook que alimenta um retorno de ouvido).
+      O menu &quot;Count-In&quot; embutido no Live não se aplica ao Play, apenas à gravação.
+    </p>
+    <h2 id="como-atualizo-da-vers-o-0-x">Como atualizo da versão 0.x?</h2>
+    <p>
+      O produto foi renomeado de <strong>Ableton RC Setlist</strong> para
+      <strong>RC Setlist</strong> na 1.0. Rode o <code>Migrate-RC-Setlist-Data.cmd</code> (Windows)
+      ou <code>Migrate RC Setlist Data.command</code> (macOS) do kit
+      <strong>uma vez, antes de abrir o Live</strong> com a 1.0. Ele copia perfis, project-setlists,
+      token e preferências para a pasta nova sem mexer na antiga e nunca sobrescreve um arquivo que
+      já existe no destino. Em seguida, no Live, abra
+      <strong>Configurações &gt; Extensões</strong> e remova a entrada antiga
+      <strong>Ableton RC Setlist</strong>, para que as duas extensões não coexistam na mesma
+      máquina. Pular a migração ou deixar as duas instaladas faz os perfis antigos ficarem
+      invisíveis para a extensão nova.
+    </p>
+    <h2 id="automa-o-de-tempo-desenhada-no-live">Automação de tempo desenhada no Live</h2>
+    <p>
+      Se o seu Arrangement tem automação de tempo própria, mantenha
+      <strong>Definir o tempo do Live ao pular</strong> <strong>desligado</strong> no painel do
+      Live. Ele já vem desligado, e o motivo é este.
+    </p>
+    <p>
+      Um pulo explícito pode escrever o tempo de destino no Live antes de mover o playhead. Escrever
+      <code>song.tempo</code> sobrepõe a automação de tempo do Live: o arranjo para de seguir o
+      próprio envelope até você clicar em <strong>Re-Enable Automation</strong> na barra de
+      transporte. Um pulo no meio do show achataria o tempo do resto do set.
+    </p>
+    <p>
+      O RC Setlist também vigia isso sozinho. Quando o tempo que o Live reporta diverge da tag
+      <code>[bpm N]</code> declarada naquele ponto do setlist, a extensão conclui que alguém além do
+      setlist é dono do tempo e se recusa a escrever, mesmo com a opção ligada.
+    </p>
+    <p>
+      Uma tag <code>[bpm N]</code> significa &quot;meça a duração com isto&quot;. Ela não significa
+      &quot;imponha isto ao Live&quot;. Marcar as suas músicas é seguro com automação de tempo, e é
+      o que transforma uma duração estimada do set numa duração exata.
+    </p>
+    <p>
+      Ligue a opção apenas quando as tags forem a sua fonte de verdade para o tempo e o Arrangement
+      não tiver automação de tempo.
+    </p>
+    <div class="source">Rendered from <code>docs\pt-BR\FAQ.md</code> on 2026-09-17.</div>
+  </body>
+</html>

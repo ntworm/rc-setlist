@@ -23,14 +23,17 @@ test('MIDI mappings recover from corrupt storage and discard malformed entries',
   assert.deepEqual({ ...runtime.readMidiMappings(corruptStorage, 'mappings', defaults) }, defaults);
 
   const storage = {
-    getItem: () => JSON.stringify({
-      play: { type: 'note', channel: 1, number: 64 },
-      stop: { type: 'cc', channel: 17, number: 1 },
-      toggle_click: 'bad',
-      injected_action: { type: 'note', channel: 1, number: 1 },
-    }),
+    getItem: () =>
+      JSON.stringify({
+        play: { type: 'note', channel: 1, number: 64 },
+        stop: { type: 'cc', channel: 17, number: 1 },
+        toggle_click: 'bad',
+        injected_action: { type: 'note', channel: 1, number: 1 },
+      }),
   };
-  const sanitized = JSON.parse(JSON.stringify(runtime.readMidiMappings(storage, 'mappings', defaults)));
+  const sanitized = JSON.parse(
+    JSON.stringify(runtime.readMidiMappings(storage, 'mappings', defaults)),
+  );
   assert.deepEqual(sanitized, {
     play: { type: 'note', channel: 1, number: 64 },
     stop: null,
@@ -63,7 +66,10 @@ test('invalid token query values are removed and fall back to stored credentials
   const token = runtime.consumeControllerToken({
     locationRef: { href: 'http://localhost:4444/static/setlist/?token=undefined&view=compact' },
     historyRef: { replaceState: (_state, _title, url) => replacements.push(url) },
-    storageRef: { getItem: () => 'stored-token', setItem: () => assert.fail('must not store invalid token') },
+    storageRef: {
+      getItem: () => 'stored-token',
+      setItem: () => assert.fail('must not store invalid token'),
+    },
   });
   assert.equal(token, 'stored-token');
   assert.deepEqual(replacements, ['/static/setlist/?view=compact']);
@@ -129,7 +135,10 @@ test('disconnect and timeout settle pending commands as failures', () => {
   let timeoutCallback;
   const tracker = runtime.createPendingCommandTracker({
     timeoutMs: 25,
-    setTimeoutFn: (callback) => { timeoutCallback = callback; return 1; },
+    setTimeoutFn: (callback) => {
+      timeoutCallback = callback;
+      return 1;
+    },
     clearTimeoutFn: () => undefined,
     onSettled: (entry, status) => callbacks.push([entry.commandId, status]),
   });
@@ -200,20 +209,31 @@ test('readKeyMappings recovers from corrupt storage and discards malformed entri
   assert.deepEqual({ ...runtime.readKeyMappings(corruptStorage, 'mappings', defaults) }, defaults);
 
   const storage = {
-    getItem: () => JSON.stringify({
-      play: { key: '1', code: 'Numpad1', ctrlKey: false, altKey: false, shiftKey: false },
-      stop: { key: 'bad' }, // missing code
-      next_song: null,
-      toggle_count_in: { key: '2', code: 'Numpad2', ctrlKey: false, altKey: false, shiftKey: false },
-      injected_action: { key: 'x', code: 'KeyX' }, // not in defaults, must be excluded
-    }),
+    getItem: () =>
+      JSON.stringify({
+        play: { key: '1', code: 'Numpad1', ctrlKey: false, altKey: false, shiftKey: false },
+        stop: { key: 'bad' }, // missing code
+        next_song: null,
+        toggle_count_in: {
+          key: '2',
+          code: 'Numpad2',
+          ctrlKey: false,
+          altKey: false,
+          shiftKey: false,
+        },
+        injected_action: { key: 'x', code: 'KeyX' }, // not in defaults, must be excluded
+      }),
   };
   const result = JSON.parse(JSON.stringify(runtime.readKeyMappings(storage, 'mappings', defaults)));
   assert.deepEqual(result, {
     play: { key: '1', code: 'Numpad1', ctrlKey: false, altKey: false, shiftKey: false },
-    stop: null,          // malformed (missing code) → falls back to default null
-    next_song: null,     // explicit null is preserved
+    stop: null, // malformed (missing code) → falls back to default null
+    next_song: null, // explicit null is preserved
     toggle_count_in: { key: '2', code: 'Numpad2', ctrlKey: false, altKey: false, shiftKey: false },
   });
-  assert.equal('injected_action' in result, false, 'injected action not in defaults must be excluded');
+  assert.equal(
+    'injected_action' in result,
+    false,
+    'injected action not in defaults must be excluded',
+  );
 });

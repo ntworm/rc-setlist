@@ -1,0 +1,559 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>CONTRATOS — RC Setlist</title>
+    <style>
+      body {
+        font:
+          16px/1.55 system-ui,
+          sans-serif;
+        max-width: 920px;
+        margin: 2rem auto;
+        padding: 0 1rem;
+        color: #f2f2f2;
+        background: #0e0e0e;
+      }
+      h1,
+      h2,
+      h3,
+      h4 {
+        line-height: 1.25;
+      }
+      h1 {
+        font-size: 2.2rem;
+        margin-top: 0;
+      }
+      h2 {
+        margin-top: 2rem;
+        padding-top: 1rem;
+        border-top: 1px solid #333;
+      }
+      h3 {
+        margin-top: 1.5rem;
+      }
+      code {
+        font:
+          0.92em ui-monospace,
+          Consolas,
+          monospace;
+        background: #1a1a1a;
+        padding: 0.1em 0.35em;
+        border-radius: 0;
+      }
+      pre {
+        background: #1a1a1a;
+        padding: 0.8rem 1rem;
+        overflow-x: auto;
+        border: 1px solid #333;
+      }
+      pre code {
+        background: transparent;
+        padding: 0;
+      }
+      a {
+        color: #ffa133;
+      }
+      ul,
+      ol {
+        padding-left: 1.2em;
+      }
+      blockquote {
+        border-left: 4px solid #ffa133;
+        margin: 1em 0;
+        padding: 0.5em 1em;
+        color: #a0a0a0;
+      }
+      .crumbs {
+        font-size: 0.85em;
+        color: #a0a0a0;
+        margin-bottom: 1rem;
+      }
+      .crumbs a {
+        color: #a0a0a0;
+        text-decoration: none;
+      }
+      .crumbs a:hover {
+        color: #f2f2f2;
+      }
+      .source {
+        font-size: 0.78em;
+        color: #a0a0a0;
+        margin-top: 2rem;
+        border-top: 1px solid #333;
+        padding-top: 0.5rem;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="crumbs">
+      <a href="https://ntworm.github.io/rc-setlist/">RC Setlist</a> · <a href="./">Docs</a>
+    </div>
+    <h1 id="contratos-do-rc-setlist">Contratos do RC Setlist</h1>
+    <p>
+      Este documento é o contrato público do RC Setlist 1.0. Cada comportamento aqui documentado tem
+      um teste de regressão em
+      <a href="../../tests/release-contracts.test.mjs"
+        ><code>tests/release-contracts.test.mjs</code></a
+      >; o que estiver fora deste documento é detalhe de implementação e pode mudar sem aviso. Tudo
+      o que está documentado aqui permanece até a próxima major version (2.0), conforme a política
+      de SemVer na §7.
+    </p>
+    <p>
+      Público: autores de extensão escrevendo um controlador que conversa com o RC Setlist via
+      WebSocket, integradores lendo ou escrevendo perfis do RC Setlist em disco, e contribuidores
+      alterando qualquer uma das superfícies abaixo.
+    </p>
+    <p>Idioma: <a href="../CONTRACTS.md">English</a></p>
+    <p>---</p>
+    <h2 id="1-formatos-em-disco">1. Formatos em disco</h2>
+    <p>
+      Os perfis ficam sob uma única raiz de armazenamento. A 1.0 deriva a raiz a partir de
+      <code>name</code> em <code>manifest.json</code> (<code>RC Setlist</code>), do editor
+      (<code>ntworm</code>) e da versão do Live Suite, então um usuário Windows com Ableton 12 vê
+      <code>%LOCALAPPDATA%\Ableton\Extensions Data\ntworm.rc-setlist\</code> e um usuário macOS vê
+      <code>~/Library/Application Support/Ableton/Extensions Data/ntworm.rc-setlist/</code>. A linha
+      0.x usava <code>ntworm.ableton-rc-setlist</code>; o kit de migração 1.0 (<code
+        >Migrate-RC-Setlist-Data.{cmd,ps1}</code
+      >
+      / <code>Migrate RC Setlist Data.command</code>, <code>scripts/migrate-data.mjs</code>) copia a
+      árvore antiga para a nova sem sobrescrever arquivos do destino.
+    </p>
+    <p>Dentro do diretório de um perfil:</p>
+    <p>
+      | Arquivo | Dono | Estável desde | Observações | | ----------------------------------- |
+      ------- | ------------- | -------------------------------------------------------------------
+      | | <code>index.json</code> | manager | 0.5.1 | Registro de perfis (UUID, nome,
+      created/updated, schemaVersion). | | <code>index.json.bak</code> | manager | 0.5.1 | Sombra de
+      recuperação gravada junto a <code>index.json</code>. | | <code>profile.json</code> | manager |
+      0.5.1 | Metadados do perfil + raiz de caminhos + <code>lastSavedAt</code>. | |
+      <code>profile.json.bak</code> | manager | 0.5.1 | Sombra de recuperação. | |
+      <code>profiles/&lt;uuid&gt;/profile.json</code> | manager | 0.5.1 | Metadados por perfil. | |
+      <code>profiles/&lt;uuid&gt;/custom-order.json</code> | manager | 0.5.1 |
+      <code>string[]</code> de títulos de música na ordem de exibição. | |
+      <code>profiles/&lt;uuid&gt;/song-book.json</code> | manager | 0.5.1 | Cor por música
+      (<code>#rrggbb</code>, paleta em §6.3) e notas de uma linha. | |
+      <code>profiles/&lt;uuid&gt;/lyrics/&lt;song&gt;.lrc</code> | lyrics | 0.5.1 | LRC com
+      cabeçalhos opcionais <code>ar</code>/<code>ti</code>/<code>al</code>/<code>by</code>; UTF-8. |
+      | <code>profiles/&lt;uuid&gt;/lyrics/&lt;song&gt;.txt</code> | lyrics | 0.5.1 | Texto puro;
+      uma linha por batida, o servidor atribui pseudo-tempo. | |
+      <code>certs/&lt;hostname&gt;.pem</code> + <code>.key</code> | server | 0.5.1 | Certificado
+      autoassinado por hostname de LAN detectado. | | <code>token</code> | server | 0.5.1 | Token em
+      texto puro usado para autenticação HTTP/WS. | | <code>ui-locale</code> | prefs | 0.5.1 |
+      <code>en</code> ou <code>pt-BR</code>; qualquer outro valor é rejeitado pelo painel. | |
+      <code>auto-start</code> | prefs | 0.5.1 | <code>1</code> ou <code>0</code>; liga/desliga o
+      início automático no Live. | | <code>events.log</code> | log | 0.5.1 | NDJSON, append-only,
+      rotação a 10 MiB; redacta segredos (ver §2.5). |
+    </p>
+    <p>
+      O registro 1.0 carrega <code>schemaVersion: 2</code>. Perfis migrados do 0.x chegam com
+      <code>schemaVersion: 1</code> e são atualizados in-place na primeira abertura.
+      <code>schemaVersion: 3</code> é reservado para a próxima major e atualmente rejeita o perfil
+      com <code>future_schema</code>.
+    </p>
+    <p>
+      A fixture <code>tests/fixtures/storage/{0.5.1,0.6.1,0.7.0}/</code> carrega um perfil mínimo
+      anonimizado por versão passada, para manter a cobertura do caminho de migração.
+    </p>
+    <p>---</p>
+    <h2 id="2-protocolo-websocket-v3">2. Protocolo WebSocket (v3)</h2>
+    <p>
+      O servidor HTTPS em <code>https://&lt;host&gt;:&lt;port&gt;/</code> faz upgrade para WebSocket
+      na mesma origem. O handshake exige que <code>Origin</code> / <code>Host</code> seja loopback
+      (<code>127.0.0.1</code>, <code>::1</code>) ou endereço de LAN local; qualquer outro valor é
+      rejeitado com HTTP 403 antes do upgrade. Após o upgrade, todo frame é um frame JSON de texto.
+    </p>
+    <h3 id="2-1-frames-servidor-cliente">2.1 Frames servidor → cliente</h3>
+    <p>
+      Todo frame do servidor carrega <code>type</code> e (para <code>state</code>)
+      <code>stateVersion</code>, para que um cliente que conectou tarde ou reconectou possa rejeitar
+      um frame fora de ordem.
+    </p>
+    <p>
+      | <code>type</code> | Campos obrigatórios | Enviado quando | | ------------------- |
+      ---------------------------------------------------------------------- |
+      ------------------------------------------------------------------------------ | |
+      <code>state</code> | <code>stateVersion</code>, <code>SetlistState</code> (§2.4) | Conexão
+      inicial (<code>sync_confirm</code> re-dispara) e em toda mudança de estado. | |
+      <code>log</code> |
+      <code>level</code>
+      (<code>debug</code>/<code>info</code>/<code>warn</code>/<code>error</code>),
+      <code>scope</code>, <code>message</code>, <code>fields?</code> | Linha de log do servidor
+      roteada ao console; redactada por §2.5. | | <code>pong</code> | <code>ts</code> | Resposta ao
+      heartbeat. | | <code>auth_success</code> | <code>clientId</code>,
+      <code>controller: true</code> | <code>auth</code> manual sucedeu. | |
+      <code>auth_failure</code> | <code>reason</code> | <code>auth</code> manual rejeitado; cliente
+      pode tentar de novo até 3 vezes/minuto/IP. | | <code>command_ack</code> |
+      <code>commandId</code>, <code>status</code> | Servidor aceitou o comando de §2.2. | |
+      <code>command_confirmed</code> | <code>commandId</code>, <code>status</code>,
+      <code>commandType</code>, <code>details?</code> | Handler terminou; <code>status</code> é um
+      de <code>confirmed</code>/<code>failed</code>/<code>expired</code>/<code>cancelled</code>. | |
+      <code>disconnect_notice</code> | <code>reason</code> | Fechamento forçado (backpressure,
+      origem rejeitada, …). |
+    </p>
+    <h3 id="2-2-frames-cliente-servidor">2.2 Frames cliente → servidor</h3>
+    <p>
+      O decoder é <code>src/server/client-message.ts</code>. Toda mensagem valida
+      <code>type</code> contra <code>^[a-z][a-z0-9_]{0,63}$</code>; qualquer outro valor retorna
+      <code>invalid_message</code>. IDs de comando precisam casar <code>^[A-Za-z0-9._:-]+$</code> e
+      são obrigatórios em todo comando.
+    </p>
+    <p>
+      | <code>type</code> | Campos obrigatórios | Efeito | | ---------------- |
+      ------------------------------------- |
+      ----------------------------------------------------------------------------------------------------------------------------
+      | | <code>handshake</code> | <code>clientId</code> | Inicia a sincronização do Reliability
+      Core; responde com <code>state</code> quando termina. | | <code>sync_confirm</code> |
+      <code>stateVersion</code> | Reenvia o <code>state</code> em cache se a versão bate; caso
+      contrário, no-op. | | <code>auth</code> | <code>token</code> | Re-tenta autenticar; só sucede
+      se <code>token === server.token</code> e o token do servidor é não vazio. | |
+      <code>play</code> | <code>commandId</code> | Retoma o transporte na posição de descanso. | |
+      <code>stop</code> | <code>commandId</code> | Para o transporte; desarma qualquer jump
+      pendente. | | <code>toggle_play</code> | <code>commandId</code> | Toca se parado, para se
+      tocando. | | <code>next</code> | <code>commandId</code> | Cue-jump para o primeiro beat da
+      próxima música (quantizado ou imediato conforme a quantização global). | | <code>prev</code> |
+      <code>commandId</code> | Recua para a música anterior. | | <code>jump</code> |
+      <code>commandId</code>, <code>locator</code> | Cue-jump para um marker pelo nome (gramática de
+      locators na §4). | | <code>bpm</code> | <code>commandId</code>, <code>bpm</code> (20–300) |
+      Define o tempo. | | <code>click</code> | <code>commandId</code>, <code>enabled</code> |
+      Liga/desliga o metrônomo. | | <code>pre_roll</code> | <code>commandId</code>,
+      <code>enabled</code> | Liga/desliga o pre-roll. | | <code>set_panic</code> |
+      <code>commandId</code>, <code>enabled</code> | Entra/sai do modo panic (para o transporte,
+      trava comandos não-safety). | | <code>set_song_color</code> | <code>commandId</code>,
+      <code>songTime</code>, <code>color</code> | Pinta a música na posição; cor precisa estar em
+      §6.3. | | <code>set_song_notes</code> | <code>commandId</code>, <code>songTime</code>,
+      <code>notes</code> | Define a nota de uma linha; <code>null</code> limpa. | |
+      <code>set_loop</code> | <code>commandId</code>, <code>enabled</code>, <code>count?</code> |
+      Arma/desarma loop na música atual. | | <code>reorder</code> | <code>commandId</code>,
+      <code>order</code> | Ordem de exibição custom; precisa conter toda música atual exatamente uma
+      vez. | | <code>profile_*</code> | <code>commandId</code> | Gestão de perfis
+      (<code>profile_create</code>, <code>profile_select</code>, <code>profile_rename</code>,
+      <code>profile_delete</code>, <code>profile_restore</code>); só controller. | |
+      <code>export_csv</code> | <code>commandId</code> | Grava um CSV UTF-8-BOM do setlist ativo no
+      caminho de exportação resolvido. | | <code>edit_locator</code> | <code>commandId</code>,
+      <code>currentName</code>, <code>newName</code> | Renomeia o cue no Set (só controller). |
+    </p>
+    <p>
+      Tamanhos limitados aplicados pelo decoder: commandId ≤ 128 chars; clientId ≤ 128; campos de
+      perfil ≤ 80; títulos ≤ 255; corpo de letra ≤ 96 KiB; reorder ≤ 4096 músicas; campos de texto
+      estruturado (notas, título, cabeçalho de letra) rejeitam controles C0/C1.
+    </p>
+    <h3 id="2-3-reliability-core">2.3 Reliability Core</h3>
+    <p>
+      Cada comando é reconhecido duas vezes: <code>command_ack</code> (servidor aceitou o comando no
+      barramento) e <code>command_confirmed</code> (handler terminou). O enum <code>status</code> em
+      <code>command_confirmed</code> é <code>created</code> → <code>sent</code> →
+      <code>acknowledged</code> → <code>confirmed</code> (ou
+      <code>failed</code>/<code>expired</code>/ <code>cancelled</code>). Um handler que lança
+      <code>OperatorError</code> mantém a rejeição dentro de <code>failed</code> com
+      <code>reason</code> estável; um handler que lança qualquer outra coisa settleia como
+      <code>execution_failed</code> e o erro original vai para <code>events.log</code>, nunca para o
+      frame WS.
+    </p>
+    <p>
+      O servidor envia <code>state</code> com <code>stateVersion</code> monotônico.
+      <code>sync_confirm</code> com versão stale é no-op; o cliente deve enviar
+      <code>handshake</code> para recuperar.
+    </p>
+    <h3 id="2-4-forma-do-setliststate">2.4 Forma do SetlistState</h3>
+    <p>
+      Espelha <code>SetlistState</code> em <a href="../../src/types.ts"><code>src/types.ts</code></a
+      >. O contrato 1.0 adiciona <code>protocolVersion: 3</code> (a versão de schema deste frame,
+      não dos perfis em disco), <code>preRollEnabled</code>, <code>durationBpm</code>,
+      <code>declaredTempo</code>, <code>songColors</code>, <code>songNotes</code>,
+      <code>durationConfidence</code>, <code>loopIteration</code>, <code>loopCount</code>,
+      <code>currentLoopIteration</code>, <code>clipTriggerQuantization</code>. O Reliability Core
+      adiciona <code>stateVersion</code>, <code>connection</code>, <code>transport</code>,
+      <code>currentSongId</code>, <code>currentSectionId</code>, <code>pendingCommands</code>,
+      <code>mode</code> (<code>rehearsal</code> | <code>show</code>), <code>safety</code>.
+    </p>
+    <h3 id="2-5-reda-o-de-logs">2.5 Redação de logs</h3>
+    <p>
+      Logs do servidor e frames WS <code>log</code> redactam, por nome de campo ou padrão de valor:
+    </p>
+    <ul>
+      <li>
+        Nomes de campo casando
+        <code>/(?:token|password|secret|^key$|authToken|passwordHash|apiKey)/i</code>
+      </li>
+    </ul>
+    <p>viram <code>[REDACTED]</code>.</p>
+    <ul>
+      <li>
+        Caminhos absolutos Windows (<code>C:\…</code>), UNC (<code>\\…</code>), macOS
+        (<code>/Users/…</code>)
+      </li>
+    </ul>
+    <p>e Linux (<code>/home/…</code>) mantêm os últimos dois segmentos do caminho, normalizados.</p>
+    <ul>
+      <li>Valores <code>token=…</code> em query string viram <code>***</code>.</li>
+    </ul>
+    <p>Isso é garantido por <code>tests/release-contracts.test.mjs</code>.</p>
+    <p>---</p>
+    <h2 id="3-integra-o-osc">3. Integração OSC</h2>
+    <p>
+      O RC Setlist prefere o <strong>RC Bridge</strong> (fork do AbletonOSC distribuído dentro da
+      extensão e do kit) e faz fallback para um AbletonOSC padrão quando nenhum bridge responde o
+      probe.
+    </p>
+    <p>
+      | Camada | Porta UDP | Comportamento | | --------------------- | --------- |
+      ----------------------------------------------------------------------------------------------------------------------
+      | | RC Bridge | 11020 | Responde <code>/live/rcbridge/version</code> em cada socket cliente; a
+      porta escolhida é a porta efêmera de origem da requisição. | | AbletonOSC (fallback) | 11000 |
+      OSC padrão; respostas vão para a porta de origem. | | AbletonOSC (listen) | 11001 | OSC
+      padrão; cliente escuta aqui o estado não solicitado. |
+    </p>
+    <p>
+      O probe roda por 700 ms (RC Bridge responde em bem menos de 200 ms na prática). A versão do RC
+      Bridge é <code>/live/rcbridge/version</code> e responde com string no formato
+      <code>RC Bridge 1.0.0</code>.
+    </p>
+    <p>Endereços OSC que o cliente escuta ou envia:</p>
+    <ul>
+      <li>
+        <code>/live/song/get/tempo</code> e <code>/live/song/start_listen/tempo</code> — tempo
+        atual.
+      </li>
+      <li>
+        <code>/live/clip/get/cues</code> — lista de cues (<code>name</code>, <code>time</code>).
+      </li>
+      <li><code>/live/song/get/current_song_time</code> — posição atual do playhead.</li>
+      <li><code>/live/song/get/is_playing</code> — estado do transporte.</li>
+      <li><code>/live/clip/get/name</code> — renomear cue.</li>
+      <li>
+        <code>/live/song/set/tempo</code> — define tempo (quando o sync do SDK não está disponível).
+      </li>
+      <li><code>/live/clip/fire</code> — cue jump.</li>
+    </ul>
+    <p>---</p>
+    <h2 id="4-gram-tica-de-locators">4. Gramática de locators</h2>
+    <p>
+      Um nome de cue no Live segue a gramática abaixo. O parser (<a
+        href="../../src/core/locator-parser.ts"
+        ><code>src/core/locator-parser.ts</code></a
+      >) aceita a forma exata; qualquer coisa fora da tabela ou quebra em vários cues (separador
+      <code>&gt;</code>) ou é tratada como título puro.
+    </p>
+    <h3 id="4-1-m-sica-vs-se-o">4.1 Música vs seção</h3>
+    <ul>
+      <li><code>Título da música</code> — locator de música (só título).</li>
+      <li><code>&gt; Seção</code> — seção da música vista por último.</li>
+      <li><code>Música &gt; Seção</code> — seção de uma música explicitamente nomeada.</li>
+      <li>
+        <code>Música &gt;</code> (com <code>&gt;</code> no fim) — seção de automação pura da
+        <code>Música</code>
+      </li>
+    </ul>
+    <p>(sem título de exibição, mas as tags da seção disparam).</p>
+    <p>
+      O <code>&gt;</code> quebra fora de colchetes <code>[ ]</code>, então
+      <code>[jump A &gt; Chorus]</code> mantém o <code>&gt;</code> dentro da tag.
+    </p>
+    <h3 id="4-2-tabela-de-tags">4.2 Tabela de tags</h3>
+    <p>
+      Todas as tags são case-insensitive (<code>[LOOP]</code> ≡ <code>[loop]</code>). Espaço dentro
+      da tag é colapsado.
+    </p>
+    <p>
+      | Tag | Valor | Efeito | | ----------------------------- | ----------- |
+      --------------------------------------------------------------------------------------------------------------------------------------------------------------------
+      | | <code>[stop]</code> | nenhum | Para o transporte quando o cue é alcançado. | |
+      <code>[next]</code> | nenhum | Recua para o primeiro beat da próxima música quando alcançado
+      tarde. | | <code>[skip]</code> | nenhum | Pula esta música no <code>next</code>. | |
+      <code>[loop]</code> | nenhum | Arma loop infinito no cue (libera no próximo
+      <code>[loop]</code> / <code>[stop]</code> / <code>[next]</code>). | | <code>[loop Nx]</code> /
+      <code>[loop N]</code> | inteiro ≥ 1 | Arma loop contado no cue; N iterações antes de liberar.
+      | | <code>[bpm N]</code> | float | Declara o tempo neste cue; durações usam este valor em vez
+      do tempo corrente. | | <code>[click]</code> | nenhum | Liga o metrônomo quando alcançado. | |
+      <code>[click off]</code> / <code>[click-off]</code> | nenhum | Desliga o metrônomo quando
+      alcançado. | | <code>[hidden]</code> | nenhum | Esconde este cue do setlist visível (fica em
+      <code>hidden[]</code>). | | <code>[ignore]</code> | nenhum | Mesmo efeito de
+      <code>[hidden]</code>; forma preferida para cues novos. | | <code>[jump NOME]</code> | string
+      | Quando alcançado, faz handover para o marker chamado NOME. Resolução: seção da mesma música
+      → música → qualquer seção, case-insensitive; tags são ignoradas no alvo. | |
+      <code>_pre-roll</code> | legado | Tratado como <code>[hidden] + preRoll</code> para
+      compatibilidade com 0.x. |
+    </p>
+    <p>Exemplos, todos válidos:</p>
+    <ul>
+      <li><code>INTRO</code></li>
+      <li><code>&gt; VERSO</code></li>
+      <li><code>Música A &gt; Refrão [loop 4x]</code></li>
+      <li><code>[bpm 120] &gt; Refrão</code></li>
+      <li><code>Música A [bpm 120]</code></li>
+      <li><code>[jump A &gt; Refrão]</code></li>
+      <li><code>&gt; [stop]</code> (automação pura sob a música anterior)</li>
+      <li>
+        <code>Música A [hidden]</code> (fica em <code>hidden[]</code>, não em <code>songs[]</code>)
+      </li>
+      <li>
+        <code>Música A &gt; Ponte [jump Verso]</code> (handover para a seção &quot;Verso&quot;)
+      </li>
+    </ul>
+    <h3 id="4-3-o-que-n-o-est-na-gram-tica">4.3 O que não está na gramática</h3>
+    <ul>
+      <li>
+        <code>[qualquer-outra-coisa]</code> — ignorada, com o literal
+        <code>[qualquer-outra-coisa]</code>
+      </li>
+    </ul>
+    <p>removido do título de exibição.</p>
+    <ul>
+      <li>Colchetes aninhados: <code>[a [b]]</code> — não suportado; tratado como texto.</li>
+      <li>Espaço Unicode dentro de tags: não normalizado além de <code>trim()</code>.</li>
+      <li>Comentários dentro de um cue: não suportados; o cue é uma linha só no Live.</li>
+    </ul>
+    <p>---</p>
+    <h2 id="5-endpoints-http">5. Endpoints HTTP</h2>
+    <p>
+      URL base: <code>https://&lt;host&gt;:&lt;port&gt;/</code> (porta padrão <code>4444</code>, mas
+      o servidor agarra a primeira porta livre na faixa do hint <code>RC_SETLIST_HTTP_PORT</code>).
+      O token vai em <code>Authorization: Bearer &lt;token&gt;</code> ou em query string
+      <code>?token=&lt;token&gt;</code> (este último é o fluxo de pareamento por QR e é o único
+      lugar onde o token pode aparecer numa URL). Toda resposta carrega
+      <code>X-Content-Type-Options: nosniff</code>, <code>Referrer-Policy: no-referrer</code> e uma
+      CSP que proíbe scripts inline nas páginas de palco.
+    </p>
+    <p>
+      | Método | Caminho | Auth | Propósito | | ------ | ------------------------ | ---- |
+      ------------------------------------------------------------------------------------------------------------------------
+      | | GET | <code>/</code> | não | HTML de landing (redireciona para <code>/setlist</code>). | |
+      GET | <code>/setlist</code> | não | HTML do Stage Control. | | GET |
+      <code>/performance</code> | não | HTML do display de Performance. | | GET |
+      <code>/panel</code> | não | HTML do painel do Live (token injetado via
+      <code>window.INITIAL_TOKEN</code>). | | GET | <code>/health</code> | não |
+      <code>HEAD</code>/<code>GET</code> — retorna 200 sem corpo. | | GET |
+      <code>/static/&lt;caminho&gt;</code> | não | Serve <code>static/</code>; <code>..</code>,
+      encoded slashes e nomes Unicode são rejeitados. | | GET |
+      <code>/exports/&lt;arquivo&gt;.csv</code> | sim | Retorna um CSV gerado; nome precisa casar
+      <code>[A-Za-z0-9_.-]+\.csv</code>. | | GET | <code>/audio/&lt;arquivo&gt;</code> | sim |
+      Retorna um asset de áudio; allowlist por perfil. | | GET |
+      <code>/lyrics/&lt;música&gt;</code> | sim | Retorna a letra salva (<code>.lrc</code> ou
+      <code>.txt</code>). | | GET | <code>/state</code> | sim | Retorna o
+      <code>SetlistState</code> atual em JSON. | | GET | <code>/api/snapshot</code> | sim |
+      Diagnóstico interno; desabilitado em produção. | | POST | <code>/api/command</code> | sim |
+      Aceita uma única mensagem cliente (<code>src/server/client-message.ts</code>); responde
+      <code>command_ack</code> e depois <code>command_confirmed</code>. |
+    </p>
+    <p>
+      Caminhos <code>/api/*</code> exigem token de controller; <code>/health</code>,
+      <code>/static/*</code> e as páginas HTML não exigem. Qualquer caminho desconhecido retorna
+      <code>404 text/plain</code> sem vazar o header do servidor.
+    </p>
+    <p>---</p>
+    <h2 id="6-auxiliares-de-compatibilidade">6. Auxiliares de compatibilidade</h2>
+    <h3 id="6-1-vers-o-com-fonte-nica">6.1 Versão com fonte única</h3>
+    <p>
+      <code>version</code> em <code>package.json</code> é a única fonte da verdade.
+      <code>scripts/sync-version.mjs</code>:
+    </p>
+    <ul>
+      <li>
+        <code>npm run version:check</code> (alias
+        <code>node scripts/sync-version.mjs --check</code>)
+      </li>
+    </ul>
+    <p>
+      lê <code>package.json</code>, <code>manifest.json</code>, <code>docs/site-i18n.js</code> e os
+      arquivos do release-template. Sai com código 1 e diff se qualquer superfície divergir.
+    </p>
+    <ul>
+      <li><code>node scripts/sync-version.mjs --write</code> reescreve toda superfície</li>
+    </ul>
+    <p>
+      listada acima para casar com <code>package.json</code>. O pipeline de release chama
+      <code>--check</code> e falha se houver drift não corrigido.
+    </p>
+    <h3 id="6-2-migra-o-0-x-1-0">6.2 Migração 0.x → 1.0</h3>
+    <p>
+      <code>scripts/migrate-data.mjs</code> é o núcleo testável; o kit distribui wrappers em
+      PowerShell (Windows) e shell (macOS) ao redor dele. Comportamento:
+    </p>
+    <ul>
+      <li>Origem: <code>%LOCALAPPDATA%\Ableton\Extensions Data\ntworm.ableton-rc-setlist</code></li>
+    </ul>
+    <p>
+      (Windows) ou
+      <code>~/Library/Application Support/Ableton/Extensions Data/ntworm.ableton-rc-setlist</code>
+      (macOS). Os wrappers sondam os dois candidatos.
+    </p>
+    <ul>
+      <li>Destino: a raiz 1.0 (ver §1). Criada se não existir.</li>
+      <li>
+        Copia <code>profiles/</code>, <code>project-setlists/</code>, <code>token</code>,
+        <code>ui-locale</code>,
+      </li>
+    </ul>
+    <p>
+      <code>auto-start</code>, <code>certs/</code>. Nunca sobrescreve arquivo existente no destino.
+    </p>
+    <ul>
+      <li>Idempotente: uma segunda execução com a mesma origem é no-op.</li>
+    </ul>
+    <h3 id="6-3-paleta-de-cores-de-m-sica">6.3 Paleta de cores de música</h3>
+    <p>
+      Dezesseis cores em duas linhas; o servidor rejeita qualquer coisa fora da paleta para que um
+      cliente hostil não pinte uma música em uma cor reservada para estado. Definida uma vez em
+      <code>src/server/client-message.ts</code> e espelhada em
+      <code>static/setlist/marker-editor.js</code>; o teste
+      <code>tests/client-message.test.mjs</code> lê o arquivo do cliente e falha se os dois
+      divergirem.
+    </p>
+    <p>---</p>
+    <h2 id="7-pol-tica-de-semver">7. Política de SemVer</h2>
+    <p>
+      <code>1.0.x</code> é a linha pública em <code>https://github.com/ntworm/rc-setlist</code> a
+      partir da data do release. Correções de segurança são fornecidas apenas para o último
+      <code>1.x.y</code>; <code>1.x</code> mais antigos e a linha <code>0.x</code> não têm suporte.
+      A próxima mudança quebradora é <code>2.0.0</code>; <code>1.x</code> é apenas aditiva.
+    </p>
+    <p>
+      | Superfície | Backwards-compatible em 1.x? | | ------------------------- |
+      ------------------------------------------------------------------------ | | Protocolo
+      WebSocket | Sim — só campos aditivos; clientes antigos ignoram campos desconhecidos. | |
+      Layout de perfil em disco | Sim — <code>schemaVersion: 2</code> é somente leitura aqui. | |
+      Endpoints HTTP | Sim — aditivos; caminhos antigos mantêm a semântica. | | Gramática de
+      locators | Sim — só tags aditivas; tags existentes mantêm o significado. | | Endereços OSC |
+      Sim — aditivos; o probe mantém o timeout de 700 ms. |
+    </p>
+    <p>
+      Qualquer coisa que precise de mudança quebradora fica para <code>2.0.0</code>. As release
+      notes de <code>1.0.0</code> estão em
+      <a href="./NOTAS-DA-VERSAO-1.0.0.html"><code>NOTAS-DA-VERSAO-1.0.0.md</code></a
+      >.
+    </p>
+    <p>---</p>
+    <h2 id="8-como-mudan-as-neste-documento-s-o-testadas">
+      8. Como mudanças neste documento são testadas
+    </h2>
+    <p>
+      Cada afirmação aqui é um teste de regressão em
+      <a href="../../tests/release-contracts.test.mjs"
+        ><code>tests/release-contracts.test.mjs</code></a
+      >:
+    </p>
+    <p>
+      1. <strong>Migração em disco</strong> — para cada versão passada em
+      <code>tests/fixtures/storage/</code>, carrega via API pública do manager e assert perfis /
+      ordem / cores / notas / letras chegam idênticos. Fixture corrompida não pode destruir o
+      original. 2. <strong>Snapshot de protocolo</strong> — <code>getState()</code> sobre um setlist
+      curado é comparado a <code>tests/fixtures/state/snapshot.json</code>; divergência =
+      <code>task verify</code> falha. 3. <strong>Gramática de locators</strong> — a tabela de tags
+      em §4.2 é lida pelo teste (ou duplicada como JSON) e cada linha passa pelo
+      <code>parseLocator</code>. 4. <strong>Versão do bridge</strong> — a resposta
+      <code>/live/rcbridge/version</code> é fixada em <code>1.0.0</code>; drift nas fixtures do
+      bridge falha a suite. 5. <strong>Segurança HTTP / WS</strong> —
+      <code>tests/http-security.test.mjs</code> e <code>tests/ws-auth.test.mjs</code> exercitam as
+      allowlists de §5 e §2; o teste de release-contracts re-executa o subset security-crítico para
+      prevenir drift silencioso.
+    </p>
+    <p>
+      Mudar um contrato aqui sem mudar o teste, ou vice-versa, quebra
+      <code>npm run ci:public</code> e <code>npm run version:check</code>. Ambos rodam em CI antes
+      de qualquer release tagged.
+    </p>
+    <div class="source">Rendered from <code>docs\pt-BR\CONTRATOS.md</code> on 2026-09-17.</div>
+  </body>
+</html>

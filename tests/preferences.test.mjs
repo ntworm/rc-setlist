@@ -9,13 +9,16 @@ import * as preferences from '../src/preferences.ts';
 const { getAutoStart, setAutoStart } = preferences;
 
 test('Preferences: auto-start read/write with SDK context', () => {
-  const testStorageDir = path.join(tmpdir(), 'setlist-pref-test-' + Math.random().toString(36).substring(7));
+  const testStorageDir = path.join(
+    tmpdir(),
+    'setlist-pref-test-' + Math.random().toString(36).substring(7),
+  );
   fs.mkdirSync(testStorageDir, { recursive: true });
 
   setExtensionContext({
     environment: {
-      storageDirectory: testStorageDir
-    }
+      storageDirectory: testStorageDir,
+    },
   });
 
   try {
@@ -38,12 +41,13 @@ test('Preferences: auto-start read/write with SDK context', () => {
     assert.strictEqual(success, true);
     assert.strictEqual(getAutoStart(), false);
     assert.strictEqual(fs.readFileSync(expectedFilePath, 'utf8').trim(), 'false');
-
   } finally {
     clearExtensionContext();
     try {
       fs.rmSync(testStorageDir, { recursive: true, force: true });
-    } catch {}
+    } catch {
+      // swallow: nothing to do here on purpose
+    }
   }
 });
 
@@ -56,7 +60,10 @@ test('Preferences: auto-start resolves fallback dirs without double-append', () 
   const originalUserProfile = process.env.USERPROFILE;
 
   // We mock process.cwd and HOME/USERPROFILE to test fallback resolution
-  const tempFallbackDir = path.join(tmpdir(), 'setlist-fallback-' + Math.random().toString(36).substring(7));
+  const tempFallbackDir = path.join(
+    tmpdir(),
+    'setlist-fallback-' + Math.random().toString(36).substring(7),
+  );
   const setlistSubdir = path.join(tempFallbackDir, '.setlist');
   fs.mkdirSync(setlistSubdir, { recursive: true });
 
@@ -79,7 +86,6 @@ test('Preferences: auto-start resolves fallback dirs without double-append', () 
     const success = setAutoStart(false);
     assert.strictEqual(success, true);
     assert.strictEqual(fs.readFileSync(expectedFilePath, 'utf8').trim(), 'false');
-
   } finally {
     // Restore process.cwd and env vars
     process.cwd = originalCwd;
@@ -92,7 +98,9 @@ test('Preferences: auto-start resolves fallback dirs without double-append', () 
 
     try {
       fs.rmSync(tempFallbackDir, { recursive: true, force: true });
-    } catch {}
+    } catch {
+      // swallow: nothing to do here on purpose
+    }
   }
 });
 
@@ -100,7 +108,10 @@ test('Preferences: UI locale persists only supported languages in SDK storage', 
   assert.strictEqual(typeof preferences.getUiLocale, 'function', 'getUiLocale must be exported');
   assert.strictEqual(typeof preferences.setUiLocale, 'function', 'setUiLocale must be exported');
   const { getUiLocale, setUiLocale } = preferences;
-  const testStorageDir = path.join(tmpdir(), 'setlist-locale-test-' + Math.random().toString(36).substring(7));
+  const testStorageDir = path.join(
+    tmpdir(),
+    'setlist-locale-test-' + Math.random().toString(36).substring(7),
+  );
   fs.mkdirSync(testStorageDir, { recursive: true });
   setExtensionContext({
     environment: {
@@ -112,7 +123,10 @@ test('Preferences: UI locale persists only supported languages in SDK storage', 
     assert.strictEqual(getUiLocale(), 'en');
     assert.strictEqual(setUiLocale('pt-BR'), true);
     assert.strictEqual(getUiLocale(), 'pt-BR');
-    assert.strictEqual(fs.readFileSync(path.join(testStorageDir, 'ui-locale'), 'utf8').trim(), 'pt-BR');
+    assert.strictEqual(
+      fs.readFileSync(path.join(testStorageDir, 'ui-locale'), 'utf8').trim(),
+      'pt-BR',
+    );
 
     assert.strictEqual(setUiLocale('fr'), false);
     assert.strictEqual(getUiLocale(), 'pt-BR');
@@ -122,6 +136,8 @@ test('Preferences: UI locale persists only supported languages in SDK storage', 
     clearExtensionContext();
     try {
       fs.rmSync(testStorageDir, { recursive: true, force: true });
-    } catch {}
+    } catch {
+      // swallow: nothing to do here on purpose
+    }
   }
 });

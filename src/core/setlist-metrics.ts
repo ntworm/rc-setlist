@@ -79,11 +79,7 @@ export function spanSeconds(
   timeline: readonly TempoEvent[],
   fallbackBpm: number,
 ): number | null {
-  if (
-    !Number.isFinite(fromBeat)
-    || !Number.isFinite(toBeat)
-    || usableBpm(fallbackBpm) === null
-  ) {
+  if (!Number.isFinite(fromBeat) || !Number.isFinite(toBeat) || usableBpm(fallbackBpm) === null) {
     return null;
   }
   const span = toBeat - fromBeat;
@@ -109,6 +105,9 @@ export function spanSeconds(
   return seconds;
 }
 
+/**
+ * CalculateSetlistMetrics — implementation detail.
+ */
 export function calculateSetlistMetrics(
   songs: readonly TimedSong[],
   arrangementEndTime: number | null,
@@ -126,13 +125,13 @@ export function calculateSetlistMetrics(
 
   for (let index = 0; index < chronological.length; index++) {
     const song = chronological[index]!;
-    const nextStart = index < chronological.length - 1
-      ? chronological[index + 1]!.time
-      : arrangementEndTime;
+    const nextStart =
+      index < chronological.length - 1 ? chronological[index + 1]!.time : arrangementEndTime;
 
-    const exact = typeof nextStart === 'number'
-      ? spanSeconds(song.time, nextStart, timeline, fallbackBpm)
-      : null;
+    const exact =
+      typeof nextStart === 'number'
+        ? spanSeconds(song.time, nextStart, timeline, fallbackBpm)
+        : null;
 
     const displayed = exact === null ? null : Math.round(exact);
     songDurationSecondsByStart.set(song.time, displayed);

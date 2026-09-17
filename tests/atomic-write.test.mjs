@@ -31,21 +31,31 @@ function fakeAtomicDependencies({ tokens = [], platform = 'linux', directorySync
       platform,
       createToken: () => tokens.shift() ?? 'fallback-token',
       fileSystem: {
-        mkdir: async (directory) => { calls.push(['mkdir', directory]); },
+        mkdir: async (directory) => {
+          calls.push(['mkdir', directory]);
+        },
         open: async (file, flags) => {
           calls.push(['open', file, flags]);
           const isDirectory = flags === 'r';
           return {
-            writeFile: async (data) => { calls.push(['writeFile', file, data]); },
+            writeFile: async (data) => {
+              calls.push(['writeFile', file, data]);
+            },
             sync: async () => {
               calls.push(['sync', file]);
               if (isDirectory && directorySyncError) throw directorySyncError;
             },
-            close: async () => { calls.push(['close', file]); },
+            close: async () => {
+              calls.push(['close', file]);
+            },
           };
         },
-        rename: async (from, to) => { calls.push(['rename', from, to]); },
-        rm: async (file) => { calls.push(['rm', file]); },
+        rename: async (from, to) => {
+          calls.push(['rename', from, to]);
+        },
+        rm: async (file) => {
+          calls.push(['rm', file]);
+        },
       },
     },
   };
@@ -75,7 +85,8 @@ test('atomic replacement syncs the containing directory after rename', async () 
 
   const renameIndex = calls.findIndex(([operation]) => operation === 'rename');
   const directoryOpenIndex = calls.findIndex(
-    ([operation, file, flags]) => operation === 'open' && file === path.dirname(target) && flags === 'r',
+    ([operation, file, flags]) =>
+      operation === 'open' && file === path.dirname(target) && flags === 'r',
   );
   const directorySyncIndex = calls.findIndex(
     ([operation, file]) => operation === 'sync' && file === path.dirname(target),
@@ -93,10 +104,17 @@ test('Windows permits only documented unsupported directory-sync failures', asyn
       platform: 'win32',
       directorySyncError: error,
     });
-    await atomicWriteFileWithDependencies(path.resolve('show', `${code}.lrc`), 'lyrics', dependencies);
+    await atomicWriteFileWithDependencies(
+      path.resolve('show', `${code}.lrc`),
+      'lyrics',
+      dependencies,
+    );
   }
 
-  for (const [platform, code] of [['win32', 'EIO'], ['linux', 'EPERM']]) {
+  for (const [platform, code] of [
+    ['win32', 'EIO'],
+    ['linux', 'EPERM'],
+  ]) {
     const error = Object.assign(new Error(`directory sync ${code}`), { code });
     const { dependencies } = fakeAtomicDependencies({
       tokens: [`${platform}-${code}`],
@@ -104,7 +122,11 @@ test('Windows permits only documented unsupported directory-sync failures', asyn
       directorySyncError: error,
     });
     await assert.rejects(
-      atomicWriteFileWithDependencies(path.resolve('show', `${platform}-${code}.lrc`), 'lyrics', dependencies),
+      atomicWriteFileWithDependencies(
+        path.resolve('show', `${platform}-${code}.lrc`),
+        'lyrics',
+        dependencies,
+      ),
       error,
     );
   }

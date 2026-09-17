@@ -1,9 +1,9 @@
 ---
 name: Feature request
 about: Propose an RC SETLIST improvement
-title: "[feature] "
+title: '[feature] '
 labels: enhancement
-assignees: ""
+assignees: ''
 ---
 
 ## Use case

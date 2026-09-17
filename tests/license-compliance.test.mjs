@@ -1,4 +1,4 @@
-import assert from 'node:assert/strict';
+﻿import assert from 'node:assert/strict';
 import { existsSync, readFileSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import { test } from 'node:test';
@@ -11,7 +11,7 @@ function readRequired(path) {
   return readFileSync(url, 'utf8');
 }
 
-test('PolyForm license keeps its canonical sections and Ableton RC Setlist notice', () => {
+test('PolyForm license keeps its canonical sections and RC Setlist notice', () => {
   const license = readRequired('LICENSE');
   const headings = [
     'Acceptance',
@@ -41,7 +41,7 @@ test('PolyForm license keeps its canonical sections and Ableton RC Setlist notic
 test('project notice states copyright, source-available license and trademark independence', () => {
   const notice = readRequired('NOTICE');
   // The notice carries no version on purpose: a version written by hand goes stale.
-  assert.match(notice, /^Ableton RC Setlist\n/);
+  assert.match(notice, /^RC Setlist\n/);
   assert.doesNotMatch(notice, /Setlist \d+\.\d+\.\d+/);
   assert.match(notice, /Copyright © 2026 Gabriel Worm/);
   assert.match(notice, /PolyForm Noncommercial 1\.0\.0/);
@@ -72,9 +72,13 @@ test('third-party notice generation normalizes dependency license line endings',
 });
 
 test('checked-in third-party notices match the generator output', () => {
-  const result = spawnSync(process.execPath, ['scripts/generate-third-party-notices.mjs', '--check'], {
-    cwd: rootUrl,
-    encoding: 'utf8',
-  });
+  const result = spawnSync(
+    process.execPath,
+    ['scripts/generate-third-party-notices.mjs', '--check'],
+    {
+      cwd: rootUrl,
+      encoding: 'utf8',
+    },
+  );
   assert.equal(result.status, 0, `${result.stdout}\n${result.stderr}`);
 });

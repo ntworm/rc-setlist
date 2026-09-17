@@ -1,0 +1,183 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>NOTAS-DA-VERSAO-0.7.0 — RC Setlist</title>
+    <style>
+      body {
+        font:
+          16px/1.55 system-ui,
+          sans-serif;
+        max-width: 920px;
+        margin: 2rem auto;
+        padding: 0 1rem;
+        color: #f2f2f2;
+        background: #0e0e0e;
+      }
+      h1,
+      h2,
+      h3,
+      h4 {
+        line-height: 1.25;
+      }
+      h1 {
+        font-size: 2.2rem;
+        margin-top: 0;
+      }
+      h2 {
+        margin-top: 2rem;
+        padding-top: 1rem;
+        border-top: 1px solid #333;
+      }
+      h3 {
+        margin-top: 1.5rem;
+      }
+      code {
+        font:
+          0.92em ui-monospace,
+          Consolas,
+          monospace;
+        background: #1a1a1a;
+        padding: 0.1em 0.35em;
+        border-radius: 0;
+      }
+      pre {
+        background: #1a1a1a;
+        padding: 0.8rem 1rem;
+        overflow-x: auto;
+        border: 1px solid #333;
+      }
+      pre code {
+        background: transparent;
+        padding: 0;
+      }
+      a {
+        color: #ffa133;
+      }
+      ul,
+      ol {
+        padding-left: 1.2em;
+      }
+      blockquote {
+        border-left: 4px solid #ffa133;
+        margin: 1em 0;
+        padding: 0.5em 1em;
+        color: #a0a0a0;
+      }
+      .crumbs {
+        font-size: 0.85em;
+        color: #a0a0a0;
+        margin-bottom: 1rem;
+      }
+      .crumbs a {
+        color: #a0a0a0;
+        text-decoration: none;
+      }
+      .crumbs a:hover {
+        color: #f2f2f2;
+      }
+      .source {
+        font-size: 0.78em;
+        color: #a0a0a0;
+        margin-top: 2rem;
+        border-top: 1px solid #333;
+        padding-top: 0.5rem;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="crumbs">
+      <a href="https://ntworm.github.io/rc-setlist/">RC Setlist</a> · <a href="./">Docs</a>
+    </div>
+    <h1 id="notas-da-vers-o-0-7-0">Notas da Versão 0.7.0</h1>
+    <p>
+      O Ableton RC Setlist 0.7.0 aposenta a instalação manual da ponte, adiciona um marcador que
+      entrega a reprodução a um alvo nomeado e coloca uma linha de notas em cada música.
+    </p>
+    <h2 id="o-que-h-de-novo">O que há de novo</h2>
+    <ul>
+      <li><strong>O RC Bridge vem dentro da extensão.</strong> Até agora, o Control Surface com</li>
+    </ul>
+    <p>
+      quem a extensão conversa era um download à parte — o AbletonOSC, buscado e instalado à mão na
+      User Library do Live. Agora ele vem como RC Bridge, um fork do AbletonOSC (licença MIT), e o
+      kit de instalação copia para você: <code>Install-RC-Bridge.cmd</code> no Windows,
+      <code>Install RC Bridge.command</code> no macOS. Selecionar <strong>RCBridge</strong> em
+      Settings › Link, Tempo &amp; MIDI › Control Surface continua sendo o seu passo, porque o Live
+      não oferece como fazer isso por você — e a cópia também não pode acontecer de dentro do Live:
+      o ExtensionHost restringe o sistema de arquivos às pastas da própria extensão, então o painel
+      informa qual script está em uso e mostra o passo restante em vez de fingir que instala. O fork
+      também é o que torna possível ter duas extensões na mesma máquina. O AbletonOSC manda toda
+      resposta e atualização de listener para uma porta fixa, então só um cliente conseguia ouvir —
+      RC Surface e RC Setlist no mesmo Live não podiam funcionar juntos. O RC Bridge escuta na
+      própria porta (11020, para um AbletonOSC comum seguir funcionando ao lado), responde para o
+      socket que perguntou e publica as atualizações de cada listener para todos os assinantes, com
+      uma concessão de 60 segundos que esquece clientes que foram embora. A extensão sonda o RC
+      Bridge primeiro e recorre a um AbletonOSC comum quando ele não está presente; a linha OSC do
+      painel diz com qual deles está falando (<code>via RC Bridge 1.0.0 na porta 11020</code>). O
+      fork também responde <code>last_event_time</code>, que o upstream nunca respondeu, então a
+      duração total do show não precisa mais da ponte MCP.
+    </p>
+    <ul>
+      <li>**<code>[jump NAME]</code> — um marcador que entrega a reprodução a um alvo</li>
+    </ul>
+    <p>
+      <em>nomeado</em>.** Uma seção da mesma música, uma música, ou a forma
+      <code>Song &gt; Section</code>. Os nomes casam com as tags removidas e ignorando maiúsculas;
+      um nome sozinho resolve primeiro nas seções desta música, depois nos títulos das músicas,
+      depois em todas as seções na ordem do arranjo. A passagem é a mesma imediata que
+      <code>[next]</code> e <code>[skip]</code> usam — sem esperar o próximo compasso — e o editor
+      de marcador e o cartão a mostram. Um nome que não casa com nada não faz nada, de propósito.
+    </p>
+    <ul>
+      <li><strong>Uma linha de notas por música.</strong> Tom, afinação, quem conta — uma linha</li>
+    </ul>
+    <p>
+      para o palco, editada no painel da música ao lado da cor, mostrada sob o título no cartão e no
+      display de performance. Fica guardada com a música no song book, então acompanha renomeações e
+      movimentações e nunca toca no projeto do Live.
+    </p>
+    <h2 id="corre-es">Correções</h2>
+    <ul>
+      <li><strong>Erros de operação sobrevivem à sanitização.</strong> O barramento de comandos</li>
+    </ul>
+    <p>
+      agora anexa mensagens voltadas ao operador (<code>OperatorError</code> e
+      <code>ProfileError</code>) a <code>command_status.error</code>, enquanto exceções internas —
+      caminhos de arquivo crus incluídos — continuam estritamente sanitizadas e chegam como um
+      <code>execution_failed</code> genérico.
+    </p>
+    <ul>
+      <li>
+        <strong>O cache do song book segue o perfil ativo.</strong> Cores e notas são cacheadas
+      </li>
+    </ul>
+    <p>
+      por perfil e o cache é descartado na troca de perfil, então as edições de um perfil não vazam
+      para outro.
+    </p>
+    <ul>
+      <li>
+        **O parser de localizadores parou de dividir <code>Song &gt; Section</code> num
+        <code>&gt;</code> que
+      </li>
+    </ul>
+    <p>está dentro de uma tag.**</p>
+    <p>
+      <em
+        >Para detalhes completos sobre a instalação, consulte o
+        <a href="INSTALL.html">Guia de Instalação</a>.</em
+      >
+    </p>
+    <p>
+      <em
+        >Read these notes in English:
+        <a href="../RELEASE-NOTES-0.7.0.md">RELEASE-NOTES-0.7.0.md</a>.</em
+      >
+    </p>
+    <div class="source">
+      Rendered from <code>docs\pt-BR\NOTAS-DA-VERSAO-0.7.0.md</code> on 2026-09-17.
+    </div>
+  </body>
+</html>

@@ -1,0 +1,278 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>TROUBLESHOOTING — RC Setlist</title>
+    <style>
+      body {
+        font:
+          16px/1.55 system-ui,
+          sans-serif;
+        max-width: 920px;
+        margin: 2rem auto;
+        padding: 0 1rem;
+        color: #f2f2f2;
+        background: #0e0e0e;
+      }
+      h1,
+      h2,
+      h3,
+      h4 {
+        line-height: 1.25;
+      }
+      h1 {
+        font-size: 2.2rem;
+        margin-top: 0;
+      }
+      h2 {
+        margin-top: 2rem;
+        padding-top: 1rem;
+        border-top: 1px solid #333;
+      }
+      h3 {
+        margin-top: 1.5rem;
+      }
+      code {
+        font:
+          0.92em ui-monospace,
+          Consolas,
+          monospace;
+        background: #1a1a1a;
+        padding: 0.1em 0.35em;
+        border-radius: 0;
+      }
+      pre {
+        background: #1a1a1a;
+        padding: 0.8rem 1rem;
+        overflow-x: auto;
+        border: 1px solid #333;
+      }
+      pre code {
+        background: transparent;
+        padding: 0;
+      }
+      a {
+        color: #ffa133;
+      }
+      ul,
+      ol {
+        padding-left: 1.2em;
+      }
+      blockquote {
+        border-left: 4px solid #ffa133;
+        margin: 1em 0;
+        padding: 0.5em 1em;
+        color: #a0a0a0;
+      }
+      .crumbs {
+        font-size: 0.85em;
+        color: #a0a0a0;
+        margin-bottom: 1rem;
+      }
+      .crumbs a {
+        color: #a0a0a0;
+        text-decoration: none;
+      }
+      .crumbs a:hover {
+        color: #f2f2f2;
+      }
+      .source {
+        font-size: 0.78em;
+        color: #a0a0a0;
+        margin-top: 2rem;
+        border-top: 1px solid #333;
+        padding-top: 0.5rem;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="crumbs">
+      <a href="https://ntworm.github.io/rc-setlist/">RC Setlist</a> · <a href="./">Docs</a>
+    </div>
+    <p>﻿# Solução de problemas</p>
+    <h2 id="o-rc-setlist-n-o-aparece-no-live">O RC Setlist não aparece no Live</h2>
+    <ul>
+      <li>Confirme o Ableton Live 12.4.5+ Suite (Beta).</li>
+      <li>Abra novamente o <code>.ablx</code> e confirme a instalação.</li>
+      <li>Reinicie o Live e procure em <strong>Extensions &gt; RC Setlist</strong>.</li>
+    </ul>
+    <h2 id="o-rcbridge-n-o-aparece-na-lista-de-control-surface">
+      O RCBridge não aparece na lista de Control Surface
+    </h2>
+    <ul>
+      <li>Instale em <code>User Library/Remote Scripts/RCBridge</code>, e não na pasta oculta</li>
+    </ul>
+    <p>
+      <code>User Remote Scripts</code> das preferências do Live. O
+      <code>Install-RC-Bridge.cmd</code> / <code>Install RC Bridge.command</code> do kit coloca no
+      lugar certo.
+    </p>
+    <ul>
+      <li>Confirme que <code>RCBridge/__init__.py</code> existe diretamente nessa pasta, sem</li>
+    </ul>
+    <p>outro diretório <code>RCBridge</code> aninhado.</p>
+    <ul>
+      <li>Feche e abra o Live de novo depois de copiar; o Live lê a pasta ao iniciar.</li>
+      <li>Selecione RCBridge como Control Surface; Input e Output podem permanecer</li>
+    </ul>
+    <p>como <code>None</code>.</p>
+    <ul>
+      <li>A linha OSC do painel diz com qual script a extensão está falando de fato</li>
+    </ul>
+    <p>
+      (<code>via RC Bridge 1.0.0 na porta 11020</code>, ou
+      <code>via AbletonOSC na porta 11000</code>), e mostra os passos de instalação quando não é o
+      RC Bridge que responde.
+    </p>
+    <h2 id="o-painel-inicia-mas-os-controles-osc-ou-o-playhead-n-o-respondem">
+      O painel inicia, mas os controles OSC ou o playhead não respondem
+    </h2>
+    <ul>
+      <li>Escolha <strong>Verificar OSC</strong> no painel do RC Setlist.</li>
+      <li>
+        <code>Live conectado</code> significa que as respostas do remote script estão chegando
+      </li>
+    </ul>
+    <p>ao RC Setlist.</p>
+    <ul>
+      <li><code>Aguardando o AbletonOSC</code> significa que o servidor local está rodando, mas</li>
+    </ul>
+    <p>
+      ainda não recebeu resposta. Confira novamente a pasta exata acima, a seleção de Control
+      Surface e reinicie o Live.
+    </p>
+    <ul>
+      <li><code>Conexão com AbletonOSC interrompida</code> significa que havia respostas e elas</li>
+    </ul>
+    <p>pararam.</p>
+    <ul>
+      <li>A extensão decide com qual script falar quando o servidor inicia. Se você</li>
+    </ul>
+    <p>
+      instalou e selecionou o RC Bridge com o servidor já rodando, aperte
+      <strong>Reiniciar</strong> no painel.
+    </p>
+    <ul>
+      <li>Play/Stop e o playhead em movimento são os testes OSC ponta a ponta mais claros.</li>
+    </ul>
+    <h2 id="nenhuma-m-sica-aparece">Nenhuma música aparece</h2>
+    <ul>
+      <li>Confirme que o Live Set tem localizadores no Arrangement.</li>
+      <li>Comece o nome com uma música; use <code>Música &gt; Seção</code> nas seções.</li>
+      <li>Reinicie pelo painel depois de mudar a configuração da integração.</li>
+    </ul>
+    <h2 id="a-p-gina-do-navegador-n-o-abre">A página do navegador não abre</h2>
+    <ul>
+      <li>
+        Na primeira conexão, <code>ERR_CERT_AUTHORITY_INVALID</code> é o aviso esperado para o
+      </li>
+    </ul>
+    <p>
+      certificado local autoassinado do RC Setlist. Continue somente se o endereço for exatamente o
+      IP mostrado no painel do Live e a rede local for confiável. Cada navegador/aparelho pode
+      exigir isso uma vez.
+    </p>
+    <ul>
+      <li>Abra <code>https://localhost:4444/health</code> no host.</li>
+      <li>Confirme que o painel informa que o servidor está em execução.</li>
+      <li>Libere TCP <code>4444</code> somente no perfil de rede privada.</li>
+      <li>Coloque host e controle na mesma LAN que não seja uma rede de convidados.</li>
+      <li>Aceite o certificado autoassinado somente para esse endereço exato do painel.</li>
+    </ul>
+    <h2 id="os-controles-est-o-somente-para-leitura">Os controles estão somente para leitura</h2>
+    <p>
+      Abra a URL de controle ou leia o QR code de controle no painel. O token é obrigatório para
+      transporte e escrita. Não o compartilhe publicamente.
+    </p>
+    <p>
+      Se músicas, letras e timecode atualizam, mas transporte e navegação falham, confirme que você
+      usa 0.3.0 ou superior. Versões anteriores podiam falhar ao codificar comandos OSC no runtime
+      embutido do Ableton.
+    </p>
+    <h2 id="o-primeiro-in-cio-mostra-erro-de-persist-ncia-do-perfil">
+      O primeiro início mostra erro de persistência do perfil
+    </h2>
+    <p>
+      Instale 0.3.0 ou superior. Versões anteriores podiam gravar o perfil inicial e falhar logo
+      depois por usar uma API indisponível. Se o erro continuar, capture um trecho sanitizado de
+      <code>ExtensionHost.txt</code> sem apagar os dados do perfil.
+    </p>
+    <h2 id="as-letras-n-o-correspondem-m-sica">As letras não correspondem à música</h2>
+    <ul>
+      <li>Confirme o perfil ativo.</li>
+      <li>Confirme que a letra está associada ao título limpo da música.</li>
+      <li>Remova tags de localizador do nome usado na letra.</li>
+      <li>Salve novamente no editor interno e atualize o estado.</li>
+    </ul>
+    <p>
+      Ao atualizar de uma versão antiga chamada <strong>RC SETLIST</strong> ou
+      <strong>Ableton Setlist Bridge</strong>, reinicie o servidor uma vez. O RC Setlist importa
+      letras e ordem ausentes das pastas conhecidas sem apagar pastas antigas ou substituir arquivos
+      já existentes no perfil novo.
+    </p>
+    <p>
+      Ao atualizar do <strong>Ableton RC Setlist</strong> 0.x (0.4.x–0.7.0), rode
+      <code>Migrate-RC-Setlist-Data.cmd</code> (Windows) ou
+      <code>Migrate RC Setlist Data.command</code> (macOS) do kit
+      <strong>uma vez, antes de abrir o Live</strong> com a 1.0. Ele copia perfis, project-setlists,
+      token e preferências para a pasta nova sem mexer na antiga. No Live, remova a entrada antiga
+      <strong>Ableton RC Setlist</strong> em <strong>Configurações &gt; Extensões</strong> para que
+      as duas extensões não coexistam na mesma máquina. Pular a migração ou deixar as duas
+      instaladas faz os perfis antigos ficarem invisíveis para a extensão nova.
+    </p>
+    <h2 id="outra-extens-o-usa-a-porta-osc-11001">Outra extensão usa a porta OSC 11001</h2>
+    <p>
+      Isso só acontece com um AbletonOSC comum. Ele envia todas as respostas para a porta UDP fixa
+      <code>11001</code>; quando outra extensão RC já ocupa essa porta, o RC Setlist usa a porta
+      11101 como fallback, ainda pode enviar comandos, mas não recebe as respostas do AbletonOSC. O
+      painel compacto mostra <code>Live ativo · porta de retorno OSC ocupada</code>.
+    </p>
+    <p>
+      A solução é o RC Bridge: ele responde na porta de quem perguntou, então cada extensão RC
+      recebe as suas respostas e nada é compartilhado. Instale (veja
+      <a href="INSTALL.html">INSTALL</a>), selecione como Control Surface e reinicie o servidor.
+    </p>
+    <p>
+      Quando a ponte MCP local também está disponível, o <strong>fallback MCP</strong> mantém o
+      playhead, o estado de reprodução e o tempo sincronizados e fornece a duração total. O RC
+      Setlist também conserva localmente a quantização pedida pelo operador; ao escolher
+      <code>Nenhuma</code>, os saltos de seção ficam imediatos mesmo com a porta de retorno OSC
+      ocupada. <strong>Verificar OSC</strong> continua mostrando o conflito de porta corretamente,
+      sem chamar o fallback de conexão OSC nativa.
+    </p>
+    <p>
+      Se a ponte MCP também estiver ausente, pare a outra extensão RC, reinicie o RC Setlist e use
+      <strong>Verificar OSC</strong> novamente. Não tente forçar dois sockets a compartilhar a porta
+      <code>11001</code> no Windows; apenas um deles receberá cada resposta. Para o diagnóstico OSC
+      nativo, mantenha o início automático ligado em apenas uma extensão RC que dependa de OSC.
+    </p>
+    <h2 id="aparecem-setlists-de-outro-live-set">Aparecem setlists de outro Live Set</h2>
+    <p>
+      As versões atuais guardam vários setlists somente dentro do escopo do Live Set atual. A lista
+      global de perfis de versões antigas não aparece no projeto aberto. Se o projeto foi trocado
+      enquanto uma versão antiga estava rodando, reinicie o servidor do RC Setlist depois de abrir o
+      <code>.als</code> correto.
+    </p>
+    <p>
+      Os dados globais antigos continuam preservados como backup. Somente a antiga pasta por projeto
+      que corresponde exatamente ao Live Set salvo atual é importada automaticamente.
+    </p>
+    <p>
+      Se os metadados do projeto chegarem depois da inicialização, o escopo temporário do projeto é
+      promovido ao escopo do <code>.als</code> salvo. Perfis criados durante a espera, inclusive
+      <code>Second Setlist</code>, são copiados sem apagar a origem temporária. Em um Set não
+      identificado, letras ausentes só são recuperadas quando uma única ordem personalizada antiga
+      corresponde à lista completa de músicas atual; resultados ambíguos permanecem intactos.
+    </p>
+    <h2 id="o-que-incluir-em-um-bug-report">O que incluir em um bug report</h2>
+    <p>
+      Inclua sistema operacional, versão/edição do Live, versão do RC Setlist, navegador, passos
+      exatos e logs sanitizados. Remova tokens, certificados, caminhos locais e conteúdo real do
+      setlist ou das letras. Consulte <a href="../../SUPPORT.md">SUPPORT.md</a>.
+    </p>
+    <div class="source">
+      Rendered from <code>docs\pt-BR\TROUBLESHOOTING.md</code> on 2026-09-17.
+    </div>
+  </body>
+</html>

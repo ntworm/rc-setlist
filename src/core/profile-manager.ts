@@ -1,4 +1,4 @@
-import * as path from 'node:path';
+﻿import * as path from 'node:path';
 import * as fs from 'node:fs/promises';
 import { writeJsonAtomic as defaultWriteJsonAtomic } from './profile/storage.js';
 import { moveToTrash as defaultMoveToTrash } from './profile/trash.js';
@@ -7,29 +7,27 @@ import { createInitialRegistry } from './profile/registry.js';
 const DEFAULT_PROFILE_NAME = 'Main Setlist';
 const LEGACY_DEFAULT_PROFILE_NAME = 'Setlist Principal';
 
-export type ProfileErrorCode =
-  | 'invalid_profile'
-  | 'duplicate_profile_name'
-  | 'profile_io_error'
-  | 'future_schema';
-
-export class ProfileError extends Error {
-  constructor(public readonly code: ProfileErrorCode, message: string, options?: ErrorOptions) {
-    super(message, options);
-    this.name = 'ProfileError';
-  }
-}
-
-export interface ProfileSummary {
-  id: string;
-  name: string;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface DeletedProfileSummary extends ProfileSummary {
-  deletedAt: string;
-}
+// The shared types and pure utilities live in their own modules so the
+// helpers below (and profile-migration.ts) do not have to depend on this
+// file. The named exports are re-exported here for backward compatibility with
+// callers that still import them from profile-manager.
+import {
+  isValidISODate,
+  isValidUUID,
+  normalizeProfileName,
+  profileNameKey,
+} from './profile/util.js';
+export {
+  isDefaultProfileName,
+  isValidUUID,
+  normalizeProfileName,
+  profileNameKey,
+} from './profile/util.js';
+import { ProfileError } from './profile/types.js';
+import type { DeletedProfileSummary, ProfilePaths, ProfileSummary } from './profile/types.js';
+import { isPlainObject, parseJson } from '../util/json.js';
+export { ProfileError } from './profile/types.js';
+export type { ProfileSummary, DeletedProfileSummary, ProfilePaths } from './profile/types.js';
 
 interface ProfileMetadata extends ProfileSummary {
   legacySource?: string;
@@ -49,17 +47,6 @@ interface ParsedRegistry {
   upgraded: boolean;
 }
 
-export interface ProfilePaths {
-  root: string;
-  metadata: string;
-  lyrics: string;
-  customOrder: string;
-  /** Song identities and the side data keyed to them. See song-book.ts. */
-  songBook: string;
-  exports: string;
-  audio: string;
-}
-
 export interface ProfileManagerOptions {
   randomUUID?: () => string;
   now?: () => string;
@@ -70,36 +57,11 @@ export interface ProfileManagerInitializeOptions {
   migrateLegacy?: boolean;
 }
 
-export function normalizeProfileName(input: unknown): string {
-  if (typeof input !== 'string') throw new ProfileError('invalid_profile', 'Profile name must be text.');
-  const normalized = input.normalize('NFKC').trim();
-  if (normalized.length < 1 || normalized.length > 80 || /[\u0000-\u001f\u007f-\u009f]/u.test(normalized)) {
-    throw new ProfileError('invalid_profile', 'Profile name must contain 1 to 80 characters without control characters.');
-  }
-  return normalized;
-}
-
 /** Whether `name` is the default profile's, in either the current or the legacy spelling. */
-export function isDefaultProfileName(name: string): boolean {
-  const key = profileNameKey(name);
-  return key === profileNameKey(DEFAULT_PROFILE_NAME) || key === profileNameKey(LEGACY_DEFAULT_PROFILE_NAME);
-}
 
-export function profileNameKey(name: string): string {
-  return normalizeProfileName(name).toLocaleLowerCase('und');
-}
-
-export function isValidUUID(id: unknown): id is string {
-  return typeof id === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id);
-}
-
-export function isValidISODate(date: unknown): date is string {
-  if (typeof date !== 'string') return false;
-  if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?Z$/i.test(date)) return false;
-  const parsed = Date.parse(date);
-  return !isNaN(parsed);
-}
-
+/**
+ * SafeRandomUUID — implementation detail.
+ */
 export function safeRandomUUID(): string {
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
     const r = (Math.random() * 16) | 0;
@@ -108,6 +70,9 @@ export function safeRandomUUID(): string {
   });
 }
 
+/**
+ * Writes the json atomic.
+ */
 export async function writeJsonAtomic(filePath: string, value: unknown): Promise<void> {
   const directory = path.dirname(filePath);
   const tempPath = `${filePath}.${safeRandomUUID()}.tmp`;
@@ -133,23 +98,34 @@ export async function writeJsonAtomic(filePath: string, value: unknown): Promise
 
 function validateProfileEntries(input: unknown, deleted: false): ProfileSummary[];
 function validateProfileEntries(input: unknown, deleted: true): DeletedProfileSummary[];
-function validateProfileEntries(input: unknown, deleted: boolean): Array<ProfileSummary | DeletedProfileSummary> {
+function validateProfileEntries(
+  input: unknown,
+  deleted: boolean,
+): Array<ProfileSummary | DeletedProfileSummary> {
   if (!Array.isArray(input)) throw new Error('Invalid profiles array');
   const profiles: ProfileSummary[] = [];
   const nameKeys = new Set<string>();
 
-  for (const p of input) {
+  for (const raw of input) {
+    if (!isPlainObject(raw)) throw new Error('Invalid profile entry');
     if (
-      !p || typeof p !== 'object' ||
-      typeof p.id !== 'string' || !isValidUUID(p.id) ||
-      typeof p.name !== 'string' ||
-      typeof p.createdAt !== 'string' || !isValidISODate(p.createdAt) ||
-      typeof p.updatedAt !== 'string' || !isValidISODate(p.updatedAt) ||
-      (deleted && (typeof p.deletedAt !== 'string' || !isValidISODate(p.deletedAt)))
+      typeof raw.id !== 'string' ||
+      !isValidUUID(raw.id) ||
+      typeof raw.name !== 'string' ||
+      typeof raw.createdAt !== 'string' ||
+      !isValidISODate(raw.createdAt) ||
+      typeof raw.updatedAt !== 'string' ||
+      !isValidISODate(raw.updatedAt) ||
+      (deleted && (typeof raw.deletedAt !== 'string' || !isValidISODate(raw.deletedAt)))
     ) {
       throw new Error('Invalid profile entry');
     }
-    const normalized = normalizeProfileName(p.name);
+    const idStr: string = raw.id;
+    const nameStr: string = raw.name;
+    const createdAtStr: string = raw.createdAt;
+    const updatedAtStr: string = raw.updatedAt;
+
+    const normalized = normalizeProfileName(nameStr);
     if (!deleted) {
       const key = profileNameKey(normalized);
       if (nameKeys.has(key)) {
@@ -159,13 +135,13 @@ function validateProfileEntries(input: unknown, deleted: boolean): Array<Profile
     }
 
     const profile: ProfileSummary | DeletedProfileSummary = {
-      id: p.id,
+      id: idStr,
       name: normalized,
-      createdAt: p.createdAt,
-      updatedAt: p.updatedAt
+      createdAt: createdAtStr,
+      updatedAt: updatedAtStr,
     };
     if (deleted) {
-      (profile as DeletedProfileSummary).deletedAt = p.deletedAt;
+      (profile as DeletedProfileSummary).deletedAt = raw.deletedAt as string;
     }
     profiles.push(profile);
   }
@@ -177,9 +153,8 @@ function validateRegistry(parsed: Record<string, unknown>): ParsedRegistry {
     throw new Error('Invalid schema version');
   }
   const profiles = validateProfileEntries(parsed.profiles, false);
-  const deletedProfiles = parsed.schemaVersion === 2
-    ? validateProfileEntries(parsed.deletedProfiles, true)
-    : [];
+  const deletedProfiles =
+    parsed.schemaVersion === 2 ? validateProfileEntries(parsed.deletedProfiles, true) : [];
   const allIds = new Set<string>();
   for (const profile of [...profiles, ...deletedProfiles]) {
     if (allIds.has(profile.id)) throw new Error(`Duplicate profile ID: ${profile.id}`);
@@ -189,7 +164,12 @@ function validateRegistry(parsed: Record<string, unknown>): ParsedRegistry {
   const legacySources: Record<string, string> = {};
   if (parsed.legacySources && typeof parsed.legacySources === 'object') {
     for (const [key, value] of Object.entries(parsed.legacySources)) {
-      if (typeof key === 'string' && key.trim().length > 0 && typeof value === 'string' && isValidUUID(value)) {
+      if (
+        typeof key === 'string' &&
+        key.trim().length > 0 &&
+        typeof value === 'string' &&
+        isValidUUID(value)
+      ) {
         if (allIds.has(value)) {
           legacySources[key] = value;
         }
@@ -197,7 +177,8 @@ function validateRegistry(parsed: Record<string, unknown>): ParsedRegistry {
     }
   }
 
-  const migrationVersion = typeof parsed.migrationVersion === 'number' ? parsed.migrationVersion : 0;
+  const migrationVersion =
+    typeof parsed.migrationVersion === 'number' ? parsed.migrationVersion : 0;
   const activeProfileId = typeof parsed.activeProfileId === 'string' ? parsed.activeProfileId : '';
 
   return {
@@ -207,12 +188,15 @@ function validateRegistry(parsed: Record<string, unknown>): ParsedRegistry {
       profiles,
       deletedProfiles,
       legacySources,
-      migrationVersion
+      migrationVersion,
     },
-    upgraded: parsed.schemaVersion === 1
+    upgraded: parsed.schemaVersion === 1,
   };
 }
 
+/**
+ * Manages the lifecycle and public surface of ProfileManager.
+ */
 export class ProfileManager {
   private readonly storageRoot: string;
   private readonly profilesRoot: string;
@@ -230,7 +214,9 @@ export class ProfileManager {
     this.indexPath = path.resolve(this.profilesRoot, 'index.json');
     this.randomUUID = options.randomUUID ?? safeRandomUUID;
     this.now = options.now ?? (() => new Date().toISOString());
-    this.atomicWrite = options.writeJsonAtomic ?? ((filePath: string, value: unknown) => defaultWriteJsonAtomic(filePath, value));
+    this.atomicWrite =
+      options.writeJsonAtomic ??
+      ((filePath: string, value: unknown) => defaultWriteJsonAtomic(filePath, value));
   }
 
   private requireRegistry(): ProfileRegistry {
@@ -250,8 +236,11 @@ export class ProfileManager {
 
   public getActive(): ProfileSummary {
     const registry = this.requireRegistry();
-    const profile = registry.profiles.find((candidate) => candidate.id === registry.activeProfileId);
-    if (!profile) throw new ProfileError('invalid_profile', 'The active profile is not registered.');
+    const profile = registry.profiles.find(
+      (candidate) => candidate.id === registry.activeProfileId,
+    );
+    if (!profile)
+      throw new ProfileError('invalid_profile', 'The active profile is not registered.');
     return { ...profile };
   }
 
@@ -260,7 +249,8 @@ export class ProfileManager {
       throw new ProfileError('invalid_profile', 'Invalid profile ID format.');
     }
     const profile = this.requireRegistry().profiles.find((candidate) => candidate.id === id);
-    if (!profile) throw new ProfileError('invalid_profile', 'The requested profile does not exist.');
+    if (!profile)
+      throw new ProfileError('invalid_profile', 'The requested profile does not exist.');
 
     return this.buildPaths(this.profilesRoot, profile.id);
   }
@@ -303,9 +293,15 @@ export class ProfileManager {
 
   private async parseRegistry(filePath: string): Promise<ParsedRegistry> {
     const data = await fs.readFile(filePath, 'utf8');
-    const parsed = JSON.parse(data);
+    const parsed = parseJson(data, isPlainObject);
+    if (!parsed) {
+      throw new ProfileError('invalid_profile', `Could not parse registry JSON at ${filePath}.`);
+    }
     if (typeof parsed.schemaVersion === 'number' && parsed.schemaVersion > 2) {
-      throw new ProfileError('future_schema', `Profile schema ${parsed.schemaVersion} is newer than supported schema 2.`);
+      throw new ProfileError(
+        'future_schema',
+        `Profile schema ${parsed.schemaVersion} is newer than supported schema 2.`,
+      );
     }
     return validateRegistry(parsed);
   }
@@ -317,16 +313,21 @@ export class ProfileManager {
         ...next,
         profiles: next.profiles.map((profile) => ({ ...profile })),
         deletedProfiles: next.deletedProfiles.map((profile) => ({ ...profile })),
-        legacySources: { ...next.legacySources }
+        legacySources: { ...next.legacySources },
       };
     } catch (cause) {
       throw cause instanceof ProfileError
         ? cause
-        : new ProfileError('profile_io_error', 'Could not persist the profile registry.', { cause });
+        : new ProfileError('profile_io_error', 'Could not persist the profile registry.', {
+            cause,
+          });
     }
   }
 
-  private async loadAndValidateMetadataAt(paths: ProfilePaths, profile: ProfileSummary): Promise<ProfileMetadata> {
+  private async loadAndValidateMetadataAt(
+    paths: ProfilePaths,
+    profile: ProfileSummary,
+  ): Promise<ProfileMetadata> {
     const { id } = profile;
     const filesToTry = [paths.metadata, `${paths.metadata}.bak`];
     let lastError: Error | null = null;
@@ -334,7 +335,10 @@ export class ProfileManager {
     for (const filePath of filesToTry) {
       try {
         const content = await fs.readFile(filePath, 'utf8');
-        const parsed = JSON.parse(content);
+        const parsed = parseJson(content, isPlainObject);
+        if (!parsed) {
+          throw new Error('Mismatched or invalid metadata values.');
+        }
         if (
           parsed.id !== id ||
           typeof parsed.name !== 'string' ||
@@ -347,15 +351,19 @@ export class ProfileManager {
         ) {
           throw new Error('Mismatched or invalid metadata values.');
         }
-        return parsed as ProfileMetadata;
+        return parsed as unknown as ProfileMetadata;
       } catch (err) {
         lastError = err as Error;
       }
     }
 
-    throw new ProfileError('profile_io_error', `Failed to load or validate profile metadata for profile ID ${id}.`, {
-      cause: lastError || new Error('No metadata file found.')
-    });
+    throw new ProfileError(
+      'profile_io_error',
+      `Failed to load or validate profile metadata for profile ID ${id}.`,
+      {
+        cause: lastError || new Error('No metadata file found.'),
+      },
+    );
   }
 
   private async loadAndValidateMetadata(id: string): Promise<ProfileMetadata> {
@@ -368,7 +376,10 @@ export class ProfileManager {
   public async create(name: string): Promise<ProfileSummary> {
     const normalizedName = normalizeProfileName(name);
     if (this.hasName(normalizedName)) {
-      throw new ProfileError('duplicate_profile_name', `A profile named "${normalizedName}" already exists.`);
+      throw new ProfileError(
+        'duplicate_profile_name',
+        `A profile named "${normalizedName}" already exists.`,
+      );
     }
 
     const id = this.randomUUID();
@@ -377,7 +388,7 @@ export class ProfileManager {
       id,
       name: normalizedName,
       createdAt: timestamp,
-      updatedAt: timestamp
+      updatedAt: timestamp,
     };
 
     const paths = {
@@ -385,7 +396,7 @@ export class ProfileManager {
       metadata: path.join(this.profilesRoot, id, 'profile.json'),
       lyrics: path.join(this.profilesRoot, id, 'lyrics'),
       exports: path.join(this.profilesRoot, id, 'exports'),
-      audio: path.join(this.profilesRoot, id, 'audio')
+      audio: path.join(this.profilesRoot, id, 'audio'),
     };
 
     let dirCreated = false;
@@ -400,7 +411,7 @@ export class ProfileManager {
 
       const nextRegistry: ProfileRegistry = {
         ...this.requireRegistry(),
-        profiles: [...this.requireRegistry().profiles, newProfile]
+        profiles: [...this.requireRegistry().profiles, newProfile],
       };
 
       await this.commitRegistry(nextRegistry);
@@ -427,7 +438,10 @@ export class ProfileManager {
     const existing = registry.profiles[profileIndex]!;
     if (profileNameKey(existing.name) !== profileNameKey(normalizedName)) {
       if (this.hasName(normalizedName)) {
-        throw new ProfileError('duplicate_profile_name', `A profile named "${normalizedName}" already exists.`);
+        throw new ProfileError(
+          'duplicate_profile_name',
+          `A profile named "${normalizedName}" already exists.`,
+        );
       }
     }
 
@@ -437,12 +451,12 @@ export class ProfileManager {
     const updatedProfile: ProfileSummary = {
       ...existing,
       name: normalizedName,
-      updatedAt: timestamp
+      updatedAt: timestamp,
     };
 
     const paths = this.getPaths(id);
     const newMetadata: ProfileMetadata = {
-      ...updatedProfile
+      ...updatedProfile,
     };
     if (oldMeta.legacySource !== undefined) {
       newMetadata.legacySource = oldMeta.legacySource;
@@ -460,7 +474,7 @@ export class ProfileManager {
     nextProfiles[profileIndex] = updatedProfile;
     const nextRegistry: ProfileRegistry = {
       ...registry,
-      profiles: nextProfiles
+      profiles: nextProfiles,
     };
 
     try {
@@ -469,9 +483,16 @@ export class ProfileManager {
       try {
         await this.atomicWrite(paths.metadata, oldMeta);
       } catch (rollbackErr) {
-        throw new ProfileError('profile_io_error', 'Failed to rename profile and failed to rollback metadata.', {
-          cause: new AggregateError([err, rollbackErr], 'Rename commit and rollback both failed.')
-        });
+        throw new ProfileError(
+          'profile_io_error',
+          'Failed to rename profile and failed to rollback metadata.',
+          {
+            cause: new AggregateError(
+              [err, rollbackErr],
+              'Rename commit and rollback both failed.',
+            ),
+          },
+        );
       }
       throw err instanceof ProfileError
         ? err
@@ -491,12 +512,16 @@ export class ProfileManager {
     try {
       await this.loadAndValidateMetadata(id);
     } catch (err) {
-      throw new ProfileError('profile_io_error', `Could not access or validate profile metadata for "${profile.name}".`, { cause: err });
+      throw new ProfileError(
+        'profile_io_error',
+        `Could not access or validate profile metadata for "${profile.name}".`,
+        { cause: err },
+      );
     }
 
     const nextRegistry: ProfileRegistry = {
       ...registry,
-      activeProfileId: id
+      activeProfileId: id,
     };
 
     await this.commitRegistry(nextRegistry);
@@ -519,7 +544,10 @@ export class ProfileManager {
       throw new ProfileError('invalid_profile', 'The active profile cannot be removed.');
     }
     if (normalizeProfileName(confirmationName) !== profile.name) {
-      throw new ProfileError('invalid_profile', 'The profile name confirmation does not match exactly.');
+      throw new ProfileError(
+        'invalid_profile',
+        'The profile name confirmation does not match exactly.',
+      );
     }
 
     const sourcePaths = this.getPaths(id);
@@ -528,28 +556,39 @@ export class ProfileManager {
     await fs.mkdir(this.trashRoot, { recursive: true });
     try {
       await fs.access(trashPaths.root);
-      throw new ProfileError('profile_io_error', 'A recoverable profile with this ID already exists.');
+      throw new ProfileError(
+        'profile_io_error',
+        'A recoverable profile with this ID already exists.',
+      );
     } catch (error) {
       if (error instanceof ProfileError) throw error;
       if ((error as NodeJS.ErrnoException).code !== 'ENOENT') {
-        throw new ProfileError('profile_io_error', 'Could not inspect the recoverable profile location.', { cause: error });
+        throw new ProfileError(
+          'profile_io_error',
+          'Could not inspect the recoverable profile location.',
+          { cause: error },
+        );
       }
     }
 
     const deletedProfile: DeletedProfileSummary = {
       ...profile,
-      deletedAt: this.now()
+      deletedAt: this.now(),
     };
     const nextRegistry: ProfileRegistry = {
       ...registry,
       profiles: registry.profiles.filter((candidate) => candidate.id !== id),
-      deletedProfiles: [...registry.deletedProfiles, deletedProfile]
+      deletedProfiles: [...registry.deletedProfiles, deletedProfile],
     };
 
     try {
       await defaultMoveToTrash(id, this.profilesRoot, this.trashRoot, deletedProfile.deletedAt);
     } catch (cause) {
-      throw new ProfileError('profile_io_error', `Could not move "${profile.name}" to recoverable trash.`, { cause });
+      throw new ProfileError(
+        'profile_io_error',
+        `Could not move "${profile.name}" to recoverable trash.`,
+        { cause },
+      );
     }
 
     try {
@@ -558,9 +597,16 @@ export class ProfileManager {
       try {
         await fs.rename(trashPaths.root, sourcePaths.root);
       } catch (rollbackError) {
-        throw new ProfileError('profile_io_error', 'Profile removal failed and the directory move could not be rolled back.', {
-          cause: new AggregateError([commitError, rollbackError], 'Remove commit and rollback both failed.')
-        });
+        throw new ProfileError(
+          'profile_io_error',
+          'Profile removal failed and the directory move could not be rolled back.',
+          {
+            cause: new AggregateError(
+              [commitError, rollbackError],
+              'Remove commit and rollback both failed.',
+            ),
+          },
+        );
       }
       throw commitError;
     }
@@ -578,7 +624,10 @@ export class ProfileManager {
       throw new ProfileError('invalid_profile', 'The recoverable profile does not exist.');
     }
     if (this.hasName(deletedProfile.name)) {
-      throw new ProfileError('duplicate_profile_name', `A profile named "${deletedProfile.name}" already exists.`);
+      throw new ProfileError(
+        'duplicate_profile_name',
+        `A profile named "${deletedProfile.name}" already exists.`,
+      );
     }
 
     const trashPaths = this.buildPaths(this.trashRoot, id);
@@ -586,11 +635,18 @@ export class ProfileManager {
     await this.loadAndValidateMetadataAt(trashPaths, deletedProfile);
     try {
       await fs.access(restoredPaths.root);
-      throw new ProfileError('profile_io_error', 'An active profile directory with this ID already exists.');
+      throw new ProfileError(
+        'profile_io_error',
+        'An active profile directory with this ID already exists.',
+      );
     } catch (error) {
       if (error instanceof ProfileError) throw error;
       if ((error as NodeJS.ErrnoException).code !== 'ENOENT') {
-        throw new ProfileError('profile_io_error', 'Could not inspect the active profile location.', { cause: error });
+        throw new ProfileError(
+          'profile_io_error',
+          'Could not inspect the active profile location.',
+          { cause: error },
+        );
       }
     }
 
@@ -598,18 +654,22 @@ export class ProfileManager {
       id: deletedProfile.id,
       name: deletedProfile.name,
       createdAt: deletedProfile.createdAt,
-      updatedAt: deletedProfile.updatedAt
+      updatedAt: deletedProfile.updatedAt,
     };
     const nextRegistry: ProfileRegistry = {
       ...registry,
       profiles: [...registry.profiles, restoredProfile],
-      deletedProfiles: registry.deletedProfiles.filter((candidate) => candidate.id !== id)
+      deletedProfiles: registry.deletedProfiles.filter((candidate) => candidate.id !== id),
     };
 
     try {
       await fs.rename(trashPaths.root, restoredPaths.root);
     } catch (cause) {
-      throw new ProfileError('profile_io_error', `Could not restore "${deletedProfile.name}" from recoverable trash.`, { cause });
+      throw new ProfileError(
+        'profile_io_error',
+        `Could not restore "${deletedProfile.name}" from recoverable trash.`,
+        { cause },
+      );
     }
 
     try {
@@ -618,9 +678,16 @@ export class ProfileManager {
       try {
         await fs.rename(restoredPaths.root, trashPaths.root);
       } catch (rollbackError) {
-        throw new ProfileError('profile_io_error', 'Profile restore failed and the directory move could not be rolled back.', {
-          cause: new AggregateError([commitError, rollbackError], 'Restore commit and rollback both failed.')
-        });
+        throw new ProfileError(
+          'profile_io_error',
+          'Profile restore failed and the directory move could not be rolled back.',
+          {
+            cause: new AggregateError(
+              [commitError, rollbackError],
+              'Restore commit and rollback both failed.',
+            ),
+          },
+        );
       }
       throw commitError;
     }
@@ -628,12 +695,16 @@ export class ProfileManager {
     return { ...restoredProfile };
   }
 
-  private async readMetadataForScan(parentRoot: string, id: string): Promise<ProfileMetadata | null> {
+  private async readMetadataForScan(
+    parentRoot: string,
+    id: string,
+  ): Promise<ProfileMetadata | null> {
     const metadataPath = this.buildPaths(parentRoot, id).metadata;
     for (const candidate of [metadataPath, `${metadataPath}.bak`]) {
       try {
         const data = await fs.readFile(candidate, 'utf8');
-        const parsed = JSON.parse(data);
+        const parsed = parseJson(data, isPlainObject);
+        if (!parsed) continue;
         if (
           parsed.id === id &&
           isValidUUID(parsed.id) &&
@@ -646,7 +717,9 @@ export class ProfileManager {
             name: normalizeProfileName(parsed.name),
             createdAt: parsed.createdAt,
             updatedAt: parsed.updatedAt,
-            ...(typeof parsed.legacySource === 'string' ? { legacySource: parsed.legacySource } : {})
+            ...(typeof parsed.legacySource === 'string'
+              ? { legacySource: parsed.legacySource }
+              : {}),
           };
         }
       } catch {
@@ -689,7 +762,9 @@ export class ProfileManager {
     }
 
     if (loaded && this.registry) {
-      const activeExists = this.registry.profiles.some(p => p.id === this.registry!.activeProfileId);
+      const activeExists = this.registry.profiles.some(
+        (p) => p.id === this.registry!.activeProfileId,
+      );
       if (!activeExists || !isValidUUID(this.registry.activeProfileId)) {
         if (this.registry.profiles.length > 0) {
           const sorted = [...this.registry.profiles].sort((a, b) => {
@@ -699,7 +774,7 @@ export class ProfileManager {
           });
           const nextRegistry: ProfileRegistry = {
             ...this.registry,
-            activeProfileId: sorted[0]!.id
+            activeProfileId: sorted[0]!.id,
           };
           await this.commitRegistry(nextRegistry);
           registryUpgraded = false;
@@ -709,7 +784,6 @@ export class ProfileManager {
       }
       if (loaded && registryUpgraded) {
         await this.commitRegistry(this.registry);
-        registryUpgraded = false;
       }
     }
 
@@ -730,7 +804,7 @@ export class ProfileManager {
                 id: meta.id,
                 name: meta.name,
                 createdAt: meta.createdAt,
-                updatedAt: meta.updatedAt
+                updatedAt: meta.updatedAt,
               });
               if (typeof meta.legacySource === 'string') {
                 legacySources[meta.legacySource] = meta.id;
@@ -751,7 +825,7 @@ export class ProfileManager {
               name: meta.name,
               createdAt: meta.createdAt,
               updatedAt: meta.updatedAt,
-              deletedAt: stats.mtime.toISOString()
+              deletedAt: stats.mtime.toISOString(),
             });
             if (meta.legacySource) legacySources[meta.legacySource] = meta.id;
           }
@@ -773,7 +847,7 @@ export class ProfileManager {
             profiles: recoveredProfiles,
             deletedProfiles: recoveredDeletedProfiles,
             legacySources,
-            migrationVersion: 0
+            migrationVersion: 0,
           };
 
           await this.atomicWrite(this.indexPath, rebuiltRegistry);
@@ -783,7 +857,11 @@ export class ProfileManager {
       } catch (scanErr) {
         throw scanErr instanceof ProfileError
           ? scanErr
-          : new ProfileError('profile_io_error', 'Failed to rebuild profile index from directory scan.', { cause: scanErr });
+          : new ProfileError(
+              'profile_io_error',
+              'Failed to rebuild profile index from directory scan.',
+              { cause: scanErr },
+            );
       }
     }
 
@@ -795,7 +873,7 @@ export class ProfileManager {
         id: defaultId,
         name: DEFAULT_PROFILE_NAME,
         createdAt: timestamp,
-        updatedAt: timestamp
+        updatedAt: timestamp,
       };
 
       const defaultPaths = {
@@ -803,7 +881,7 @@ export class ProfileManager {
         metadata: path.join(this.profilesRoot, defaultId, 'profile.json'),
         lyrics: path.join(this.profilesRoot, defaultId, 'lyrics'),
         exports: path.join(this.profilesRoot, defaultId, 'exports'),
-        audio: path.join(this.profilesRoot, defaultId, 'audio')
+        audio: path.join(this.profilesRoot, defaultId, 'audio'),
       };
 
       let dirCreated = false;
@@ -816,7 +894,11 @@ export class ProfileManager {
         const profileMeta: ProfileMetadata = { ...defaultProfile };
         await this.atomicWrite(defaultPaths.metadata, profileMeta);
 
-        const defaultRegistry = createInitialRegistry(defaultId, DEFAULT_PROFILE_NAME, defaultProfile.createdAt);
+        const defaultRegistry = createInitialRegistry(
+          defaultId,
+          DEFAULT_PROFILE_NAME,
+          defaultProfile.createdAt,
+        );
         defaultRegistry.migrationVersion = 0;
 
         await this.atomicWrite(this.indexPath, defaultRegistry);
@@ -827,7 +909,9 @@ export class ProfileManager {
         }
         throw err instanceof ProfileError
           ? err
-          : new ProfileError('profile_io_error', 'Failed to create default profile.', { cause: err });
+          : new ProfileError('profile_io_error', 'Failed to create default profile.', {
+              cause: err,
+            });
       }
     }
 
@@ -858,7 +942,7 @@ export class ProfileManager {
 
     const newMetadata: ProfileMetadata = {
       ...oldMeta,
-      legacySource: source
+      legacySource: source,
     };
 
     try {
@@ -866,15 +950,17 @@ export class ProfileManager {
     } catch (err) {
       throw err instanceof ProfileError
         ? err
-        : new ProfileError('profile_io_error', 'Failed to write legacy source metadata.', { cause: err });
+        : new ProfileError('profile_io_error', 'Failed to write legacy source metadata.', {
+            cause: err,
+          });
     }
 
     const nextRegistry: ProfileRegistry = {
       ...registry,
       legacySources: {
         ...registry.legacySources,
-        [source]: profileId
-      }
+        [source]: profileId,
+      },
     };
 
     try {
@@ -883,9 +969,16 @@ export class ProfileManager {
       try {
         await this.atomicWrite(paths.metadata, oldMeta);
       } catch (rollbackErr) {
-        throw new ProfileError('profile_io_error', 'Failed to record legacy source and failed to rollback metadata.', {
-          cause: new AggregateError([err, rollbackErr], 'Record legacy source commit and rollback both failed.')
-        });
+        throw new ProfileError(
+          'profile_io_error',
+          'Failed to record legacy source and failed to rollback metadata.',
+          {
+            cause: new AggregateError(
+              [err, rollbackErr],
+              'Record legacy source commit and rollback both failed.',
+            ),
+          },
+        );
       }
       throw err instanceof ProfileError
         ? err
@@ -899,7 +992,9 @@ export class ProfileManager {
       profileNameKey(DEFAULT_PROFILE_NAME),
       profileNameKey(LEGACY_DEFAULT_PROFILE_NAME),
     ]);
-    const existing = registry.profiles.find((profile) => defaultKeys.has(profileNameKey(profile.name)));
+    const existing = registry.profiles.find((profile) =>
+      defaultKeys.has(profileNameKey(profile.name)),
+    );
     if (existing) {
       return existing;
     }
@@ -913,7 +1008,7 @@ export class ProfileManager {
     }
     const nextRegistry = {
       ...registry,
-      migrationVersion: version
+      migrationVersion: version,
     };
     await this.commitRegistry(nextRegistry);
   }
@@ -932,7 +1027,7 @@ export class ProfileManager {
   public async importLegacyProfile(
     source: string,
     requestedName: string,
-    populate: (paths: ProfilePaths) => Promise<void>
+    populate: (paths: ProfilePaths) => Promise<void>,
   ): Promise<ProfileSummary> {
     const normalizedName = this.uniqueLegacyName(requestedName);
     const id = this.randomUUID();
@@ -942,7 +1037,7 @@ export class ProfileManager {
       id,
       name: normalizedName,
       createdAt: timestamp,
-      updatedAt: timestamp
+      updatedAt: timestamp,
     };
 
     const stagingRoot = path.join(this.profilesRoot, `.migrating-${id}`);
@@ -955,7 +1050,7 @@ export class ProfileManager {
       customOrder: path.join(stagingRoot, 'custom-order.json'),
       songBook: path.join(stagingRoot, 'song-book.json'),
       exports: path.join(stagingRoot, 'exports'),
-      audio: path.join(stagingRoot, 'audio')
+      audio: path.join(stagingRoot, 'audio'),
     };
 
     let stagingCreated = false;
@@ -971,7 +1066,7 @@ export class ProfileManager {
 
       const metadata: ProfileMetadata = {
         ...profile,
-        legacySource: source
+        legacySource: source,
       };
       await this.atomicWrite(stagingPaths.metadata, metadata);
 
@@ -983,8 +1078,8 @@ export class ProfileManager {
         profiles: [...this.requireRegistry().profiles, profile],
         legacySources: {
           ...this.requireRegistry().legacySources,
-          [source]: id
-        }
+          [source]: id,
+        },
       };
 
       await this.commitRegistry(nextRegistry);

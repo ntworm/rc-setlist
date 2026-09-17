@@ -61,7 +61,9 @@ test('pre-roll toggle is an explicit local command policy', () => {
 test('local commands confirm only after their handler promise resolves', async () => {
   const { bus } = createBus();
   let release;
-  const handler = new Promise((resolve) => { release = resolve; });
+  const handler = new Promise((resolve) => {
+    release = resolve;
+  });
   const command = bus.registerCommand('local-1', 'save_lyrics', {}, 'test');
   const result = settled(bus, command.commandId);
 
@@ -81,24 +83,32 @@ test('rejected local handlers settle with only the stable execution_failed reaso
   const command = bus.registerCommand('failed-local', 'export_csv', {}, 'test');
   const result = settled(bus, command.commandId);
 
-  bus.dispatch(command, async () => { throw new Error('disk unavailable: C:\\private\\secret.txt'); });
+  bus.dispatch(command, async () => {
+    throw new Error('disk unavailable: C:\\private\\secret.txt');
+  });
   const settledCommand = await result;
 
   assert.equal(settledCommand.status, 'failed');
   assert.equal(settledCommand.reason, 'execution_failed');
   assert.equal(events.at(-1)?.message.includes('disk unavailable'), false);
-  assert.equal(settledCommand.error, undefined, 'a raw Error message (it may hold a path) never reaches the client');
+  assert.equal(
+    settledCommand.error,
+    undefined,
+    'a raw Error message (it may hold a path) never reaches the client',
+  );
   assert.equal(bus.getPending().length, 0);
   bus.stop();
 });
 
 test('a handler that throws an OperatorError hands its message to the client', async () => {
-  const { OperatorError } = await import('../src/commands/operator-error.ts');
+  const { OperatorError } = await import('../src/core/operator-error.ts');
   const { bus } = createBus();
   const command = bus.registerCommand('failed-operator', 'edit_locator', {}, 'test');
   const result = settled(bus, command.commandId);
 
-  bus.dispatch(command, async () => { throw new OperatorError('No cue point found at time 64.'); });
+  bus.dispatch(command, async () => {
+    throw new OperatorError('No cue point found at time 64.');
+  });
   const settledCommand = await result;
 
   assert.equal(settledCommand.status, 'failed');
@@ -115,7 +125,9 @@ test('metronome confirmation reads state.metronome rather than transport.state',
       transport: { state: false },
       safety: { panicActive: false, criticalCommandsLocked: false },
     }),
-    setPendingCommands: (ids) => { pending = ids; },
+    setPendingCommands: (ids) => {
+      pending = ids;
+    },
   };
   const bus = new CommandBus(manager, { log() {} });
   const command = bus.registerCommand('metronome-on', 'metronome', { value: true }, 'test');
@@ -131,7 +143,9 @@ test('metronome confirmation reads state.metronome rather than transport.state',
 test('stop and active panic bypass a blocked normal mutation', async () => {
   const { bus, manager } = createBus();
   let releaseLong;
-  const longHandler = new Promise((resolve) => { releaseLong = resolve; });
+  const longHandler = new Promise((resolve) => {
+    releaseLong = resolve;
+  });
   const order = [];
 
   const long = bus.registerCommand('long', 'export_csv', {}, 'test');
@@ -170,7 +184,9 @@ test('safety-lane commands still execute while panic is already active', async (
 
   const stop = bus.registerCommand('stop-in-panic', 'stop', {}, 'test');
   const stopResult = settled(bus, stop.commandId);
-  bus.dispatch(stop, () => { stopExecutions++; });
+  bus.dispatch(stop, () => {
+    stopExecutions++;
+  });
 
   const clearPanic = bus.registerCommand('clear-panic', 'set_panic', { active: false }, 'test');
   const clearPanicResult = settled(bus, clearPanic.commandId);
@@ -186,7 +202,9 @@ test('safety-lane commands still execute while panic is already active', async (
 test('queued critical play revalidates panic immediately before execution', async () => {
   const { bus, manager } = createBus();
   let releaseBlocker;
-  const blockerPromise = new Promise((resolve) => { releaseBlocker = resolve; });
+  const blockerPromise = new Promise((resolve) => {
+    releaseBlocker = resolve;
+  });
   const blocker = bus.registerCommand('panic-blocker', 'save_lyrics', {}, 'test');
   const blockerResult = settled(bus, blocker.commandId);
   bus.dispatch(blocker, () => blockerPromise);
@@ -224,7 +242,9 @@ test('queued critical play revalidates panic immediately before execution', asyn
 test('queued critical jump revalidates the lock and lets following noncritical work continue', async () => {
   const { bus, manager } = createBus();
   let releaseBlocker;
-  const blockerPromise = new Promise((resolve) => { releaseBlocker = resolve; });
+  const blockerPromise = new Promise((resolve) => {
+    releaseBlocker = resolve;
+  });
   const blocker = bus.registerCommand('lock-blocker', 'save_lyrics', {}, 'test');
   const blockerResult = settled(bus, blocker.commandId);
   bus.dispatch(blocker, () => blockerPromise);
@@ -244,7 +264,9 @@ test('queued critical jump revalidates the lock and lets following noncritical w
   let followerExecutions = 0;
   const follower = bus.registerCommand('after-locked-jump', 'save_lyrics', {}, 'test');
   const followerResult = settled(bus, follower.commandId);
-  bus.dispatch(follower, () => { followerExecutions++; });
+  bus.dispatch(follower, () => {
+    followerExecutions++;
+  });
 
   manager.setCriticalCommandsLocked(true);
   releaseBlocker();
@@ -271,7 +293,9 @@ test('expired commands remain deduped while their handler is in flight and age f
   const { bus } = createBus();
   bus.stop();
   let releaseHandler;
-  const handlerPromise = new Promise((resolve) => { releaseHandler = resolve; });
+  const handlerPromise = new Promise((resolve) => {
+    releaseHandler = resolve;
+  });
 
   try {
     const command = bus.registerCommand('slow-expired', 'save_lyrics', {}, 'test');
@@ -305,13 +329,17 @@ test('expired commands remain deduped while their handler is in flight and age f
 test('a late handler settlement cannot settle a newer command with the same ID', async () => {
   const { bus } = createBus();
   let releaseOld;
-  const oldHandler = new Promise((resolve) => { releaseOld = resolve; });
+  const oldHandler = new Promise((resolve) => {
+    releaseOld = resolve;
+  });
   const oldCommand = bus.registerCommand('reused-id', 'save_lyrics', {}, 'old-client');
   bus.dispatch(oldCommand, () => oldHandler);
 
   let releaseNew;
   let newExecutions = 0;
-  const newHandler = new Promise((resolve) => { releaseNew = resolve; });
+  const newHandler = new Promise((resolve) => {
+    releaseNew = resolve;
+  });
   const newCommand = bus.registerCommand('reused-id', 'save_lyrics', {}, 'new-client');
   bus.dispatch(newCommand, () => {
     newExecutions++;
@@ -332,15 +360,23 @@ for (const terminalStatus of ['expired', 'cancelled']) {
   test(`${terminalStatus} commands never execute when dequeued`, async () => {
     const { bus } = createBus();
     let releaseBlocker;
-    const blockerPromise = new Promise((resolve) => { releaseBlocker = resolve; });
+    const blockerPromise = new Promise((resolve) => {
+      releaseBlocker = resolve;
+    });
     const blocker = bus.registerCommand(`blocker-${terminalStatus}`, 'save_lyrics', {}, 'test');
     const blockerResult = settled(bus, blocker.commandId);
     bus.dispatch(blocker, () => blockerPromise);
 
     let executed = false;
     const skipped = bus.registerCommand(`skipped-${terminalStatus}`, 'save_lyrics', {}, 'test');
-    bus.dispatch(skipped, () => { executed = true; });
-    bus.updateStatus(skipped.commandId, terminalStatus, terminalStatus === 'expired' ? 'timeout' : undefined);
+    bus.dispatch(skipped, () => {
+      executed = true;
+    });
+    bus.updateStatus(
+      skipped.commandId,
+      terminalStatus,
+      terminalStatus === 'expired' ? 'timeout' : undefined,
+    );
 
     releaseBlocker();
     await blockerResult;
@@ -367,6 +403,9 @@ test('timeouts expire once without emitting retry_required', async () => {
   assert.equal(settledCommand.status, 'expired');
   assert.equal(settledCommand.reason, 'timeout');
   assert.deepEqual(retries, []);
-  assert.equal(events.some((event) => event.type === 'command_retry' || event.result === 'retry_required'), false);
+  assert.equal(
+    events.some((event) => event.type === 'command_retry' || event.result === 'retry_required'),
+    false,
+  );
   bus.stop();
 });

@@ -3,7 +3,12 @@ import assert from 'node:assert/strict';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { tmpdir } from 'node:os';
-import { ProfileError, ProfileManager, normalizeProfileName, isValidUUID } from '../src/core/profile-manager.ts';
+import {
+  ProfileError,
+  ProfileManager,
+  normalizeProfileName,
+  isValidUUID,
+} from '../src/core/profile-manager.ts';
 
 function makeRoot(t) {
   const root = fs.mkdtempSync(path.join(tmpdir(), 'rc-setlist-profiles-'));
@@ -22,9 +27,18 @@ function deterministicOptions() {
 
 test('profile names normalize with NFKC and enforce the contract', () => {
   assert.equal(normalizeProfileName('  Ｆｅｓｔｉｖａｌ  '), 'Festival');
-  assert.throws(() => normalizeProfileName('   '), (err) => err instanceof ProfileError && err.code === 'invalid_profile');
-  assert.throws(() => normalizeProfileName('a'.repeat(81)), (err) => err instanceof ProfileError && err.code === 'invalid_profile');
-  assert.throws(() => normalizeProfileName('Show\u0000'), (err) => err instanceof ProfileError && err.code === 'invalid_profile');
+  assert.throws(
+    () => normalizeProfileName('   '),
+    (err) => err instanceof ProfileError && err.code === 'invalid_profile',
+  );
+  assert.throws(
+    () => normalizeProfileName('a'.repeat(81)),
+    (err) => err instanceof ProfileError && err.code === 'invalid_profile',
+  );
+  assert.throws(
+    () => normalizeProfileName('Show\u0000'),
+    (err) => err instanceof ProfileError && err.code === 'invalid_profile',
+  );
 });
 
 test('empty storage creates and remembers Main Setlist with profile-local paths', async (t) => {
@@ -101,14 +115,20 @@ test('profile names are unique after normalization and case folding', async (t) 
   const manager = new ProfileManager(makeRoot(t), deterministicOptions());
   await manager.initialize();
   await manager.create('Festival');
-  await assert.rejects(manager.create('  festival  '), (err) => err.code === 'duplicate_profile_name');
+  await assert.rejects(
+    manager.create('  festival  '),
+    (err) => err.code === 'duplicate_profile_name',
+  );
 });
 
 test('create, rename and select validate input and reject invalid profiles', async (t) => {
   const manager = new ProfileManager(makeRoot(t), deterministicOptions());
   await manager.initialize();
   await assert.rejects(manager.create(''), (err) => err.code === 'invalid_profile');
-  await assert.rejects(manager.select('non-existent-uuid'), (err) => err.code === 'invalid_profile');
+  await assert.rejects(
+    manager.select('non-existent-uuid'),
+    (err) => err.code === 'invalid_profile',
+  );
 });
 
 test('corrupt index.json recovers from index.json.bak', async (t) => {
@@ -138,7 +158,11 @@ test('absent index and bak rebuilds index from directory profile.json scanning',
   // remove index.json and index.json.bak
   const indexPath = path.join(root, 'profiles', 'index.json');
   fs.unlinkSync(indexPath);
-  try { fs.unlinkSync(indexPath + '.bak'); } catch {}
+  try {
+    fs.unlinkSync(indexPath + '.bak');
+  } catch {
+    // swallow: nothing to do here on purpose
+  }
 
   const restarted = new ProfileManager(root, deterministicOptions());
   await restarted.initialize();
@@ -159,22 +183,40 @@ test('inactive profile moves to recoverable trash and restores with the same UUI
   const removed = await manager.remove(festival.id, 'Festival');
 
   assert.equal(removed.id, festival.id);
-  assert.equal(manager.list().some((profile) => profile.id === festival.id), false);
-  assert.equal(manager.listDeleted().some((profile) => profile.id === festival.id), true);
+  assert.equal(
+    manager.list().some((profile) => profile.id === festival.id),
+    false,
+  );
+  assert.equal(
+    manager.listDeleted().some((profile) => profile.id === festival.id),
+    true,
+  );
   assert.equal(fs.existsSync(originalPaths.root), false);
   const trashRoot = path.join(root, 'profiles', '.trash', festival.id);
-  assert.equal(fs.readFileSync(path.join(trashRoot, 'lyrics', 'song.txt'), 'utf8'), 'lyrics survive');
+  assert.equal(
+    fs.readFileSync(path.join(trashRoot, 'lyrics', 'song.txt'), 'utf8'),
+    'lyrics survive',
+  );
 
   const restarted = new ProfileManager(root, options);
   await restarted.initialize();
-  assert.equal(restarted.listDeleted().some((profile) => profile.id === festival.id), true);
+  assert.equal(
+    restarted.listDeleted().some((profile) => profile.id === festival.id),
+    true,
+  );
 
   const restored = await restarted.restore(festival.id);
 
   assert.equal(restored.id, festival.id);
   assert.equal(restarted.getActive().name, 'Main Setlist');
-  assert.equal(restarted.listDeleted().some((profile) => profile.id === festival.id), false);
-  assert.equal(fs.readFileSync(path.join(restarted.getPaths(festival.id).lyrics, 'song.txt'), 'utf8'), 'lyrics survive');
+  assert.equal(
+    restarted.listDeleted().some((profile) => profile.id === festival.id),
+    false,
+  );
+  assert.equal(
+    fs.readFileSync(path.join(restarted.getPaths(festival.id).lyrics, 'song.txt'), 'utf8'),
+    'lyrics survive',
+  );
 });
 
 test('remove rejects the active profile, the only profile, and a wrong exact-name confirmation', async (t) => {
@@ -185,19 +227,22 @@ test('remove rejects the active profile, the only profile, and a wrong exact-nam
 
   await assert.rejects(
     manager.remove(active.id, active.name),
-    (err) => err instanceof ProfileError && err.code === 'invalid_profile'
+    (err) => err instanceof ProfileError && err.code === 'invalid_profile',
   );
 
   const festival = await manager.create('Festival');
   await assert.rejects(
     manager.remove(active.id, active.name),
-    (err) => err instanceof ProfileError && err.code === 'invalid_profile'
+    (err) => err instanceof ProfileError && err.code === 'invalid_profile',
   );
   await assert.rejects(
     manager.remove(festival.id, 'festival'),
-    (err) => err instanceof ProfileError && err.code === 'invalid_profile'
+    (err) => err instanceof ProfileError && err.code === 'invalid_profile',
   );
-  assert.equal(manager.list().some((profile) => profile.id === festival.id), true);
+  assert.equal(
+    manager.list().some((profile) => profile.id === festival.id),
+    true,
+  );
   assert.equal(fs.existsSync(manager.getPaths(festival.id).root), true);
 });
 
@@ -212,7 +257,7 @@ test('remove rolls the directory move back when the registry commit fails', asyn
       }
       await fs.promises.mkdir(path.dirname(filePath), { recursive: true });
       await fs.promises.writeFile(filePath, JSON.stringify(value, null, 2), 'utf8');
-    }
+    },
   });
   await manager.initialize();
   const festival = await manager.create('Festival');
@@ -221,12 +266,15 @@ test('remove rolls the directory move back when the registry commit fails', asyn
   failIndex = true;
   await assert.rejects(
     manager.remove(festival.id, festival.name),
-    (err) => err instanceof ProfileError && err.code === 'profile_io_error'
+    (err) => err instanceof ProfileError && err.code === 'profile_io_error',
   );
 
   assert.equal(fs.existsSync(originalRoot), true);
   assert.equal(fs.existsSync(path.join(root, 'profiles', '.trash', festival.id)), false);
-  assert.equal(manager.list().some((profile) => profile.id === festival.id), true);
+  assert.equal(
+    manager.list().some((profile) => profile.id === festival.id),
+    true,
+  );
   assert.deepEqual(manager.listDeleted(), []);
 });
 
@@ -241,7 +289,7 @@ test('restore rolls the directory move back when the registry commit fails', asy
       }
       await fs.promises.mkdir(path.dirname(filePath), { recursive: true });
       await fs.promises.writeFile(filePath, JSON.stringify(value, null, 2), 'utf8');
-    }
+    },
   });
   await manager.initialize();
   const festival = await manager.create('Festival');
@@ -250,12 +298,15 @@ test('restore rolls the directory move back when the registry commit fails', asy
   failIndex = true;
   await assert.rejects(
     manager.restore(festival.id),
-    (err) => err instanceof ProfileError && err.code === 'profile_io_error'
+    (err) => err instanceof ProfileError && err.code === 'profile_io_error',
   );
 
   assert.equal(fs.existsSync(path.join(root, 'profiles', festival.id)), false);
   assert.equal(fs.existsSync(path.join(root, 'profiles', '.trash', festival.id)), true);
-  assert.equal(manager.listDeleted().some((profile) => profile.id === festival.id), true);
+  assert.equal(
+    manager.listDeleted().some((profile) => profile.id === festival.id),
+    true,
+  );
 });
 
 test('restore rejects a name collision and preserves the trashed profile', async (t) => {
@@ -268,7 +319,7 @@ test('restore rejects a name collision and preserves the trashed profile', async
 
   await assert.rejects(
     manager.restore(festival.id),
-    (err) => err instanceof ProfileError && err.code === 'duplicate_profile_name'
+    (err) => err instanceof ProfileError && err.code === 'duplicate_profile_name',
   );
   assert.equal(fs.existsSync(path.join(root, 'profiles', '.trash', festival.id)), true);
 });
@@ -285,7 +336,10 @@ test('deleted profiles retain legacy-source deduplication across restart', async
   const restarted = new ProfileManager(root, options);
   await restarted.initialize();
   assert.equal(restarted.hasLegacySource('project:festival'), true);
-  assert.equal(restarted.listDeleted().some((profile) => profile.id === festival.id), true);
+  assert.equal(
+    restarted.listDeleted().some((profile) => profile.id === festival.id),
+    true,
+  );
 });
 
 test('schemaVersion 1 upgrades to schemaVersion 2 during initialization', async (t) => {
@@ -319,7 +373,10 @@ test('schemaVersion 3 throws future_schema without rewriting index.json or index
   fs.writeFileSync(indexBakPath, schema3Data);
 
   const restarted = new ProfileManager(root, deterministicOptions());
-  await assert.rejects(restarted.initialize(), (err) => err instanceof ProfileError && err.code === 'future_schema');
+  await assert.rejects(
+    restarted.initialize(),
+    (err) => err instanceof ProfileError && err.code === 'future_schema',
+  );
 
   // Verify files were not rewritten
   assert.equal(fs.readFileSync(indexPath, 'utf8'), schema3Data);
@@ -332,8 +389,14 @@ test('invalid IDs, path traversal, and timestamps validation', async (t) => {
   await manager.initialize();
 
   // Try path traversal or invalid UUID format
-  assert.throws(() => manager.getPaths('..'), (err) => err instanceof ProfileError && err.code === 'invalid_profile');
-  assert.throws(() => manager.getPaths('00000000-0000-0000-0000-00000000000g'), (err) => err instanceof ProfileError && err.code === 'invalid_profile');
+  assert.throws(
+    () => manager.getPaths('..'),
+    (err) => err instanceof ProfileError && err.code === 'invalid_profile',
+  );
+  assert.throws(
+    () => manager.getPaths('00000000-0000-0000-0000-00000000000g'),
+    (err) => err instanceof ProfileError && err.code === 'invalid_profile',
+  );
 
   // Try corrupting index.json with invalid activeProfileId (e.g. non-UUID format)
   const indexPath = path.join(root, 'profiles', 'index.json');
@@ -343,30 +406,43 @@ test('invalid IDs, path traversal, and timestamps validation', async (t) => {
     id: '../evil',
     name: 'Evil',
     createdAt: 'invalid-date',
-    updatedAt: '2026-07-10T00:00:00Z'
+    updatedAt: '2026-07-10T00:00:00Z',
   });
-  try { fs.unlinkSync(indexPath + '.bak'); } catch {}
+  try {
+    fs.unlinkSync(indexPath + '.bak');
+  } catch {
+    // swallow: nothing to do here on purpose
+  }
   fs.writeFileSync(indexPath, JSON.stringify(registry));
 
   const restarted = new ProfileManager(root, deterministicOptions());
   await restarted.initialize();
   // Verify the invalid profile was discarded
-  assert.equal(restarted.list().some(p => p.id === '../evil'), false);
+  assert.equal(
+    restarted.list().some((p) => p.id === '../evil'),
+    false,
+  );
 
   // Create a profile directory with invalid UUID name
   const evilDir = path.join(root, 'profiles', 'invalid-uuid-folder');
   fs.mkdirSync(evilDir, { recursive: true });
-  fs.writeFileSync(path.join(evilDir, 'profile.json'), JSON.stringify({
-    id: 'invalid-uuid-folder',
-    name: 'Evil Dir',
-    createdAt: 'invalid-date',
-    updatedAt: '2026-07-10T00:00:00Z'
-  }));
+  fs.writeFileSync(
+    path.join(evilDir, 'profile.json'),
+    JSON.stringify({
+      id: 'invalid-uuid-folder',
+      name: 'Evil Dir',
+      createdAt: 'invalid-date',
+      updatedAt: '2026-07-10T00:00:00Z',
+    }),
+  );
 
   const manager4 = new ProfileManager(root, deterministicOptions());
   await manager4.initialize();
   // Verify it was discarded
-  assert.equal(manager4.list().some(p => p.name === 'Evil Dir'), false);
+  assert.equal(
+    manager4.list().some((p) => p.name === 'Evil Dir'),
+    false,
+  );
 });
 
 test('missing or invalid activeProfileId chooses oldest profile and repairs index', async (t) => {
@@ -405,7 +481,10 @@ test('select(id) validates metadata and ID mismatch, and reverts active profile 
   fs.writeFileSync(festPaths.metadata, JSON.stringify(meta));
 
   // Trying to select should fail and preserve previous active profile
-  await assert.rejects(manager.select(fest.id), (err) => err instanceof ProfileError && err.code === 'profile_io_error');
+  await assert.rejects(
+    manager.select(fest.id),
+    (err) => err instanceof ProfileError && err.code === 'profile_io_error',
+  );
   assert.equal(manager.getActive().name, 'Main Setlist');
 });
 
@@ -427,7 +506,7 @@ test('transactional metadata cleanup on create failure', async (t) => {
       const tempPath = `${filePath}.tmp`;
       await fs.promises.writeFile(tempPath, JSON.stringify(val), 'utf8');
       await fs.promises.rename(tempPath, filePath);
-    }
+    },
   });
   await manager.initialize();
 
@@ -437,7 +516,7 @@ test('transactional metadata cleanup on create failure', async (t) => {
   const profilesDir = path.join(root, 'profiles');
   const files = fs.readdirSync(profilesDir);
   // Only index.json and the Main Setlist folder should exist
-  assert.equal(files.filter(f => f !== 'index.json').length, 1);
+  assert.equal(files.filter((f) => f !== 'index.json').length, 1);
 });
 
 // ===== NEW RED TESTS =====
@@ -455,7 +534,7 @@ test('first initialization rejects with profile_io_error when profile.json write
       }
       // For index.json, use real write
       await fs.promises.writeFile(filePath, JSON.stringify(val, null, 2), 'utf8');
-    }
+    },
   });
 
   await assert.rejects(manager.initialize(), (err) => {
@@ -465,7 +544,7 @@ test('first initialization rejects with profile_io_error when profile.json write
   // No partial profile directory should remain
   const profilesDir = path.join(root, 'profiles');
   const entries = fs.existsSync(profilesDir) ? fs.readdirSync(profilesDir) : [];
-  const profileDirs = entries.filter(f => !f.startsWith('index'));
+  const profileDirs = entries.filter((f) => !f.startsWith('index'));
   assert.equal(profileDirs.length, 0, `Expected no profile dirs, found: ${profileDirs}`);
 
   // No index.json should exist
@@ -492,13 +571,21 @@ test('corrupt profile.json recovers from profile.json.bak during directory scan'
 
   // Remove index.json and index.json.bak to force directory scan
   fs.unlinkSync(indexPath);
-  try { fs.unlinkSync(indexPath + '.bak'); } catch {}
+  try {
+    fs.unlinkSync(indexPath + '.bak');
+  } catch {
+    // swallow: nothing to do here on purpose
+  }
 
   const restarted = new ProfileManager(root, options);
   await restarted.initialize();
 
   // Fest should be recovered from .bak
-  assert.equal(restarted.list().some(p => p.id === fest.id), true, 'Fest should be recovered from .bak');
+  assert.equal(
+    restarted.list().some((p) => p.id === fest.id),
+    true,
+    'Fest should be recovered from .bak',
+  );
 });
 
 // Issue 3a: Rename metadata write failure
@@ -512,7 +599,7 @@ test('rename returns ProfileError on metadata write failure and preserves previo
         throw new Error('Injected rename metadata failure');
       }
       await fs.promises.writeFile(filePath, JSON.stringify(val, null, 2), 'utf8');
-    }
+    },
   });
   await manager.initialize();
   const fest = await manager.create('Fest');
@@ -523,12 +610,12 @@ test('rename returns ProfileError on metadata write failure and preserves previo
   });
 
   // Name should remain 'Fest' in memory
-  assert.equal(manager.list().find(p => p.id === fest.id)?.name, 'Fest');
+  assert.equal(manager.list().find((p) => p.id === fest.id)?.name, 'Fest');
 
   // Name should remain 'Fest' on disk (index.json)
   const indexPath = path.join(root, 'profiles', 'index.json');
   const registry = JSON.parse(fs.readFileSync(indexPath, 'utf8'));
-  assert.equal(registry.profiles.find(p => p.id === fest.id)?.name, 'Fest');
+  assert.equal(registry.profiles.find((p) => p.id === fest.id)?.name, 'Fest');
 
   // profile.json should still have original name
   const metaPath = path.join(root, 'profiles', fest.id, 'profile.json');
@@ -547,7 +634,7 @@ test('rename restores previous metadata when index commit fails', async (t) => {
         throw new Error('Injected index commit failure');
       }
       await fs.promises.writeFile(filePath, JSON.stringify(val, null, 2), 'utf8');
-    }
+    },
   });
   await manager.initialize();
   const fest = await manager.create('Fest');
@@ -558,7 +645,7 @@ test('rename restores previous metadata when index commit fails', async (t) => {
   });
 
   // In-memory name should remain 'Fest'
-  assert.equal(manager.list().find(p => p.id === fest.id)?.name, 'Fest');
+  assert.equal(manager.list().find((p) => p.id === fest.id)?.name, 'Fest');
 
   // profile.json on disk should be restored to 'Fest'
   const metaPath = path.join(root, 'profiles', fest.id, 'profile.json');
@@ -577,7 +664,7 @@ test('recordLegacySource returns ProfileError on metadata write failure and pres
         throw new Error('Injected recordLegacy metadata failure');
       }
       await fs.promises.writeFile(filePath, JSON.stringify(val, null, 2), 'utf8');
-    }
+    },
   });
   await manager.initialize();
   const principal = manager.getActive();
@@ -602,7 +689,11 @@ test('scan recovery rejects when index write fails, does not create spurious Mai
   // Remove index.json and .bak to force scan
   const indexPath = path.join(root, 'profiles', 'index.json');
   fs.unlinkSync(indexPath);
-  try { fs.unlinkSync(indexPath + '.bak'); } catch {}
+  try {
+    fs.unlinkSync(indexPath + '.bak');
+  } catch {
+    // swallow: nothing to do here on purpose
+  }
 
   // New manager with writer that fails on index.json
   const restarted = new ProfileManager(root, {
@@ -612,7 +703,7 @@ test('scan recovery rejects when index write fails, does not create spurious Mai
         throw new Error('Injected index write failure during scan rebuild');
       }
       await fs.promises.writeFile(filePath, JSON.stringify(val, null, 2), 'utf8');
-    }
+    },
   });
 
   await assert.rejects(restarted.initialize(), (err) => {
@@ -621,7 +712,7 @@ test('scan recovery rejects when index write fails, does not create spurious Mai
 
   // No extra Main Setlist should have been created
   const profilesDir = path.join(root, 'profiles');
-  const dirs = fs.readdirSync(profilesDir).filter(f => {
+  const dirs = fs.readdirSync(profilesDir).filter((f) => {
     const stat = fs.statSync(path.join(profilesDir, f));
     return stat.isDirectory();
   });
@@ -658,7 +749,7 @@ test('rename with corrupted metadata and index commit failure does not escape Sy
         throw new Error('Injected index commit failure during rename');
       }
       await fs.promises.writeFile(filePath, JSON.stringify(val, null, 2), 'utf8');
-    }
+    },
   });
   await manager.initialize();
   const fest = await manager.create('Fest');
@@ -669,18 +760,15 @@ test('rename with corrupted metadata and index commit failure does not escape Sy
 
   // Trigger rename with index failure
   failIndex = true;
-  await assert.rejects(
-    manager.rename(fest.id, 'New Name'),
-    (err) => {
-      // Must be a ProfileError with profile_io_error, NOT a SyntaxError from JSON.parse()
-      return err instanceof ProfileError && err.code === 'profile_io_error';
-    }
-  );
+  await assert.rejects(manager.rename(fest.id, 'New Name'), (err) => {
+    // Must be a ProfileError with profile_io_error, NOT a SyntaxError from JSON.parse()
+    return err instanceof ProfileError && err.code === 'profile_io_error';
+  });
 
   // Verify memory and index preserved
-  assert.equal(manager.list().find(p => p.id === fest.id)?.name, 'Fest');
+  assert.equal(manager.list().find((p) => p.id === fest.id)?.name, 'Fest');
   const index = JSON.parse(fs.readFileSync(path.join(root, 'profiles', 'index.json'), 'utf8'));
-  assert.equal(index.profiles.find(p => p.id === fest.id)?.name, 'Fest');
+  assert.equal(index.profiles.find((p) => p.id === fest.id)?.name, 'Fest');
 });
 
 test('recordLegacySource metadata write / index rollback failure handles state correctly', async (t) => {
@@ -693,7 +781,7 @@ test('recordLegacySource metadata write / index rollback failure handles state c
         throw new Error('Injected index commit failure');
       }
       await fs.promises.writeFile(filePath, JSON.stringify(val, null, 2), 'utf8');
-    }
+    },
   });
   await manager.initialize();
   const principal = manager.getActive();
@@ -702,7 +790,7 @@ test('recordLegacySource metadata write / index rollback failure handles state c
   failIndex = true;
   await assert.rejects(
     manager.recordLegacySource('global', principal.id),
-    (err) => err instanceof ProfileError && err.code === 'profile_io_error'
+    (err) => err instanceof ProfileError && err.code === 'profile_io_error',
   );
 
   // Verify legacySources not changed
@@ -722,6 +810,6 @@ test('recordLegacySource with corrupted metadata throws ProfileError before muta
   // Should throw ProfileError and not run any metadata writes/updates
   await assert.rejects(
     manager.recordLegacySource('global', principal.id),
-    (err) => err instanceof ProfileError && err.code === 'profile_io_error'
+    (err) => err instanceof ProfileError && err.code === 'profile_io_error',
   );
 });

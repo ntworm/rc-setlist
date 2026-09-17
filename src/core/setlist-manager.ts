@@ -1,6 +1,15 @@
-import { Section, Song, SetlistState } from '../types.js';
+import type { Section, Song, SetlistState } from '../types.js';
 import { computeCuesFingerprint, parseSetlist } from './locator-parser.js';
 import { calculateSetlistMetrics } from './setlist-metrics.js';
+import {
+  reconcileSongSectionKeys,
+  resetFiredAutomations as resetFiredAutomationFlags,
+} from './automation-evaluator.js';
+import {
+  trackRestingPosition as recordRestingPosition,
+  shouldContinuePlayback as restingShouldContinue,
+} from './transport-tracker.js';
+import { log } from '../util/log.js';
 
 /**
  * `next` and `skip` carry the beat the playhead must be moved to. Both hand
@@ -19,6 +28,9 @@ export type AutomationAction =
   | { type: 'skip'; targetCue: string; targetTime: number }
   | { type: 'jump_to'; targetCue: string; targetTime: number };
 
+/**
+ * Manages the lifecycle and public surface of SetlistManager.
+ */
 export class SetlistManager {
   private songs: Song[] = [];
   private hidden: { name: string; time: number }[] = [];
@@ -51,7 +63,7 @@ export class SetlistManager {
    */
   private restingAt: number | null = null;
   /** Forward movement a stop may still show while the last samples settle. */
-  private static readonly REST_SETTLE_BEATS = 2;
+
   private rawCues: { name: string; time: number; cueIndex?: number }[] = [];
   private appliedCuesFingerprint: string | null = null;
   private metronome: boolean = false;
@@ -86,7 +98,7 @@ export class SetlistManager {
    */
   private lastSongKey: string | null = null;
   private lastSectionKey: string | null = null;
-  
+
   // Loop iteration tracking
   private loopActive: boolean = false;
   private loopCount: number | null = null;
@@ -192,8 +204,12 @@ export class SetlistManager {
       }
       for (const section of song.sections) {
         const sectionBpm = usable(section.bpm);
-        if (sectionBpm !== null && Number.isFinite(section.time)
-          && section.time <= this.currentSongTime && section.time >= bestTime) {
+        if (
+          sectionBpm !== null &&
+          Number.isFinite(section.time) &&
+          section.time <= this.currentSongTime &&
+          section.time >= bestTime
+        ) {
           declared = sectionBpm;
           bestTime = section.time;
         }
@@ -338,7 +354,11 @@ export class SetlistManager {
 
   private getDerivedSongs(): { songs: Song[]; totalDurationSeconds: number | null } {
     if (!this.derivedSongs) {
-      const metrics = calculateSetlistMetrics(this.songs, this.arrangementEndTime, this.durationFallbackBpm);
+      const metrics = calculateSetlistMetrics(
+        this.songs,
+        this.arrangementEndTime,
+        this.durationFallbackBpm,
+      );
       this.derivedSongs = this.songs.map((song) => ({
         ...song,
         durationSeconds: metrics.songDurationSecondsBySong.get(song) ?? null,
@@ -397,7 +417,10 @@ export class SetlistManager {
         const loopMid = this.loopStartBeat + (this.loopEndBeat - this.loopStartBeat) / 2;
         if (time < prevTime && time >= this.loopStartBeat - 1.0 && time <= loopMid) {
           this.currentLoopIteration++;
-          console.log(`[Loop] Loop wrapped around. Iteration ${this.currentLoopIteration} of ${this.loopCount}`);
+          log.info('core', 'Loop wrapped around', {
+            iteration: this.currentLoopIteration,
+            total: this.loopCount,
+          });
 
           if (this.currentLoopIteration >= this.loopCount) {
             this.pendingDeactivateLoop = true;
@@ -434,18 +457,12 @@ export class SetlistManager {
    * behind the playhead. Backward movement is always a relocation.
    */
   private trackRestingPosition(time: number, isPlaying: boolean): void {
-    if (isPlaying) {
-      this.restingAt = null;
-      return;
-    }
-    if (this.isPlaying || this.restingAt === null) {
-      this.restingAt = time;
-      return;
-    }
-    const drift = time - this.restingAt;
-    if (drift >= 0 && drift <= SetlistManager.REST_SETTLE_BEATS) {
-      this.restingAt = time;
-    }
+    const update = recordRestingPosition(time, isPlaying, {
+      restingAt: this.restingAt,
+      isPlaying: this.isPlaying,
+      currentSongTime: this.currentSongTime,
+    });
+    this.restingAt = update.restingAt;
   }
 
   /**
@@ -455,9 +472,11 @@ export class SetlistManager {
    * transport always continues: `start_playing` would restart it.
    */
   public shouldContinuePlayback(): boolean {
-    if (this.isPlaying) return true;
-    if (this.restingAt === null) return true;
-    return Math.abs(this.currentSongTime - this.restingAt) < 0.01;
+    return restingShouldContinue({
+      restingAt: this.restingAt,
+      isPlaying: this.isPlaying,
+      currentSongTime: this.currentSongTime,
+    });
   }
 
   public updateMetronome(metronome: boolean): void {
@@ -482,7 +501,7 @@ export class SetlistManager {
     if (this.loopActive && !this.pendingDeactivateLoop) {
       time = Math.min(time, this.loopEndBeat - 0.02);
     }
-    
+
     let low = 0;
     let high = this.chronologicalSongs.length - 1;
     let activeEntry: { song: Song; displayIndex: number } | null = null;
@@ -518,19 +537,19 @@ export class SetlistManager {
      *
      * Song keys are `<tag>:song@<beat>`; section keys are `<tag>:section@<beat>`.
      */
-    const songKey = activeSong ? SetlistManager.songKey(activeSong) : null;
-    const section = activeSong && newSectionIndex >= 0 ? activeSong.sections[newSectionIndex]! : null;
-    const sectionKey = section ? SetlistManager.sectionKey(section) : null;
-    if (songKey !== this.lastSongKey) {
-      this.firedAutomations.clear();
-      this.lastSongKey = songKey;
-      this.lastSectionKey = sectionKey;
-    } else if (sectionKey !== this.lastSectionKey) {
-      for (const fired of [...this.firedAutomations]) {
-        if (!fired.includes(':song@')) this.firedAutomations.delete(fired);
-      }
-      this.lastSectionKey = sectionKey;
-    }
+    const section =
+      activeSong && newSectionIndex >= 0 ? activeSong.sections[newSectionIndex]! : null;
+    const update = reconcileSongSectionKeys(
+      {
+        firedAutomations: this.firedAutomations,
+        lastSongKey: this.lastSongKey,
+        lastSectionKey: this.lastSectionKey,
+      },
+      activeSong,
+      section,
+    );
+    this.lastSongKey = update.lastSongKey;
+    this.lastSectionKey = update.lastSectionKey;
 
     this.activeSectionIndex = newSectionIndex;
   }
@@ -623,10 +642,14 @@ export class SetlistManager {
       }
     }
 
-    if (target.loopCount !== null && !this.loopActive && !this.firedAutomations.has(`loop:${key}`)) {
+    if (
+      target.loopCount !== null &&
+      !this.loopActive &&
+      !this.firedAutomations.has(`loop:${key}`)
+    ) {
       this.firedAutomations.add(`loop:${key}`);
       const region = isSection
-        ? this.getLoopRegion(this.activeSongIndex, sectionIndex!)
+        ? this.getLoopRegion(this.activeSongIndex, sectionIndex)
         : this.getSongRegion(this.activeSongIndex);
       if (region) {
         this.loopActive = true;
@@ -652,7 +675,7 @@ export class SetlistManager {
       this.firedAutomations.add(`skip:${key}`);
       // A song-level skip leaves the song, so it asks for the next song rather
       // than the next section of the song it is skipping.
-      const nextCue = this.getNextCue(this.activeSongIndex, isSection ? sectionIndex! : -1);
+      const nextCue = this.getNextCue(this.activeSongIndex, isSection ? sectionIndex : -1);
       if (nextCue) {
         actions.push({ type: 'skip', targetCue: nextCue.name, targetTime: nextCue.time });
       }
@@ -678,7 +701,10 @@ export class SetlistManager {
    * one; the last is what lets a bridge shared by two songs be reached from
    * either.
    */
-  public resolveJumpTarget(name: string, fromSongIndex: number): { name: string; time: number } | null {
+  public resolveJumpTarget(
+    name: string,
+    fromSongIndex: number,
+  ): { name: string; time: number } | null {
     const fold = (value: string) => value.replace(/\s+/g, ' ').trim().toLowerCase();
     const wanted = fold(name);
     if (!wanted) return null;
@@ -716,7 +742,10 @@ export class SetlistManager {
    * The cue a [skip] hands over to: the section after the given one, or the
    * song after the given song when the skip is song-level or on a last section.
    */
-  public getNextCue(songIndex: number, sectionIndex: number): { name: string; time: number } | null {
+  public getNextCue(
+    songIndex: number,
+    sectionIndex: number,
+  ): { name: string; time: number } | null {
     const currentSong = this.songs[songIndex];
     if (!currentSong) return null;
 
@@ -727,7 +756,7 @@ export class SetlistManager {
       targetTime = this.songs[songIndex + 1]?.time ?? null;
     }
     if (targetTime === null) return null;
-    const matchingCue = this.rawCues.find(c => c.time === targetTime);
+    const matchingCue = this.rawCues.find((c) => c.time === targetTime);
     return matchingCue ? { name: matchingCue.name, time: matchingCue.time } : null;
   }
 
@@ -743,9 +772,11 @@ export class SetlistManager {
   }
 
   public resetFiredAutomations(): void {
-    this.firedAutomations.clear();
-    this.lastSongKey = null;
-    this.lastSectionKey = null;
+    resetFiredAutomationFlags({
+      firedAutomations: this.firedAutomations,
+      lastSongKey: this.lastSongKey,
+      lastSectionKey: this.lastSectionKey,
+    });
   }
 
   public isLoopActive(): boolean {
@@ -757,7 +788,10 @@ export class SetlistManager {
     const activeSection = activeSong?.sections[this.activeSectionIndex];
     const derived = this.getDerivedSongs();
 
-    const state: any = {
+    const state: Partial<SetlistState> & {
+      currentSongId?: string;
+      currentSectionId?: string;
+    } = {
       protocolVersion: 3,
       setlistVersion: this.setlistVersion,
       songs: derived.songs,
@@ -771,9 +805,10 @@ export class SetlistManager {
       preRollEnabled: this.preRollEnabled,
       signatureNumerator: this.signatureNumerator,
       signatureDenominator: this.signatureDenominator,
-      loopIteration: this.loopActive && this.loopCount !== null && this.loopCount > 0
-        ? { current: this.currentLoopIteration, total: this.loopCount }
-        : null,
+      loopIteration:
+        this.loopActive && this.loopCount !== null && this.loopCount > 0
+          ? { current: this.currentLoopIteration, total: this.loopCount }
+          : null,
       loopActive: this.loopActive,
       loopCount: this.loopCount,
       currentLoopIteration: this.currentLoopIteration,
@@ -817,7 +852,10 @@ export class SetlistManager {
     return state as SetlistState;
   }
 
-  public setConnectionStatus(type: 'ableton' | 'osc', status: 'disconnected' | 'connecting' | 'synced' | 'degraded'): void {
+  public setConnectionStatus(
+    type: 'ableton' | 'osc',
+    status: 'disconnected' | 'connecting' | 'synced' | 'degraded',
+  ): void {
     let changed = false;
     if (type === 'ableton' && this.abletonConnection !== status) {
       this.abletonConnection = status;
@@ -880,9 +918,8 @@ export class SetlistManager {
   }
 
   public setCustomOrder(order: string[]): void {
-    this.customOrder = Array.isArray(order) && order.every((title) => typeof title === 'string')
-      ? [...order]
-      : [];
+    this.customOrder =
+      Array.isArray(order) && order.every((title) => typeof title === 'string') ? [...order] : [];
     this.sortSongs();
     this.updateActiveIndices();
     this.stateVersion++;
@@ -914,10 +951,13 @@ export class SetlistManager {
     return { start, end, duration: 4 };
   }
 
-  public getLoopRegion(songIndex: number, sectionIndex: number): { start: number; end: number; duration: number } | null {
+  public getLoopRegion(
+    songIndex: number,
+    sectionIndex: number,
+  ): { start: number; end: number; duration: number } | null {
     const song = this.songs[songIndex];
     if (!song) return null;
-    
+
     const section = song.sections[sectionIndex];
     if (!section) return null;
 

@@ -51,6 +51,9 @@ async function syncContainingDirectory(
   }
 }
 
+/**
+ * AtomicWriteFileWithDependencies — implementation detail.
+ */
 export async function atomicWriteFileWithDependencies(
   targetPath: string,
   data: string | Uint8Array,

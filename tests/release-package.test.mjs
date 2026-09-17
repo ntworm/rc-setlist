@@ -17,14 +17,12 @@ test('every release-surface file names the version in package.json', () => {
   // containment, not regex: the version is a literal, not a pattern.
   const version = JSON.parse(read('package.json')).version;
   const packager = read('scripts/package-release-candidate.ps1');
-  const contains = (file, needle) => assert.ok(
-    read(file).includes(needle),
-    `${file} must name "${needle}"`,
-  );
+  const contains = (file, needle) =>
+    assert.ok(read(file).includes(needle), `${file} must name "${needle}"`);
 
-  contains('release-template/README.txt', `Ableton-RC-Setlist-${version}.ablx`);
-  contains('release-template/README.txt', `ABLETON RC SETLIST ${version}`);
-  contains('release-template/START-HERE.html', `Ableton-RC-Setlist-${version}.ablx`);
+  contains('release-template/README.txt', `RC-Setlist-${version}.ablx`);
+  contains('release-template/README.txt', `RC SETLIST ${version}`);
+  contains('release-template/START-HERE.html', `RC-Setlist-${version}.ablx`);
   contains('release-template/en/TEST-CHECKLIST.md', version);
   contains('release-template/pt-BR/TEST-CHECKLIST.md', version);
   contains('scripts/package-release-candidate.ps1', `$Version = "${version}"`);
@@ -48,8 +46,8 @@ test('release installation kit has a deterministic packager and owner-facing tem
 
   const packager = read('scripts/package-release-candidate.ps1');
   for (const required of [
-    'Ableton-RC-Setlist-$Version.ablx',
-    'Ableton-RC-Setlist-$Version-Installation-Kit',
+    'RC-Setlist-$Version.ablx',
+    'RC-Setlist-$Version-Installation-Kit',
     'SHA256SUMS.txt',
     'THIRD_PARTY_NOTICES.md',
     'en/TEST-CHECKLIST.md',
@@ -64,8 +62,15 @@ test('release installation kit has a deterministic packager and owner-facing tem
     assert.ok(packager.includes(required), `packager must include ${required}`);
   }
 
-  assert.doesNotMatch(packager, /Copy-Item[^\n]+AbletonOSC/i, 'AbletonOSC must remain an external upstream install');
-  assert.match(packager, /Release verification: automated gates passed; rehearse in Ableton Live before stage use/);
+  assert.doesNotMatch(
+    packager,
+    /Copy-Item[^\n]+AbletonOSC/i,
+    'AbletonOSC must remain an external upstream install',
+  );
+  assert.match(
+    packager,
+    /Release verification: automated gates passed; rehearse in Ableton Live before stage use/,
+  );
 });
 
 test('release templates describe the real prerequisites and safe local-network setup', () => {
@@ -79,7 +84,7 @@ test('release templates describe the real prerequisites and safe local-network s
   assert.match(combined, /Ableton Live 12\.4\.5\+/);
   assert.match(combined, /AbletonOSC/);
   assert.match(combined, /trusted (?:local network|LAN)/i);
-  assert.ok(combined.includes(`Ableton-RC-Setlist-${JSON.parse(read('package.json')).version}.ablx`));
+  assert.ok(combined.includes(`RC-Setlist-${JSON.parse(read('package.json')).version}.ablx`));
   assert.doesNotMatch(combined, /Ableton Setlist Bridge|commercial-song|real setlist/i);
 });
 
@@ -93,18 +98,36 @@ test('release templates ship RC Bridge with its installers and the one manual st
     assert.match(content, /RCBridge/);
   }
   // Both installers copy the same folder and print the same last step.
-  for (const path of ['release-template/RC-Bridge/Install-RC-Bridge.ps1', 'release-template/RC-Bridge/Install RC Bridge.command']) {
+  for (const path of [
+    'release-template/RC-Bridge/Install-RC-Bridge.ps1',
+    'release-template/RC-Bridge/Install RC Bridge.command',
+  ]) {
     const content = read(path);
     assert.match(content, /Remote Scripts/);
     assert.match(content, /RCBridge/);
     assert.match(content, /Link, Tempo & MIDI/);
     assert.match(content, /RCBRIDGE_VERSION/, 'reports the version it installed');
   }
-  for (const path of ['release-template/en/TEST-CHECKLIST.md', 'release-template/pt-BR/TEST-CHECKLIST.md']) {
+  for (const path of [
+    'release-template/en/TEST-CHECKLIST.md',
+    'release-template/pt-BR/TEST-CHECKLIST.md',
+  ]) {
     const content = read(path);
-    assert.match(content, /User Library[\\/]Remote Scripts[\\/]RCBridge/i, `${path} must show the exact install target`);
-    assert.match(content, /RCBridge[\\/]__init__\.py/i, `${path} must show how to detect an extra nested folder`);
-    assert.match(content, /via RC Bridge 1\.0\.0/, `${path} must check the panel reports the bridge`);
+    assert.match(
+      content,
+      /User Library[\\/]Remote Scripts[\\/]RCBridge/i,
+      `${path} must show the exact install target`,
+    );
+    assert.match(
+      content,
+      /RCBridge[\\/]__init__\.py/i,
+      `${path} must show how to detect an extra nested folder`,
+    );
+    assert.match(
+      content,
+      /via RC Bridge 1\.0\.0/,
+      `${path} must check the panel reports the bridge`,
+    );
   }
 });
 
@@ -136,30 +159,51 @@ test('certificate onboarding is explicit in both languages and canonical English
 test('generated installation kit keeps English and Portuguese guides in their language folders', (t) => {
   const tempRoot = mkdtempSync(path.join(tmpdir(), 'rc-setlist-kit-contract-'));
   t.after(() => rmSync(tempRoot, { recursive: true, force: true }));
-  const ablxPath = path.join(tempRoot, 'Ableton-RC-Setlist-0.7.0.ablx');
+  const ablxPath = path.join(tempRoot, 'RC-Setlist-1.0.0.ablx');
   const outputRoot = path.join(tempRoot, 'output');
   writeFileSync(ablxPath, '');
 
   const powershellExecutable = process.platform === 'win32' ? 'powershell.exe' : 'pwsh';
-  const result = spawnSync(powershellExecutable, [
-    '-NoProfile',
-    '-ExecutionPolicy', 'Bypass',
-    '-File', path.join(rootPath, 'scripts', 'package-release-candidate.ps1'),
-    '-Version', '0.7.0',
-    '-AblxPath', ablxPath,
-    '-OutputRoot', outputRoot,
-  ], { cwd: rootPath, encoding: 'utf8' });
+  const result = spawnSync(
+    powershellExecutable,
+    [
+      '-NoProfile',
+      '-ExecutionPolicy',
+      'Bypass',
+      '-File',
+      path.join(rootPath, 'scripts', 'package-release-candidate.ps1'),
+      '-Version',
+      '1.0.0',
+      '-AblxPath',
+      ablxPath,
+      '-OutputRoot',
+      outputRoot,
+    ],
+    { cwd: rootPath, encoding: 'utf8' },
+  );
   assert.equal(result.status, 0, result.error?.message || result.stderr || result.stdout);
 
-  const kitRoot = path.join(outputRoot, 'Ableton-RC-Setlist-0.7.0-Installation-Kit');
-  const expectedGuides = ['INSTALL.md', 'USER-GUIDE.md', 'TROUBLESHOOTING.md', 'FAQ.md', 'TEST-CHECKLIST.md'];
+  const kitRoot = path.join(outputRoot, 'RC-Setlist-1.0.0-Installation-Kit');
+  const expectedGuides = [
+    'INSTALL.md',
+    'USER-GUIDE.md',
+    'TROUBLESHOOTING.md',
+    'FAQ.md',
+    'TEST-CHECKLIST.md',
+  ];
   for (const locale of ['en', 'pt-BR']) {
     for (const guide of expectedGuides) {
       assert.ok(existsSync(path.join(kitRoot, locale, guide)), `${locale}/${guide} must exist`);
     }
   }
-  assert.ok(existsSync(path.join(kitRoot, 'en', 'RELEASE-NOTES.md')), 'en/RELEASE-NOTES.md must exist');
-  assert.ok(existsSync(path.join(kitRoot, 'pt-BR', 'NOTAS-DA-VERSAO.md')), 'pt-BR/NOTAS-DA-VERSAO.md must exist');
+  assert.ok(
+    existsSync(path.join(kitRoot, 'en', 'RELEASE-NOTES.md')),
+    'en/RELEASE-NOTES.md must exist',
+  );
+  assert.ok(
+    existsSync(path.join(kitRoot, 'pt-BR', 'NOTAS-DA-VERSAO.md')),
+    'pt-BR/NOTAS-DA-VERSAO.md must exist',
+  );
 
   const rootMarkdownOrHtml = readdirSync(kitRoot)
     .filter((name) => /\.(?:md|html)$/i.test(name))
@@ -175,12 +219,17 @@ test('generated installation kit keeps English and Portuguese guides in their la
     }
   };
   walk(kitRoot);
-  assert.equal(allRelativeFiles.some((file) => /LEIA-ME-INSTALACAO/i.test(file)), false);
+  assert.equal(
+    allRelativeFiles.some((file) => /LEIA-ME-INSTALACAO/i.test(file)),
+    false,
+  );
 });
 
 test('verify-production-bundle.mjs rejects bundles missing relative locator semantics', () => {
-  const verifierScript = readFileSync(new URL('../scripts/verify-production-bundle.mjs', import.meta.url), 'utf8');
+  const verifierScript = readFileSync(
+    new URL('../scripts/verify-production-bundle.mjs', import.meta.url),
+    'utf8',
+  );
   assert.match(verifierScript, /relative-section/);
   assert.match(verifierScript, /relative-automation/);
 });
-

@@ -20,7 +20,11 @@ function copyDirectory(source: string, destination: string, options: CopyTreeOpt
   }
 }
 
-export function copyStaticTree(source: string, destination: string, options: CopyTreeOptions = {}): void {
+export function copyStaticTree(
+  source: string,
+  destination: string,
+  options: CopyTreeOptions = {},
+): void {
   if (!fs.existsSync(source) || !fs.statSync(source).isDirectory()) {
     throw new Error(`Static source directory does not exist: ${source}`);
   }

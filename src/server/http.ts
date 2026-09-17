@@ -1,20 +1,24 @@
-import * as http from 'node:http';
+﻿import * as http from 'node:http';
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
 import { fileURLToPath, URL as NodeURL } from 'node:url';
+import { log } from '../util/log.js';
 
-const __dirnameResolved = typeof __dirname !== 'undefined'
-  ? __dirname
-  : path.dirname(fileURLToPath(import.meta.url));
+const __dirnameResolved =
+  typeof __dirname !== 'undefined' ? __dirname : path.dirname(fileURLToPath(import.meta.url));
 
+/**
+ * SanitizeUrl — implementation detail.
+ */
 export function sanitizeUrl(urlStr: string): string {
   if (!urlStr) return '';
   const [base, query] = urlStr.split('?');
   if (!query) return urlStr;
   const parts = query.split('&');
-  const sanitizedParts = parts.map(part => {
+  const sanitizedParts = parts.map((part) => {
     const separator = part.indexOf('=');
     const rawKey = separator === -1 ? part : part.slice(0, separator);
+    // eslint-disable-next-line no-useless-assignment -- initial value used by the catch branch when decodeURIComponent throws.
     let decodedKey = '';
     try {
       decodedKey = decodeURIComponent(rawKey.replace(/\+/g, ' '));
@@ -56,12 +60,18 @@ export type AudioResolver = (fileName: string) => Promise<{
 export type DebugSnapshotProvider = () => Record<string, unknown>;
 let debugSnapshotProvider: DebugSnapshotProvider | null = null;
 
+/**
+ * Sets the debug snapshot provider.
+ */
 export function setDebugSnapshotProvider(fn: DebugSnapshotProvider): void {
   debugSnapshotProvider = fn;
 }
 
 let httpAuthToken: string = '';
 
+/**
+ * Sets the http auth token.
+ */
 export function setHttpAuthToken(token: string): void {
   httpAuthToken = token;
 }
@@ -69,10 +79,16 @@ export function setHttpAuthToken(token: string): void {
 let csvExportResolver: CsvExportResolver | null = null;
 let audioResolver: AudioResolver | null = null;
 
+/**
+ * Sets the csv export resolver.
+ */
 export function setCsvExportResolver(fn: CsvExportResolver): void {
   csvExportResolver = fn;
 }
 
+/**
+ * Sets the audio resolver.
+ */
 export function setAudioResolver(fn: AudioResolver): void {
   audioResolver = fn;
 }
@@ -82,20 +98,25 @@ export type AsyncHttpHandler = (
   res: http.ServerResponse,
 ) => void | Promise<void>;
 
+/**
+ * Creates the http request listener.
+ */
 export function createHttpRequestListener(
   handler: AsyncHttpHandler = handleHttp,
 ): http.RequestListener {
   return (req, res) => {
-    void Promise.resolve().then(() => handler(req, res)).catch(() => {
-      console.error('[HTTP] Request failed.');
-      if (res.writableEnded) return;
-      if (res.headersSent) {
-        res.destroy();
-        return;
-      }
-      res.writeHead(500, { 'Content-Type': 'text/plain; charset=utf-8' });
-      res.end('internal server error\n');
-    });
+    void Promise.resolve()
+      .then(() => handler(req, res))
+      .catch(() => {
+        log.error('http', 'Request failed.');
+        if (res.writableEnded) return;
+        if (res.headersSent) {
+          res.destroy();
+          return;
+        }
+        res.writeHead(500, { 'Content-Type': 'text/plain; charset=utf-8' });
+        res.end('internal server error\n');
+      });
   };
 }
 
@@ -109,6 +130,9 @@ export interface ResponseFileSystem {
   readFile(filePath: string): Promise<Buffer>;
 }
 
+/**
+ * Loads the response file.
+ */
 export async function loadResponseFile(
   filePath: string,
   isHead: boolean,
@@ -123,19 +147,27 @@ export async function loadResponseFile(
   return { length: data.length, data };
 }
 
+/**
+ * SafeAttachmentName — implementation detail.
+ */
 export function safeAttachmentName(value: string): string {
   const baseName = path.posix.basename(String(value).replace(/\\/g, '/'));
-  const sanitized = baseName.replace(/[^A-Za-z0-9 ._()\-]/g, '_').slice(0, 180);
+  const sanitized = baseName.replace(/[^A-Za-z0-9 ._()-]/g, '_').slice(0, 180);
   return sanitized || 'setlist.csv';
 }
 
-async function serveStaticFile(reqUrl: string, res: http.ServerResponse, isHead: boolean = false): Promise<void> {
+async function serveStaticFile(
+  reqUrl: string,
+  res: http.ServerResponse,
+  isHead: boolean = false,
+): Promise<void> {
   const staticDir = path.join(__dirnameResolved, 'static');
   const rawPath = reqUrl.split('?')[0] ?? '/';
   const relativePath = rawPath.startsWith('/static/')
     ? rawPath.slice('/static/'.length)
     : rawPath.replace(/^\/+/, '');
 
+  // eslint-disable-next-line no-useless-assignment -- initial value used by the catch branch when decodeURIComponent throws.
   let decodedRelativePath = '';
   try {
     decodedRelativePath = decodeURIComponent(relativePath);
@@ -145,9 +177,7 @@ async function serveStaticFile(reqUrl: string, res: http.ServerResponse, isHead:
     return;
   }
 
-  const normalized = path
-    .normalize(decodedRelativePath)
-    .replace(/^[\\/]+/, '');
+  const normalized = path.normalize(decodedRelativePath).replace(/^[\\/]+/, '');
   let filePath = path.join(staticDir, normalized);
 
   if (!filePath.startsWith(staticDir + path.sep) && filePath !== staticDir) {
@@ -156,6 +186,7 @@ async function serveStaticFile(reqUrl: string, res: http.ServerResponse, isHead:
     return;
   }
 
+  // eslint-disable-next-line no-useless-assignment -- initial value used by the catch branch when fs.stat throws.
   let size = 0;
   try {
     const stat = await fs.stat(filePath);
@@ -193,9 +224,15 @@ async function serveStaticFile(reqUrl: string, res: http.ServerResponse, isHead:
   }
 }
 
-export async function handleHttp(req: http.IncomingMessage, res: http.ServerResponse): Promise<void> {
+/**
+ * Handles the http.
+ */
+export async function handleHttp(
+  req: http.IncomingMessage,
+  res: http.ServerResponse,
+): Promise<void> {
   const ts = new Date().toISOString();
-  console.log(`[${ts}] ${req.method} ${sanitizeUrl(req.url ?? '')}`);
+  log.info('http', `${req.method} request`, { ts, url: sanitizeUrl(req.url ?? '') });
 
   const rawPath = req.url ? (req.url.split('?')[0] ?? '') : '';
 
@@ -212,7 +249,7 @@ export async function handleHttp(req: http.IncomingMessage, res: http.ServerResp
     if (isHead) {
       res.end();
     } else {
-      res.end(JSON.stringify({ ok: true, ts, message: 'Ableton RC Setlist: server is healthy.' }));
+      res.end(JSON.stringify({ ok: true, ts, message: 'RC Setlist: server is healthy.' }));
     }
     return;
   }
@@ -228,7 +265,11 @@ export async function handleHttp(req: http.IncomingMessage, res: http.ServerResp
     const tokenParsed = url.searchParams.get('token');
     if (!httpAuthToken || tokenParsed !== httpAuthToken) {
       res.writeHead(401, { 'Content-Type': 'application/json; charset=utf-8' });
-      res.end(isHead ? undefined : JSON.stringify({ error: 'unauthorized: invalid or missing security token' }));
+      res.end(
+        isHead
+          ? undefined
+          : JSON.stringify({ error: 'unauthorized: invalid or missing security token' }),
+      );
       return;
     }
 
@@ -241,7 +282,7 @@ export async function handleHttp(req: http.IncomingMessage, res: http.ServerResp
     const bodyStr = JSON.stringify({ ts, ...snapshot });
     res.writeHead(200, {
       'Content-Type': 'application/json; charset=utf-8',
-      'Content-Length': String(Buffer.byteLength(bodyStr, 'utf-8'))
+      'Content-Length': String(Buffer.byteLength(bodyStr, 'utf-8')),
     });
     if (isHead) {
       res.end();
@@ -253,9 +294,9 @@ export async function handleHttp(req: http.IncomingMessage, res: http.ServerResp
 
   if (rawPath === '/' || rawPath === '/index.html' || rawPath === '/setlist') {
     const query = req.url && req.url.includes('?') ? req.url.slice(req.url.indexOf('?')) : '';
-    res.writeHead(302, { 
-      'Location': `/static/setlist/${query}`,
-      'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0'
+    res.writeHead(302, {
+      Location: `/static/setlist/${query}`,
+      'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0',
     });
     res.end();
     return;
@@ -263,9 +304,9 @@ export async function handleHttp(req: http.IncomingMessage, res: http.ServerResp
 
   if (rawPath === '/performance') {
     const query = req.url && req.url.includes('?') ? req.url.slice(req.url.indexOf('?')) : '';
-    res.writeHead(302, { 
-      'Location': `/static/performance/${query}`,
-      'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0'
+    res.writeHead(302, {
+      Location: `/static/performance/${query}`,
+      'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0',
     });
     res.end();
     return;
@@ -274,7 +315,7 @@ export async function handleHttp(req: http.IncomingMessage, res: http.ServerResp
   if (rawPath.startsWith('/exports/')) {
     const rawName = rawPath.slice('/exports/'.length);
     // Sanity check: only accept basename.csv (no traversal)
-    if (!/^[A-Za-z0-9_.\-]+\.csv$/.test(rawName)) {
+    if (!/^[A-Za-z0-9_.-]+\.csv$/.test(rawName)) {
       res.writeHead(400, { 'Content-Type': 'text/plain' });
       res.end(isHead ? undefined : 'invalid export filename\n');
       return;
@@ -297,7 +338,7 @@ export async function handleHttp(req: http.IncomingMessage, res: http.ServerResp
       res.setHeader('Content-Length', String(file.length));
       res.setHeader(
         'Content-Disposition',
-        `attachment; filename="${safeAttachmentName(resolved.friendlyName)}"`
+        `attachment; filename="${safeAttachmentName(resolved.friendlyName)}"`,
       );
       res.end(file.data ?? undefined);
     } catch {

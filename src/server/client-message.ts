@@ -31,17 +31,20 @@ function isBoundedNumber(value: unknown, min: number, max: number): value is num
 }
 
 function isBoundedText(value: unknown, maxLength: number): value is string {
-  return typeof value === 'string'
-    && value.length <= maxLength
-    && value.trim().length > 0
-    && !/[\u0000-\u001F\u007F-\u009F]/.test(value);
+  return (
+    typeof value === 'string' &&
+    value.length <= maxLength &&
+    value.trim().length > 0 &&
+    // eslint-disable-next-line no-control-regex
+    !/[\u0000-\u001F\u007F-\u009F]/.test(value)
+  );
 }
 
 function safeCommandId(value: unknown): string | undefined {
-  return typeof value === 'string'
-    && value.length > 0
-    && value.length <= MAX_COMMAND_ID_LENGTH
-    && COMMAND_ID_PATTERN.test(value)
+  return typeof value === 'string' &&
+    value.length > 0 &&
+    value.length <= MAX_COMMAND_ID_LENGTH &&
+    COMMAND_ID_PATTERN.test(value)
     ? value
     : undefined;
 }
@@ -67,12 +70,27 @@ function invalid(message: string, commandId?: string): DecodeResult {
  * Row one, then row two, in the order the swatch matrix renders them.
  */
 export const SONG_PALETTE = new Set([
-  '#d6a89a', '#d9c7a7', '#a9c4a0', '#98c4c0',
-  '#9db8d4', '#bfa8d1', '#d9a3b0', '#c9c9c9',
-  '#8a705c', '#818a5c', '#5c8a6b', '#5c818a',
-  '#5d5c8a', '#8a5c83', '#8a5c60', '#8a8a8a',
+  '#d6a89a',
+  '#d9c7a7',
+  '#a9c4a0',
+  '#98c4c0',
+  '#9db8d4',
+  '#bfa8d1',
+  '#d9a3b0',
+  '#c9c9c9',
+  '#8a705c',
+  '#818a5c',
+  '#5c8a6b',
+  '#5c818a',
+  '#5d5c8a',
+  '#8a5c83',
+  '#8a5c60',
+  '#8a8a8a',
 ]);
 
+/**
+ * Decodes the client message.
+ */
 export function decodeClientMessage(input: unknown): DecodeResult {
   if (!isRecord(input)) return invalid('Message must be a JSON object.');
   if (typeof input.type !== 'string' || !MESSAGE_TYPE_PATTERN.test(input.type)) {
@@ -97,13 +115,17 @@ export function decodeClientMessage(input: unknown): DecodeResult {
       if (!requireText('clientId', MAX_CLIENT_ID_LENGTH)) return fail('Invalid clientId.');
       return success({ type: 'handshake', clientId: input.clientId as string });
     case 'sync_confirm':
-      if (!isFiniteInteger(input.stateVersion, 0, Number.MAX_SAFE_INTEGER)) return fail('Invalid stateVersion.');
+      if (!isFiniteInteger(input.stateVersion, 0, Number.MAX_SAFE_INTEGER))
+        return fail('Invalid stateVersion.');
       return success({ type: 'sync_confirm', stateVersion: input.stateVersion });
     case 'get_lyrics':
-      if (input.song !== undefined && !isBoundedText(input.song, MAX_SONG_TITLE_LENGTH)) return fail('Invalid song.');
-      return success(input.song === undefined
-        ? { type: 'get_lyrics' }
-        : { type: 'get_lyrics', song: input.song });
+      if (input.song !== undefined && !isBoundedText(input.song, MAX_SONG_TITLE_LENGTH))
+        return fail('Invalid song.');
+      return success(
+        input.song === undefined
+          ? { type: 'get_lyrics' }
+          : { type: 'get_lyrics', song: input.song },
+      );
     case 'profiles_get':
       return success({ type: 'profiles_get' });
     case 'preflight_check':
@@ -127,26 +149,41 @@ export function decodeClientMessage(input: unknown): DecodeResult {
       return success({ type: 'set_quantization', value: input.value });
     case 'jump':
       if (!isFiniteInteger(input.songIndex, 0, 100_000)) return fail('Invalid songIndex.');
-      if (input.sectionIndex !== undefined && input.sectionIndex !== null
-        && !isFiniteInteger(input.sectionIndex, 0, 100_000)) return fail('Invalid sectionIndex.');
-      return success(input.sectionIndex === undefined
-        ? { type: 'jump', songIndex: input.songIndex }
-        : { type: 'jump', songIndex: input.songIndex, sectionIndex: input.sectionIndex as number | null });
+      if (
+        input.sectionIndex !== undefined &&
+        input.sectionIndex !== null &&
+        !isFiniteInteger(input.sectionIndex, 0, 100_000)
+      )
+        return fail('Invalid sectionIndex.');
+      return success(
+        input.sectionIndex === undefined
+          ? { type: 'jump', songIndex: input.songIndex }
+          : { type: 'jump', songIndex: input.songIndex, sectionIndex: input.sectionIndex },
+      );
     case 'reorder':
-      if (!Array.isArray(input.songTitles) || input.songTitles.length > MAX_REORDER_SONGS
-        || !input.songTitles.every((title) => isBoundedText(title, MAX_SONG_TITLE_LENGTH))) {
+      if (
+        !Array.isArray(input.songTitles) ||
+        input.songTitles.length > MAX_REORDER_SONGS ||
+        !input.songTitles.every((title) => isBoundedText(title, MAX_SONG_TITLE_LENGTH))
+      ) {
         return fail('Invalid songTitles; expected a bounded array of non-empty strings.');
       }
       return success({ type: 'reorder', songTitles: [...input.songTitles] as string[] });
     case 'save_lyrics':
       if (!requireText('song', MAX_SONG_TITLE_LENGTH)) return fail('Invalid song.');
-      if (typeof input.text !== 'string' || input.text.length > MAX_LYRICS_LENGTH || input.text.includes('\u0000')) {
+      if (
+        typeof input.text !== 'string' ||
+        input.text.length > MAX_LYRICS_LENGTH ||
+        input.text.includes('\u0000')
+      ) {
         return fail('Invalid text for lyrics.');
       }
       return success({ type: 'save_lyrics', song: input.song as string, text: input.text });
     case 'click_preview':
-      if (input.bpm !== undefined && !isBoundedNumber(input.bpm, 1, 999)) return fail('Invalid bpm.');
-      if (input.beats !== undefined && !isFiniteInteger(input.beats, 1, 64)) return fail('Invalid beats.');
+      if (input.bpm !== undefined && !isBoundedNumber(input.bpm, 1, 999))
+        return fail('Invalid bpm.');
+      if (input.beats !== undefined && !isFiniteInteger(input.beats, 1, 64))
+        return fail('Invalid beats.');
       return success({
         type: 'click_preview',
         ...(input.bpm === undefined ? {} : { bpm: input.bpm }),
@@ -173,37 +210,50 @@ export function decodeClientMessage(input: unknown): DecodeResult {
     case 'profile_rename':
       if (!requireText('id', MAX_COMMAND_ID_LENGTH)) return fail('Invalid profile id.');
       if (!requireText('name', MAX_PROFILE_FIELD_LENGTH)) return fail('Invalid profile name.');
-      return success({ type: 'profile_rename', id: input.id as string, name: input.name as string });
+      return success({
+        type: 'profile_rename',
+        id: input.id as string,
+        name: input.name as string,
+      });
     case 'profile_delete':
       if (!requireText('id', MAX_COMMAND_ID_LENGTH)) return fail('Invalid profile id.');
-      if (!requireText('confirmationName', MAX_PROFILE_FIELD_LENGTH)) return fail('Invalid confirmationName.');
+      if (!requireText('confirmationName', MAX_PROFILE_FIELD_LENGTH))
+        return fail('Invalid confirmationName.');
       return success({
         type: 'profile_delete',
         id: input.id as string,
         confirmationName: input.confirmationName as string,
       });
     case 'set_song_color': {
-      if (!isBoundedNumber(input.time, 0, 1_000_000)) return fail('Invalid time for set_song_color.');
+      if (!isBoundedNumber(input.time, 0, 1_000_000))
+        return fail('Invalid time for set_song_color.');
       const color = input.color;
       if (color !== null && !(typeof color === 'string' && SONG_PALETTE.has(color))) {
         return fail('Invalid colour for set_song_color.');
       }
-      return success({ type: 'set_song_color', time: input.time as number, color: color as string | null });
+      return success({ type: 'set_song_color', time: input.time, color: color });
     }
     case 'set_song_notes': {
-      if (!isBoundedNumber(input.time, 0, 1_000_000)) return fail('Invalid time for set_song_notes.');
+      if (!isBoundedNumber(input.time, 0, 1_000_000))
+        return fail('Invalid time for set_song_notes.');
       const notes = input.notes;
       if (notes === null || (typeof notes === 'string' && notes.trim() === '')) {
-        return success({ type: 'set_song_notes', time: input.time as number, notes: null });
+        return success({ type: 'set_song_notes', time: input.time, notes: null });
       }
       // One line: the card has room for one, and a newline is a control character anyway.
-      if (!isBoundedText(notes, MAX_SONG_NOTES_LENGTH)) return fail('Invalid notes for set_song_notes.');
-      return success({ type: 'set_song_notes', time: input.time as number, notes: (notes as string).trim() });
+      if (!isBoundedText(notes, MAX_SONG_NOTES_LENGTH))
+        return fail('Invalid notes for set_song_notes.');
+      return success({ type: 'set_song_notes', time: input.time, notes: notes.trim() });
     }
     case 'edit_locator':
       if (!isBoundedNumber(input.time, 0, 1_000_000)) return fail('Invalid time for edit_locator.');
-      if (!requireText('name', MAX_LOCATOR_NAME_LENGTH)) return fail('Invalid name for edit_locator.');
-      return success({ type: 'edit_locator', time: input.time as number, name: input.name as string });
+      if (!requireText('name', MAX_LOCATOR_NAME_LENGTH))
+        return fail('Invalid name for edit_locator.');
+      return success({ type: 'edit_locator', time: input.time, name: input.name as string });
+    case 'trigger_count_in':
+      if (!isBoundedNumber(input.sendPlayOffsetMs, 0, 10_000))
+        return fail('Invalid sendPlayOffsetMs.');
+      return success({ type: 'trigger_count_in', sendPlayOffsetMs: input.sendPlayOffsetMs });
     default:
       return fail('Unsupported message type.');
   }

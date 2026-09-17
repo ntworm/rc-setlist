@@ -1,4 +1,4 @@
-# Install Ableton RC Setlist
+# Install RC Setlist
 
 ## Requirements
 
@@ -13,7 +13,7 @@ release package.
 
 ## 1. Install RC Bridge
 
-RC Bridge is the Live Remote Script that Ableton RC Setlist talks to. It is a
+RC Bridge is the Live Remote Script that RC Setlist talks to. It is a
 fork of the MIT-licensed [AbletonOSC](https://github.com/ideoforms/AbletonOSC)
 that answers each client on its own port, so it never fights another RC
 extension for a reply port and runs beside a stock AbletonOSC if you have one.
@@ -47,13 +47,13 @@ in use (`via RC Bridge 1.0.0 on port 11020`). The extension itself cannot
 copy the script for you: Live runs extensions in a sandbox that cannot write
 to your User Library.
 
-## 2. Install Ableton RC Setlist
+## 2. Install RC Setlist
 
-1. Download `Ableton-RC-Setlist-0.5.0.ablx` from the
+1. Download `RC-Setlist-1.0.0.ablx` from the
    [latest GitHub release](https://github.com/ntworm/rc-setlist/releases/latest).
 2. Open the `.ablx` and follow the Ableton Live installation prompt.
 3. Restart Live if the extension does not appear immediately.
-4. Open **Extensions > Ableton RC Setlist**.
+4. Open **Extensions > RC Setlist**.
 
 The same `.ablx` contains both interface languages. English is selected by
 default; choose **Brazilian Portuguese** from the language menu in the panel,
@@ -63,7 +63,7 @@ Do not install SDK or CLI archives as an end user.
 
 ## 3. Start the local server
 
-1. In the Ableton RC Setlist panel, choose **Start Server**.
+1. In the RC Setlist panel, choose **Start Server**.
 2. Confirm the panel reports a local URL and QR code.
 3. On the host computer, open `https://localhost:4444/setlist`.
 4. On a phone/tablet, use the LAN URL or QR code shown by the panel.
@@ -77,6 +77,25 @@ Each browser/device may require this once.
 
 - Operator workspace: `https://<host-ip>:4444/setlist`
 - Stage display: `https://<host-ip>:4444/performance`
+
+## Updating from 0.x (Ableton RC Setlist 0.4.x–0.7.0)
+
+The product name changed to **RC Setlist** in 1.0 following Ableton's brand
+guidelines. Your profiles, project-setlists, token and preferences live in a
+folder whose name is derived from the manifest name, so they must move.
+
+Run the kit's `Migrate-RC-Setlist-Data.cmd` (Windows) or
+`Migrate RC Setlist Data.command` (macOS) **once, before opening Live** with
+1.0. It copies your old `ntworm.ableton-rc-setlist` data into the new
+`ntworm.rc-setlist` folder without touching the old one and never overwrites
+a file that already exists at the destination.
+
+The kit's `RC-Bridge/Install-RC-Bridge.ps1` (Windows) or
+`RC-Bridge/Install RC Bridge.command` (macOS) automatically removes any
+`Ableton-RC-Setlist-*.ablx` that was previously installed in your User Library.
+No separate uninstall step is needed. If you ran the installer before upgrading
+to 1.0.1, use the included `uninstall-pre-1.0-extensions.ps1` as a manual
+fallback (see [TROUBLESHOOTING.md](TROUBLESHOOTING.md)).
 
 The controller URL contains a token. Treat it like a local password and do not
 post screenshots containing the full URL.
@@ -100,11 +119,11 @@ from the application package and should remain available after an update.
 
 ## Uninstall
 
-1. Stop Ableton RC Setlist in its panel.
+1. Stop RC Setlist in its panel.
 2. Remove the extension through Live's extension management flow.
 3. Restart Live.
 4. To remove saved profiles, lyrics, certificates and preferences as well, delete
-   the Ableton RC Setlist storage directory shown in the Ableton Extensions logs.
+   the RC Setlist storage directory shown in the Ableton Extensions logs.
 
 Do not delete a broad Ableton user-library directory. Remove only the confirmed
-Ableton RC Setlist storage target.
+RC Setlist storage target.

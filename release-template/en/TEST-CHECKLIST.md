@@ -1,4 +1,4 @@
-# Release checklist — Ableton RC Setlist 0.7.0
+# Release checklist — RC Setlist 1.0.0
 
 Use a copy of a Live Set and a **trusted local network / LAN**. Do not perform
 the first test during a real show.
@@ -7,16 +7,16 @@ the first test during a real show.
 
 - [ ] Ableton Live 12.4.5+ Suite Beta opens normally.
 - [ ] `RC-Bridge/Install-RC-Bridge.cmd` (or `Install RC Bridge.command`) runs
-  and reports the install path; `RCBridge/__init__.py` exists directly inside
-  `User Library/Remote Scripts/RCBridge`.
+      and reports the install path; `RCBridge/__init__.py` exists directly inside
+      `User Library/Remote Scripts/RCBridge`.
 - [ ] RCBridge appears and is selected as a Control Surface.
 - [ ] After Start, the RC Setlist panel's OSC line reads
-  `via RC Bridge 1.0.0 on port 11020`.
+      `via RC Bridge 1.0.0 on port 11020`.
 - [ ] With a stock AbletonOSC selected instead, the OSC line reads
-  `via AbletonOSC on port 11000` and the transport still works.
-- [ ] `Ableton-RC-Setlist-0.7.0.ablx` installs without errors.
+      `via AbletonOSC on port 11000` and the transport still works.
+- [ ] `RC-Setlist-1.0.0.ablx` installs without errors.
 - [ ] With clean data, the first **Start** creates the default profile and starts the server without a persistence error.
-- [ ] **Extensions > Ableton RC Setlist** opens the correct panel and shows version 0.7.0.
+- [ ] **Extensions > RC Setlist** opens the correct panel and shows version 1.0.0.
 
 ## Language
 
@@ -48,9 +48,9 @@ TEST 02 > CHORUS
 ```
 
 - [ ] The two tag-only locators appear as automation sections inside TEST 01,
-  not as blank songs.
+      not as blank songs.
 - [ ] Add `TEST 01B` between TEST 01 and TEST 02; Refresh places it in the
-  chronological position instead of appending it.
+      chronological position instead of appending it.
 - [ ] Song duration appears on every song and total setlist duration updates.
 - [ ] BPM, click, `[loop 2x]` and `[stop]` work as documented.
 - [ ] Previous/Next require the safety hold.
@@ -60,21 +60,21 @@ TEST 02 > CHORUS
 - [ ] Authorized or fictional LRC text follows transport.
 - [ ] Missing legacy lyrics migrate without deleting the old folder or overwriting new lyrics.
 - [ ] CSV opens as UTF-8, identifies the current setlist and includes
-  `sections_count`, named `sections`, locator `automations` and `lyric_lines`.
+      `sections_count`, named `sections`, locator `automations` and `lyric_lines`.
 
 ## Persistence and failure states
 
 - [ ] Profile, order, language and auto-start preference survive a Live restart.
 - [ ] With transport stopped, create, select and rename a second Active Setlist,
-  delete it while inactive, and restore it from recoverable trash.
+      delete it while inactive, and restore it from recoverable trash.
 - [ ] On a phone, the rename field keeps the keyboard/focus while Live remains
-  stopped, and Enter confirms the new name.
+      stopped, and Enter confirms the new name.
 - [ ] A setlist created in this Live Set does not appear after opening another
-  saved `.als`; reopening the first Set restores it.
+      saved `.als`; reopening the first Set restores it.
 - [ ] A brief connection loss shows reconnection state without inventing data.
 - [ ] With no control surface selected, the interface fails clearly.
 - [ ] **Check OSC** distinguishes stopped, waiting, connected, interrupted and
-  OSC return-port-busy states with a compact label.
+      OSC return-port-busy states with a compact label.
 - [ ] The full controller token appears in no public screenshot.
 
 ## Approval

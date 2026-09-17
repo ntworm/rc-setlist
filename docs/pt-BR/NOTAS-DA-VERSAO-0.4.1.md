@@ -1,4 +1,4 @@
-# Notas da versão Ableton RC Setlist 0.4.1
+﻿# Notas da versão RC Setlist 0.4.1
 
 [English](../RELEASE-NOTES-0.4.1.md)
 

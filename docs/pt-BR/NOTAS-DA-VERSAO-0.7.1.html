@@ -1,0 +1,177 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>NOTAS-DA-VERSAO-0.7.1 — RC Setlist</title>
+    <style>
+      body {
+        font:
+          16px/1.55 system-ui,
+          sans-serif;
+        max-width: 920px;
+        margin: 2rem auto;
+        padding: 0 1rem;
+        color: #f2f2f2;
+        background: #0e0e0e;
+      }
+      h1,
+      h2,
+      h3,
+      h4 {
+        line-height: 1.25;
+      }
+      h1 {
+        font-size: 2.2rem;
+        margin-top: 0;
+      }
+      h2 {
+        margin-top: 2rem;
+        padding-top: 1rem;
+        border-top: 1px solid #333;
+      }
+      h3 {
+        margin-top: 1.5rem;
+      }
+      code {
+        font:
+          0.92em ui-monospace,
+          Consolas,
+          monospace;
+        background: #1a1a1a;
+        padding: 0.1em 0.35em;
+        border-radius: 0;
+      }
+      pre {
+        background: #1a1a1a;
+        padding: 0.8rem 1rem;
+        overflow-x: auto;
+        border: 1px solid #333;
+      }
+      pre code {
+        background: transparent;
+        padding: 0;
+      }
+      a {
+        color: #ffa133;
+      }
+      ul,
+      ol {
+        padding-left: 1.2em;
+      }
+      blockquote {
+        border-left: 4px solid #ffa133;
+        margin: 1em 0;
+        padding: 0.5em 1em;
+        color: #a0a0a0;
+      }
+      .crumbs {
+        font-size: 0.85em;
+        color: #a0a0a0;
+        margin-bottom: 1rem;
+      }
+      .crumbs a {
+        color: #a0a0a0;
+        text-decoration: none;
+      }
+      .crumbs a:hover {
+        color: #f2f2f2;
+      }
+      .source {
+        font-size: 0.78em;
+        color: #a0a0a0;
+        margin-top: 2rem;
+        border-top: 1px solid #333;
+        padding-top: 0.5rem;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="crumbs">
+      <a href="https://ntworm.github.io/rc-setlist/">RC Setlist</a> · <a href="./">Docs</a>
+    </div>
+    <h1 id="notas-da-vers-o-0-7-1">Notas da Versão 0.7.1</h1>
+    <p>
+      O RC Setlist 0.7.1 incorpora correções de palco do ensaio de 16/09/2026, melhora a
+      visibilidade do painel e o layout em celulares, remove instalações legadas e alinha o nome do
+      produto às diretrizes da Ableton.
+    </p>
+    <h2 id="o-que-h-de-novo">O que há de novo</h2>
+    <ul>
+      <li>
+        <strong>Alinhamento do nome</strong>: Renomeado para <strong>RC Setlist</strong> para
+        cumprir as
+      </li>
+    </ul>
+    <p>
+      diretrizes de marca da Ableton, que proíbem o uso de &#39;Ableton&#39; no nome de produtos
+      terceiros.
+    </p>
+    <ul>
+      <li>
+        <strong>Migração de dados em uma etapa</strong>: A atualização a partir da versão 0.x copia
+      </li>
+    </ul>
+    <p>
+      perfis, setlists de projeto, preferências e tokens para a nova estrutura sem alterar os
+      arquivos originais (scripts/migrate-data.mjs).
+    </p>
+    <ul>
+      <li><strong>Placa do painel com alto contraste</strong>: Moldura âmbar de 2px</li>
+    </ul>
+    <p>
+      ( gba(255, 168, 38, 0.45)) com brilho sutil garante que o painel se destaque com clareza sobre
+      temas claros e escuros do Live.
+    </p>
+    <ul>
+      <li><strong>Limpeza de extensões legadas</strong>: O kit de instalação e o script</li>
+    </ul>
+    <p>
+      (scripts/uninstall-pre-1.0-extensions.ps1) removem pacotes antigos da pasta User Library para
+      que o Live exiba apenas uma entrada do RC Setlist no menu.
+    </p>
+    <h2 id="corre-es">Correções</h2>
+    <ul>
+      <li>
+        <strong>Carregamento de CSS do painel</strong>: Estilos restaurados com a correção da tag
+      </li>
+    </ul>
+    <p>&lt;link&gt; no container de extensões do Live.</p>
+    <ul>
+      <li>
+        <strong>Layout da telemetria no celular</strong>: Cartões em modo retrato agora usam a
+      </li>
+    </ul>
+    <p>divisão 58/42, eliminando cortes de visualização em smartphones.</p>
+    <ul>
+      <li>
+        <strong>Contagem silenciada no celular</strong>: O áudio da contagem no navegador agora vem
+      </li>
+    </ul>
+    <p>
+      mudo por padrão em celulares para evitar vazamentos em fones e PA; pode ser ativado
+      opcionalmente nas configurações locais.
+    </p>
+    <ul>
+      <li>
+        <strong>Autocomplete do editor de marcadores</strong>: O menu seletor exibe marcadores de
+      </li>
+    </ul>
+    <p>forma limpa, sem duplicar tags [jump] ou [loop].</p>
+    <p>
+      <em
+        >Para detalhes completos sobre a instalação, consulte o
+        <a href="INSTALL.html">Guia de Instalação</a>.</em
+      >
+    </p>
+    <p>
+      <em
+        >Read these notes in English:
+        <a href="../RELEASE-NOTES-0.7.1.md">RELEASE-NOTES-0.7.1.md</a>.</em
+      >
+    </p>
+    <div class="source">
+      Rendered from <code>docs\pt-BR\NOTAS-DA-VERSAO-0.7.1.md</code> on 2026-09-17.
+    </div>
+  </body>
+</html>

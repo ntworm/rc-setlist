@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 2,
+  "activeProfileId": "00000000-0000-4000-8000-000000000001",
+  "profiles": [
+    {
+      "id": "00000000-0000-4000-8000-000000000001",
+      "name": "Main Setlist",
+      "createdAt": "2026-01-15T10:00:00.000Z",
+      "updatedAt": "2026-02-20T14:30:00.000Z"
+    }
+  ],
+  "deletedProfiles": [],
+  "legacySources": {},
+  "migrationVersion": 0
+}

@@ -10,7 +10,13 @@
     "moduleDetection": "force",
     "esModuleInterop": true,
     "noEmit": true,
-    "rootDir": "./src"
+    "rootDir": "./src",
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noImplicitOverride": true,
+    "noFallthroughCasesInSwitch": true,
+    "noImplicitReturns": true,
+    "verbatimModuleSyntax": true
   },
   "include": ["src/**/*"]
 }

@@ -13,10 +13,7 @@ if (!fs.existsSync(entry)) {
 const bundleContent = fs.readFileSync(entry, 'utf8');
 
 // Verify mandatory feature markers in production bundle
-const requiredSemantics = [
-  'relative-section',
-  'relative-automation',
-];
+const requiredSemantics = ['relative-section', 'relative-automation'];
 
 for (const semantic of requiredSemantics) {
   if (!bundleContent.includes(semantic)) {
@@ -34,9 +31,7 @@ const result = spawnSync(
 );
 
 if (result.status !== 0) {
-  process.stderr.write(
-    result.stderr || result.stdout || 'Bundle load failed without output.\n',
-  );
+  process.stderr.write(result.stderr || result.stdout || 'Bundle load failed without output.\n');
   process.exit(result.status ?? 1);
 }
 

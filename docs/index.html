@@ -1,238 +1,594 @@
 <!doctype html>
 <html lang="en">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Ableton RC Setlist — your Ableton Live setlist on stage</title>
-  <meta name="description" content="Ableton RC Setlist is a source-available setlist extension for Ableton Live with locator-driven songs, synchronized lyrics and guarded stage controls.">
-  <meta name="theme-color" content="#0b0b0d">
-  <meta property="og:type" content="website">
-  <meta property="og:title" content="Ableton RC Setlist — your Live Set, ready for the stage">
-  <meta property="og:description" content="Turn Arrangement locators into a real operator setlist and synchronized performance display.">
-  <meta property="og:url" content="https://ntworm.github.io/rc-setlist/">
-  <meta property="og:image" content="https://ntworm.github.io/rc-setlist/og-image.png">
-  <meta name="twitter:card" content="summary_large_image">
-  <link rel="canonical" href="https://ntworm.github.io/rc-setlist/">
-  <link rel="icon" href="./favicon.svg" type="image/svg+xml">
-  <link rel="icon" href="./favicon-32.png" sizes="32x32" type="image/png">
-  <link rel="apple-touch-icon" href="./apple-touch-icon.png">
-  <style>
-    @font-face {
-      font-family: "Martian Mono";
-      src: url("./fonts/MartianMono-latin.woff2") format("woff2");
-      font-style: normal;
-      font-weight: 100 800;
-      font-display: swap;
-    }
-    :root {
-      color-scheme: dark;
-      --bg: #0e0e0e;
-      --panel: #141414;
-      --panel2: #1a1a1a;
-      --ink: #f2f2f2;
-      --muted: #a0a0a0;
-      --line: #333333;
-      --line-strong: #444444;
-      --accent: #ffa133;
-      --soft: #ffb35c;
-      --ok: #30d158;
-      --max: 1180px;
-    }
-    * { box-sizing: border-box; }
-    html { scroll-behavior: smooth; background: var(--bg); }
-    body {
-      margin: 0;
-      min-width: 0;
-      overflow-x: hidden;
-      background: var(--bg);
-      color: var(--ink);
-      font-family: "Martian Mono", Consolas, ui-monospace, monospace;
-      font-variation-settings: "wdth" 87.5;
-      line-height: 1.55;
-      letter-spacing: 0;
-    }
-    img { display: block; max-width: 100%; }
-    a { color: inherit; }
-    a:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 0; }
-    .skip { position: fixed; z-index: 30; top: .75rem; left: .75rem; padding: .7rem 1rem; background: var(--ink); color: var(--bg); transform: translateY(-180%); font-weight: 700; }
-    .skip:focus { transform: translateY(0); }
-    .shell { width: min(calc(100% - 2rem), var(--max)); margin-inline: auto; }
-    .topbar { border-bottom: 1px solid var(--line); background: var(--bg); }
-    nav { min-height: 72px; display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
-    .brand { display: inline-flex; align-items: center; gap: .7rem; text-decoration: none; font-weight: 800; letter-spacing: 0; }
-    .mark { display: grid; place-items: center; width: 36px; height: 36px; border-radius: 0; background: var(--accent); color: var(--bg); font-size: .75rem; font-weight: 800; }
-    .nav-links { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: .35rem 1rem; font-size: .85rem; }
-    .nav-links a { color: var(--muted); text-decoration: none; }
-    .nav-links a:hover { color: var(--ink); }
-    .site-language { min-height: 40px; border: 1px solid var(--line); border-radius: 0; background: var(--panel); color: var(--ink); padding: .45rem .65rem; font-family: inherit; font-size: .82rem; font-weight: 700; cursor: pointer; }
-    .hero { display: grid; grid-template-columns: minmax(0, .82fr) minmax(420px, 1.18fr); gap: clamp(2rem, 5vw, 4.5rem); align-items: center; padding-block: clamp(4rem, 8vw, 7.5rem); }
-    .eyebrow { margin: 0 0 1rem; color: var(--soft); font: 700 .78rem/1.2 "Martian Mono", monospace; letter-spacing: 0; text-transform: uppercase; }
-    h1, h2, h3, p { overflow-wrap: anywhere; }
-    h1 { max-width: 12ch; margin: 0; font-size: clamp(2.4rem, 5.5vw, 4.5rem); line-height: 1.05; letter-spacing: 0; text-wrap: balance; font-weight: 800; }
-    h1 span, h2 span { color: var(--accent); }
-    .lede { max-width: 58ch; margin: 1.6rem 0 0; color: var(--muted); font-size: clamp(0.92rem, 1.6vw, 1.05rem); text-wrap: pretty; }
-    .actions { display: flex; flex-wrap: wrap; gap: .75rem; margin-top: 2rem; }
-    .button { display: inline-flex; min-height: 48px; align-items: center; justify-content: center; padding: .75rem 1.08rem; border: 1px solid var(--line); border-radius: 0; background: var(--panel); text-decoration: none; font-weight: 700; font-size: .85rem; }
-    .button.primary { border-color: var(--accent); background: var(--accent); color: var(--bg); }
-    .button:hover { background: var(--panel2); }
-    .button.primary:hover { background: var(--soft); }
-    .fine { margin: 1rem 0 0; color: var(--muted); font-size: .8rem; }
-    .hero-visual { position: relative; min-width: 0; }
-    .hero-visual img { width: 100%; height: auto; aspect-ratio: 16/9; object-fit: contain; border: 1px solid var(--line); border-radius: 0; }
-    .truth-label { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin: .85rem .35rem 0; color: var(--muted); font-size: .78rem; }
-    .truth-label strong { color: var(--soft); font-family: "Martian Mono", monospace; letter-spacing: 0; text-transform: uppercase; }
-    .proof { border-block: 1px solid var(--line); background: var(--panel); }
-    .proof-grid { display: grid; grid-template-columns: repeat(4, 1fr); }
-    .proof-item { min-width: 0; padding: 1.35rem; border-right: 1px solid var(--line); }
-    .proof-item:last-child { border-right: 0; }
-    .proof-item strong { display: block; color: var(--ink); font-size: .95rem; }
-    .proof-item span { display: block; margin-top: .2rem; color: var(--muted); font-size: .82rem; }
-    .section { padding-block: clamp(4.5rem, 8vw, 7.5rem); }
-    .section-head { display: grid; grid-template-columns: minmax(0, .8fr) minmax(280px, .6fr); gap: 2rem; align-items: end; margin-bottom: 2.2rem; }
-    h2 { max-width: 14ch; margin: 0; font-size: clamp(1.8rem, 3.8vw, 3.2rem); line-height: 1.1; letter-spacing: 0; text-wrap: balance; font-weight: 800; }
-    .section-head p { margin: 0; color: var(--muted); font-size: .95rem; }
-    .gallery { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
-    figure { margin: 0; min-width: 0; overflow: hidden; border: 1px solid var(--line); border-radius: 0; background: var(--panel); }
-    figure img { width: 100%; height: auto; aspect-ratio: 16/9; object-fit: contain; object-position: top left; }
-    figcaption { padding: 1rem 1.1rem 1.15rem; }
-    figcaption strong { display: block; font-size: .95rem; }
-    figcaption span { display: block; margin-top: .25rem; color: var(--muted); font-size: .82rem; }
-    .workflow-section { border-block: 1px solid var(--line); background: var(--panel); }
-    .workflow-layout { display: grid; grid-template-columns: minmax(280px, .58fr) minmax(0, 1.42fr); gap: clamp(2rem, 5vw, 4rem); align-items: center; }
-    .workflow-copy h2 { max-width: 12ch; }
-    .workflow-copy p { color: var(--muted); font-size: .92rem; }
-    .workflow-copy code { color: var(--soft); background: var(--panel2); padding: .15rem .35rem; font-size: .85rem; }
-    .workflow-image { width: 100%; height: auto; aspect-ratio: 16/9; object-fit: contain; border: 1px solid var(--line); border-radius: 0; }
-    .features { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; }
-    .card { min-width: 0; padding: 1.35rem; border: 1px solid var(--line); border-radius: 0; background: var(--panel); }
-    .card-number { color: var(--soft); font: 700 .78rem/1 "Martian Mono", monospace; letter-spacing: 0; }
-    .card h3 { margin: 1.1rem 0 .45rem; font-size: 1.05rem; font-weight: 700; }
-    .card p { margin: 0; color: var(--muted); font-size: .85rem; }
-    .editorial { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(280px, .65fr); gap: 1rem; align-items: stretch; }
-    .editorial img { width: 100%; height: 100%; object-fit: cover; border: 1px solid var(--line); border-radius: 0; }
-    .editorial-copy { display: flex; flex-direction: column; justify-content: center; padding: clamp(1.5rem, 4vw, 3rem); border: 1px solid var(--line); border-radius: 0; background: var(--panel); }
-    .editorial-copy h2 { max-width: 12ch; font-size: clamp(1.8rem, 3.5vw, 2.8rem); font-weight: 800; }
-    .editorial-copy p { color: var(--muted); font-size: .92rem; }
-    .install { border-block: 1px solid var(--line); background: var(--panel); }
-    .install-grid { display: grid; grid-template-columns: minmax(0, .9fr) minmax(300px, .7fr); gap: 2rem; align-items: center; }
-    .install h2 { max-width: 14ch; font-size: clamp(1.8rem, 3.5vw, 2.8rem); }
-    .install p { color: var(--muted); font-size: .92rem; }
-    .checklist { margin: 0; padding: 0; list-style: none; }
-    .checklist li { padding: .75rem 0; border-bottom: 1px solid var(--line); color: var(--ink); font-size: .85rem; }
-    .checklist li:last-child { border-bottom: 0; }
-    .checklist li::before { content: "✓ "; margin-right: .5rem; color: var(--ok); font-weight: 700; }
-    footer { padding: 2.5rem 0 3.5rem; color: var(--muted); font-size: .8rem; }
-    footer p { margin: .45rem 0; }
-    footer a { color: var(--ink); }
-    @media (max-width: 960px) {
-      .hero, .workflow-layout, .install-grid { grid-template-columns: 1fr; }
-      .hero-visual { max-width: 760px; }
-      .section-head { grid-template-columns: 1fr; align-items: start; }
-      .features { grid-template-columns: repeat(2, 1fr); }
-      .editorial { grid-template-columns: 1fr; }
-      .proof-grid { grid-template-columns: repeat(2, 1fr); }
-      .proof-item:nth-child(2) { border-right: 0; }
-      .proof-item:nth-child(-n+2) { border-bottom: 1px solid var(--line); }
-    }
-    @media (max-width: 680px) {
-      .shell { width: min(calc(100% - 1.2rem), var(--max)); }
-      nav { align-items: flex-start; padding-block: .8rem; }
-      .nav-links { gap: .35rem .7rem; font-size: .78rem; }
-      .nav-links a:nth-child(-n+2) { display: none; }
-      .hero { padding-block: 3.7rem; }
-      h1 { font-size: clamp(2.2rem, 12vw, 3.5rem); }
-      .gallery, .features { grid-template-columns: 1fr; }
-      .proof-grid { grid-template-columns: 1fr; }
-      .proof-item { border-right: 0; border-bottom: 1px solid var(--line); }
-      .proof-item:last-child { border-bottom: 0; }
-      .button { width: 100%; }
-      .actions { display: grid; }
-    }
-    @media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; transition: none !important; } }
-  </style>
-</head>
-<body>
-  <a class="skip" href="#main" data-site-i18n="skip">Skip to content</a>
-  <header class="topbar">
-    <nav class="shell" aria-label="Primary navigation" data-site-i18n-aria-label="navAria">
-      <a class="brand" href="./"><span class="mark">RC</span><span>Ableton RC Setlist</span></a>
-      <div class="nav-links">
-        <a href="#product" data-site-i18n="navProduct">Product</a>
-        <a href="#workflow" data-site-i18n="navWorkflow">Workflow</a>
-        <a href="#install" data-site-i18n="navInstall">Install</a>
-        <a id="navDocumentation" href="./README.md" data-site-i18n="navDocs">Docs</a>
-        <a id="source" href="https://github.com/ntworm/rc-setlist" data-site-i18n="navSource">Source</a>
-        <label>
-          <span style="position:absolute;width:1px;height:1px;overflow:hidden" data-site-i18n="language">Language</span>
-          <select id="languageSelect" class="site-language" aria-label="Language" data-site-i18n-aria-label="language">
-            <option value="en">English</option>
-            <option value="pt-BR">Português (Brasil)</option>
-          </select>
-        </label>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta
+      name="description"
+      content="RC Setlist is a source-available setlist extension for Ableton Live with locator-driven songs, synchronized lyrics and guarded stage controls."
+    />
+    <meta name="theme-color" content="#0e0e0e" />
+    <link rel="canonical" href="https://ntworm.github.io/rc-setlist/" />
+    <title>RC Setlist — your Ableton Live setlist on stage</title>
+    <style>
+      @font-face {
+        font-family: 'Martian Mono';
+        font-weight: 400;
+        font-style: normal;
+        font-display: swap;
+        src: url('./fonts/MartianMono-latin.woff2') format('woff2');
+      }
+      @font-face {
+        font-family: 'Martian Mono';
+        font-weight: 400;
+        font-style: normal;
+        font-display: swap;
+        src: url('./fonts/MartianMono-latin-ext.woff2') format('woff2');
+        unicode-range: U+0100-024F, U+1E00-1EFF, U+02B0-02FF, U+2000-206F;
+      }
+      :root {
+        --bg: #0e0e0e;
+        --surface: #141414;
+        --text: #f2f2f2;
+        --muted: #a0a0a0;
+        --border: #333333;
+        --accent: #ffa133;
+        --link: #ffa133;
+        --max: 1120px;
+      }
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+      }
+      html {
+        background: var(--bg);
+        color: var(--text);
+        font:
+          16px/1.6 'Martian Mono',
+          ui-monospace,
+          'SF Mono',
+          Menlo,
+          Consolas,
+          monospace;
+        margin: 0;
+        -webkit-text-size-adjust: 100%;
+      }
+      body {
+        margin: 0;
+        padding: 0;
+        max-width: 100%;
+        overflow-x: hidden;
+      }
+      a {
+        color: var(--link);
+        text-decoration: none;
+        border-bottom: 1px solid rgba(255, 161, 51, 0.35);
+      }
+      a:hover,
+      a:focus {
+        border-bottom-color: var(--link);
+      }
+      img {
+        max-width: 100%;
+        height: auto;
+        display: block;
+      }
+      h1,
+      h2,
+      h3 {
+        font-weight: 400;
+        letter-spacing: -0.01em;
+        line-height: 1.25;
+      }
+      .skip {
+        position: absolute;
+        left: -9999px;
+        top: auto;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+      }
+      .skip:focus {
+        position: static;
+        left: 1rem;
+        top: 1rem;
+        width: auto;
+        height: auto;
+        padding: 0.5rem 1rem;
+        background: var(--accent);
+        color: #000;
+      }
+      .nav {
+        display: flex;
+        align-items: center;
+        gap: 1.5rem;
+        padding: 1.5rem 2rem;
+        border-bottom: 1px solid var(--border);
+        position: sticky;
+        top: 0;
+        background: rgba(14, 14, 14, 0.85);
+        backdrop-filter: blur(8px);
+        z-index: 10;
+      }
+      .nav__brand {
+        font-weight: 400;
+        letter-spacing: 0.05em;
+        font-size: 1.1rem;
+        border: none;
+        color: var(--text);
+      }
+      .nav__brand span {
+        color: var(--accent);
+      }
+      .nav__links {
+        display: flex;
+        gap: 1.25rem;
+        margin-left: auto;
+        align-items: center;
+      }
+      .nav__links a {
+        border: none;
+        color: var(--muted);
+        font-size: 0.95rem;
+      }
+      .nav__links a:hover {
+        color: var(--text);
+      }
+      .nav__lang {
+        margin-left: 0.5rem;
+        background: var(--surface);
+        color: var(--text);
+        border: 1px solid var(--border);
+        padding: 0.35rem 0.55rem;
+        font: inherit;
+      }
+      .hero {
+        padding: 6rem 2rem 4rem;
+        max-width: var(--max);
+        margin: 0 auto;
+      }
+      .hero__eyebrow {
+        color: var(--accent);
+        font-size: 0.85rem;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        margin-bottom: 1rem;
+      }
+      .hero h1 {
+        font-size: clamp(2.4rem, 5vw, 3.6rem);
+        margin: 0 0 1.5rem;
+        max-width: 32ch;
+      }
+      .hero__lede {
+        font-size: 1.15rem;
+        color: var(--muted);
+        max-width: 60ch;
+        margin: 0 0 2.5rem;
+      }
+      .hero__ctas {
+        display: flex;
+        gap: 1rem;
+        flex-wrap: wrap;
+      }
+      .hero-visual {
+        position: relative;
+        min-width: 0;
+        max-width: 760px;
+        margin: 2rem auto 0;
+      }
+      .hero-visual img {
+        width: 100%;
+        height: auto;
+        aspect-ratio: 16 / 9;
+        object-fit: contain;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        background: var(--surface);
+        display: block;
+      }
+      .hero__tagline {
+        font-size: 1.05rem;
+        color: var(--muted);
+        margin: 1.5rem 0 0;
+        max-width: 60ch;
+      }
+      .btn {
+        display: inline-block;
+        padding: 0.85rem 1.4rem;
+        border: 1px solid var(--accent);
+        background: var(--accent);
+        color: #0e0e0e;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+        border-bottom-width: 1px;
+      }
+      .btn--ghost {
+        background: transparent;
+        color: var(--text);
+        border-color: var(--border);
+      }
+      .btn--ghost:hover {
+        color: var(--accent);
+        border-color: var(--accent);
+      }
+      .btn--accent {
+        border-bottom-color: var(--accent);
+      }
+      section {
+        padding: 4rem 2rem;
+        max-width: var(--max);
+        margin: 0 auto;
+      }
+      section h2 {
+        font-size: clamp(1.6rem, 3vw, 2.2rem);
+        margin: 0 0 0.5rem;
+      }
+      section .eyebrow {
+        color: var(--accent);
+        font-size: 0.78rem;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        margin-bottom: 0.75rem;
+        display: block;
+      }
+      section .lede {
+        color: var(--muted);
+        max-width: 60ch;
+        margin: 0 0 2.5rem;
+      }
+      .principles {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 1.5rem;
+      }
+      .principle {
+        padding: 1.5rem;
+        border: 1px solid var(--border);
+        background: var(--surface);
+      }
+      .principle__label {
+        color: var(--accent);
+        font-size: 0.78rem;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        margin-bottom: 0.5rem;
+      }
+      .principle h3 {
+        margin: 0 0 0.75rem;
+        font-size: 1.1rem;
+      }
+      .principle p {
+        margin: 0;
+        color: var(--muted);
+        font-size: 0.95rem;
+      }
+      .gallery {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 1.5rem;
+      }
+      .gallery figure {
+        margin: 0;
+      }
+      .gallery figcaption {
+        margin-top: 0.5rem;
+        color: var(--muted);
+        font-size: 0.85rem;
+      }
+      .workflow {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 1.5rem;
+      }
+      .workflow .step {
+        padding: 1.5rem;
+        border: 1px solid var(--border);
+        background: var(--surface);
+      }
+      .workflow .step__num {
+        color: var(--accent);
+        font-size: 0.78rem;
+        letter-spacing: 0.18em;
+      }
+      .workflow .step h3 {
+        margin: 0.5rem 0 0.75rem;
+        font-size: 1.1rem;
+      }
+      .workflow .step p {
+        margin: 0;
+        color: var(--muted);
+        font-size: 0.95rem;
+      }
+      .install {
+        padding: 3rem 2rem;
+        border: 1px solid var(--border);
+        background: var(--surface);
+        max-width: var(--max);
+        margin: 2rem auto;
+      }
+      .install h2 {
+        margin-top: 0;
+      }
+      .install ol {
+        margin: 0;
+        padding-left: 1.4rem;
+        line-height: 1.8;
+      }
+      .install li {
+        margin-bottom: 0.5rem;
+      }
+      footer {
+        padding: 3rem 2rem 4rem;
+        border-top: 1px solid var(--border);
+        color: var(--muted);
+        font-size: 0.85rem;
+        text-align: center;
+      }
+      footer p {
+        margin: 0.25rem 0;
+      }
+      @media (max-width: 720px) {
+        .nav {
+          flex-wrap: wrap;
+          padding: 1rem;
+        }
+        .nav__links {
+          margin-left: 0;
+          width: 100%;
+          flex-wrap: wrap;
+        }
+        .workflow {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <a class="skip" href="#content">Skip to content</a>
+    <nav class="nav" aria-label="Primary navigation">
+      <a class="nav__brand" href="#content">RC <span>Setlist</span></a>
+      <div class="nav__links">
+        <a href="#principles">Product</a>
+        <a href="#workflow">Workflow</a>
+        <a href="#install">Install</a>
+        <a href="./USER-GUIDE.md">Docs</a>
+        <a href="https://github.com/ntworm/rc-setlist">Source</a>
       </div>
+      <select class="nav__lang" id="languageSelect" aria-label="Language">
+        <option value="en">English</option>
+        <option value="pt-BR">Português (Brasil)</option>
+      </select>
     </nav>
-  </header>
 
-  <main id="main">
-    <section class="hero shell">
-      <div>
-        <p class="eyebrow" data-site-i18n="heroEyebrow">Ableton Live extension · v0.7.0</p>
-        <h1>Ableton <span>RC Setlist</span></h1>
-        <p class="lede" data-site-i18n="heroLede">Turn Arrangement locators into a real operator setlist, synchronized lyric display and guarded stage controls — running locally between Ableton Live and your browser.</p>
-        <div class="actions"><a id="download" class="button primary" href="https://github.com/ntworm/rc-setlist/releases/latest" data-site-i18n="download">Download .ablx</a><a id="documentation" class="button" href="./README.md" data-site-i18n="readDocs">Read the docs</a></div>
-        <p class="fine" data-site-i18n="fine">No account · no subscription · no analytics · source-available</p>
-      </div>
+    <header class="hero" id="content">
+      <span class="hero__eyebrow" data-i18n="heroEyebrow"
+        >Release 1.0.0 · Ableton Live extension</span
+      >
+      <h1 data-i18n="title">RC Setlist — your Ableton Live setlist on stage</h1>
+      <p class="hero__lede" data-i18n="heroLede">
+        Turn Arrangement locators into a real operator setlist, synchronized lyric display and
+        guarded stage controls — running locally between Ableton Live and your browser.
+      </p>
+      <p class="hero__tagline">
+        <span data-i18n="fromLocators">From locators</span>
+        <span data-i18n="toStage">to stage.</span>
+      </p>
       <div class="hero-visual">
-        <img src="./media/en/product-truth-discord.png" data-site-image="product-truth-discord.png" width="1200" height="675" alt="Product truth composition of the real Ableton RC Setlist Performance and Stage Control interfaces" data-site-i18n-alt="heroAlt">
-        <div class="truth-label"><strong data-site-i18n="productTruth">Product truth</strong><span data-site-i18n="realInterfaces">Real interfaces · neutral demo data</span></div>
+        <img src="./media/en/workflow.png" alt="Workflow diagram" data-i18n-attr="heroAlt" />
+      </div>
+      <div class="hero__ctas">
+        <a
+          class="btn btn--accent"
+          id="download"
+          href="https://github.com/ntworm/rc-setlist/releases/latest"
+          data-i18n="download"
+          >Download .ablx</a
+        >
+        <a class="btn btn--ghost" id="documentation" href="./USER-GUIDE.md" data-i18n="readDocs"
+          >Read the docs</a
+        >
+        <a class="btn btn--ghost" id="whatsnew" href="./RELEASE-NOTES-1.0.0.md"
+          >What is new in 1.0.0</a
+        >
+        <span class="hero__hint"
+          >Release notes source: <code>docs/RELEASE-NOTES-1.0.0.md</code></span
+        >
+        <a class="btn btn--ghost" id="source" href="https://github.com/ntworm/rc-setlist"
+          >Source on GitHub</a
+        >
+      </div>
+    </header>
+
+    <section id="principles" aria-label="Product principles">
+      <span class="eyebrow">Product truth</span>
+      <h2>Real interfaces · neutral demo data</h2>
+      <p class="lede">
+        The product stays anchored to Ableton Live. The browser gives the operator and performer the
+        information each one needs without inventing a second timeline.
+      </p>
+      <div class="principles">
+        <div class="principle">
+          <div class="principle__label">01 · LOCAL FIRST</div>
+          <h3>Live ↔ browser on your trusted LAN</h3>
+          <p>
+            HTTPS + token on your own machine. No cloud relay, no analytics, no third-party service.
+          </p>
+        </div>
+        <div class="principle">
+          <div class="principle__label">02 · TWO REAL VIEWS</div>
+          <h3>Stage Control + Performance display</h3>
+          <p>
+            The operator drives the show. The performer reads the next cue, lyrics and timecode.
+          </p>
+        </div>
+        <div class="principle">
+          <div class="principle__label">03 · ONE .ABLX</div>
+          <h3>Install through Ableton Live</h3>
+          <p>
+            Drop the .ablx into Live's Packages folder. No separate installer, no second process.
+          </p>
+        </div>
+        <div class="principle">
+          <div class="principle__label">04 · NO TELEMETRY</div>
+          <h3>Your show data stays local</h3>
+          <p>
+            Profiles, lyrics and song book live under your Ableton storage. Nothing leaves your
+            network.
+          </p>
+        </div>
       </div>
     </section>
 
-    <section class="proof" aria-label="Product principles" data-site-i18n-aria-label="principlesAria"><div class="shell proof-grid">
-      <div class="proof-item"><strong data-site-i18n="localFirst">Local first</strong><span data-site-i18n="localFirstBody">Live ↔ browser on your trusted LAN</span></div>
-      <div class="proof-item"><strong data-site-i18n="twoViews">Two real views</strong><span data-site-i18n="twoViewsBody">Stage Control + Performance display</span></div>
-      <div class="proof-item"><strong data-site-i18n="oneAblx">One .ablx</strong><span data-site-i18n="oneAblxBody">Install through Ableton Live</span></div>
-      <div class="proof-item"><strong data-site-i18n="noTelemetry">No telemetry</strong><span data-site-i18n="noTelemetryBody">Your show data stays local</span></div>
-    </div></section>
-
-    <section id="product" class="section shell">
-      <div class="section-head"><div><p class="eyebrow" data-site-i18n="shipped">The shipped interface</p><h2><span style="color:inherit" data-site-i18n="seeShow">See the show.</span><br><span data-site-i18n="runSet">Run the set.</span></h2></div><p data-site-i18n="productIntro">The product stays anchored to Ableton Live. The browser gives the operator and performer the information each one needs without inventing a second timeline.</p></div>
+    <section id="showcase" aria-label="The shipped interface">
+      <span class="eyebrow">The shipped interface</span>
+      <h2>See the show. Run the set.</h2>
+      <p class="lede">
+        Three captures from the real extension. Neutral demo data; no fictional dashboard metrics
+        and no show content bundled with the .ablx.
+      </p>
       <div class="gallery">
-        <figure><img src="./media/en/performance.png" data-site-image="performance.png" width="1600" height="900" loading="lazy" alt="Performance interface showing current and next song, section, lyrics, timecode, bar, BPM and click" data-site-i18n-alt="performanceAlt"><figcaption><strong>Performance</strong><span data-site-i18n="performanceBody">High-contrast show state, current and next cues, synchronized lyrics, timecode, bar, tempo and click.</span></figcaption></figure>
-        <figure><img src="./media/en/stage-control.png" data-site-image="stage-control.png" width="1600" height="900" loading="lazy" alt="Stage Control interface showing the setlist, section controls, show state and transport" data-site-i18n-alt="stageAlt"><figcaption><strong data-site-i18n="stageControl">Stage Control</strong><span data-site-i18n="stageBody">Song and section navigation, guarded transport, quantization, click, refresh, tools, lock and live feedback.</span></figcaption></figure>
+        <figure>
+          <img
+            src="./media/en/performance.png"
+            data-site-image="performance.png"
+            alt="Performance interface showing current and next song, section, lyrics, timecode, bar, BPM and click"
+          />
+          <figcaption>
+            Performance display — high-contrast show state, current and next cues, synchronized
+            lyrics, timecode, bar, tempo and click.
+          </figcaption>
+        </figure>
+        <figure>
+          <img
+            src="./media/en/stage-control.png"
+            data-site-image="stage-control.png"
+            alt="Stage Control interface showing the setlist, section controls, show state and transport"
+          />
+          <figcaption>
+            Stage Control — song and section navigation, guarded transport, quantization, click,
+            refresh, tools, lock and live feedback.
+          </figcaption>
+        </figure>
+        <figure>
+          <img
+            src="./media/en/workflow.png"
+            data-site-image="workflow.png"
+            alt="From locators to stage workflow: mark the Arrangement, conduct the set and read the show"
+          />
+          <figcaption>
+            From locators to stage — mark the Arrangement, conduct the set, read the show.
+          </figcaption>
+        </figure>
       </div>
     </section>
 
-    <section id="workflow" class="section workflow-section"><div class="shell workflow-layout">
-      <div class="workflow-copy"><p class="eyebrow" data-site-i18n="workflowEyebrow">Three-step workflow</p><h2><span style="color:inherit" data-site-i18n="fromLocators">From locators</span><br><span data-site-i18n="toStage">to stage.</span></h2><p><span data-site-i18n="workflowBody">Write the show structure once in Arrangement with automation tags. Ableton RC Setlist turns that structure into operator and performer views.</span> <code>[bpm]</code> <code>[click]</code> <code>[loop]</code> <code>[stop]</code> <code>[next]</code> <code>[skip]</code></p></div>
-      <img class="workflow-image" src="./media/en/workflow.png" data-site-image="workflow.png" width="1200" height="675" loading="lazy" alt="From locators to stage workflow: mark the Arrangement, conduct the set and read the show" data-site-i18n-alt="workflowAlt">
-    </div></section>
-
-    <section class="section shell">
-      <div class="section-head"><div><p class="eyebrow" data-site-i18n="builtFor">Built for rehearsal and stage</p><h2 data-site-i18n="liveSet">A Live Set that reads like a show.</h2></div><p data-site-i18n="truthful">The interface mirrors the functions that ship in v0.7.0. No fictional dashboard metrics and no show content bundled with the extension.</p></div>
-      <div class="features">
-        <article class="card"><span class="card-number" data-site-i18n="feature1Label">01 · STRUCTURE</span><h3 data-site-i18n="feature1Title">Locator-driven setlist</h3><p data-site-i18n="feature1Body">Turn Arrangement markers into ordered songs and sections with optional automation tags.</p></article>
-        <article class="card"><span class="card-number" data-site-i18n="feature2Label">02 · SAFETY</span><h3 data-site-i18n="feature2Title">Guarded transport</h3><p data-site-i18n="feature2Body">Previous and Next require a deliberate hold. Jump and quantization feedback wait for confirmation from Live.</p></article>
-        <article class="card"><span class="card-number" data-site-i18n="feature3Label">03 · LYRICS</span><h3 data-site-i18n="feature3Title">Synchronized words</h3><p data-site-i18n="feature3Body">Create, time, edit and display authorized LRC or plain text inside local show profiles.</p></article>
-        <article class="card"><span class="card-number" data-site-i18n="feature4Label">04 · FEEDBACK</span><h3 data-site-i18n="feature4Title">Current and next cues</h3><p data-site-i18n="feature4Body">See song and total duration, section, loop progress, stable bar/beat, BPM and click state at a glance.</p></article>
-        <article class="card"><span class="card-number" data-site-i18n="feature5Label">05 · SHOW DATA</span><h3 data-site-i18n="feature5Title">Saved setlists and export</h3><p data-site-i18n="feature5Body">Keep multiple setlists inside the current Live Set, preserve local ordering and lyrics, recover deleted profiles, and export CSV.</p></article>
-        <article class="card"><span class="card-number" data-site-i18n="feature6Label">06 · NETWORK</span><h3 data-site-i18n="feature6Title">Local browser access</h3><p data-site-i18n="feature6Body">Open Stage Control or the read-only Performance view from a trusted laptop, tablet or phone on the LAN.</p></article>
+    <section id="workflow" aria-label="Workflow">
+      <span class="eyebrow">Three-step workflow</span>
+      <h2>From locators to stage.</h2>
+      <p class="lede">
+        Write the show structure once in Arrangement with automation tags. RC Setlist turns that
+        structure into operator and performer views.
+      </p>
+      <div class="workflow">
+        <div class="step">
+          <span class="step__num">01 · MARK</span>
+          <h3>Set up locators in Arrangement</h3>
+          <p>
+            Drop `[stop]`, `[next]`, `[bpm]`, `[loop]`, `[click]` markers on the timeline. RC
+            Setlist reads them as you build the Set.
+          </p>
+        </div>
+        <div class="step">
+          <span class="step__num">02 · CONDUCT</span>
+          <h3>Drive from the Stage Control</h3>
+          <p>
+            Open the browser page. Previous, Next, Jump, Quantization, Click — guarded by 500 ms
+            holds and confirmation from Live.
+          </p>
+        </div>
+        <div class="step">
+          <span class="step__num">03 · READ</span>
+          <h3>Perform from the second view</h3>
+          <p>
+            The performer sees the next song, the current section, the synchronized lyrics and the
+            timecode on a high-contrast display.
+          </p>
+        </div>
       </div>
+      <pre><code class="lang-text">Song A [bpm 122]<br>
+&gt; Verse<br>
+&gt; Chorus<br>
+&gt; End [next]<br>
+Song B [bpm 96]</code></pre>
     </section>
 
-    <section class="section shell editorial">
-      <img src="./media/en/stage-editorial.png" data-site-image="stage-editorial.png" width="1200" height="675" loading="lazy" alt="Stage editorial composition using the real Performance and Stage Control interfaces" data-site-i18n-alt="editorialAlt">
-      <div class="editorial-copy"><p class="eyebrow" data-site-i18n="oneSession">One session · two views</p><h2><span style="color:inherit" data-site-i18n="controlShow">Control the show.</span><br><span data-site-i18n="notScreen">Not the screen.</span></h2><p data-site-i18n="editorialBody">Operate from Stage Control and keep Performance visible for the information that matters in the next second.</p></div>
+    <section id="install" class="install">
+      <span class="eyebrow">Install</span>
+      <h2>Five steps from zero to first cue</h2>
+      <ol>
+        <li>Download <code>RC-Setlist-1.0.0.ablx</code> from the GitHub release.</li>
+        <li>
+          Double-click the <code>.ablx</code> — Ableton Live installs it under
+          <code>~/Music/Ableton/User Library/Packages/RC Setlist/</code>.
+        </li>
+        <li>
+          Restart Live. Open the <strong>RC Setlist</strong> context menu on any MIDI/Audio track
+          and start the bridge from the Live panel.
+        </li>
+        <li>
+          Scan the QR on the panel with your phone, or open the URL on the same computer. Stage
+          Control loads in the browser.
+        </li>
+        <li>
+          Open <code>docs/INSTALL.md</code> (or <code>docs/pt-BR/INSTALL.md</code>) for the
+          migration step from a 0.x install and the macOS path of <code>Extensions Data</code>.
+        </li>
+      </ol>
+      <p class="lede">
+        Ableton Live 12.4.5+ Suite (Beta) is required. The development Node floor is 24.16.0. The
+        bundled <code>RC Bridge</code> is our fork of
+        <a href="https://github.com/ideoforms/AbletonOSC">AbletonOSC</a> — same protocol,
+        distributed with the extension.
+      </p>
     </section>
 
-    <section id="install" class="section install"><div class="shell install-grid">
-      <div><p class="eyebrow" data-site-i18n="release">Release 0.7.0</p><h2 data-site-i18n="installTitle">Install, rehearse, verify.</h2><p data-site-i18n="installBody">Ableton RC Setlist requires Ableton Live 12.4.5+ Suite (Beta) with Extensions support and the bundled RC Bridge Control Surface (a fork of AbletonOSC; a stock AbletonOSC also works). Windows is validated; macOS remains experimental for this release.</p><div class="actions"><a id="installGuide" class="button primary" href="./INSTALL.md" data-site-i18n="installGuide">Installation guide</a><a class="button" href="./RELEASE-NOTES-0.7.0.md" data-site-i18n="releaseNotes">What is new</a><a class="button" href="https://github.com/ideoforms/AbletonOSC">AbletonOSC</a></div></div>
-      <ul class="checklist"><li data-site-i18n="check1">Install the single Ableton-RC-Setlist-0.7.0.ablx package</li><li data-site-i18n="check2">Install RC Bridge from the kit or the panel, and choose it as a Control Surface</li><li data-site-i18n="check3">Start the local server from Extensions in Live</li><li data-site-i18n="check4">Open Stage Control or Performance on a trusted LAN</li><li data-site-i18n="check5">Rehearse transport, cues, click and lyrics before stage use</li></ul>
-    </div></section>
+    <footer>
+      <p>
+        <strong>RC Setlist 1.0.0</strong> — source-available under the PolyForm Noncommercial 1.0.0
+        license.
+      </p>
+      <p>
+        RC Setlist is an independent project and is not affiliated with or endorsed by Ableton AG.
+        Ableton, Live, Push, and Link are trademarks of Ableton AG.
+      </p>
+      <p>No account · no subscription · no analytics · source-available.</p>
+    </footer>
 
-  </main>
-
-  <footer><div class="shell"><p><strong data-site-i18n="license">License:</strong> <span data-site-i18n="licenseBody">Ableton RC Setlist is source-available under the PolyForm Noncommercial 1.0.0 license. Commercial use is not permitted.</span> <a href="https://github.com/ntworm/rc-setlist/blob/main/LICENSE">PolyForm Noncommercial 1.0.0</a></p><p data-site-i18n="copyright">Copyright © 2026 Gabriel Worm.</p><p data-site-i18n="trademark">Ableton and Ableton Live are trademarks of Ableton AG.</p><p data-site-i18n="independence">Ableton RC Setlist is an independent project and is not affiliated with or endorsed by Ableton AG.</p></div></footer>
-  <script src="./site-i18n.js"></script>
-</body>
+    <script src="./site-i18n.js"></script>
+    <script>
+      (function () {
+        var select = document.getElementById('languageSelect');
+        if (!select) return;
+        var stored = null;
+        try {
+          stored = localStorage.getItem('rc-setlist.locale');
+        } catch (_) {}
+        var initial = stored || 'en';
+        if (Array.prototype.indexOf.call(select.options, initial) >= 0) {
+          select.value = initial;
+        }
+        document.documentElement.setAttribute('lang', select.value);
+        if (typeof window.rcSetlistSiteI18n === 'function') {
+          window.rcSetlistSiteI18n(window);
+        }
+        select.addEventListener('change', function () {
+          document.documentElement.setAttribute('lang', select.value);
+          try {
+            localStorage.setItem('rc-setlist.locale', select.value);
+          } catch (_) {}
+        });
+      })();
+    </script>
+  </body>
 </html>

@@ -43,7 +43,10 @@ test('public export uses an explicit allowlist and reproducible verifier', () =>
     'THIRD_PARTY_NOTICES.md',
     'vendor/README.md',
   ]) {
-    assert.match(allowlist, new RegExp(`^${required.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'm'));
+    assert.match(
+      allowlist,
+      new RegExp(`^${required.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'm'),
+    );
   }
 
   for (const privatePath of [
@@ -52,16 +55,32 @@ test('public export uses an explicit allowlist and reproducible verifier', () =>
     'docs/media/product-truth-linkedin.png',
     'docs/media/product-truth-square.png',
   ]) {
-    assert.doesNotMatch(allowlist, new RegExp(`^${privatePath.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'm'));
+    assert.doesNotMatch(
+      allowlist,
+      new RegExp(`^${privatePath.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'm'),
+    );
   }
 
-  assert.doesNotMatch(allowlist, /AGENTS\.md|AGENT_GUIDE|\.agent-context|\.tgz|docs\/superpowers|docs\/agent|docs\/release\/BASELINE|release-kit|competitive_analysis|investigation_report/i);
-  assert.match(exporter, /tests\/scratch/, 'internal scratch probes must be excluded from the public snapshot');
+  assert.doesNotMatch(
+    allowlist,
+    /AGENTS\.md|AGENT_GUIDE|\.agent-context|\.tgz|docs\/superpowers|docs\/agent|docs\/release\/BASELINE|release-kit|competitive_analysis|investigation_report/i,
+  );
+  assert.match(
+    exporter,
+    /tests\/scratch/,
+    'internal scratch probes must be excluded from the public snapshot',
+  );
 });
 
 test('snapshot verifier rejects private archives, internal context and stale branding', () => {
   const verifier = read('scripts/verify-public-snapshot.mjs');
-  for (const rule of ['tgz', '.agent-context', 'internal-scratch', 'stale-product-name', 'commercial-song']) {
+  for (const rule of [
+    'tgz',
+    '.agent-context',
+    'internal-scratch',
+    'stale-product-name',
+    'commercial-song',
+  ]) {
     assert.ok(verifier.includes(rule), `verifier must cover ${rule}`);
   }
   assert.match(verifier, /src\/core\/profile-migration\.ts/);
@@ -72,6 +91,7 @@ test('snapshot verifier scopes scanner self-references to exact files', () => {
   const verifier = read('scripts/verify-public-snapshot.mjs');
   for (const exactPath of [
     'tests/content-sanitization.test.mjs',
+    'tests/log.test.mjs',
     'docs/TROUBLESHOOTING.md',
     'docs/pt-BR/TROUBLESHOOTING.md',
     'tests/profile-migration.test.mjs',
@@ -81,8 +101,16 @@ test('snapshot verifier scopes scanner self-references to exact files', () => {
   ]) {
     assert.ok(verifier.includes(exactPath), `verifier must scope the exception to ${exactPath}`);
   }
-  assert.doesNotMatch(verifier, /relative\.startsWith\(['"]tests\//, 'verifier must not skip the tests tree');
-  assert.match(verifier, /relative === ['"]node_modules['"]/, 'verifier may skip only the generated root dependency tree');
+  assert.doesNotMatch(
+    verifier,
+    /relative\.startsWith\(['"]tests\//,
+    'verifier must not skip the tests tree',
+  );
+  assert.match(
+    verifier,
+    /relative === ['"]node_modules['"]/,
+    'verifier may skip only the generated root dependency tree',
+  );
 });
 
 test('every local link in a public document resolves inside the public snapshot', () => {
@@ -96,9 +124,10 @@ test('every local link in a public document resolves inside the public snapshot'
     .map((line) => line.trim())
     .filter((line) => line && !line.startsWith('#'));
 
-  const isPublic = (relative) => entries.some((entry) => (
-    entry.endsWith('/') ? relative.startsWith(entry) : relative === entry
-  ));
+  const isPublic = (relative) =>
+    entries.some((entry) =>
+      entry.endsWith('/') ? relative.startsWith(entry) : relative === entry,
+    );
 
   const documents = [];
   for (const entry of entries) {

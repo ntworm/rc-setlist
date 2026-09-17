@@ -1,5 +1,5 @@
 param(
-    [string]$Version = "0.7.0",
+    [string]$Version = "1.0.0",
     [string]$AblxPath,
     [string]$OutputRoot
 )
@@ -31,7 +31,7 @@ if ($Version -notmatch '^\d+\.\d+\.\d+$') {
     throw "Version must use semantic X.Y.Z format."
 }
 if (-not $AblxPath) {
-    $AblxPath = Join-Path $repoRoot "Ableton-RC-Setlist-$Version.ablx"
+    $AblxPath = Join-Path $repoRoot "RC-Setlist-$Version.ablx"
 }
 if (-not $OutputRoot) {
     $OutputRoot = Join-Path $repoRoot "release-candidates"
@@ -39,11 +39,11 @@ if (-not $OutputRoot) {
 
 $ablxFull = (Resolve-Path -LiteralPath $AblxPath).Path
 $outputFull = [IO.Path]::GetFullPath($OutputRoot)
-$kitName = "Ableton-RC-Setlist-$Version-Installation-Kit"
+$kitName = "RC-Setlist-$Version-Installation-Kit"
 $kitRoot = Join-Path $outputFull $kitName
 $zipPath = Join-Path $outputFull "$kitName.zip"
 
-if ([IO.Path]::GetFileName($ablxFull) -ne "Ableton-RC-Setlist-$Version.ablx") {
+if ([IO.Path]::GetFileName($ablxFull) -ne "RC-Setlist-$Version.ablx") {
     throw "Unexpected .ablx filename: $ablxFull"
 }
 if ($outputFull -eq [IO.Path]::GetPathRoot($outputFull)) {
@@ -69,7 +69,7 @@ New-Item -ItemType Directory -Path (Join-Path $kitRoot "pt-BR") | Out-Null
 New-Item -ItemType Directory -Path (Join-Path $kitRoot "RC-Bridge") | Out-Null
 
 $copies = @(
-    @{ Source = $ablxFull; Target = "Ableton-RC-Setlist-$Version.ablx" },
+    @{ Source = $ablxFull; Target = "RC-Setlist-$Version.ablx" },
     @{ Source = (Join-Path $repoRoot "release-template/START-HERE.html"); Target = "START-HERE.html" },
     @{ Source = (Join-Path $repoRoot "release-template/README.txt"); Target = "README.txt" },
     @{ Source = (Join-Path $repoRoot "release-template/RC-Bridge/Install-RC-Bridge.cmd"); Target = "RC-Bridge/Install-RC-Bridge.cmd" },
@@ -91,7 +91,8 @@ $copies = @(
     @{ Source = (Join-Path $repoRoot "CHANGELOG.md"); Target = "CHANGELOG.md" },
     @{ Source = (Join-Path $repoRoot "LICENSE"); Target = "LEGAL/LICENSE.txt" },
     @{ Source = (Join-Path $repoRoot "NOTICE"); Target = "LEGAL/NOTICE.txt" },
-    @{ Source = (Join-Path $repoRoot "THIRD_PARTY_NOTICES.md"); Target = "LEGAL/THIRD_PARTY_NOTICES.md" }
+    @{ Source = (Join-Path $repoRoot "THIRD_PARTY_NOTICES.md"); Target = "LEGAL/THIRD_PARTY_NOTICES.md" },
+    @{ Source = (Join-Path $repoRoot "scripts/uninstall-pre-1.0-extensions.ps1"); Target = "uninstall-pre-1.0-extensions.ps1" }
 )
 
 foreach ($copy in $copies) {
@@ -116,8 +117,8 @@ Get-ChildItem -LiteralPath $bridgeTarget -Recurse -Directory -Filter "__pycache_
 $ablxHash = Get-FileSha256 -LiteralPath $ablxFull
 $ablxSize = (Get-Item -LiteralPath $ablxFull).Length
 $buildInfo = @(
-    "Ableton RC Setlist $Version public release",
-    "Artifact: Ableton-RC-Setlist-$Version.ablx",
+    "RC Setlist $Version public release",
+    "Artifact: RC-Setlist-$Version.ablx",
     "Size: $ablxSize bytes",
     "SHA256: $ablxHash",
     "Package inventory: generated successfully",

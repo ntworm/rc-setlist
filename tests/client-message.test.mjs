@@ -133,7 +133,10 @@ test('decoder rejects C0 and C1 controls in every structured text field', () => 
     [{ type: 'profile_select', id: 'profile\n1' }, /id/],
     [{ type: 'profile_rename', id: 'profile-1', name: 'En\rcore' }, /name/],
     [{ type: 'profile_delete', id: 'profile\t1', confirmationName: 'Encore' }, /id/],
-    [{ type: 'profile_delete', id: 'profile-1', confirmationName: 'En\u0080core' }, /confirmationName/],
+    [
+      { type: 'profile_delete', id: 'profile-1', confirmationName: 'En\u0080core' },
+      /confirmationName/,
+    ],
     [{ type: 'profile_restore', id: 'profile\u009f1' }, /id/],
   ];
 
@@ -160,7 +163,13 @@ test('decoder constructs canonical messages without retaining unexpected propert
       { type: 'get_lyrics', song: 'Song A' },
     ],
     [
-      { type: 'jump', songIndex: 2, sectionIndex: null, commandId: 'jump-1', extra: { nested: true } },
+      {
+        type: 'jump',
+        songIndex: 2,
+        sectionIndex: null,
+        commandId: 'jump-1',
+        extra: { nested: true },
+      },
       { type: 'jump', songIndex: 2, sectionIndex: null, commandId: 'jump-1' },
     ],
     [
@@ -212,10 +221,16 @@ test('decoder bounds lyrics and profile mutation fields', () => {
 });
 
 test('decoder returns only a safe valid commandId on failures', () => {
-  const safeId = expectInvalid({ type: 'metronome', value: 'yes', commandId: 'metronome-1' }, /value/);
+  const safeId = expectInvalid(
+    { type: 'metronome', value: 'yes', commandId: 'metronome-1' },
+    /value/,
+  );
   assert.equal(safeId.commandId, 'metronome-1');
 
-  const hostileId = expectInvalid({ type: 'metronome', value: 'yes', commandId: 'bad\nvalue' }, /commandId/);
+  const hostileId = expectInvalid(
+    { type: 'metronome', value: 'yes', commandId: 'bad\nvalue' },
+    /commandId/,
+  );
   assert.equal(hostileId.commandId, undefined);
   assert.doesNotMatch(hostileId.message, /bad|value\n/);
 });
@@ -241,12 +256,27 @@ test('the server palette matches the client palette exactly', () => {
 });
 
 test('set_song_notes carries one line of bounded text, or null to clear', () => {
-  assert.deepEqual(decodeClientMessage({ type: 'set_song_notes', time: 1136, notes: 'Sol maior · capo 2' }),
-    { ok: true, message: { type: 'set_song_notes', time: 1136, notes: 'Sol maior · capo 2' } });
-  assert.deepEqual(decodeClientMessage({ type: 'set_song_notes', time: 1136, notes: null }).message,
-    { type: 'set_song_notes', time: 1136, notes: null });
-  assert.equal(decodeClientMessage({ type: 'set_song_notes', time: 1136, notes: '   ' }).message.notes, null, 'blank means clear');
-  assert.equal(decodeClientMessage({ type: 'set_song_notes', time: 1136, notes: 'x'.repeat(201) }).ok, false);
-  assert.equal(decodeClientMessage({ type: 'set_song_notes', time: 1136, notes: 'a\nb' }).ok, false, 'one line');
+  assert.deepEqual(
+    decodeClientMessage({ type: 'set_song_notes', time: 1136, notes: 'Sol maior · capo 2' }),
+    { ok: true, message: { type: 'set_song_notes', time: 1136, notes: 'Sol maior · capo 2' } },
+  );
+  assert.deepEqual(
+    decodeClientMessage({ type: 'set_song_notes', time: 1136, notes: null }).message,
+    { type: 'set_song_notes', time: 1136, notes: null },
+  );
+  assert.equal(
+    decodeClientMessage({ type: 'set_song_notes', time: 1136, notes: '   ' }).message.notes,
+    null,
+    'blank means clear',
+  );
+  assert.equal(
+    decodeClientMessage({ type: 'set_song_notes', time: 1136, notes: 'x'.repeat(201) }).ok,
+    false,
+  );
+  assert.equal(
+    decodeClientMessage({ type: 'set_song_notes', time: 1136, notes: 'a\nb' }).ok,
+    false,
+    'one line',
+  );
   assert.equal(decodeClientMessage({ type: 'set_song_notes', time: -1, notes: 'x' }).ok, false);
 });

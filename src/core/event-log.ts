@@ -6,6 +6,7 @@
 
 import * as fs from 'node:fs';
 import * as path from 'node:path';
+import { log } from '../util/log.js';
 
 export interface EventLogEntry {
   timestamp: string;
@@ -16,7 +17,7 @@ export interface EventLogEntry {
   result?: string;
   message?: string;
   repeatCount?: number;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 export interface EventLoggerOptions {
@@ -26,7 +27,8 @@ export interface EventLoggerOptions {
 }
 
 const REDACT_RE = /(?:token|secret|password|key)=(?:[^\s&"']+)/gi;
-const SECRET_KEY_RE = /^(?:.*_)?(?:token|secret|password|key|auth|authorization|cred|credential)(?:_.*)?$/i;
+const SECRET_KEY_RE =
+  /^(?:.*_)?(?:token|secret|password|key|auth|authorization|cred|credential)(?:_.*)?$/i;
 const MAX_QUEUE_SIZE = 2048;
 
 function redactString(val: string): string {
@@ -47,7 +49,7 @@ function redactObject<T>(obj: T): T {
     return obj.map(redactObject) as unknown as T;
   }
 
-  const result: Record<string, any> = {};
+  const result: Record<string, unknown> = {};
   for (const [k, v] of Object.entries(obj)) {
     if (SECRET_KEY_RE.test(k)) {
       result[k] = '[REDACTED]';
@@ -62,6 +64,9 @@ function redactObject<T>(obj: T): T {
   return result as T;
 }
 
+/**
+ * Manages the lifecycle and public surface of EventLogger.
+ */
 export class EventLogger {
   private globalStorageDir: string;
   private logPath: string;
@@ -93,12 +98,12 @@ export class EventLogger {
   public log(entry: Omit<EventLogEntry, 'timestamp'>): void {
     const now = Date.now();
     const redacted = redactObject(entry);
-    const entryKey = `${redacted.type}::${redacted.result ?? ''}::${redacted.message ?? ''}`;
+    const rType = typeof redacted.type === 'string' ? redacted.type : 'unknown';
+    const rResult = typeof redacted.result === 'string' ? redacted.result : '';
+    const rMessage = typeof redacted.message === 'string' ? redacted.message : '';
+    const entryKey = `${rType}::${rResult}::${rMessage}`;
 
-    if (
-      this.lastEntryKey === entryKey &&
-      now - this.lastEntryTime < this.dedupWindowMs
-    ) {
+    if (this.lastEntryKey === entryKey && now - this.lastEntryTime < this.dedupWindowMs) {
       this.lastRepeatCount++;
       return;
     }
@@ -120,7 +125,7 @@ export class EventLogger {
     }
 
     const fullEntry: EventLogEntry = {
-      type: redacted.type,
+      type: typeof redacted.type === 'string' ? redacted.type : 'unknown',
       timestamp: new Date(now).toISOString(),
       ...redacted,
     };
@@ -159,7 +164,9 @@ export class EventLogger {
         await fs.promises.appendFile(this.logPath, line, 'utf8');
       }
     } catch (err) {
-      console.error('[EventLogger] Failed to write log batch:', err);
+      log.error('core', 'Failed to write log batch', {
+        error: err instanceof Error ? err.message : String(err),
+      });
     } finally {
       this.isFlushing = false;
     }
@@ -167,10 +174,7 @@ export class EventLogger {
 
   private rotateFiles(): void {
     try {
-      const oldestFile = path.join(
-        this.globalStorageDir,
-        `events.log.${this.maxRotationFiles}`
-      );
+      const oldestFile = path.join(this.globalStorageDir, `events.log.${this.maxRotationFiles}`);
       if (fs.existsSync(oldestFile)) {
         fs.unlinkSync(oldestFile);
       }
@@ -187,7 +191,9 @@ export class EventLogger {
         fs.renameSync(this.logPath, path.join(this.globalStorageDir, 'events.log.1'));
       }
     } catch (err) {
-      console.error('[EventLogger] Log rotation failed:', err);
+      log.error('core', 'Log rotation failed', {
+        error: err instanceof Error ? err.message : String(err),
+      });
     }
   }
 

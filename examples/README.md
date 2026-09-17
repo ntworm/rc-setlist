@@ -1,6 +1,6 @@
-# Fictional demo setlist
+﻿# Fictional demo setlist
 
-Everything under `demo-setlist/` was written for Ableton RC Setlist. The song names and
+Everything under `demo-setlist/` was written for RC Setlist. The song names and
 text are fictional and may be used to test the extension without copying a
 commercial work.
 

@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { executeAutomationActions } from '../src/automation/executor.ts';
-import { bridgeState } from '../src/core/bridge-state.ts';
+import { bridgeState } from '../src/runtime/bridge-state.ts';
 import { SetlistManager } from '../src/core/setlist-manager.ts';
 
 /**
@@ -113,7 +113,10 @@ test('crossing an end-of-song [next] at poll rate writes the position exactly on
     }
     const positions = harness.calls.filter((c) => c[0] === 'position');
     assert.deepEqual(positions, [['position', 68]]);
-    assert.equal(harness.calls.some((c) => c[0] === 'cue-jump'), false);
+    assert.equal(
+      harness.calls.some((c) => c[0] === 'cue-jump'),
+      false,
+    );
   } finally {
     harness.restore();
   }

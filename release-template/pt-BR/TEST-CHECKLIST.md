@@ -1,4 +1,4 @@
-# Checklist de lançamento — Ableton RC Setlist 0.7.0
+# Checklist de lançamento — RC Setlist 1.0.0
 
 Use uma cópia de um Live Set e uma **rede local confiável / LAN**. Não faça o
 primeiro teste durante um show real.
@@ -7,16 +7,16 @@ primeiro teste durante um show real.
 
 - [ ] Ableton Live 12.4.5+ Suite Beta abre normalmente.
 - [ ] `RC-Bridge/Install-RC-Bridge.cmd` (ou `Install RC Bridge.command`) roda e
-  mostra o caminho de instalação; `RCBridge/__init__.py` existe diretamente
-  dentro de `User Library/Remote Scripts/RCBridge`.
+      mostra o caminho de instalação; `RCBridge/__init__.py` existe diretamente
+      dentro de `User Library/Remote Scripts/RCBridge`.
 - [ ] RCBridge aparece e está selecionado como Control Surface.
 - [ ] Depois de Iniciar, a linha OSC do painel do RC Setlist diz
-  `via RC Bridge 1.0.0 na porta 11020`.
+      `via RC Bridge 1.0.0 na porta 11020`.
 - [ ] Com um AbletonOSC comum selecionado no lugar, a linha OSC diz
-  `via AbletonOSC na porta 11000` e o transporte continua funcionando.
-- [ ] `Ableton-RC-Setlist-0.7.0.ablx` instala sem erro.
+      `via AbletonOSC na porta 11000` e o transporte continua funcionando.
+- [ ] `RC-Setlist-1.0.0.ablx` instala sem erro.
 - [ ] Em dados limpos, o primeiro **Iniciar** cria o perfil padrão e sobe o servidor sem erro de persistência.
-- [ ] **Extensions > Ableton RC Setlist** abre o painel correto e mostra a versão 0.7.0.
+- [ ] **Extensões > RC Setlist** abre o painel correto e mostra a versão 1.0.0.
 
 ## Idioma
 
@@ -48,9 +48,9 @@ TESTE 02 > REFRÃO
 ```
 
 - [ ] Os dois localizadores que contêm somente tags aparecem como seções de
-  automação dentro de TESTE 01, e não como músicas vazias.
+      automação dentro de TESTE 01, e não como músicas vazias.
 - [ ] Adicione `TESTE 01B` entre TESTE 01 e TESTE 02; **Atualizar** deve
-  colocá-lo na posição cronológica em vez de anexá-lo ao final.
+      colocá-lo na posição cronológica em vez de anexá-lo ao final.
 - [ ] A duração aparece em cada música e a duração total do setlist é atualizada.
 - [ ] BPM, click, `[loop 2x]` e `[stop]` funcionam como documentado.
 - [ ] Anterior/Próxima exigem o hold de segurança.
@@ -60,22 +60,22 @@ TESTE 02 > REFRÃO
 - [ ] Texto LRC autorizado ou fictício acompanha o transporte.
 - [ ] Letras antigas ausentes migram sem apagar a pasta anterior ou sobrescrever letras novas.
 - [ ] O CSV abre em UTF-8, identifica o setlist atual e inclui
-  `sections_count`, nomes em `sections`, ações em `automations` e `lyric_lines`.
+      `sections_count`, nomes em `sections`, ações em `automations` e `lyric_lines`.
 
 ## Persistência e falhas
 
 - [ ] Perfil, ordem, idioma e início automático sobrevivem ao reinício do Live.
 - [ ] Com o transporte parado, criar, selecionar e renomear um segundo Active
-  Setlist; depois excluir esse setlist enquanto estiver inativo e restaurar pela
-  lixeira recuperável.
+      Setlist; depois excluir esse setlist enquanto estiver inativo e restaurar pela
+      lixeira recuperável.
 - [ ] No celular, o campo de rename mantém teclado e foco com o Live parado, e
-  Enter confirma o novo nome.
+      Enter confirma o novo nome.
 - [ ] Um setlist criado neste Live Set não aparece ao abrir outro `.als` salvo;
-  reabrir o primeiro Set recupera esse setlist.
+      reabrir o primeiro Set recupera esse setlist.
 - [ ] Uma queda breve mostra reconexão sem inventar dados.
 - [ ] Sem nenhuma control surface selecionada, a interface falha de forma compreensível.
 - [ ] **Verificar OSC** distingue parado, aguardando, conectado, interrompido e
-  porta de retorno OSC ocupada com um rótulo compacto.
+      porta de retorno OSC ocupada com um rótulo compacto.
 - [ ] O token completo do controle não aparece em nenhuma captura pública.
 
 ## Aprovação

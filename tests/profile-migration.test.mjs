@@ -65,13 +65,22 @@ test('renamed extension imports profile lyrics from the known previous storage i
   const previous = new ProfileManager(previousRoot, deterministicOptions());
   await previous.initialize();
   const previousPaths = previous.getActivePaths();
-  fs.writeFileSync(path.join(previousPaths.lyrics, 'Legacy Song.lrc'), '[00:00.00]Preserved legacy lyric');
+  fs.writeFileSync(
+    path.join(previousPaths.lyrics, 'Legacy Song.lrc'),
+    '[00:00.00]Preserved legacy lyric',
+  );
   fs.writeFileSync(previousPaths.customOrder, JSON.stringify(['Legacy Song']));
 
   const previousProject = path.join(previousRoot, 'projects', 'legacy-project');
   fs.mkdirSync(path.join(previousProject, 'lyrics'), { recursive: true });
-  fs.writeFileSync(path.join(previousProject, 'project-info.json'), JSON.stringify({ projectName: 'Legacy Show' }));
-  fs.writeFileSync(path.join(previousProject, 'lyrics', 'Project Song.txt'), 'Preserved project lyric');
+  fs.writeFileSync(
+    path.join(previousProject, 'project-info.json'),
+    JSON.stringify({ projectName: 'Legacy Show' }),
+  );
+  fs.writeFileSync(
+    path.join(previousProject, 'lyrics', 'Project Song.txt'),
+    'Preserved project lyric',
+  );
 
   const current = new ProfileManager(currentRoot, deterministicOptions());
   await current.initialize();
@@ -87,7 +96,10 @@ test('renamed extension imports profile lyrics from the known previous storage i
   const importedProject = current.list().find((profile) => profile.name === 'Legacy Show');
   assert.ok(importedProject);
   assert.equal(
-    fs.readFileSync(path.join(current.getPaths(importedProject.id).lyrics, 'Project Song.txt'), 'utf8'),
+    fs.readFileSync(
+      path.join(current.getPaths(importedProject.id).lyrics, 'Project Song.txt'),
+      'utf8',
+    ),
     'Preserved project lyric',
   );
   assert.equal(fs.existsSync(path.join(previousProject, 'lyrics', 'Project Song.txt')), true);
@@ -103,13 +115,19 @@ test('project-info directories migrate into explicit profiles in sorted hash ord
   // Set up project legacy sources
   const project1 = path.join(root, 'projects', 'hash1');
   fs.mkdirSync(path.join(project1, 'lyrics'), { recursive: true });
-  fs.writeFileSync(path.join(project1, 'project-info.json'), JSON.stringify({ projectName: 'Show A' }));
+  fs.writeFileSync(
+    path.join(project1, 'project-info.json'),
+    JSON.stringify({ projectName: 'Show A' }),
+  );
   fs.writeFileSync(path.join(project1, 'lyrics', 'Song B.txt'), 'Lyrics B');
 
   // Same name but different hash (creates unique name)
   const project2 = path.join(root, 'projects', 'hash2');
   fs.mkdirSync(path.join(project2, 'lyrics'), { recursive: true });
-  fs.writeFileSync(path.join(project2, 'project-info.json'), JSON.stringify({ projectName: 'Show A' }));
+  fs.writeFileSync(
+    path.join(project2, 'project-info.json'),
+    JSON.stringify({ projectName: 'Show A' }),
+  );
   fs.writeFileSync(path.join(project2, 'lyrics', 'Song C.txt'), 'Lyrics C');
 
   const manager = new ProfileManager(root, deterministicOptions());
@@ -149,7 +167,10 @@ test('detailed migration: existing target files are not overwritten, custom-orde
   // Set up project legacy files
   const project1 = path.join(root, 'projects', 'hash1');
   fs.mkdirSync(path.join(project1, 'lyrics'), { recursive: true });
-  fs.writeFileSync(path.join(project1, 'project-info.json'), JSON.stringify({ projectName: 'Show A' }));
+  fs.writeFileSync(
+    path.join(project1, 'project-info.json'),
+    JSON.stringify({ projectName: 'Show A' }),
+  );
   fs.writeFileSync(path.join(project1, 'custom-order.json'), JSON.stringify(['Song B']));
   fs.writeFileSync(path.join(project1, 'lyrics', 'Song B.txt'), 'Project Lyrics');
 
@@ -159,7 +180,10 @@ test('detailed migration: existing target files are not overwritten, custom-orde
 
   const primaryPaths = manager.getActivePaths();
   // Verify global lyrics and custom-order are migrated
-  assert.equal(fs.readFileSync(path.join(primaryPaths.lyrics, 'Song A.lrc'), 'utf8'), 'Global Lyrics');
+  assert.equal(
+    fs.readFileSync(path.join(primaryPaths.lyrics, 'Song A.lrc'), 'utf8'),
+    'Global Lyrics',
+  );
   assert.deepEqual(JSON.parse(fs.readFileSync(primaryPaths.customOrder, 'utf8')), ['Song A']);
 
   // Verify exports/audio were not created/migrated inside the profile
@@ -178,19 +202,27 @@ test('detailed migration: existing target files are not overwritten, custom-orde
   // 2. Transactional cleanup: fail inside populate during import
   const failProject = path.join(root, 'projects', 'hash2');
   fs.mkdirSync(path.join(failProject, 'lyrics'), { recursive: true });
-  fs.writeFileSync(path.join(failProject, 'project-info.json'), JSON.stringify({ projectName: 'Show Fail' }));
+  fs.writeFileSync(
+    path.join(failProject, 'project-info.json'),
+    JSON.stringify({ projectName: 'Show Fail' }),
+  );
 
   const manager2 = new ProfileManager(root, deterministicOptions());
   await manager2.initialize();
 
-  await assert.rejects(manager2.importLegacyProfile('project:hash2', 'Show Fail', async () => {
-    throw new Error('Injected populate failure');
-  }));
+  await assert.rejects(
+    manager2.importLegacyProfile('project:hash2', 'Show Fail', async () => {
+      throw new Error('Injected populate failure');
+    }),
+  );
 
   // Verify that NO partial/migrating directory remains and no ledger entry is created
   const profilesDir = path.join(root, 'profiles');
   const files = fs.readdirSync(profilesDir);
-  assert.equal(files.some(f => f.startsWith('.migrating-')), false);
+  assert.equal(
+    files.some((f) => f.startsWith('.migrating-')),
+    false,
+  );
   assert.equal(manager2.hasLegacySource('project:hash2'), false);
 
   // 3. Verify logs do not contain absolute paths (projectPath)
@@ -226,7 +258,7 @@ test('importLegacyProfile cleans up staging dir when metadata write fails and do
         throw new Error('Injected metadata write failure in staging');
       }
       await fs.promises.writeFile(filePath, JSON.stringify(val, null, 2), 'utf8');
-    }
+    },
   });
   await manager.initialize();
 
@@ -236,13 +268,17 @@ test('importLegacyProfile cleans up staging dir when metadata write fails and do
       fs.mkdirSync(paths.lyrics, { recursive: true });
       fs.writeFileSync(path.join(paths.lyrics, 'sentinel.lrc'), 'should be cleaned up');
     }),
-    (err) => err instanceof ProfileError && err.code === 'profile_io_error'
+    (err) => err instanceof ProfileError && err.code === 'profile_io_error',
   );
 
   // No .migrating-* or final UUID directory should remain
   const profilesDir = path.join(root, 'profiles');
   const entries = fs.readdirSync(profilesDir);
-  assert.equal(entries.some(f => f.startsWith('.migrating-')), false, 'No .migrating-* should remain');
+  assert.equal(
+    entries.some((f) => f.startsWith('.migrating-')),
+    false,
+    'No .migrating-* should remain',
+  );
 
   // source should not be in legacySources
   assert.equal(manager.hasLegacySource('project:hash_fail'), false);
@@ -272,7 +308,11 @@ test('migration does not overwrite pre-existing file in profile destination', as
 
   // 5. The sentinel content must survive
   const content = fs.readFileSync(path.join(primaryPaths.lyrics, 'Song A.lrc'), 'utf8');
-  assert.equal(content, 'SENTINEL ORIGINAL', 'Pre-existing file must not be overwritten by migration');
+  assert.equal(
+    content,
+    'SENTINEL ORIGINAL',
+    'Pre-existing file must not be overwritten by migration',
+  );
 
   // 6. Source must remain
   assert.equal(fs.existsSync(path.join(root, 'lyrics', 'Song A.lrc')), true);

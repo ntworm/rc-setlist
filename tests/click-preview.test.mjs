@@ -3,10 +3,7 @@
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import {
-  buildClickPreviewWav,
-  clickPreviewFilename,
-} from '../src/core/click-preview.ts';
+import { buildClickPreviewWav, clickPreviewFilename } from '../src/core/click-preview.ts';
 
 test('buildClickPreviewWav: produces valid RIFF/WAVE header', () => {
   const wav = buildClickPreviewWav({ bpm: 120, beats: 4 });
@@ -32,7 +29,7 @@ test('buildClickPreviewWav: shorter buffer at higher BPM', () => {
   const wav120 = buildClickPreviewWav({ bpm: 120, beats: 4 });
   assert.ok(
     wav60.length > wav120.length,
-    `60bpm wav (${wav60.length}B) should be longer than 120bpm (${wav120.length}B)`
+    `60bpm wav (${wav60.length}B) should be longer than 120bpm (${wav120.length}B)`,
   );
 });
 

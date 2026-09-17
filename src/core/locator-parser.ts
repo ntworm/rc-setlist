@@ -1,6 +1,6 @@
-import { Section, Song, Setlist } from '../types.js';
+import type { Section, Song, Setlist } from '../types.js';
 
-export { computeCuesFingerprint, type RawCue } from './cue-fingerprint.js';
+export { computeCuesFingerprint } from './cue-fingerprint.js';
 
 /**
  * Extract all [tag] or [tag value] tokens from a string and return
@@ -73,7 +73,18 @@ export function extractTags(raw: string): {
   // Remove all [...] blocks from display name
   const displayName = raw.replace(/\s*\[[^\]]+\]/g, '').trim();
 
-  return { displayName, loopCount, autoStop, autoNext, bpm, autoClick, skip, hidden, ignore, jumpTarget };
+  return {
+    displayName,
+    loopCount,
+    autoStop,
+    autoNext,
+    bpm,
+    autoClick,
+    skip,
+    hidden,
+    ignore,
+    jumpTarget,
+  };
 }
 
 /** The optional `jumpTarget` key, present only when the tag was written. */
@@ -85,17 +96,24 @@ type TagInfo = ReturnType<typeof extractTags>;
 
 /** Whether any tag on this marker does something when the playhead reaches it. */
 function hasAnyAutomation(info: TagInfo): boolean {
-  return info.loopCount !== null
-    || info.autoStop
-    || info.autoNext
-    || info.bpm !== null
-    || info.autoClick !== null
-    || info.skip
-    || info.jumpTarget !== null;
+  return (
+    info.loopCount !== null ||
+    info.autoStop ||
+    info.autoNext ||
+    info.bpm !== null ||
+    info.autoClick !== null ||
+    info.skip ||
+    info.jumpTarget !== null
+  );
 }
 
 /** The tag fields a song or a section carries, in the shape both share. */
-function tagFields(info: TagInfo): Pick<Section, 'loopCount' | 'autoStop' | 'autoNext' | 'bpm' | 'autoClick' | 'skip' | 'jumpTarget'> {
+function tagFields(
+  info: TagInfo,
+): Pick<
+  Section,
+  'loopCount' | 'autoStop' | 'autoNext' | 'bpm' | 'autoClick' | 'skip' | 'jumpTarget'
+> {
   return {
     loopCount: info.loopCount,
     autoStop: info.autoStop,
@@ -142,10 +160,21 @@ function splitOutsideTags(text: string): string[] {
 
 export const PLACEHOLDER_SONG_TITLE = '_Sem Música_';
 
+/**
+ * Parses the locator.
+ */
 export function parseLocator(name: string): {
   kind: 'song' | 'section' | 'automation' | 'hidden' | 'relative-section' | 'relative-automation';
   songName?: string;
-  songTags?: { loopCount: number | null; autoStop: boolean; autoNext: boolean; bpm: number | null; autoClick: boolean | null; skip: boolean; jumpTarget?: string };
+  songTags?: {
+    loopCount: number | null;
+    autoStop: boolean;
+    autoNext: boolean;
+    bpm: number | null;
+    autoClick: boolean | null;
+    skip: boolean;
+    jumpTarget?: string;
+  };
   section?: Section;
   hiddenName?: string;
 } {
@@ -219,6 +248,9 @@ function placeholderSong(time: number): Song {
   };
 }
 
+/**
+ * Parses the setlist.
+ */
 export function parseSetlist(cues: { name: string; time: number }[]): Setlist {
   const songs: Song[] = [];
   const hidden: { name: string; time: number }[] = [];
@@ -248,12 +280,16 @@ export function parseSetlist(cues: { name: string; time: number }[]): Setlist {
 
     if (parsed.kind === 'section') {
       if (!currentSong || currentSong.title !== parsed.songName) {
-        currentSong = { ...placeholderSong(cue.time), title: parsed.songName!, bpm: parsed.section?.bpm ?? null };
+        currentSong = {
+          ...placeholderSong(cue.time),
+          title: parsed.songName!,
+          bpm: parsed.section?.bpm ?? null,
+        };
         songs.push(currentSong);
       } else if (
-        currentSong.bpm === null
-        && typeof parsed.section?.bpm === 'number'
-        && cue.time === currentSong.time
+        currentSong.bpm === null &&
+        typeof parsed.section?.bpm === 'number' &&
+        cue.time === currentSong.time
       ) {
         // Only a section that starts exactly where the song starts may stand in
         // for a missing song tag. Promoting a tag from a chorus in the middle

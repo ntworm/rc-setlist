@@ -2,25 +2,36 @@ import * as http from 'node:http';
 import * as https from 'node:https';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
-import { SetlistManager } from './setlist-manager.js';
-import { JumpScheduler } from './next-downbeat-jump.js';
+import { SetlistManager } from '../core/setlist-manager.js';
+import { JumpScheduler } from '../core/next-downbeat-jump.js';
 import { OSCClient } from '../integration/osc-client.js';
 import { SetlistWSServer } from '../server/ws.js';
-import { ProfileManager, ProfileError, safeRandomUUID } from './profile-manager.js';
-import { applyCues, colorsByTime, emptySongBook, notesByTime, parseSongBook, setSongColor, setSongNotes, type SongBook } from './song-book.js';
-import { EventLogger } from './event-log.js';
-import { CommandBus } from './command-bus.js';
+import { ProfileManager, ProfileError, safeRandomUUID } from '../core/profile-manager.js';
+import {
+  applyCues,
+  colorsByTime,
+  emptySongBook,
+  notesByTime,
+  parseSongBook,
+  setSongColor,
+  setSongNotes,
+  type SongBook,
+} from '../core/song-book.js';
+import { EventLogger } from '../core/event-log.js';
+import { CommandBus } from '../core/command-bus.js';
 import { McpTcpClient } from '../integration/mcp-client.js';
 import { McpFallbackSync } from '../integration/mcp-fallback-sync.js';
-import { parseLrc, parseTxt } from './lyrics-parser.js';
+import { parseLrc, parseTxt } from '../core/lyrics-parser.js';
 import {
   initializeProjectProfileScope,
   recoverCompatibleLegacyPayload,
   ProjectProfilePromotionCancelledError,
   type ProjectProfileScope,
-} from './project-profile-scope.js';
-import type { ProjectIdentity } from './project-identity.js';
-import type { ProfileManagerOptions } from './profile-manager.js';
+} from '../core/project-profile-scope.js';
+import type { ProjectIdentity } from '../core/project-identity.js';
+import type { ProfileManagerOptions } from '../core/profile-manager.js';
+import { log } from '../util/log.js';
+import { isPlainObject, isStringArray, parseJson } from '../util/json.js';
 
 export interface BridgeState {
   manager: SetlistManager | null;
@@ -97,6 +108,9 @@ export const bridgeState: BridgeState = {
   legacyRecoveryPromise: null,
 };
 
+/**
+ * RequireProfileManager — implementation detail.
+ */
 export function requireProfileManager(): ProfileManager {
   if (!bridgeState.profileManager) {
     throw new ProfileError('profile_io_error', 'Profiles are not initialized.');
@@ -104,10 +118,16 @@ export function requireProfileManager(): ProfileManager {
   return bridgeState.profileManager;
 }
 
+/**
+ * Returns the active profile paths.
+ */
 export function getActiveProfilePaths() {
   return requireProfileManager().getActivePaths();
 }
 
+/**
+ * Broadcasts the state.
+ */
 export function broadcastState(): void {
   if (bridgeState.manager && bridgeState.wsServer) {
     bridgeState.commandBus?.resolveObservableConfirmations();
@@ -115,15 +135,23 @@ export function broadcastState(): void {
     // by where it sits, not by the id the song book keeps on the server.
     const songColors = bridgeState.songBook ? colorsByTime(bridgeState.songBook) : {};
     const songNotes = bridgeState.songBook ? notesByTime(bridgeState.songBook) : {};
-    bridgeState.wsServer.broadcastState({ ...bridgeState.manager.getState(), songColors, songNotes });
+    bridgeState.wsServer.broadcastState({
+      ...bridgeState.manager.getState(),
+      songColors,
+      songNotes,
+    });
   }
 }
 
-
+/**
+ * ProfileStatePayload — implementation detail.
+ */
 export function profileStatePayload() {
   const manager = requireProfileManager();
   const profiles = manager.list().map(({ id, name }) => ({ id, name }));
-  const deletedProfiles = manager.listDeleted().map(({ id, name, deletedAt }) => ({ id, name, deletedAt }));
+  const deletedProfiles = manager
+    .listDeleted()
+    .map(({ id, name, deletedAt }) => ({ id, name, deletedAt }));
   return {
     type: 'profiles_state',
     version: 2,
@@ -137,10 +165,16 @@ export function profileStatePayload() {
   } as const;
 }
 
+/**
+ * Broadcasts the profile state.
+ */
 export function broadcastProfileState(): void {
   bridgeState.wsServer?.broadcast(profileStatePayload());
 }
 
+/**
+ * Loads the lyrics for song.
+ */
 export function loadLyricsForSong(songTitle: string) {
   try {
     const cleanTitle = songTitle.replace(/[\\/:*?"<>|]/g, '_').trim();
@@ -156,11 +190,17 @@ export function loadLyricsForSong(songTitle: string) {
       return { type: 'txt' as const, lines: parseTxt(content) };
     }
   } catch (err) {
-    console.error(`[Lyrics] Error loading lyrics for "${songTitle}":`, err);
+    log.error('core', 'Error loading lyrics', {
+      songTitle,
+      error: err instanceof Error ? err.message : String(err),
+    });
   }
   return { type: 'none' as const, lines: [] };
 }
 
+/**
+ * Checks the and broadcast lyrics.
+ */
 export function checkAndBroadcastLyrics(activeSongTitle: string): void {
   if (activeSongTitle !== bridgeState.lastActiveSongTitle) {
     bridgeState.lastActiveSongTitle = activeSongTitle;
@@ -169,20 +209,24 @@ export function checkAndBroadcastLyrics(activeSongTitle: string): void {
       type: 'lyrics',
       song: activeSongTitle,
       format: lyrics.type,
-      lines: lyrics.lines
+      lines: lyrics.lines,
     });
   }
 }
 
+/**
+ * AttemptCompatibleLegacyRecovery — implementation detail.
+ */
 export function attemptCompatibleLegacyRecovery(): Promise<void> {
   if (bridgeState.legacyRecoveryPending) {
     return bridgeState.legacyRecoveryPromise ?? Promise.resolve();
   }
   if (
-    bridgeState.projectIdentity?.source !== 'session'
-    || !bridgeState.manager
-    || !bridgeState.profileManager
-  ) return Promise.resolve();
+    bridgeState.projectIdentity?.source !== 'session' ||
+    !bridgeState.manager ||
+    !bridgeState.profileManager
+  )
+    return Promise.resolve();
 
   const state = bridgeState.manager.getState();
   const setlistManager = bridgeState.manager;
@@ -201,57 +245,73 @@ export function attemptCompatibleLegacyRecovery(): Promise<void> {
     storageRoot: bridgeState.globalPersistenceDir,
     manager: profileManager,
     songTitles,
-  }).then((result) => {
-    if (
-      !result.recovered
-      || bridgeState.manager !== setlistManager
-      || bridgeState.profileManager !== profileManager
-      || bridgeState.projectIdentity?.key !== identityKey
-    ) return;
-    const recoveredIsActive = profileManager.getActive().id === result.profileId;
-    if (recoveredIsActive) setlistManager.setCustomOrder(result.customOrder);
-    bridgeState.lastActiveSongTitle = '';
-    broadcastProfileState();
-    broadcastState();
-    const nextState = setlistManager.getState();
-    const currentSong = nextState.songs[nextState.activeSongIndex];
-    if (recoveredIsActive && currentSong) checkAndBroadcastLyrics(currentSong.title);
-  }).catch((error) => {
-    console.error(`[Lyrics] Compatible legacy recovery failed: ${error instanceof Error ? error.message : String(error)}`);
-  }).finally(() => {
-    if (
-      bridgeState.profileManager === profileManager
-      && bridgeState.projectIdentity?.key === identityKey
-    ) {
-      bridgeState.legacyRecoveryKey = key;
-      bridgeState.legacyRecoveryPending = false;
-    }
-    if (bridgeState.legacyRecoveryPromise === recovery) {
-      bridgeState.legacyRecoveryPromise = null;
-    }
-  });
+  })
+    .then((result) => {
+      if (
+        !result.recovered ||
+        bridgeState.manager !== setlistManager ||
+        bridgeState.profileManager !== profileManager ||
+        bridgeState.projectIdentity?.key !== identityKey
+      )
+        return;
+      const recoveredIsActive = profileManager.getActive().id === result.profileId;
+      if (recoveredIsActive) setlistManager.setCustomOrder(result.customOrder);
+      bridgeState.lastActiveSongTitle = '';
+      broadcastProfileState();
+      broadcastState();
+      const nextState = setlistManager.getState();
+      const currentSong = nextState.songs[nextState.activeSongIndex];
+      if (recoveredIsActive && currentSong) checkAndBroadcastLyrics(currentSong.title);
+    })
+    .catch((error) => {
+      log.error('core', 'Compatible legacy recovery failed', {
+        error: error instanceof Error ? error.message : String(error),
+      });
+    })
+    .finally(() => {
+      if (
+        bridgeState.profileManager === profileManager &&
+        bridgeState.projectIdentity?.key === identityKey
+      ) {
+        bridgeState.legacyRecoveryKey = key;
+        bridgeState.legacyRecoveryPending = false;
+      }
+      if (bridgeState.legacyRecoveryPromise === recovery) {
+        bridgeState.legacyRecoveryPromise = null;
+      }
+    });
   bridgeState.legacyRecoveryPromise = recovery;
   return recovery;
 }
 
+/**
+ * Loads the song book.
+ */
 export function loadSongBook(filePath: string): SongBook {
   try {
     if (!fs.existsSync(filePath)) return emptySongBook();
-    return parseSongBook(JSON.parse(fs.readFileSync(filePath, 'utf8')));
+    const parsed = parseJson(fs.readFileSync(filePath, 'utf8'), isPlainObject);
+    if (!parsed) return emptySongBook();
+    return parseSongBook(parsed);
   } catch {
     // A corrupt or hand-edited book costs the user their colours. It must never
     // cost them a working setlist, so this degrades instead of throwing.
-    console.warn('[song-book] unreadable; starting a fresh one');
+    log.warn('core', 'song-book unreadable; starting a fresh one');
     return emptySongBook();
   }
 }
 
+/**
+ * Saves the song book.
+ */
 export function saveSongBook(filePath: string, book: SongBook): void {
   try {
     fs.mkdirSync(path.dirname(filePath), { recursive: true });
     fs.writeFileSync(filePath, JSON.stringify(book, null, 1), 'utf8');
   } catch (err) {
-    console.warn(`[song-book] could not save: ${err instanceof Error ? err.message : String(err)}`);
+    log.warn('core', 'song-book could not save', {
+      error: err instanceof Error ? err.message : String(err),
+    });
   }
 }
 
@@ -285,12 +345,18 @@ export function setSongColorAtTime(time: number, color: string | undefined): boo
   return updateSongBookAtTime(time, (book, songId) => setSongColor(book, songId, color));
 }
 
+/**
+ * Sets the song notes at time.
+ */
 export function setSongNotesAtTime(time: number, notes: string | undefined): boolean {
   return updateSongBookAtTime(time, (book, songId) => setSongNotes(book, songId, notes));
 }
 
 /** Apply one side-data change to the song at `time` and persist the book. False when no song is known there. */
-function updateSongBookAtTime(time: number, change: (book: SongBook, songId: string) => SongBook): boolean {
+function updateSongBookAtTime(
+  time: number,
+  change: (book: SongBook, songId: string) => SongBook,
+): boolean {
   if (!bridgeState.profileManager) return false;
   let bookPath: string;
   try {
@@ -308,10 +374,13 @@ function updateSongBookAtTime(time: number, change: (book: SongBook, songId: str
   return true;
 }
 
+/**
+ * Loads the custom order.
+ */
 export function loadCustomOrder(filePath: string): string[] {
   if (!fs.existsSync(filePath)) return [];
-  const parsed = JSON.parse(fs.readFileSync(filePath, 'utf8'));
-  if (!Array.isArray(parsed) || parsed.some((item) => typeof item !== 'string')) {
+  const parsed = parseJson(fs.readFileSync(filePath, 'utf8'), isStringArray);
+  if (!parsed) {
     throw new ProfileError('profile_io_error', 'Custom order is invalid.');
   }
   return parsed;
@@ -322,29 +391,39 @@ export interface ProfileScopePromotionAuthorization {
   projectSessionId: string;
 }
 
+/**
+ * ActivateProjectProfileScope — implementation detail.
+ */
 export async function activateProjectProfileScope(
   identity: ProjectIdentity,
   managerOptions?: ProfileManagerOptions,
   promotionAuthorization?: ProfileScopePromotionAuthorization,
   activationGuard?: () => boolean,
 ): Promise<ProjectProfileScope> {
-  const previousScope = bridgeState.profileManager && bridgeState.projectIdentity
-    ? {
-        identity: bridgeState.projectIdentity,
-        root: path.resolve(bridgeState.globalPersistenceDir, 'project-setlists', bridgeState.projectIdentity.key),
-        manager: bridgeState.profileManager,
-      }
-    : null;
-  const promoteFrom = previousScope
-    && promotionAuthorization
-    && promotionAuthorization.sourceIdentityKey === previousScope.identity.key
-    && promotionAuthorization.projectSessionId === bridgeState.projectSessionId
-    ? previousScope
-    : undefined;
+  const previousScope =
+    bridgeState.profileManager && bridgeState.projectIdentity
+      ? {
+          identity: bridgeState.projectIdentity,
+          root: path.resolve(
+            bridgeState.globalPersistenceDir,
+            'project-setlists',
+            bridgeState.projectIdentity.key,
+          ),
+          manager: bridgeState.profileManager,
+        }
+      : null;
+  const promoteFrom =
+    previousScope &&
+    promotionAuthorization &&
+    promotionAuthorization.sourceIdentityKey === previousScope.identity.key &&
+    promotionAuthorization.projectSessionId === bridgeState.projectSessionId
+      ? previousScope
+      : undefined;
   const promotionGuard = promoteFrom
-    ? () => bridgeState.projectSessionId === promotionAuthorization!.projectSessionId
-      && bridgeState.projectIdentity?.key === promotionAuthorization!.sourceIdentityKey
-      && bridgeState.profileManager === previousScope!.manager
+    ? () =>
+        bridgeState.projectSessionId === promotionAuthorization!.projectSessionId &&
+        bridgeState.projectIdentity?.key === promotionAuthorization!.sourceIdentityKey &&
+        bridgeState.profileManager === previousScope!.manager
     : undefined;
   const ensureActivationAllowed = () => {
     if (activationGuard && !activationGuard()) {
@@ -389,11 +468,15 @@ export async function activateProjectProfileScope(
   refreshSongBook();
   broadcastProfileState();
   broadcastState();
-  const currentSong = bridgeState.manager?.getState().songs[bridgeState.manager.getState().activeSongIndex];
+  const currentSong =
+    bridgeState.manager?.getState().songs[bridgeState.manager.getState().activeSongIndex];
   if (currentSong) checkAndBroadcastLyrics(currentSong.title);
   return scope;
 }
 
+/**
+ * SelectProfile — implementation detail.
+ */
 export async function selectProfile(id: string): Promise<void> {
   const profiles = requireProfileManager();
   const nextPaths = profiles.getPaths(id);
@@ -413,7 +496,13 @@ export async function selectProfile(id: string): Promise<void> {
   }
 }
 
-export function runPreflightCheck(): { status: 'ready' | 'attention' | 'blocking'; reports: string[] } {
+/**
+ * RunPreflightCheck — implementation detail.
+ */
+export function runPreflightCheck(): {
+  status: 'ready' | 'attention' | 'blocking';
+  reports: string[];
+} {
   const reports: string[] = [];
   let status: 'ready' | 'attention' | 'blocking' = 'ready';
 
@@ -439,7 +528,7 @@ export function runPreflightCheck(): { status: 'ready' | 'attention' | 'blocking
       reports.push('The setlist is empty (no locators parsed).');
     }
 
-    const titles = state.songs.map(s => s.title);
+    const titles = state.songs.map((s) => s.title);
     const unique = new Set(titles);
     if (unique.size !== titles.length) {
       if (status !== 'blocking') status = 'attention';

@@ -29,6 +29,9 @@ interface ResolveProjectIdentityOptions extends IdentityOptions {
   readWindowTitle?: () => Promise<string>;
 }
 
+/**
+ * ProjectSessionIdForSong — implementation detail.
+ */
 export function projectSessionIdForSong(
   processId: number,
   songHandleId: string,
@@ -41,14 +44,17 @@ export function projectSessionIdForSong(
 
 function cleanDisplayName(value: unknown): string {
   if (typeof value !== 'string') return '';
-  return value
-    .normalize('NFKC')
-    .replace(/[\u0000-\u001f\u007f-\u009f]/gu, '')
-    .trim()
-    .slice(0, 160);
+  return (
+    value
+      .normalize('NFKC')
+      // eslint-disable-next-line no-control-regex
+      .replace(/[\u0000-\u001f\u007f-\u009f]/gu, '')
+      .trim()
+      .slice(0, 160)
+  );
 }
 
-function pathApiFor(filePath: string, platform: NodeJS.Platform): typeof path.win32 | typeof path.posix {
+function pathApiFor(filePath: string, platform: NodeJS.Platform): typeof path.win32 {
   return platform === 'win32' || /^[A-Za-z]:[\\/]/u.test(filePath) ? path.win32 : path.posix;
 }
 
@@ -66,6 +72,9 @@ function hashKey(namespace: string, value: string): string {
   return createHash('sha256').update(`${namespace}:${value}`).digest('hex').slice(0, 32);
 }
 
+/**
+ * LegacyProjectKeyForFile — implementation detail.
+ */
 export function legacyProjectKeyForFile(filePath: string): string | null {
   const cleaned = cleanDisplayName(filePath);
   if (!cleaned) return null;
@@ -75,6 +84,9 @@ export function legacyProjectKeyForFile(filePath: string): string | null {
   return createHash('md5').update(projectDirectory).digest('hex');
 }
 
+/**
+ * ProjectIdentityFromMetadata — implementation detail.
+ */
 export function projectIdentityFromMetadata(
   metadata: ProjectMetadata | null | undefined,
   options: IdentityOptions = {},
@@ -98,6 +110,9 @@ export function projectIdentityFromMetadata(
   };
 }
 
+/**
+ * ProjectIdentityFromWindowTitle — implementation detail.
+ */
 export function projectIdentityFromWindowTitle(title: string): ProjectIdentity | null {
   const cleaned = cleanDisplayName(title)
     .replace(/\s+-\s+Ableton Live(?:\s+.*)?$/iu, '')
@@ -114,6 +129,9 @@ export function projectIdentityFromWindowTitle(title: string): ProjectIdentity |
   };
 }
 
+/**
+ * Reads the ableton window title.
+ */
 export function readAbletonWindowTitle(): Promise<string> {
   if (process.platform !== 'win32') return Promise.resolve('');
   const command = [
@@ -130,14 +148,19 @@ export function readAbletonWindowTitle(): Promise<string> {
   });
 }
 
+/**
+ * Resolves the project identity.
+ */
 export async function resolveProjectIdentity(
   options: ResolveProjectIdentityOptions = {},
 ): Promise<ProjectIdentity> {
   const platform = options.platform ?? process.platform;
   let metadata: ProjectMetadata | null = null;
   try {
-    metadata = await options.getProjectMetadata?.() ?? null;
-  } catch {}
+    metadata = (await options.getProjectMetadata?.()) ?? null;
+  } catch {
+    // swallow: nothing to do here on purpose
+  }
 
   const metadataIdentity = projectIdentityFromMetadata(metadata, { platform });
   if (metadataIdentity) return metadataIdentity;
@@ -146,7 +169,9 @@ export async function resolveProjectIdentity(
     const title = await (options.readWindowTitle ?? readAbletonWindowTitle)();
     const titleIdentity = projectIdentityFromWindowTitle(title);
     if (titleIdentity) return titleIdentity;
-  } catch {}
+  } catch {
+    // swallow: nothing to do here on purpose
+  }
 
   const sessionId = cleanDisplayName(options.sessionId) || randomUUID();
   const metadataName = cleanDisplayName(metadata?.song_name);

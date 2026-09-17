@@ -1,10 +1,10 @@
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
 import { createPrivateKey, createPublicKey, X509Certificate } from 'node:crypto';
-// @ts-ignore
 import selfsigned from 'selfsigned';
 import { getExtensionContext } from '../context.js';
 import { getLanAddresses } from '../util/helpers.js';
+import { log } from '../util/log.js';
 
 export let useHttps = false;
 export let httpsOptions: { key: Buffer; cert: Buffer } | null = null;
@@ -15,6 +15,9 @@ export type SubjectAltNameEntry = {
   ip?: string;
 };
 
+/**
+ * Builds the subject alt names.
+ */
 export function buildSubjectAltNames(lanIps: string[]): SubjectAltNameEntry[] {
   const out: SubjectAltNameEntry[] = [
     { type: 2, value: 'localhost' },
@@ -42,6 +45,9 @@ function isLikelyIpv4(s: string): boolean {
   return true;
 }
 
+/**
+ * CertCoversRequiredAltNames — implementation detail.
+ */
 export function certCoversRequiredAltNames(
   certPem: Buffer | string,
   lanIps: string[],
@@ -64,6 +70,9 @@ export function certCoversRequiredAltNames(
   }
 }
 
+/**
+ * PrivateKeyMatchesCertificate — implementation detail.
+ */
 export function privateKeyMatchesCertificate(
   privateKeyPem: Buffer | string,
   certPem: Buffer | string,
@@ -83,6 +92,9 @@ export function privateKeyMatchesCertificate(
   }
 }
 
+/**
+ * Loads the certs.
+ */
 export async function loadCerts(): Promise<void> {
   const extensionContext = getExtensionContext();
   const storageDir = extensionContext?.environment?.storageDirectory;
@@ -90,7 +102,7 @@ export async function loadCerts(): Promise<void> {
   const altNames = buildSubjectAltNames(lanIps);
 
   if (!storageDir) {
-    console.warn('[rc-setlist] storageDirectory unavailable, generating ephemeral HTTPS certs');
+    log.warn('lifecycle', 'storageDirectory unavailable; generating ephemeral HTTPS certs');
     await generateAndApplyEphemeral(altNames);
     return;
   }
@@ -101,17 +113,14 @@ export async function loadCerts(): Promise<void> {
   const certPath = path.join(certDir, 'ableton-setlist-server.crt');
 
   try {
-    const [key, cert] = await Promise.all([
-      fs.readFile(keyPath),
-      fs.readFile(certPath),
-    ]);
+    const [key, cert] = await Promise.all([fs.readFile(keyPath), fs.readFile(certPath)]);
     if (!certCoversRequiredAltNames(cert, lanIps) || !privateKeyMatchesCertificate(key, cert)) {
-      console.log('[rc-setlist] persisted certificate is stale or invalid; regenerating');
+      log.info('core', 'persisted certificate is stale or invalid; regenerating');
       throw new Error('cert_invalid');
     }
     httpsOptions = { key, cert };
     useHttps = true;
-    console.log('[rc-setlist] loaded persisted HTTPS certificates');
+    log.info('core', 'loaded persisted HTTPS certificates');
     return;
   } catch {
     // Generate new
@@ -119,18 +128,15 @@ export async function loadCerts(): Promise<void> {
 
   try {
     await fs.mkdir(certDir, { recursive: true });
-    const pems = await selfsigned.generate(
-      [{ name: 'commonName', value: 'rc-setlist.local' }],
-      {
-        algorithm: 'sha256',
-        keySize: 2048,
-        extensions: [
-          { name: 'basicConstraints', cA: false },
-          { name: 'keyUsage', digitalSignature: true, keyEncipherment: true },
-          { name: 'subjectAltName', altNames },
-        ],
-      },
-    );
+    const pems = await selfsigned.generate([{ name: 'commonName', value: 'rc-setlist.local' }], {
+      algorithm: 'sha256',
+      keySize: 2048,
+      extensions: [
+        { name: 'basicConstraints', cA: false },
+        { name: 'keyUsage', digitalSignature: true, keyEncipherment: true },
+        { name: 'subjectAltName', altNames },
+      ],
+    });
     await Promise.all([
       fs.writeFile(keyPath, pems.private, { mode: 0o600 }),
       fs.writeFile(certPath, pems.cert, { mode: 0o600 }),
@@ -140,9 +146,9 @@ export async function loadCerts(): Promise<void> {
       cert: Buffer.from(pems.cert, 'utf8'),
     };
     useHttps = true;
-    console.log('[rc-setlist] saved new HTTPS certificates');
+    log.info('core', 'saved new HTTPS certificates');
   } catch {
-    console.error('[rc-setlist] certificate generation failed; falling back to HTTP');
+    log.error('lifecycle', 'certificate generation failed; falling back to HTTP');
     useHttps = false;
     httpsOptions = null;
   }
@@ -150,25 +156,22 @@ export async function loadCerts(): Promise<void> {
 
 async function generateAndApplyEphemeral(altNames: SubjectAltNameEntry[]): Promise<void> {
   try {
-    const pems = await selfsigned.generate(
-      [{ name: 'commonName', value: 'rc-setlist.local' }],
-      {
-        algorithm: 'sha256',
-        keySize: 2048,
-        extensions: [
-          { name: 'basicConstraints', cA: false },
-          { name: 'keyUsage', digitalSignature: true, keyEncipherment: true },
-          { name: 'subjectAltName', altNames },
-        ],
-      },
-    );
+    const pems = await selfsigned.generate([{ name: 'commonName', value: 'rc-setlist.local' }], {
+      algorithm: 'sha256',
+      keySize: 2048,
+      extensions: [
+        { name: 'basicConstraints', cA: false },
+        { name: 'keyUsage', digitalSignature: true, keyEncipherment: true },
+        { name: 'subjectAltName', altNames },
+      ],
+    });
     httpsOptions = {
       key: Buffer.from(pems.private, 'utf8'),
       cert: Buffer.from(pems.cert, 'utf8'),
     };
     useHttps = true;
   } catch {
-    console.error('[rc-setlist] ephemeral certificate generation failed; falling back to HTTP');
+    log.error('lifecycle', 'ephemeral certificate generation failed; falling back to HTTP');
     useHttps = false;
     httpsOptions = null;
   }

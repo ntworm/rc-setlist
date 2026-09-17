@@ -1,6 +1,6 @@
-# Guia do Ableton RC Setlist
+# Guia do RC Setlist
 
-O Ableton RC Setlist transforma localizadores do Arrangement do Ableton Live em
+O RC Setlist transforma localizadores do Arrangement do Ableton Live em
 um setlist e uma tela de performance. Leia [INSTALL.md](INSTALL.md) primeiro.
 
 ## Idioma da interface
@@ -23,18 +23,18 @@ Música A [bpm 122] [click]
 Marcador Técnico [ignore]
 ```
 
-| Tag | Efeito |
-| --- | --- |
-| `[loop]` | Repete a seção atual até ser desativado. |
-| `[loop Nx]` | Repete a seção N vezes. |
-| `[stop]` | Para quando o localizador é alcançado. |
-| `[next]` | Passa a reprodução para a próxima música no instante em que este marcador é alcançado. Escrita numa seção, ela ainda sai da música — não avança para a próxima seção. |
-| `[bpm N]` | Define o BPM esperado. |
-| `[click]` / `[click off]` | Liga ou desliga o metrônomo do Live. |
-| `[skip]` | Ignora esta seção ou música: passa a reprodução para a próxima seção (ou música) no instante em que este marcador é alcançado. |
-| `[jump NOME]` | Passa a reprodução para o marcador chamado NOME no instante em que este marcador é alcançado — uma seção desta música, uma música, ou `Música > Seção`. Nomes são comparados sem as tags e sem diferenciar maiúsculas. |
-| `[hidden]` | Oculta uma âncora de automação do setlist visível. |
-| `[ignore]` | Marcador técnico que oculta o localizador e tem precedência sobre qualquer tag de ação. |
+| Tag                       | Efeito                                                                                                                                                                                                                 |
+| ------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `[loop]`                  | Repete a seção atual até ser desativado.                                                                                                                                                                               |
+| `[loop Nx]`               | Repete a seção N vezes.                                                                                                                                                                                                |
+| `[stop]`                  | Para quando o localizador é alcançado.                                                                                                                                                                                 |
+| `[next]`                  | Passa a reprodução para a próxima música no instante em que este marcador é alcançado. Escrita numa seção, ela ainda sai da música — não avança para a próxima seção.                                                  |
+| `[bpm N]`                 | Define o BPM esperado.                                                                                                                                                                                                 |
+| `[click]` / `[click off]` | Liga ou desliga o metrônomo do Live.                                                                                                                                                                                   |
+| `[skip]`                  | Ignora esta seção ou música: passa a reprodução para a próxima seção (ou música) no instante em que este marcador é alcançado.                                                                                         |
+| `[jump NOME]`             | Passa a reprodução para o marcador chamado NOME no instante em que este marcador é alcançado — uma seção desta música, uma música, ou `Música > Seção`. Nomes são comparados sem as tags e sem diferenciar maiúsculas. |
+| `[hidden]`                | Oculta uma âncora de automação do setlist visível.                                                                                                                                                                     |
+| `[ignore]`                | Marcador técnico que oculta o localizador e tem precedência sobre qualquer tag de ação.                                                                                                                                |
 
 As tags não diferenciam maiúsculas de minúsculas e não aparecem no nome exibido. A tag `[ignore]` tem precedência sobre tags de automação, ocultando o marcador e ignorando quaisquer tags de ação no localizador sem criar músicas, seções ou automações.
 
@@ -134,7 +134,7 @@ local, mas não é misturado em **Gerenciar setlists**. Somente uma pasta legada
 que corresponda exatamente ao Live Set salvo é migrada, sem apagar a origem.
 
 ## Duração do setlist
- 
+
 O Controle de Palco mostra a duração de cada música no cartão correspondente. O
 cabeçalho mostra a duração total do setlist. Cada música vai do seu localizador
 até o localizador da próxima música, incluindo qualquer intervalo de transição.
@@ -175,6 +175,7 @@ ou `> Refrão [bpm 135]`).
 ### Exemplo de medição real
 
 Em um setlist de produção medido com 21 músicas e andamentos entre 93 e 166 BPM:
+
 - **Duração exata trecho a trecho**: **78:41** (4.721 segundos).
 - **Estimativa de andamento único a 99 BPM**: 95:40 — **erro de 16:59 (+21,6%)**.
 - **Estimativa de andamento único a 136 BPM**: 69:38 — **erro de 9:03 (-11,5%)**.
@@ -211,10 +212,15 @@ para transições com precisão de amostra dentro do Live.
 
 ### Contagem de um compasso
 
-`CONTAGEM 1 COMP.` toca um compasso no navegador antes de enviar o Play, quando
-o Play é solicitado enquanto o transporte está parado. O playhead do Live não se move e o
-metrônomo do Live não é tocado: a contagem é áudio do navegador, e o transporte
-começa no beat onde já estava.
+`CONTAGEM 1 COMP` conta visualmente um compasso no botão Play antes de enviar o Play, quando
+o Play é solicitado enquanto o transporte está parado. O playhead do Live não se move, o
+transporte do Live não é tocado até a contagem terminar, e o metrônomo do Live não é tocado.
+O menu "Count-In" embutido no Live se aplica apenas à gravação, não ao playback.
+
+Por padrão, a contagem é apenas visual. O click do navegador é opcional e pode ser ligado
+por aparelho definindo `rc-setlist.count-in-audio` como `true` no `localStorage` do navegador
+(ex.: via console de desenvolvedor num notebook que alimenta um retorno de ouvido). Isso vem
+desligado por padrão para que o celular do operador não apite pelo alto-falante no palco.
 
 A contagem roda no tempo que **o setlist declara** para aquele ponto — o último
 `[bpm]` em ou antes do playhead — e só recorre ao tempo atual do Live quando o
@@ -225,9 +231,6 @@ para a música que vai começar.
 O Play é enviado um pouco antes do último beat, para o transporte chegar no
 tempo forte e não depois dele. Apertar Play de novo durante a contagem começa
 imediatamente em vez de contar outra vez, e o Stop cancela.
-
-Como a contagem não toma mais o Click do Live emprestado, um click que você
-desligou continua desligado durante ela, e um que você ligou não é afetado.
 
 Esse controle de ensaio não entra em Record e não arma pistas. Ele também não
 altera a quantização dos saltos. Quando o Live já está tocando, Play e os saltos
@@ -250,7 +253,7 @@ Lock permanece ativo durante a tela cheia e é liberado ao sair.
 
 Use somente texto original, licenciado ou autorizado.
 
-O Ableton RC Setlist aceita linhas LRC sincronizadas:
+O RC Setlist aceita linhas LRC sincronizadas:
 
 ```text
 [00:00.00] A sala desperta sob uma luz âmbar
@@ -281,7 +284,7 @@ opção desligada quando o serviço de rede só deva rodar em ensaios ou shows.
 
 - Ensaie o Live Set e a versão exata da extensão antes de uma apresentação.
 - Mantenha host e controle em uma rede dedicada e confiável.
-- Salve um setlist alternativo fora do Ableton RC Setlist.
+- Salve um setlist alternativo fora do RC Setlist.
 - Não troque perfil, rede ou instalação do AbletonOSC durante o show.
 - Confira perfil ativo e trava de transporte antes de liberar o controle.
 

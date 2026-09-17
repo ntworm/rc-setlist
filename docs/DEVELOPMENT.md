@@ -1,4 +1,4 @@
-# Develop Ableton RC Setlist
+﻿# Develop RC Setlist
 
 ## Requirements
 
@@ -14,10 +14,15 @@
 ```bash
 npm ci
 npm run ci:public
+npm run gates:quality
 npm audit --audit-level=high
 ```
 
-This gate does not need or download Ableton developer archives.
+This gate does not need or download Ableton developer archives. The
+quality gates (`gates:quality`) group `lint`, `format:check`,
+`deadcode` (knip), `deps:check` (dependency-cruiser) and `lint:py`
+(ruff). P04 promotes them from `continue-on-error` to blocking the
+public gate; until then they are reported as artifacts.
 
 ## Authorized release gate
 
@@ -44,6 +49,29 @@ npm run test:release-surface
 npm run build:public
 npm run notices:check
 ```
+
+## Quality gates
+
+```bash
+npm run lint           # ESLint (typescript-eslint + jsdoc + Prettier-friendly)
+npm run format:check   # Prettier, reports files not yet formatted
+npm run deadcode       # knip — exports/types/files unused (21 from AUDIT)
+npm run deps:check     # dependency-cruiser — cycles + layer rules (11 from AUDIT)
+npm run lint:py        # ruff — bridge Python files
+npm run version:check  # sync-version.mjs — package.json == manifest.json
+npm run gates:quality  # all five above in one
+```
+
+P01 ships these gates and expects them to **fail by the audit count**
+(deadcode=21, deps:check=11, format:check=full report). P04 zeroes
+them and promotes the `no-unsafe-*` / `no-explicit-any` / `no-empty` /
+`no-unused-vars` ESLint rules to `error`.
+
+`prettier --write .` runs **once and in its own commit** after P04
+review (recorded in `.git-blame-ignore-revs`). Until then, the
+`format:check` script never blocks the gate — it lists the still
+non-formatted files inside `internal/CODE-HYGIENE-1.0.md` so reviewers
+can focus on semantics.
 
 ## Architecture boundaries
 

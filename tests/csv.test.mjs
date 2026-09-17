@@ -47,16 +47,35 @@ const automationSong = {
   time: 0,
   sections: [
     {
-      name: 'Intro', time: 8, loopCount: 2, autoStop: false, autoNext: false,
-      bpm: null, autoClick: null, skip: false,
+      name: 'Intro',
+      time: 8,
+      loopCount: 2,
+      autoStop: false,
+      autoNext: false,
+      bpm: null,
+      autoClick: null,
+      skip: false,
     },
     {
-      name: '', time: 32, automationOnly: true, loopCount: null, autoStop: true,
-      autoNext: false, bpm: null, autoClick: null, skip: false,
+      name: '',
+      time: 32,
+      automationOnly: true,
+      loopCount: null,
+      autoStop: true,
+      autoNext: false,
+      bpm: null,
+      autoClick: null,
+      skip: false,
     },
     {
-      name: 'Finale', time: 48, loopCount: null, autoStop: false, autoNext: true,
-      bpm: null, autoClick: false, skip: true,
+      name: 'Finale',
+      time: 48,
+      loopCount: null,
+      autoStop: false,
+      autoNext: true,
+      bpm: null,
+      autoClick: false,
+      skip: true,
     },
   ],
   loopCount: null,
@@ -86,7 +105,13 @@ test('buildTracklistCsv: uses ; delim', () => {
     '#;setlist;title;start_beat;bpm;duration_sec;duration;sections_count;sections;automations;lyric_lines',
   );
   for (const removed of [
-    'signature', 'key', 'plays', 'custom_order', 'in_setlist', 'cues_count', 'last_played_at',
+    'signature',
+    'key',
+    'plays',
+    'custom_order',
+    'in_setlist',
+    'cues_count',
+    'last_played_at',
   ]) {
     assert.equal(header.includes(removed), false, `${removed} placeholder must not be exported`);
   }
@@ -111,13 +136,18 @@ test('buildTracklistCsv: null bpm renders as empty', () => {
     for (let i = 0; i < line.length; i++) {
       const c = line[i];
       if (inQ) {
-        if (c === '"' && line[i + 1] === '"') { cur += '"'; i++; }
-        else if (c === '"') { inQ = false; }
-        else cur += c;
+        if (c === '"' && line[i + 1] === '"') {
+          cur += '"';
+          i++;
+        } else if (c === '"') {
+          inQ = false;
+        } else cur += c;
       } else {
         if (c === '"') inQ = true;
-        else if (c === ';') { out.push(cur); cur = ''; }
-        else cur += c;
+        else if (c === ';') {
+          out.push(cur);
+          cur = '';
+        } else cur += c;
       }
     }
     out.push(cur);
@@ -150,7 +180,13 @@ test('formatSongAutomations: preserves song, section and automation-only actions
     'song [bpm 111.11] [click] | Intro [loop 2x] | @32 [stop] | Finale [next] [click off] [skip]',
   );
   assert.equal(
-    formatSongAutomations({ ...automationSong, sections: [], loopCount: -1, bpm: null, autoClick: null }),
+    formatSongAutomations({
+      ...automationSong,
+      sections: [],
+      loopCount: -1,
+      bpm: null,
+      autoClick: null,
+    }),
     'song [loop]',
   );
 });

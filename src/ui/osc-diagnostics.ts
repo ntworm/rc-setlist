@@ -14,6 +14,9 @@ export interface OscDiagnosticModel {
   targetPort: number | null;
 }
 
+/**
+ * Builds the osc diagnostic model.
+ */
 export function buildOscDiagnosticModel({
   serverRunning,
   snapshot,
@@ -48,7 +51,12 @@ export function buildOscDiagnosticModel({
   // A stock AbletonOSC answers on 11001 only. Being pushed off it by another
   // extension means silence; RC Bridge answers whichever port asked, so the
   // ephemeral port it gets is never a conflict.
-  if (bridge !== 'rcbridge' && snapshot.oscRxCount === 0 && base.listenPort !== null && base.listenPort !== 11001) {
+  if (
+    bridge !== 'rcbridge' &&
+    snapshot.oscRxCount === 0 &&
+    base.listenPort !== null &&
+    base.listenPort !== 11001
+  ) {
     return { state: 'port-conflict', ...base };
   }
   if (snapshot.oscRxCount === 0) {

@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>NOTAS-DA-VERSAO-0.4.2 — RC Setlist</title>
+    <style>
+      body {
+        font:
+          16px/1.55 system-ui,
+          sans-serif;
+        max-width: 920px;
+        margin: 2rem auto;
+        padding: 0 1rem;
+        color: #f2f2f2;
+        background: #0e0e0e;
+      }
+      h1,
+      h2,
+      h3,
+      h4 {
+        line-height: 1.25;
+      }
+      h1 {
+        font-size: 2.2rem;
+        margin-top: 0;
+      }
+      h2 {
+        margin-top: 2rem;
+        padding-top: 1rem;
+        border-top: 1px solid #333;
+      }
+      h3 {
+        margin-top: 1.5rem;
+      }
+      code {
+        font:
+          0.92em ui-monospace,
+          Consolas,
+          monospace;
+        background: #1a1a1a;
+        padding: 0.1em 0.35em;
+        border-radius: 0;
+      }
+      pre {
+        background: #1a1a1a;
+        padding: 0.8rem 1rem;
+        overflow-x: auto;
+        border: 1px solid #333;
+      }
+      pre code {
+        background: transparent;
+        padding: 0;
+      }
+      a {
+        color: #ffa133;
+      }
+      ul,
+      ol {
+        padding-left: 1.2em;
+      }
+      blockquote {
+        border-left: 4px solid #ffa133;
+        margin: 1em 0;
+        padding: 0.5em 1em;
+        color: #a0a0a0;
+      }
+      .crumbs {
+        font-size: 0.85em;
+        color: #a0a0a0;
+        margin-bottom: 1rem;
+      }
+      .crumbs a {
+        color: #a0a0a0;
+        text-decoration: none;
+      }
+      .crumbs a:hover {
+        color: #f2f2f2;
+      }
+      .source {
+        font-size: 0.78em;
+        color: #a0a0a0;
+        margin-top: 2rem;
+        border-top: 1px solid #333;
+        padding-top: 0.5rem;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="crumbs">
+      <a href="https://ntworm.github.io/rc-setlist/">RC Setlist</a> · <a href="./">Docs</a>
+    </div>
+    <p>﻿# Notas locais de teste do RC Setlist 0.4.2</p>
+    <p><a href="../RELEASE-NOTES-0.4.2.md">English</a></p>
+    <p>
+      A versão 0.4.2 é um candidato local de teste para validação no Ableton Live. Ela não é uma
+      versão publicada: o site público e o download mais recente continuam na 0.4.1 até o ensaio
+      terminar.
+    </p>
+    <h2 id="o-que-verificar">O que verificar</h2>
+    <ul>
+      <li>
+        A nova forma relativa <code>&gt; Seção</code> mantém a seção ligada à música anterior.
+      </li>
+    </ul>
+    <p>
+      Marcadores relativos de automação seguem a mesma regra, e <code>[ignore]</code> oculta
+      localizadores técnicos mesmo quando existe outra tag de ação.
+    </p>
+    <ul>
+      <li>Todo o visual do Stage Control 0.4.1 permanece preservado: cabeçalho compacto,</li>
+    </ul>
+    <p>cartões de música, área de letras, perfis, dock de transporte e layouts responsivos.</p>
+    <ul>
+      <li>Edições de letras continuam marcadas como não salvas até a confirmação da</li>
+    </ul>
+    <p>gravação. Falha, timeout ou desconexão mantém o texto disponível para tentar novamente.</p>
+    <ul>
+      <li>Títulos repetidos, ordem personalizada, durações, loops, ações stop/next e</li>
+    </ul>
+    <p>
+      marcadores técnicos ocultos continuam seguindo a identidade cronológica dos localizadores.
+    </p>
+    <h2 id="mudan-as-de-confiabilidade">Mudanças de confiabilidade</h2>
+    <ul>
+      <li>Mensagens WebSocket são validadas antes do despacho. As travas de segurança</li>
+    </ul>
+    <p>
+      são verificadas novamente na execução, e comandos urgentes de stop/pânico não ficam presos
+      atrás de comandos comuns.
+    </p>
+    <ul>
+      <li>Ordem, letras, CSV e prévia de clique usam substituição atômica e rejeitam uma</li>
+    </ul>
+    <p>conclusão atrasada depois da troca do Live Set ou do perfil ativo.</p>
+    <ul>
+      <li>O bridge monitora clientes WebSocket com heartbeat limitado, preserva os</li>
+    </ul>
+    <p>
+      limites de backpressure, valida certificados TLS salvos e encerra conexões HTTP em uma ordem
+      definida.
+    </p>
+    <ul>
+      <li>O cálculo do setlist e a troca do cartão ativo usam cache para evitar reconstruir</li>
+    </ul>
+    <p>toda a lista durante a atualização normal do transporte.</p>
+    <h2 id="estado-do-teste">Estado do teste</h2>
+    <p>
+      Os testes automatizados de código, interface, navegador, documentação e pacote fazem parte
+      deste candidato. Ainda é obrigatório instalar e ensaiar no Ableton Live antes do palco. Esta
+      promoção local não criou release, tag nem download público.
+    </p>
+    <div class="source">
+      Rendered from <code>docs\pt-BR\NOTAS-DA-VERSAO-0.4.2.md</code> on 2026-09-17.
+    </div>
+  </body>
+</html>

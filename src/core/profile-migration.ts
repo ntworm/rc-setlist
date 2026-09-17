@@ -1,35 +1,32 @@
 import * as path from 'node:path';
 import * as fs from 'node:fs/promises';
-import {
-  isValidUUID,
-  normalizeProfileName,
-  type ProfileManager,
-  type ProfilePaths,
-} from './profile-manager.js';
+import { isValidUUID, normalizeProfileName } from './profile/util.js';
+import type { ProfileManager, ProfilePaths } from './profile/types.js';
+import { isPlainObject, parseJson } from '../util/json.js';
 
 const GLOBAL_SOURCE = 'global';
 export const LEGACY_PROFILE_STORAGE_NAMES = [
   'ntworm.rc-setlist',
   'worm.ableton-setlist-bridge',
 ] as const;
-const DEFAULT_PROFILE_NAMES = new Set([
-  'main setlist',
-  'setlist principal',
-]);
+const DEFAULT_PROFILE_NAMES = new Set(['main setlist', 'setlist principal']);
 
 async function copyIfMissing(source: string, destination: string): Promise<void> {
   try {
     await fs.access(destination);
     return;
-  } catch {}
+  } catch {
+    // swallow: nothing to do here on purpose
+  }
   await fs.mkdir(path.dirname(destination), { recursive: true });
   await fs.copyFile(source, destination);
 }
 
 async function copyLyrics(sourceDir: string, destinationDir: string): Promise<void> {
   let entries;
-  try { entries = await fs.readdir(sourceDir, { withFileTypes: true }); }
-  catch (error) {
+  try {
+    entries = await fs.readdir(sourceDir, { withFileTypes: true });
+  } catch (error) {
     if ((error as NodeJS.ErrnoException).code === 'ENOENT') return;
     throw error;
   }
@@ -43,8 +40,9 @@ async function copyLyrics(sourceDir: string, destinationDir: string): Promise<vo
 
 async function populateLegacy(sourceRoot: string, target: ProfilePaths): Promise<void> {
   await copyLyrics(path.join(sourceRoot, 'lyrics'), target.lyrics);
-  try { await copyIfMissing(path.join(sourceRoot, 'custom-order.json'), target.customOrder); }
-  catch (error) {
+  try {
+    await copyIfMissing(path.join(sourceRoot, 'custom-order.json'), target.customOrder);
+  } catch (error) {
     if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error;
   }
 }
@@ -65,7 +63,10 @@ async function hasLegacyPayload(sourceRoot: string): Promise<boolean> {
   }
 }
 
-async function migratePreviousInstallations(storageRoot: string, manager: ProfileManager): Promise<void> {
+async function migratePreviousInstallations(
+  storageRoot: string,
+  manager: ProfileManager,
+): Promise<void> {
   const resolvedRoot = path.resolve(storageRoot);
   const storageParent = path.dirname(resolvedRoot);
   const currentStorageName = path.basename(resolvedRoot).toLocaleLowerCase('en-US');
@@ -76,25 +77,28 @@ async function migratePreviousInstallations(storageRoot: string, manager: Profil
     const previousRoot = path.join(storageParent, previousStorageName);
     const globalSource = `previous:${previousStorageName}:global`;
 
-    if (!manager.hasLegacySource(globalSource) && await hasLegacyPayload(previousRoot)) {
+    if (!manager.hasLegacySource(globalSource) && (await hasLegacyPayload(previousRoot))) {
       try {
         const primary = await manager.ensureDefaultProfile();
         await populateLegacy(previousRoot, manager.getPaths(primary.id));
         await manager.recordLegacySource(globalSource, primary.id);
       } catch {
-        console.warn(`[Profiles] Previous installation ${previousStorageName} global migration will be retried.`);
+        console.warn(
+          `[Profiles] Previous installation ${previousStorageName} global migration will be retried.`,
+        );
       }
     }
 
     let rawProfiles: unknown[] = [];
     try {
-      const registry = JSON.parse(
-        await fs.readFile(path.join(previousRoot, 'profiles', 'index.json'), 'utf8'),
-      ) as Record<string, unknown>;
-      if (Array.isArray(registry.profiles)) rawProfiles = registry.profiles;
+      const text = await fs.readFile(path.join(previousRoot, 'profiles', 'index.json'), 'utf8');
+      const registry = parseJson(text, isPlainObject);
+      if (registry && Array.isArray(registry.profiles)) rawProfiles = registry.profiles;
     } catch (error) {
       if ((error as NodeJS.ErrnoException).code !== 'ENOENT') {
-        console.warn(`[Profiles] Previous installation ${previousStorageName} profile index could not be read.`);
+        console.warn(
+          `[Profiles] Previous installation ${previousStorageName} profile index could not be read.`,
+        );
       }
     }
 
@@ -107,7 +111,7 @@ async function migratePreviousInstallations(storageRoot: string, manager: Profil
       if (manager.hasLegacySource(source)) continue;
 
       const previousProfileRoot = path.join(previousRoot, 'profiles', candidate.id);
-      if (!await hasLegacyPayload(previousProfileRoot)) continue;
+      if (!(await hasLegacyPayload(previousProfileRoot))) continue;
 
       try {
         const profileName = normalizeProfileName(candidate.name);
@@ -116,38 +120,43 @@ async function migratePreviousInstallations(storageRoot: string, manager: Profil
           await populateLegacy(previousProfileRoot, manager.getPaths(primary.id));
           await manager.recordLegacySource(source, primary.id);
         } else {
-          await manager.importLegacyProfile(
-            source,
-            profileName,
-            (paths) => populateLegacy(previousProfileRoot, paths),
+          await manager.importLegacyProfile(source, profileName, (paths) =>
+            populateLegacy(previousProfileRoot, paths),
           );
         }
       } catch {
-        console.warn(`[Profiles] Previous installation ${previousStorageName} profile migration will be retried.`);
+        console.warn(
+          `[Profiles] Previous installation ${previousStorageName} profile migration will be retried.`,
+        );
       }
     }
 
     let previousProjects: Array<{ name: string; isDirectory(): boolean }> = [];
     try {
-      previousProjects = await fs.readdir(path.join(previousRoot, 'projects'), { withFileTypes: true });
+      previousProjects = await fs.readdir(path.join(previousRoot, 'projects'), {
+        withFileTypes: true,
+      });
     } catch (error) {
       if ((error as NodeJS.ErrnoException).code !== 'ENOENT') {
-        console.warn(`[Profiles] Previous installation ${previousStorageName} project index could not be read.`);
+        console.warn(
+          `[Profiles] Previous installation ${previousStorageName} project index could not be read.`,
+        );
       }
     }
 
-    for (const entry of previousProjects.filter((item) => item.isDirectory()).sort((a, b) => a.name.localeCompare(b.name))) {
+    for (const entry of previousProjects
+      .filter((item) => item.isDirectory())
+      .sort((a, b) => a.name.localeCompare(b.name))) {
       const source = `previous:${previousStorageName}:project:${entry.name}`;
       if (manager.hasLegacySource(source)) continue;
 
       const previousProjectRoot = path.join(previousRoot, 'projects', entry.name);
-      if (!await hasLegacyPayload(previousProjectRoot)) continue;
+      if (!(await hasLegacyPayload(previousProjectRoot))) continue;
 
       try {
-        const projectInfo = JSON.parse(
-          await fs.readFile(path.join(previousProjectRoot, 'project-info.json'), 'utf8'),
-        ) as Record<string, unknown>;
-        if (typeof projectInfo.projectName !== 'string') continue;
+        const text = await fs.readFile(path.join(previousProjectRoot, 'project-info.json'), 'utf8');
+        const projectInfo = parseJson(text, isPlainObject);
+        if (!projectInfo || typeof projectInfo.projectName !== 'string') continue;
 
         await manager.importLegacyProfile(
           source,
@@ -155,16 +164,24 @@ async function migratePreviousInstallations(storageRoot: string, manager: Profil
           (paths) => populateLegacy(previousProjectRoot, paths),
         );
       } catch {
-        console.warn(`[Profiles] Previous installation ${previousStorageName} project migration will be retried.`);
+        console.warn(
+          `[Profiles] Previous installation ${previousStorageName} project migration will be retried.`,
+        );
       }
     }
   }
 }
 
-export async function migrateLegacyData(storageRoot: string, manager: ProfileManager): Promise<void> {
+/**
+ * MigrateLegacyData — implementation detail.
+ */
+export async function migrateLegacyData(
+  storageRoot: string,
+  manager: ProfileManager,
+): Promise<void> {
   await migratePreviousInstallations(storageRoot, manager);
 
-  if (!manager.hasLegacySource(GLOBAL_SOURCE) && await hasLegacyPayload(storageRoot)) {
+  if (!manager.hasLegacySource(GLOBAL_SOURCE) && (await hasLegacyPayload(storageRoot))) {
     try {
       const primary = await manager.ensureDefaultProfile();
       await populateLegacy(storageRoot, manager.getPaths(primary.id));
@@ -182,17 +199,23 @@ export async function migrateLegacyData(storageRoot: string, manager: ProfileMan
     if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error;
   }
 
-  for (const entry of projectEntries.filter((item) => item.isDirectory()).sort((a, b) => a.name.localeCompare(b.name))) {
+  for (const entry of projectEntries
+    .filter((item) => item.isDirectory())
+    .sort((a, b) => a.name.localeCompare(b.name))) {
     const source = `project:${entry.name}`;
     if (manager.hasLegacySource(source)) continue;
     const sourceRoot = path.join(projectsRoot, entry.name);
     try {
-      const raw = JSON.parse(await fs.readFile(path.join(sourceRoot, 'project-info.json'), 'utf8')) as Record<string, unknown>;
+      const text = await fs.readFile(path.join(sourceRoot, 'project-info.json'), 'utf8');
+      const raw = parseJson(text, isPlainObject);
+      if (!raw) continue;
       if (typeof raw.projectName !== 'string' || !raw.projectName.trim()) {
         console.warn(`[Profiles] Skipping legacy project ${entry.name}: invalid metadata.`);
         continue;
       }
-      await manager.importLegacyProfile(source, raw.projectName, (paths) => populateLegacy(sourceRoot, paths));
+      await manager.importLegacyProfile(source, raw.projectName, (paths) =>
+        populateLegacy(sourceRoot, paths),
+      );
     } catch {
       console.warn(`[Profiles] Legacy project ${entry.name} will be retried on next startup.`);
     }

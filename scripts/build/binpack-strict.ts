@@ -10,19 +10,13 @@ export function patchBinpackSource(source: string): string {
   let output = source;
 
   if (brokenBuffer.test(output)) {
-    output = output.replace(
-      brokenBuffer,
-      '$1var b = new Buffer(sizeOfType(binpackTypename));',
-    );
+    output = output.replace(brokenBuffer, '$1var b = new Buffer(sizeOfType(binpackTypename));');
   } else if (!fixedBuffer.test(output)) {
     throw new Error('Unsupported binpack source shape: buffer declaration not found.');
   }
 
   if (brokenPower.test(output)) {
-    output = output.replace(
-      brokenPower,
-      'var twoToThe32 = Math.pow(2, 32);',
-    );
+    output = output.replace(brokenPower, 'var twoToThe32 = Math.pow(2, 32);');
   } else if (!fixedPower.test(output)) {
     throw new Error('Unsupported binpack source shape: twoToThe32 declaration not found.');
   }
@@ -34,13 +28,10 @@ export function strictBinpackPlugin(): Plugin {
   return {
     name: 'strict-binpack',
     setup(build) {
-      build.onLoad(
-        { filter: /[\\/]node_modules[\\/]binpack[\\/]index\.js$/ },
-        async (args) => ({
-          contents: patchBinpackSource(await fs.readFile(args.path, 'utf8')),
-          loader: 'js',
-        }),
-      );
+      build.onLoad({ filter: /[\\/]node_modules[\\/]binpack[\\/]index\.js$/ }, async (args) => ({
+        contents: patchBinpackSource(await fs.readFile(args.path, 'utf8')),
+        loader: 'js',
+      }));
     },
   };
 }

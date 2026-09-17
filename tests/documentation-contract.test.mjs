@@ -13,10 +13,10 @@ function readRequired(path) {
   return readFileSync(url, 'utf8');
 }
 
-test('public landing presents Ableton RC Setlist as source-available and noncommercial', () => {
+test('public landing presents RC Setlist as source-available and noncommercial', () => {
   const landing = read('docs/index.html');
 
-  assert.match(landing, /<title>Ableton RC Setlist\b/);
+  assert.match(landing, /<title>RC Setlist\b/);
   assert.match(landing, /source-available/i);
   assert.match(landing, /PolyForm Noncommercial 1\.0\.0/i);
   assert.match(landing, /independent project.+not affiliated with or endorsed by Ableton AG/is);
@@ -32,8 +32,14 @@ test('public landing presents Ableton RC Setlist as source-available and noncomm
   );
   assert.match(landing, /id=["']languageSelect["']/);
   assert.doesNotMatch(landing, /Release candidate/i);
-  assert.doesNotMatch(landing, /commercial distribution is in preparation|private beta|sales open/i);
-  assert.doesNotMatch(landing, /fonts\.googleapis\.com|fonts\.gstatic\.com|google-analytics|googletagmanager/i);
+  assert.doesNotMatch(
+    landing,
+    /commercial distribution is in preparation|private beta|sales open/i,
+  );
+  assert.doesNotMatch(
+    landing,
+    /fonts\.googleapis\.com|fonts\.gstatic\.com|google-analytics|googletagmanager/i,
+  );
   assert.match(
     landing,
     /@font-face\s*\{[^}]*font-family:\s*["']Martian Mono["'][^}]*src:\s*url\(["']?\.\/fonts\/MartianMono-latin\.woff2["']?\)/is,
@@ -47,8 +53,16 @@ test('public documentation uses the official compatibility floor', () => {
   for (const path of ['README.md', 'docs/INSTALL.md', 'docs/DEVELOPMENT.md']) {
     assert.ok(existsSync(new URL(`../${path}`, import.meta.url)), `${path} must exist`);
     const content = read(path);
-    assert.match(content, /Ableton Live 12\.4\.5\+ Suite \(Beta\)/i, `${path} must state the Live floor`);
-    assert.match(content, /Node(?:\.js)? 24\.16\.0/i, `${path} must state the development Node floor`);
+    assert.match(
+      content,
+      /Ableton Live 12\.4\.5\+ Suite \(Beta\)/i,
+      `${path} must state the Live floor`,
+    );
+    assert.match(
+      content,
+      /Node(?:\.js)? 24\.16\.0/i,
+      `${path} must state the development Node floor`,
+    );
   }
 });
 
@@ -56,14 +70,27 @@ test('public documentation presents RC Bridge as the bundled fork of AbletonOSC,
   const readme = readRequired('README.md');
   const install = readRequired('docs/INSTALL.md');
 
-  for (const [label, content] of [['README', readme], ['install guide', install]]) {
-    assert.match(content, /github\.com\/ideoforms\/AbletonOSC/i, `${label} must link upstream AbletonOSC`);
+  for (const [label, content] of [
+    ['README', readme],
+    ['install guide', install],
+  ]) {
+    assert.match(
+      content,
+      /github\.com\/ideoforms\/AbletonOSC/i,
+      `${label} must link upstream AbletonOSC`,
+    );
     assert.match(content, /RC Bridge/, `${label} must name the bundled script`);
     assert.match(content, /fork/i, `${label} must say it is a fork, not the upstream project`);
   }
   // The fork ships in the tree with its licence; nothing is fetched at build time.
-  assert.ok(existsSync(new URL('../bridge/RCBridge/LICENSE.md', import.meta.url)), 'the MIT licence travels with the fork');
-  assert.ok(existsSync(new URL('../bridge/RCBridge/README.md', import.meta.url)), 'the fork documents its changes');
+  assert.ok(
+    existsSync(new URL('../bridge/RCBridge/LICENSE.md', import.meta.url)),
+    'the MIT licence travels with the fork',
+  );
+  assert.ok(
+    existsSync(new URL('../bridge/RCBridge/README.md', import.meta.url)),
+    'the fork documents its changes',
+  );
 });
 
 test('user guides define the stopped-play one-bar count-in safety contract', () => {
@@ -82,12 +109,22 @@ test('user guides define the stopped-play one-bar count-in safety contract', () 
   assert.match(english, /does not change[\s\S]*jump quantization/i);
 
   assert.match(portuguese, /CONTAGEM 1 COMP[\s\S]*um compasso[\s\S]*transporte est[aá] parado/i);
-  assert.match(portuguese, /playhead do Live n[aã]o se move[\s\S]*metr[oô]nomo do Live n[aã]o [eé] tocado/i);
+  assert.match(
+    portuguese,
+    /playhead do Live n[aã]o se move[\s\S]*metr[oô]nomo do Live n[aã]o [eé] tocado/i,
+  );
   assert.match(portuguese, /tempo que \*\*o setlist declara\*\*/i);
   assert.match(portuguese, /n[aã]o entra em Record[\s\S]*n[aã]o arma pistas/i);
   assert.match(portuguese, /n[aã]o\s+altera[\s\S]*quantiza[cç][aã]o dos saltos/i);
 
-  for (const marker of ['Click off', 'Click on', 'beat zero', 'Stop', 'manual Click', 'already playing']) {
+  for (const marker of [
+    'Click off',
+    'Click on',
+    'beat zero',
+    'Stop',
+    'manual Click',
+    'already playing',
+  ]) {
     assert.match(tester, new RegExp(marker, 'i'), `tester guide must cover ${marker}`);
   }
   assert.match(changelog, /\[ws\][^\n]*preRollEnabled[^\n]*protocolVersion 3/i);
@@ -101,9 +138,21 @@ test('installation and troubleshooting guides prevent the remote-script folder m
     'docs/pt-BR/TROUBLESHOOTING.md',
   ]) {
     const content = readRequired(path);
-    assert.match(content, /User Library[\\/]Remote Scripts[\\/]RCBridge/i, `${path} must show the exact install target`);
-    assert.match(content, /User Remote Scripts/i, `${path} must distinguish Live's hidden preferences folder`);
-    assert.match(content, /RCBridge[\\/]__init__\.py/i, `${path} must show how to detect an extra nested folder`);
+    assert.match(
+      content,
+      /User Library[\\/]Remote Scripts[\\/]RCBridge/i,
+      `${path} must show the exact install target`,
+    );
+    assert.match(
+      content,
+      /User Remote Scripts/i,
+      `${path} must distinguish Live's hidden preferences folder`,
+    );
+    assert.match(
+      content,
+      /RCBridge[\\/]__init__\.py/i,
+      `${path} must show how to detect an extra nested folder`,
+    );
   }
   // The two ways in: the kit installers and the manual copy.
   for (const path of ['docs/INSTALL.md', 'docs/pt-BR/INSTALL.md']) {
@@ -117,9 +166,21 @@ test('installation and troubleshooting guides prevent the remote-script folder m
 test('troubleshooting explains the fixed OSC return-port conflict outside the Live panel', () => {
   for (const path of ['docs/TROUBLESHOOTING.md', 'docs/pt-BR/TROUBLESHOOTING.md']) {
     const content = readRequired(path);
-    assert.match(content, /UDP 11101|porta 11101/i, `${path} must identify the fallback listener symptom`);
-    assert.match(content, /another\s+RC\s+extension|outra\s+extens[aã]o\s+RC/i, `${path} must identify the competing RC extension`);
-    assert.match(content, /only one|apenas uma/i, `${path} must recommend one OSC auto-start owner`);
+    assert.match(
+      content,
+      /UDP 11101|porta 11101/i,
+      `${path} must identify the fallback listener symptom`,
+    );
+    assert.match(
+      content,
+      /another\s+RC\s+extension|outra\s+extens[aã]o\s+RC/i,
+      `${path} must identify the competing RC extension`,
+    );
+    assert.match(
+      content,
+      /only one|apenas uma/i,
+      `${path} must recommend one OSC auto-start owner`,
+    );
   }
 });
 
@@ -172,10 +233,12 @@ test('0.4.2 local test notes remain preserved as the historical candidate', () =
   assert.match(englishNotes, /local test candidate[\s\S]*not (?:a )?published release/i);
   assert.match(englishNotes, />\s+Section[\s\S]*\[ignore\][\s\S]*visual/i);
   assert.match(englishNotes, /pt-BR\/NOTAS-DA-VERSAO-0\.4\.2\.md/);
-  assert.match(portugueseNotes, /candidato local de teste[\s\S]*n[aã]o [ée] uma vers[aã]o publicada/i);
+  assert.match(
+    portugueseNotes,
+    /candidato local de teste[\s\S]*n[aã]o [ée] uma vers[aã]o publicada/i,
+  );
   assert.match(portugueseNotes, />\s+Se[cç][aã]o[\s\S]*\[ignore\][\s\S]*visual/i);
   assert.match(portugueseNotes, /\.\.\/RELEASE-NOTES-0\.4\.2\.md/);
-
 });
 
 test('0.5.1 final notes are bilingual and promote the field-tested release surface', () => {
@@ -201,7 +264,7 @@ test('0.5.1 final notes are bilingual and promote the field-tested release surfa
   // What has to survive is that the 0.5.1 notes remain published and bilingual.
   const version = JSON.parse(read('package.json')).version;
   assert.ok(landing.includes(`RELEASE-NOTES-${version}.md`));
-  assert.ok(readme.includes(`Ableton-RC-Setlist-${version}.ablx`));
+  assert.ok(readme.includes(`RC-Setlist-${version}.ablx`));
 });
 
 test('0.4.1 guides and changelog document durations, recoverable profiles and WebSocket compatibility', () => {
@@ -231,7 +294,10 @@ test('0.4.1 guides document current-Live-Set profile scope and the PT-BR rehears
   for (const marker of ['TESTE 01', '[loop 2x]', '[stop]', 'TESTE 01B']) {
     assert.ok(portugueseChecklist.includes(marker), `PT-BR checklist must include ${marker}`);
   }
-  assert.match(portugueseChecklist, /criar[\s\S]*selecionar[\s\S]*renomear[\s\S]*excluir[\s\S]*restaurar/i);
+  assert.match(
+    portugueseChecklist,
+    /criar[\s\S]*selecionar[\s\S]*renomear[\s\S]*excluir[\s\S]*restaurar/i,
+  );
   assert.match(changelog, /current Live Set|Live Set atual/i);
   assert.match(changelog, /mobile[\s\S]*rename|rename[\s\S]*mobile/i);
 });
@@ -258,10 +324,19 @@ test('0.4.1 release notes remain preserved, bilingual and describe the tested re
   assert.ok(changelog.indexOf('## [0.4.1]') < changelog.indexOf('## [0.4.0]'));
   assert.match(englishNotes, /pt-BR\/NOTAS-DA-VERSAO-0\.4\.1\.md/);
   assert.match(portugueseNotes, /\.\.\/RELEASE-NOTES-0\.4\.1\.md/);
-  assert.match(englishNotes, /setlist duration[\s\S]*Manage Setlists[\s\S]*lyrics[\s\S]*bar display/i);
-  assert.match(portugueseNotes, /dura[cç][aã]o total[\s\S]*Gerenciar setlists[\s\S]*letras[\s\S]*compasso/i);
-  assert.match(readme, /\[Landing page and screenshots\]\(https:\/\/ntworm\.github\.io\/rc-setlist\/\)/);
-  assert.match(readme, /!\[Ableton RC Setlist Stage Control\]\(docs\/media\/en\/stage-control\.png\)/);
+  assert.match(
+    englishNotes,
+    /setlist duration[\s\S]*Manage Setlists[\s\S]*lyrics[\s\S]*bar display/i,
+  );
+  assert.match(
+    portugueseNotes,
+    /dura[cç][aã]o total[\s\S]*Gerenciar setlists[\s\S]*letras[\s\S]*compasso/i,
+  );
+  assert.match(
+    readme,
+    /\[Landing page and screenshots\]\(https:\/\/ntworm\.github\.io\/rc-setlist\/\)/,
+  );
+  assert.match(readme, /!\[RC Setlist Stage Control\]\(docs\/media\/en\/stage-control\.png\)/);
 });
 
 test('public landing contains truthful site media and keeps the owner media kit private', () => {
@@ -292,7 +367,10 @@ test('public landing contains truthful site media and keeps the owner media kit 
     'docs/media/product-truth-linkedin.png',
     'docs/media/product-truth-square.png',
   ]) {
-    assert.doesNotMatch(allowlist, new RegExp(`^${privatePath.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'm'));
+    assert.doesNotMatch(
+      allowlist,
+      new RegExp(`^${privatePath.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'm'),
+    );
   }
 });
 
@@ -302,7 +380,9 @@ test('Dependabot keeps TypeScript and Node types on the supported major release 
     const escaped = dependency.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     assert.match(
       dependabot,
-      new RegExp(`dependency-name:\\s*["']?${escaped}["']?[\\s\\S]*?update-types:[\\s\\S]*?version-update:semver-major`),
+      new RegExp(
+        `dependency-name:\\s*["']?${escaped}["']?[\\s\\S]*?update-types:[\\s\\S]*?version-update:semver-major`,
+      ),
       `${dependency} must ignore semver-major Dependabot updates`,
     );
   }
@@ -357,17 +437,33 @@ test('public Markdown and HTML have no broken local links', () => {
 test('documentation and guides explain relative locators, ignore tag, Manage Setlists and CSV downloads', () => {
   for (const path of ['docs/USER-GUIDE.md', 'docs/pt-BR/USER-GUIDE.md']) {
     const content = readRequired(path);
-    assert.match(content, /> Se[çc][ãa]o|> Section/i, `${path} must document relative locator syntax`);
+    assert.match(
+      content,
+      /> Se[çc][ãa]o|> Section/i,
+      `${path} must document relative locator syntax`,
+    );
     assert.match(content, /\[ignore\]/i, `${path} must document ignore tag`);
-    assert.match(content, /Manage Setlists|Gerenciar setlists/i, `${path} must document Manage Setlists discovery`);
+    assert.match(
+      content,
+      /Manage Setlists|Gerenciar setlists/i,
+      `${path} must document Manage Setlists discovery`,
+    );
     assert.match(content, /Downloads/i, `${path} must document browser Downloads location for CSV`);
     assert.match(content, /sections_count/i, `${path} must document named-section CSV data`);
     assert.match(content, /automations/i, `${path} must document automation CSV data`);
-    assert.doesNotMatch(content, /CSV[^\n]*(?:plays|last_played_at)/i, `${path} must not promise unavailable play history`);
+    assert.doesNotMatch(
+      content,
+      /CSV[^\n]*(?:plays|last_played_at)/i,
+      `${path} must not promise unavailable play history`,
+    );
   }
   const changelog = readRequired('CHANGELOG.md');
   assert.match(changelog, /## \[Unreleased\]/i, 'CHANGELOG.md must have Unreleased section');
-  assert.match(changelog, /relative section locator syntax/i, 'CHANGELOG.md must document relative section locators');
+  assert.match(
+    changelog,
+    /relative section locator syntax/i,
+    'CHANGELOG.md must document relative section locators',
+  );
   assert.match(changelog, /\[ignore\]/i, 'CHANGELOG.md must document ignore tag');
 });
 
@@ -377,13 +473,19 @@ test('jump documentation preserves the destination-BPM ordering and timing limit
   const changelog = readRequired('CHANGELOG.md');
 
   assert.match(english, /explicit jumps[\s\S]*destination BPM[\s\S]*around[\s\S]*cue jump/i);
-  assert.match(english, /handed to Live at once[\s\S]*next grid line[\s\S]*tempo is written when that landing is observed/i);
+  assert.match(
+    english,
+    /handed to Live at once[\s\S]*next grid line[\s\S]*tempo is written when that landing is observed/i,
+  );
   assert.match(english, /section BPM[\s\S]*overrides[\s\S]*song BPM/i);
   assert.match(english, /SDK-first/i);
   assert.match(english, /sequential[\s\S]*(?:not atomic|non-atomic)/i);
   assert.match(english, /Arrangement tempo automation[\s\S]*sample-accurate/i);
 
-  assert.match(portuguese, /saltos expl.citos[\s\S]*BPM de destino[\s\S]*em torno[\s\S]*salto de cue/i);
+  assert.match(
+    portuguese,
+    /saltos expl.citos[\s\S]*BPM de destino[\s\S]*em torno[\s\S]*salto de cue/i,
+  );
   assert.match(portuguese, /entregue ao Live na hora[\s\S]*pr.xima linha da grade/i);
   assert.match(portuguese, /BPM da se..o[\s\S]*substitui[\s\S]*BPM da m.sica/i);
   assert.match(portuguese, /SDK-first/i);
@@ -396,99 +498,59 @@ test('jump documentation preserves the destination-BPM ordering and timing limit
   assert.match(changelog, /Arrangement tempo automation[\s\S]*sample-accurate/i);
 });
 
-
-test('0.6.1 notes are bilingual and describe the stage pass this version ships', () => {
+test('1.0.0 notes are bilingual and describe the consolidated release', () => {
   const changelog = readRequired('CHANGELOG.md');
-  const englishNotes = readRequired('docs/RELEASE-NOTES-0.6.1.md');
-  const portugueseNotes = readRequired('docs/pt-BR/NOTAS-DA-VERSAO-0.6.1.md');
+  const englishNotes = readRequired('docs/RELEASE-NOTES-1.0.0.md');
+  const portugueseNotes = readRequired('docs/pt-BR/NOTAS-DA-VERSAO-1.0.0.md');
   const landing = readRequired('docs/index.html');
   const siteStrings = readRequired('docs/site-i18n.js');
   const readme = readRequired('README.md');
 
-  assert.match(changelog, /^## \[0\.6\.1\] - 2026-09-12/m);
+  assert.match(changelog, /^## \[1\.0\.0\] - 2026-09-14/m);
 
   for (const notes of [englishNotes, portugueseNotes]) {
-    assert.match(notes, /0\.6\.1/);
-    assert.match(notes, /\[next\]/, 'the end-of-song hand-over is the headline fix');
-    assert.match(notes, /872\.3[\s\S]*876\.0/, 'and it is stated with the measurement that found it');
-    assert.match(notes, /Play/);
+    assert.match(notes, /1\.0\.0/);
+    assert.match(notes, /RC Setlist/i);
+    assert.match(notes, /RC Bridge/i);
   }
-  assert.match(englishNotes, /pt-BR\/NOTAS-DA-VERSAO-0\.6\.1\.md/);
-  assert.match(portugueseNotes, /\.\.\/RELEASE-NOTES-0\.6\.1\.md/);
+  assert.match(englishNotes, /pt-BR\/NOTAS-DA-VERSAO-1\.0\.0\.md/);
+  assert.match(portugueseNotes, /\.\.\/RELEASE-NOTES-1\.0\.0\.md/);
 
-  // The landing page and README now name 0.7.0; the 0.6.1 notes stay
-  // published and are reached from the changelog.
-  assert.doesNotMatch(siteStrings, /v0\.6\.0|v0\.5\.\d/, 'the site strings must not name a superseded version');
-  assert.doesNotMatch(landing, /v0\.6\.0|v0\.5\.\d/);
-});
-
-test('0.7.0 notes are bilingual and describe the release this version ships', () => {
-  const changelog = readRequired('CHANGELOG.md');
-  const englishNotes = readRequired('docs/RELEASE-NOTES-0.7.0.md');
-  const portugueseNotes = readRequired('docs/pt-BR/NOTAS-DA-VERSAO-0.7.0.md');
-  const landing = readRequired('docs/index.html');
-  const siteStrings = readRequired('docs/site-i18n.js');
-  const readme = readRequired('README.md');
-
-  assert.match(changelog, /^## \[0\.7\.0\] - 2026-09-13/m);
-
-  for (const notes of [englishNotes, portugueseNotes]) {
-    assert.match(notes, /0\.7\.0/);
-    assert.match(notes, /RC Bridge/, 'the bundled bridge is the headline of this release');
-    assert.match(notes, /\[jump/, 'the named jump ships in this release');
-    assert.match(notes, /11020/, 'the bridge port is stated');
-  }
-  assert.match(englishNotes, /one line of notes/i, 'the per-song notes are the third feature');
-  assert.match(portugueseNotes, /uma linha de notas/i, 'the per-song notes are the third feature');
-  assert.match(englishNotes, /pt-BR\/NOTAS-DA-VERSAO-0\.7\.0\.md/);
-  assert.match(portugueseNotes, /\.\.\/RELEASE-NOTES-0\.7\.0\.md/);
-
-  assert.match(landing, /RELEASE-NOTES-0\.7\.0\.md/);
-  assert.match(readme, /Ableton-RC-Setlist-0\.7\.0\.ablx/);
-  assert.match(readme, /docs\/RELEASE-NOTES-0\.7\.0\.md/);
-  assert.doesNotMatch(siteStrings, /v0\.6\.\d|v0\.5\.\d/, 'the site strings must not name a superseded version');
+  assert.match(landing, /RELEASE-NOTES-1\.0\.0\.md/);
+  assert.match(readme, /RC-Setlist-1\.0\.0\.ablx/);
+  assert.match(readme, /docs\/RELEASE-NOTES-1\.0\.0\.md/);
+  assert.doesNotMatch(
+    siteStrings,
+    /v0\.6\.\d|v0\.5\.\d/,
+    'the site strings must not name a superseded version',
+  );
   assert.doesNotMatch(landing, /v0\.6\.\d|v0\.5\.\d/);
-});
-
-test('0.6.0 notes are bilingual and describe the release this version actually ships', () => {
-  const changelog = readRequired('CHANGELOG.md');
-  const englishNotes = readRequired('docs/RELEASE-NOTES-0.6.0.md');
-  const portugueseNotes = readRequired('docs/pt-BR/NOTAS-DA-VERSAO-0.6.0.md');
-  const landing = readRequired('docs/index.html');
-  const siteStrings = readRequired('docs/site-i18n.js');
-  const readme = readRequired('README.md');
-
-  assert.match(changelog, /^## \[0\.6\.0\] - 2026-09-08/m);
-
-  for (const notes of [englishNotes, portugueseNotes]) {
-    assert.match(notes, /0\.6\.0/);
-    assert.match(notes, /marker|marcador/i);
-    assert.match(notes, /\[bpm 107\]/, 'the duration defect is the headline fix');
-  }
-  assert.match(englishNotes, /pt-BR\/NOTAS-DA-VERSAO-0\.6\.0\.md/);
-  assert.match(portugueseNotes, /\.\.\/RELEASE-NOTES-0\.6\.0\.md/);
-
-  // The landing page and README now name 0.6.1; the 0.6.0 notes stay
-  // published and are reached from the changelog.
-
-  // site-i18n.js overrides the landing markup at runtime, so a version left
-  // behind there is the one visitors actually read. It had been showing v0.5.0
-  // for the whole 0.5.1 release.
-  assert.doesNotMatch(siteStrings, /v0\.5\.\d/, 'the site strings must not name a superseded version');
-  assert.doesNotMatch(landing, /v0\.5\.\d/);
 });
 
 test('the repository map only names paths that exist', () => {
   // docs/agent/PROJECT_MAP.md is the map agents are told to read first; a
   // path that no longer exists sends them to a module that moved or died.
   const map = readRequired('docs/agent/PROJECT_MAP.md');
-  const roots = ['src/', 'static/', 'bridge/', 'scripts/', 'tests/', 'docs/', 'release-template/', '.agents/', 'package.json', 'public-files.txt'];
+  const roots = [
+    'src/',
+    'static/',
+    'bridge/',
+    'scripts/',
+    'tests/',
+    'docs/',
+    'release-template/',
+    '.agents/',
+    'package.json',
+    'public-files.txt',
+  ];
   const missing = [];
   for (const match of map.matchAll(/`([A-Za-z0-9_./{},*-]+)`/g)) {
     const token = match[1];
     if (!roots.some((root) => token.startsWith(root))) continue;
     const braces = token.match(/^(.*)\{([^}]+)\}(.*)$/);
-    const candidates = braces ? braces[2].split(',').map((part) => braces[1] + part + braces[3]) : [token];
+    const candidates = braces
+      ? braces[2].split(',').map((part) => braces[1] + part + braces[3])
+      : [token];
     for (const candidate of candidates) {
       if (candidate.includes('*')) continue;
       if (!existsSync(new URL(`../${candidate}`, import.meta.url))) missing.push(candidate);

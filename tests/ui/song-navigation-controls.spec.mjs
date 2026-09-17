@@ -5,9 +5,9 @@ async function fixtureState(page) {
 }
 
 async function jumpMessages(page) {
-  const messages = await page.evaluate(async () => (
-    fetch('/__test__/messages').then((response) => response.json())
-  ));
+  const messages = await page.evaluate(async () =>
+    fetch('/__test__/messages').then((response) => response.json()),
+  );
   return messages.filter((message) => message.type === 'jump');
 }
 
@@ -36,7 +36,9 @@ async function pointerHold(page, locator, pointerId, holdMs = 550) {
 }
 
 async function expectAllDisabled(locator) {
-  await expect.poll(() => locator.evaluateAll((buttons) => buttons.every((button) => button.disabled))).toBe(true);
+  await expect
+    .poll(() => locator.evaluateAll((buttons) => buttons.every((button) => button.disabled)))
+    .toBe(true);
 }
 
 test.beforeEach(async ({ page }) => {
@@ -44,14 +46,32 @@ test.beforeEach(async ({ page }) => {
   await expect(page.locator('#songList .song-item')).toHaveCount(8);
 });
 
-test('Stage Control renders six ordered icon-only transport controls with explicit labels', async ({ page }) => {
+test('Stage Control renders six ordered icon-only transport controls with explicit labels', async ({
+  page,
+}) => {
   const ids = ['btnPreviousSong', 'btnPrevious', 'btnPlay', 'btnStop', 'btnNext', 'btnNextSong'];
   await expect(page.locator('.transport-dock > button')).toHaveCount(6);
-  expect(await page.locator('.transport-dock > button').evaluateAll((buttons) => buttons.map((button) => button.id))).toEqual(ids);
-  await expect(page.locator('#btnPreviousSong')).toHaveAttribute('aria-label', 'Previous song — press and hold');
-  await expect(page.locator('#btnPrevious')).toHaveAttribute('aria-label', 'Previous section — press and hold');
-  await expect(page.locator('#btnNext')).toHaveAttribute('aria-label', 'Next section — press and hold');
-  await expect(page.locator('#btnNextSong')).toHaveAttribute('aria-label', 'Next song — press and hold');
+  expect(
+    await page
+      .locator('.transport-dock > button')
+      .evaluateAll((buttons) => buttons.map((button) => button.id)),
+  ).toEqual(ids);
+  await expect(page.locator('#btnPreviousSong')).toHaveAttribute(
+    'aria-label',
+    'Previous song — press and hold',
+  );
+  await expect(page.locator('#btnPrevious')).toHaveAttribute(
+    'aria-label',
+    'Previous section — press and hold',
+  );
+  await expect(page.locator('#btnNext')).toHaveAttribute(
+    'aria-label',
+    'Next section — press and hold',
+  );
+  await expect(page.locator('#btnNextSong')).toHaveAttribute(
+    'aria-label',
+    'Next song — press and hold',
+  );
 });
 
 test('a 100 ms section hold stays inert', async ({ page }) => {
@@ -62,24 +82,30 @@ test('a 100 ms section hold stays inert', async ({ page }) => {
 test('inner next hold preserves section navigation', async ({ page }) => {
   const fixture = await fixtureState(page);
   await pointerHold(page, page.locator('#btnNext'), 2);
-  await expect.poll(() => jumpMessages(page)).toEqual([
-    { type: 'jump', songIndex: fixture.state.activeSongIndex, sectionIndex: fixture.state.activeSectionIndex + 1 },
-  ]);
+  await expect
+    .poll(() => jumpMessages(page))
+    .toEqual([
+      {
+        type: 'jump',
+        songIndex: fixture.state.activeSongIndex,
+        sectionIndex: fixture.state.activeSectionIndex + 1,
+      },
+    ]);
 });
 
 test('outer song holds jump to adjacent whole-song starts exactly once', async ({ page }) => {
   const fixture = await fixtureState(page);
   await pointerHold(page, page.locator('#btnPreviousSong'), 3);
-  await expect.poll(() => jumpMessages(page)).toEqual([
-    { type: 'jump', songIndex: fixture.state.activeSongIndex - 1, sectionIndex: null },
-  ]);
+  await expect
+    .poll(() => jumpMessages(page))
+    .toEqual([{ type: 'jump', songIndex: fixture.state.activeSongIndex - 1, sectionIndex: null }]);
 
   await page.goto('/setlist/');
   await expect(page.locator('#songList .song-item')).toHaveCount(8);
   await pointerHold(page, page.locator('#btnNextSong'), 4, 1150);
-  await expect.poll(() => jumpMessages(page)).toEqual([
-    { type: 'jump', songIndex: fixture.state.activeSongIndex + 1, sectionIndex: null },
-  ]);
+  await expect
+    .poll(() => jumpMessages(page))
+    .toEqual([{ type: 'jump', songIndex: fixture.state.activeSongIndex + 1, sectionIndex: null }]);
   await page.waitForTimeout(150);
   expect(await jumpMessages(page)).toHaveLength(1);
 });
@@ -97,7 +123,11 @@ test('outer song controls disable at first and last song boundaries', async ({ p
 
   await emitServerMessage(page, {
     ...fixture,
-    state: { ...fixture.state, activeSongIndex: fixture.state.songs.length - 1, activeSectionIndex: 0 },
+    state: {
+      ...fixture.state,
+      activeSongIndex: fixture.state.songs.length - 1,
+      activeSectionIndex: 0,
+    },
   });
   await expect(page.locator('#btnNextSong')).toBeDisabled();
   await expect(page.locator('#btnPreviousSong')).toBeEnabled();
@@ -105,7 +135,9 @@ test('outer song controls disable at first and last song boundaries', async ({ p
   expect(await jumpMessages(page)).toEqual([]);
 });
 
-test('all directional holds disable under Lock Mode and lost controller authority', async ({ page }) => {
+test('all directional holds disable under Lock Mode and lost controller authority', async ({
+  page,
+}) => {
   const controls = page.locator('#btnPreviousSong, #btnPrevious, #btnNext, #btnNextSong');
   await expect(controls).toHaveCount(4);
   await page.locator('#btnLock').click();
@@ -127,7 +159,9 @@ test('all directional holds disable under Lock Mode and lost controller authorit
   expect(await jumpMessages(page)).toEqual([]);
 });
 
-test('play button shows playing state by block inversion and never turns into a pause icon', async ({ page }) => {
+test('play button shows playing state by block inversion and never turns into a pause icon', async ({
+  page,
+}) => {
   const btnPlay = page.locator('#btnPlay');
   const playPath = btnPlay.locator('svg path');
   await expect(btnPlay).toHaveClass(/is-playing/);
@@ -135,9 +169,9 @@ test('play button shows playing state by block inversion and never turns into a 
   // The glyph must stay a play triangle while playing: this button does not pause.
   await expect(playPath).toHaveAttribute('d', 'M8 5v14l11-7L8 5Z');
 
-  const fixture = await page.evaluate(async () => (
-    fetch('/__test__/state').then((response) => response.json())
-  ));
+  const fixture = await page.evaluate(async () =>
+    fetch('/__test__/state').then((response) => response.json()),
+  );
   await emitServerMessage(page, { ...fixture, state: { ...fixture.state, isPlaying: false } });
 
   await expect(btnPlay).not.toHaveClass(/is-playing/);

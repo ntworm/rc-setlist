@@ -61,9 +61,14 @@ foreach ($entry in $entries) {
         throw "Allowlisted path does not exist: $entry"
     }
 
-    $targetParent = Split-Path -Parent $targetPath
-    New-Item -ItemType Directory -Force -Path $targetParent | Out-Null
-    Copy-Item -LiteralPath $sourcePath -Destination $targetPath -Recurse -Force
+    if (Test-Path -LiteralPath $sourcePath -PathType Container) {
+        New-Item -ItemType Directory -Force -Path $targetPath | Out-Null
+        Get-ChildItem -LiteralPath $sourcePath -Force | Copy-Item -Destination $targetPath -Recurse -Force
+    } else {
+        $targetParent = Split-Path -Parent $targetPath
+        New-Item -ItemType Directory -Force -Path $targetParent | Out-Null
+        Copy-Item -LiteralPath $sourcePath -Destination $targetPath -Force
+    }
 }
 
 foreach ($entry in $excludedEntries) {

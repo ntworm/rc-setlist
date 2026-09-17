@@ -5,10 +5,9 @@
 
   function preRollBarBeats(signatureNumerator, signatureDenominator) {
     if (!Number.isFinite(signatureNumerator) || signatureNumerator <= 0) return null;
-    const denominator = Number.isFinite(signatureDenominator) && signatureDenominator > 0
-      ? signatureDenominator
-      : 4;
-    return signatureNumerator * 4 / denominator;
+    const denominator =
+      Number.isFinite(signatureDenominator) && signatureDenominator > 0 ? signatureDenominator : 4;
+    return (signatureNumerator * 4) / denominator;
   }
 
   function isKnownDuration(value) {
@@ -31,20 +30,28 @@
     const declaredTempo = isValidSong(activeSong) ? usableTempo(activeSong.bpm) : null;
     let fallback = declaredTempo ?? usableTempo(fallbackTempo);
 
-    if (isValidSong(activeSong) && Array.isArray(activeSong.sections) && activeSong.sections.length > 0) {
-      const songStart = typeof activeSong.time === 'number' && Number.isFinite(activeSong.time) ? activeSong.time : 0;
-      const validSections = activeSong.sections.filter(s =>
-        s && typeof s.time === 'number' && Number.isFinite(s.time) && s.time >= songStart
+    if (
+      isValidSong(activeSong) &&
+      Array.isArray(activeSong.sections) &&
+      activeSong.sections.length > 0
+    ) {
+      const songStart =
+        typeof activeSong.time === 'number' && Number.isFinite(activeSong.time)
+          ? activeSong.time
+          : 0;
+      const validSections = activeSong.sections.filter(
+        (s) => s && typeof s.time === 'number' && Number.isFinite(s.time) && s.time >= songStart,
       );
 
       if (validSections.length > 0) {
         const sortedSections = [...validSections].sort((a, b) => a.time - b.time);
-        const firstSectionBpm = sortedSections[0].time === songStart ? usableTempo(sortedSections[0].bpm) : null;
+        const firstSectionBpm =
+          sortedSections[0].time === songStart ? usableTempo(sortedSections[0].bpm) : null;
         if (declaredTempo === null && firstSectionBpm !== null) {
           fallback = firstSectionBpm;
         }
 
-        const hasSectionBpm = sortedSections.some(s => usableTempo(s.bpm) !== null);
+        const hasSectionBpm = sortedSections.some((s) => usableTempo(s.bpm) !== null);
         if (hasSectionBpm) {
           if (fallback === null) return null;
           let currentBpm = fallback;
@@ -56,10 +63,10 @@
             const sec = sortedSections[i];
             if (sec.time > currentBeat) {
               if (targetBeat <= sec.time) {
-                elapsedSec += (targetBeat - currentBeat) * 60 / currentBpm;
+                elapsedSec += ((targetBeat - currentBeat) * 60) / currentBpm;
                 return elapsedSec;
               }
-              elapsedSec += (sec.time - currentBeat) * 60 / currentBpm;
+              elapsedSec += ((sec.time - currentBeat) * 60) / currentBpm;
               currentBeat = sec.time;
             }
             const secBpm = usableTempo(sec.bpm);
@@ -69,7 +76,7 @@
           }
 
           if (targetBeat > currentBeat) {
-            elapsedSec += (targetBeat - currentBeat) * 60 / currentBpm;
+            elapsedSec += ((targetBeat - currentBeat) * 60) / currentBpm;
           }
           return elapsedSec;
         }
@@ -77,7 +84,7 @@
     }
 
     if (fallback === null) return null;
-    return safeElapsedBeats * 60 / fallback;
+    return (safeElapsedBeats * 60) / fallback;
   }
 
   function calculateSetlistProgress({
@@ -93,8 +100,13 @@
       songElapsedSeconds: null,
       songDurationSeconds: null,
     };
-    if (!Array.isArray(songs) || !Number.isInteger(activeSongIndex)
-      || activeSongIndex < 0 || activeSongIndex >= songs.length || !isValidSong(songs[activeSongIndex])) {
+    if (
+      !Array.isArray(songs) ||
+      !Number.isInteger(activeSongIndex) ||
+      activeSongIndex < 0 ||
+      activeSongIndex >= songs.length ||
+      !isValidSong(songs[activeSongIndex])
+    ) {
       return unknown;
     }
 
@@ -105,24 +117,38 @@
     const songElapsed = Number.isFinite(songElapsedSeconds)
       ? Math.max(0, songElapsedSeconds)
       : null;
-    const clampedSongElapsed = songElapsed === null
-      ? null
-      : songDurationSeconds === null ? songElapsed : Math.min(songElapsed, songDurationSeconds);
+    const clampedSongElapsed =
+      songElapsed === null
+        ? null
+        : songDurationSeconds === null
+          ? songElapsed
+          : Math.min(songElapsed, songDurationSeconds);
     let priorDurationSeconds = 0;
     for (let index = 0; index < activeSongIndex; index += 1) {
       const durationSeconds = songs[index]?.durationSeconds;
       if (!isKnownDuration(durationSeconds)) {
-        return { ...unknown, showTotalSeconds, songElapsedSeconds: clampedSongElapsed, songDurationSeconds };
+        return {
+          ...unknown,
+          showTotalSeconds,
+          songElapsedSeconds: clampedSongElapsed,
+          songDurationSeconds,
+        };
       }
       priorDurationSeconds += durationSeconds;
     }
-    const showElapsedSeconds = clampedSongElapsed === null
-      ? null
-      : showTotalSeconds === null
-        ? priorDurationSeconds + clampedSongElapsed
-        : Math.min(priorDurationSeconds + clampedSongElapsed, showTotalSeconds);
+    const showElapsedSeconds =
+      clampedSongElapsed === null
+        ? null
+        : showTotalSeconds === null
+          ? priorDurationSeconds + clampedSongElapsed
+          : Math.min(priorDurationSeconds + clampedSongElapsed, showTotalSeconds);
 
-    return { showElapsedSeconds, showTotalSeconds, songElapsedSeconds: clampedSongElapsed, songDurationSeconds };
+    return {
+      showElapsedSeconds,
+      showTotalSeconds,
+      songElapsedSeconds: clampedSongElapsed,
+      songDurationSeconds,
+    };
   }
 
   function isValidSong(song) {
@@ -151,13 +177,15 @@
     }
     if (!state || !Array.isArray(state.songs)) return null;
     const songIndex = state.activeSongIndex;
-    if (!Number.isInteger(songIndex) || songIndex < 0 || songIndex >= state.songs.length) return null;
+    if (!Number.isInteger(songIndex) || songIndex < 0 || songIndex >= state.songs.length)
+      return null;
 
     const song = state.songs[songIndex];
     if (!isValidSong(song)) return null;
     const sections = Array.isArray(song.sections) ? song.sections : [];
     const sectionIndex = state.activeSectionIndex;
-    if (!Number.isInteger(sectionIndex) || sectionIndex < -1 || sectionIndex >= sections.length) return null;
+    if (!Number.isInteger(sectionIndex) || sectionIndex < -1 || sectionIndex >= sections.length)
+      return null;
 
     if (direction === 'next') {
       if (resolvedLevel === 'song') {
@@ -192,7 +220,8 @@
     // Optional overrides let a non-navigation control reuse this gate. The
     // pointer, touch, keyboard, blur and visibility handling below is the part
     // worth reusing; the navigation target resolution is not.
-    const resolveTargetOverride = typeof options.resolveTarget === 'function' ? options.resolveTarget : null;
+    const resolveTargetOverride =
+      typeof options.resolveTarget === 'function' ? options.resolveTarget : null;
     const onComplete = typeof options.onComplete === 'function' ? options.onComplete : null;
     let timer = null;
     let inputKind = null;
@@ -257,7 +286,8 @@
       }
       event.preventDefault?.();
       inputKind = kind;
-      activePointerId = kind === 'pointer' && event.pointerId !== undefined ? event.pointerId : null;
+      activePointerId =
+        kind === 'pointer' && event.pointerId !== undefined ? event.pointerId : null;
       button.classList.add('is-holding');
       timer = setTimeoutFn(complete, HOLD_MS);
     }
@@ -276,7 +306,12 @@
 
     function handlePointerEnd(event) {
       if (inputKind !== 'pointer') return;
-      if (activePointerId !== null && event.pointerId !== undefined && event.pointerId !== activePointerId) return;
+      if (
+        activePointerId !== null &&
+        event.pointerId !== undefined &&
+        event.pointerId !== activePointerId
+      )
+        return;
       reset();
     }
 
@@ -411,7 +446,7 @@
       if (!canActivate(target)) return;
       holding = {
         element: target.element,
-        pointerId: input === 'pointer' ? contact.pointerId ?? null : null,
+        pointerId: input === 'pointer' ? (contact.pointerId ?? null) : null,
         touchId: input === 'touch' ? contact.identifier : null,
         input,
         startX: Number(contact.clientX) || 0,
@@ -449,14 +484,19 @@
 
     function matchesPointer(event) {
       if (holding?.input === 'touch' || directInput === 'touch') return false;
-      return suppressedPointerId === null
-        || event.pointerId === undefined
-        || event.pointerId === suppressedPointerId;
+      return (
+        suppressedPointerId === null ||
+        event.pointerId === undefined ||
+        event.pointerId === suppressedPointerId
+      );
     }
 
     function findTouch(event) {
       const touches = [...(event.changedTouches || event.touches || [])];
-      return touches.find((touch) => directTouchId === null || touch.identifier === directTouchId) || null;
+      return (
+        touches.find((touch) => directTouchId === null || touch.identifier === directTouchId) ||
+        null
+      );
     }
 
     function handleTouchStart(event) {
@@ -585,7 +625,8 @@
 
     function handleContextMenu(event) {
       const target = resolveTarget(event.target);
-      if (target && suppressedKey !== null && suppressedKey === targetKey(target)) event.preventDefault?.();
+      if (target && suppressedKey !== null && suppressedKey === targetKey(target))
+        event.preventDefault?.();
     }
 
     function handleVisibility() {
@@ -594,7 +635,10 @@
 
     function update() {
       if (!holding) return;
-      if (!canActivate(holding.target) || (holding.phase === 'reordering' && !canReorder(holding.target))) {
+      if (
+        !canActivate(holding.target) ||
+        (holding.phase === 'reordering' && !canReorder(holding.target))
+      ) {
         cancelHold(true);
       }
     }
@@ -687,8 +731,9 @@
 
     function observeState(state) {
       if (phase !== 'confirming' || !target || !state) return false;
-      const matches = state.activeSongIndex === target.songIndex
-        && state.activeSectionIndex === (target.sectionIndex ?? -1);
+      const matches =
+        state.activeSongIndex === target.songIndex &&
+        state.activeSectionIndex === (target.sectionIndex ?? -1);
       // Force-clear when transport is paused: no quantization schedule can
       // still be pending, so the visual cue should not linger. This addresses
       // the "blue bar stuck while paused" bug where MCP updates lag the
@@ -739,7 +784,11 @@
     }
 
     function begin(request) {
-      if (!Number.isInteger(request?.value) || typeof request.commandId !== 'string' || !request.commandId) {
+      if (
+        !Number.isInteger(request?.value) ||
+        typeof request.commandId !== 'string' ||
+        !request.commandId
+      ) {
         return false;
       }
       cancelTimer();
@@ -792,8 +841,8 @@
         return lastVisualBeats;
       }
       if (
-        estimatedBeats < lastVisualBeats
-        && lastVisualBeats - estimatedBeats < jitterToleranceBeats
+        estimatedBeats < lastVisualBeats &&
+        lastVisualBeats - estimatedBeats < jitterToleranceBeats
       ) {
         return lastVisualBeats;
       }
@@ -808,12 +857,13 @@
     }
 
     function observeState(previousState, nextState) {
-      const discontinuity = !previousState
-        || !nextState
-        || previousState.activeSongIndex !== nextState.activeSongIndex
-        || previousState.activeSectionIndex !== nextState.activeSectionIndex
-        || previousState.currentLoopIteration !== nextState.currentLoopIteration
-        || previousState.isPlaying !== nextState.isPlaying;
+      const discontinuity =
+        !previousState ||
+        !nextState ||
+        previousState.activeSongIndex !== nextState.activeSongIndex ||
+        previousState.activeSectionIndex !== nextState.activeSectionIndex ||
+        previousState.currentLoopIteration !== nextState.currentLoopIteration ||
+        previousState.isPlaying !== nextState.isPlaying;
       if (discontinuity) reset();
       return discontinuity;
     }

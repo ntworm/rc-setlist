@@ -16,16 +16,26 @@ test('Static UI Lyrics Sync Regression: Song starting after beat zero', () => {
   const timingJs = fs.readFileSync(timingJsPath, 'utf8');
 
   // Verify that both HTML pages load the shared library
-  assert.ok(setlistHtml.includes('src="../shared/lyrics-timing.js"'), 'setlist/index.html must load shared/lyrics-timing.js');
-  assert.ok(performanceHtml.includes('src="../shared/lyrics-timing.js"'), 'performance/index.html must load shared/lyrics-timing.js');
+  assert.ok(
+    setlistHtml.includes('src="../shared/lyrics-timing.js"'),
+    'setlist/index.html must load shared/lyrics-timing.js',
+  );
+  assert.ok(
+    performanceHtml.includes('src="../shared/lyrics-timing.js"'),
+    'performance/index.html must load shared/lyrics-timing.js',
+  );
 
   // Load the shared logic using a sandbox function to get the functions
   const timingExports = {};
-  const loadFunc = new Function('exports', timingJs + `
+  const loadFunc = new Function(
+    'exports',
+    timingJs +
+      `
     exports.calculateSongElapsedBeats = calculateSongElapsedBeats;
     exports.convertBeatsToSeconds = convertBeatsToSeconds;
     exports.findActiveLyricLine = findActiveLyricLine;
-  `);
+  `,
+  );
   loadFunc(timingExports);
 
   const { calculateSongElapsedBeats, convertBeatsToSeconds, findActiveLyricLine } = timingExports;
@@ -39,8 +49,8 @@ test('Static UI Lyrics Sync Regression: Song starting after beat zero', () => {
     lines: [
       { time: 1.0, text: 'First line' },
       { time: 3.0, text: 'Second line' },
-      { time: 5.0, text: 'Third line' }
-    ]
+      { time: 5.0, text: 'Third line' },
+    ],
   };
 
   // Case 1: before song starts (absolute beat 20.0)
@@ -72,9 +82,13 @@ test('Static UI Lyrics Editor: preserves rounded LRC centiseconds', () => {
   const timingJsPath = path.join(__dirname, 'shared', 'lyrics-timing.js');
   const timingJs = fs.readFileSync(timingJsPath, 'utf8');
   const timingExports = {};
-  const loadFunc = new Function('exports', timingJs + `
+  const loadFunc = new Function(
+    'exports',
+    timingJs +
+      `
     exports.formatSecondsToLrcTime = formatSecondsToLrcTime;
-  `);
+  `,
+  );
   loadFunc(timingExports);
 
   const { formatSecondsToLrcTime } = timingExports;
@@ -134,7 +148,10 @@ test('Static UI Setlist: the retired modules/ tree is gone and nothing loads it'
   const setlistDir = path.join(__dirname, 'setlist');
   const setlistHtml = fs.readFileSync(path.join(setlistDir, 'index.html'), 'utf8');
   assert.doesNotMatch(setlistHtml, /modules\//i);
-  assert.ok(!fs.existsSync(path.join(setlistDir, 'modules')), 'static/setlist/modules must not come back');
+  assert.ok(
+    !fs.existsSync(path.join(setlistDir, 'modules')),
+    'static/setlist/modules must not come back',
+  );
 });
 
 test('Static UI Setlist: loads the safe transport runtime and dock controls', () => {
@@ -143,10 +160,24 @@ test('Static UI Setlist: loads the safe transport runtime and dock controls', ()
   const setlistJs = fs.readFileSync(path.join(__dirname, 'setlist', 'setlist.js'), 'utf8');
   assert.match(setlistHtml, /src="\.\/transport-runtime\.js"/);
   assert.match(setlistHtml, /class="transport-dock"/);
-  const transportIds = ['btnPreviousSong', 'btnPrevious', 'btnPlay', 'btnStop', 'btnNext', 'btnNextSong'];
+  const transportIds = [
+    'btnPreviousSong',
+    'btnPrevious',
+    'btnPlay',
+    'btnStop',
+    'btnNext',
+    'btnNextSong',
+  ];
   const positions = transportIds.map((id) => setlistHtml.indexOf(`id="${id}"`));
-  assert.ok(positions.every((position) => position >= 0), 'all six transport controls exist');
-  assert.deepEqual([...positions].sort((a, b) => a - b), positions, 'transport controls retain the performer-facing order');
+  assert.ok(
+    positions.every((position) => position >= 0),
+    'all six transport controls exist',
+  );
+  assert.deepEqual(
+    [...positions].sort((a, b) => a - b),
+    positions,
+    'transport controls retain the performer-facing order',
+  );
   const labels = {
     btnPreviousSong: 'setlist.previousSongHold',
     btnPrevious: 'setlist.previousSectionHold',
@@ -175,8 +206,14 @@ test('Static UI Setlist: loads the safe transport runtime and dock controls', ()
   assert.match(setlistJs, /\{ button: btnNext, direction: 'next', level: 'section' \}/);
   assert.match(setlistJs, /\{ button: btnNextSong, direction: 'next', level: 'song' \}/);
   assert.doesNotMatch(setlistJs, /previousHoldController|nextHoldController/);
-  assert.match(setlistJs, /transportHoldControllers\.forEach\(\(controller\) => controller\.update\(\)\);/);
-  assert.match(setlistJs, /transportHoldControllers\.forEach\(\(controller\) => controller\.reset\(\)\);/);
+  assert.match(
+    setlistJs,
+    /transportHoldControllers\.forEach\(\(controller\) => controller\.update\(\)\);/,
+  );
+  assert.match(
+    setlistJs,
+    /transportHoldControllers\.forEach\(\(controller\) => controller\.reset\(\)\);/,
+  );
   assert.match(
     setlistCss,
     /\.transport-dock\s*\{\s*grid-template-columns:\s*repeat\(6,\s*minmax\(0,\s*1fr\)\);\s*\}/,
@@ -217,15 +254,24 @@ test('Static UI Setlist: uses guarded controller storage and confirmed lyrics sa
   const runtimeIndex = setlistHtml.indexOf('src="./controller-runtime.js"');
   const applicationIndex = setlistHtml.indexOf('src="./setlist.js"');
 
-  assert.ok(runtimeIndex >= 0 && runtimeIndex < applicationIndex, 'controller runtime loads before setlist.js');
+  assert.ok(
+    runtimeIndex >= 0 && runtimeIndex < applicationIndex,
+    'controller runtime loads before setlist.js',
+  );
   assert.match(setlistJs, /readMidiMappings\(/);
   assert.match(setlistJs, /consumeControllerToken\(/);
   assert.match(setlistJs, /lyricsSaveTracker\.settle\(payload\)/);
   assert.match(setlistJs, /state\.setlistVersion/);
   assert.match(setlistJs, /createActiveClassController\(songListDiv\)/);
   assert.doesNotMatch(setlistJs, /querySelectorAll\(['"]\.song-item['"]\)/);
-  const tickBody = setlistJs.match(/function tick\(\)\s*\{([\s\S]*?)\n\}\nrequestAnimationFrame\(tick\);/)?.[1] || '';
-  assert.doesNotMatch(tickBody, /document\.getElementById\(/, 'animation frames reuse stable DOM references');
+  const tickBody =
+    setlistJs.match(/function tick\(\)\s*\{([\s\S]*?)\n\}\nrequestAnimationFrame\(tick\);/)?.[1] ||
+    '';
+  assert.doesNotMatch(
+    tickBody,
+    /document\.getElementById\(/,
+    'animation frames reuse stable DOM references',
+  );
   assert.match(tickBody, /setTextIfChanged\(/);
   assert.doesNotMatch(
     setlistJs,
@@ -245,7 +291,10 @@ test('Static UI Setlist: exposes duration metrics and complete profile controls'
   }
   assert.match(setlistJs, /function profileRegistryFingerprint\(/);
   assert.match(setlistJs, /renameInput\.addEventListener\(['"]keydown['"]/);
-  assert.match(setlistJs, /profileState = \{ \.\.\.profileState, canMutate: !lastState\.isPlaying \};\s*updateProfileMutationAvailability\(\);/);
+  assert.match(
+    setlistJs,
+    /profileState = \{ \.\.\.profileState, canMutate: !lastState\.isPlaying \};\s*updateProfileMutationAvailability\(\);/,
+  );
 });
 
 test('Static UI Setlist: presents relative show and song time without Arrangement timecode', () => {
@@ -258,8 +307,14 @@ test('Static UI Setlist: presents relative show and song time without Arrangemen
   assert.match(setlistHtml, /id="hudSongTime"[^>]*data-i18n="setlist\.songTimeEmpty"/);
   assert.doesNotMatch(setlistHtml, /Ableton Timecode/);
   assert.match(i18nSource, /'setlist\.showTime': \{ en: 'Show time', 'pt-BR': 'Tempo do show' \}/);
-  assert.match(i18nSource, /'setlist\.songTime': \{ en: 'Song \{elapsed\} \/ \{duration\}', 'pt-BR': 'Música \{elapsed\} \/ \{duration\}' \}/);
-  assert.match(i18nSource, /'setlist\.songTimeEmpty': \{ en: 'Song — \/ —', 'pt-BR': 'Música — \/ —' \}/);
+  assert.match(
+    i18nSource,
+    /'setlist\.songTime': \{ en: 'Song \{elapsed\} \/ \{duration\}', 'pt-BR': 'Música \{elapsed\} \/ \{duration\}' \}/,
+  );
+  assert.match(
+    i18nSource,
+    /'setlist\.songTimeEmpty': \{ en: 'Song — \/ —', 'pt-BR': 'Música — \/ —' \}/,
+  );
   assert.doesNotMatch(setlistHtml, /hudRemaining|remaining/i);
   assert.match(setlistJs, /SetlistTransportRuntime\.calculateSetlistProgress\(/);
   assert.doesNotMatch(setlistJs, /setTextIfChanged\(hudTime, formattedTime\)/);
@@ -268,7 +323,10 @@ test('Static UI Setlist: presents relative show and song time without Arrangemen
 
 test('Static UI: automation-only sections receive a localized visible label', () => {
   const setlistJs = fs.readFileSync(path.join(__dirname, 'setlist', 'setlist.js'), 'utf8');
-  const performanceJs = fs.readFileSync(path.join(__dirname, 'performance', 'performance.js'), 'utf8');
+  const performanceJs = fs.readFileSync(
+    path.join(__dirname, 'performance', 'performance.js'),
+    'utf8',
+  );
   const i18nSource = fs.readFileSync(path.join(__dirname, 'shared', 'i18n.js'), 'utf8');
 
   assert.match(setlistJs, /automationOnly/);
@@ -314,7 +372,10 @@ test('Static UI Setlist: omits handlers for controls removed from the operator s
 test('Static UI: product surfaces expose English and Brazilian Portuguese', () => {
   const panelHtml = fs.readFileSync(path.join(__dirname, 'panel', 'index.html'), 'utf8');
   const setlistHtml = fs.readFileSync(path.join(__dirname, 'setlist', 'index.html'), 'utf8');
-  const performanceHtml = fs.readFileSync(path.join(__dirname, 'performance', 'index.html'), 'utf8');
+  const performanceHtml = fs.readFileSync(
+    path.join(__dirname, 'performance', 'index.html'),
+    'utf8',
+  );
   const i18nSource = fs.readFileSync(path.join(__dirname, 'shared', 'i18n.js'), 'utf8');
 
   assert.match(i18nSource, /SUPPORTED_LOCALES/);
@@ -366,8 +427,16 @@ test('Static UI: i18n tooltips for Manage Setlists, Export CSV, and CSV feedback
   // New keys do not appear as missing key strings in the UI
   const keys = ['setlist.manageSetlistsTitle', 'setlist.exportCsvTitle', 'feedback.csv'];
   for (const key of keys) {
-    assert.notStrictEqual(t(key, { count: 1, fileName: 'test.csv' }, 'en'), key, `${key} missing in EN`);
-    assert.notStrictEqual(t(key, { count: 1, fileName: 'test.csv' }, 'pt-BR'), key, `${key} missing in PT-BR`);
+    assert.notStrictEqual(
+      t(key, { count: 1, fileName: 'test.csv' }, 'en'),
+      key,
+      `${key} missing in EN`,
+    );
+    assert.notStrictEqual(
+      t(key, { count: 1, fileName: 'test.csv' }, 'pt-BR'),
+      key,
+      `${key} missing in PT-BR`,
+    );
   }
 
   // HTML attributes bind the new keys correctly
@@ -384,8 +453,24 @@ test('Static UI: the help modal tells [next] and [skip] apart, with the end-of-s
   new Function(i18nSource)();
   const { t } = globalThis.RcSetlistI18n;
 
-  for (const key of ['help.next', 'help.skip', 'help.nextVsSkip', 'help.nextVsSkipNext', 'help.nextVsSkipSkip', 'help.nextVsSkipTiming', 'help.exampleChain']) {
-    assert.match(setlistHtml, new RegExp(`data-i18n="${key.replace('.', '\.')}"`), `${key} is not in the help markup`);
+  for (const key of [
+    'help.next',
+    'help.skip',
+    'help.nextVsSkip',
+    'help.nextVsSkipNext',
+    'help.nextVsSkipSkip',
+    'help.nextVsSkipTiming',
+    'help.exampleChain',
+  ]) {
+    assert.match(
+      setlistHtml,
+      // `\.` in the replacement is meaningful: it escapes the dot inside
+      // the resulting RegExp pattern so `data-i18n` keys with namespace dots
+      // (`logs.*`, `next.*`) are matched literally instead of as wildcards.
+      // eslint-disable-next-line no-useless-escape
+      new RegExp(`data-i18n="${key.replace('.', '\.')}"`),
+      `${key} is not in the help markup`,
+    );
     assert.notStrictEqual(t(key, {}, 'en'), key, `${key} missing in EN`);
     assert.notStrictEqual(t(key, {}, 'pt-BR'), key, `${key} missing in PT-BR`);
   }
@@ -403,12 +488,19 @@ test('Static UI: the help modal tells [next] and [skip] apart, with the end-of-s
 
 test('Static UI: the song panel offers a notes field and the card and performance view have a place for it', () => {
   const setlistHtml = fs.readFileSync(path.join(__dirname, 'setlist', 'index.html'), 'utf8');
-  const performanceHtml = fs.readFileSync(path.join(__dirname, 'performance', 'index.html'), 'utf8');
+  const performanceHtml = fs.readFileSync(
+    path.join(__dirname, 'performance', 'index.html'),
+    'utf8',
+  );
   const i18nSource = fs.readFileSync(path.join(__dirname, 'shared', 'i18n.js'), 'utf8');
   new Function(i18nSource)();
   const { t } = globalThis.RcSetlistI18n;
 
-  assert.match(setlistHtml, /<[^>]*class="marker-field"[^>]*data-only="song"[^>]*>[\s\S]*?data-field="notes"/, 'the notes field is song-only');
+  assert.match(
+    setlistHtml,
+    /<[^>]*class="marker-field"[^>]*data-only="song"[^>]*>[\s\S]*?data-field="notes"/,
+    'the notes field is song-only',
+  );
   assert.match(setlistHtml, /data-field="notes"[^>]*maxlength="200"/);
   assert.match(performanceHtml, /id="songNotes"/);
   for (const key of ['marker.notes', 'marker.notesPlaceholder']) {

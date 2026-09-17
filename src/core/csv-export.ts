@@ -36,7 +36,8 @@ type AutomationTarget = Pick<
 function formatAutomationTags(target: AutomationTarget): string[] {
   const tags: string[] = [];
   if (target.loopCount === -1) tags.push('[loop]');
-  else if (target.loopCount !== null && target.loopCount > 0) tags.push(`[loop ${target.loopCount}x]`);
+  else if (target.loopCount !== null && target.loopCount > 0)
+    tags.push(`[loop ${target.loopCount}x]`);
   if (target.autoStop) tags.push('[stop]');
   if (target.autoNext) tags.push('[next]');
   if (target.bpm !== null && Number.isFinite(target.bpm) && target.bpm > 0) {
@@ -48,6 +49,9 @@ function formatAutomationTags(target: AutomationTarget): string[] {
   return tags;
 }
 
+/**
+ * Formats the duration.
+ */
 export function formatDuration(seconds: number | null): string {
   if (seconds === null || !Number.isFinite(seconds) || seconds < 0) return '';
   const wholeSeconds = Math.round(seconds);
@@ -55,6 +59,9 @@ export function formatDuration(seconds: number | null): string {
   return `${minutes}:${String(wholeSeconds % 60).padStart(2, '0')}`;
 }
 
+/**
+ * Formats the song sections.
+ */
 export function formatSongSections(song: Pick<Song, 'sections'>): { count: number; names: string } {
   const names = [...song.sections]
     .sort((a, b) => a.time - b.time)
@@ -63,6 +70,9 @@ export function formatSongSections(song: Pick<Song, 'sections'>): { count: numbe
   return { count: names.length, names: names.join(' | ') };
 }
 
+/**
+ * Formats the song automations.
+ */
 export function formatSongAutomations(song: Song): string {
   const entries: string[] = [];
   const songTags = formatAutomationTags(song);
@@ -89,6 +99,9 @@ function escapeField(value: string | number | null | boolean | undefined): strin
   return s;
 }
 
+/**
+ * Builds the tracklist csv.
+ */
 export function buildTracklistCsv(rows: CsvTracklistRow[]): string {
   const header = [
     '#',
@@ -121,13 +134,16 @@ export function buildTracklistCsv(rows: CsvTracklistRow[]): string {
         escapeField(r.sections),
         escapeField(r.automations),
         escapeField(r.lyricLines),
-      ].join(CSV_DELIM)
+      ].join(CSV_DELIM),
     );
   }
 
   return UTF8_BOM + lines.join(CSV_LINE_END) + CSV_LINE_END;
 }
 
+/**
+ * CsvFilenameTimestamp — implementation detail.
+ */
 export function csvFilenameTimestamp(date: Date = new Date()): string {
   const pad = (n: number) => String(n).padStart(2, '0');
   return (

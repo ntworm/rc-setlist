@@ -1,17 +1,20 @@
-# Documentação do Ableton RC Setlist
+# Documentação do RC Setlist
 
 - [English](../README.md)
+- [Primeiros passos](PRIMEIROS-PASSOS.md)
 - [Instalação](INSTALL.md)
-- [O que há de novo na versão 0.7.0](NOTAS-DA-VERSAO-0.7.0.md)
-- [Como usar o Ableton RC Setlist](USER-GUIDE.md)
+- [O que há de novo na versão 1.0.0](NOTAS-DA-VERSAO-1.0.0.md)
+- [Como usar o RC Setlist](USER-GUIDE.md)
 - [Solução de problemas](TROUBLESHOOTING.md)
+- [Contrato público](CONTRATOS.md)
+- [Contrato de tema](../THEME_CONTRACT.md)
+- [Histórico de versões](../HISTORY.md)
 - [Perguntas frequentes](FAQ.md)
 - [Guia completo de testes (em inglês)](../TESTER-GUIDE.md)
 - [Desenvolvimento a partir do código-fonte (em inglês)](../DEVELOPMENT.md)
 - [Privacidade](../../PRIVACY.md)
 - [Segurança](../../SECURITY.md)
 - [Suporte](../../SUPPORT.md)
-- [Histórico de versões](../../CHANGELOG.md)
 - [Licença](../../LICENSE)
 - [Avisos de terceiros](../../THIRD_PARTY_NOTICES.md)
 

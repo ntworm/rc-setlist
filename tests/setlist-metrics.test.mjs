@@ -1,9 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import {
-  calculateSetlistMetrics,
-  calculateSongDurationSec,
-} from '../src/core/setlist-metrics.ts';
+import { calculateSetlistMetrics, calculateSongDurationSec } from '../src/core/setlist-metrics.ts';
 
 test('metrics use chronological boundaries despite custom display order', () => {
   const first = { title: 'First', time: 0, bpm: 120 };
@@ -13,7 +10,10 @@ test('metrics use chronological boundaries despite custom display order', () => 
 
   assert.deepEqual(
     [...result.songDurationSecondsByStart.entries()],
-    [[0, 60], [120, 120]],
+    [
+      [0, 60],
+      [120, 120],
+    ],
   );
   assert.equal(result.totalDurationSeconds, 180);
 });
@@ -87,11 +87,15 @@ test('untagged songs inherit the tempo of the nearest preceding tagged song', ()
   const untaggedSecond = { title: 'Second', time: 120, bpm: null };
   const taggedThird = { title: 'Third', time: 240, bpm: 80 };
   const untaggedFourth = { title: 'Fourth', time: 320, bpm: null };
-  const result = calculateSetlistMetrics([taggedFirst, untaggedSecond, taggedThird, untaggedFourth], 400, 200);
+  const result = calculateSetlistMetrics(
+    [taggedFirst, untaggedSecond, taggedThird, untaggedFourth],
+    400,
+    200,
+  );
 
   // Second inherits 120 from First. (240 - 120) beats @ 120 bpm = 60s
   assert.equal(result.songDurationSecondsByStart.get(120), 60);
-  
+
   // Fourth inherits 80 from Third. (400 - 320) beats @ 80 bpm = 60s
   assert.equal(result.songDurationSecondsByStart.get(320), 60);
 });
@@ -129,7 +133,7 @@ test('metrics calculate piecewise duration across sections with different BPMs',
     bpm: 120,
     sections: [
       { name: 'Part 1', time: 0, bpm: 120 }, // 60 beats @ 120 bpm = 30s
-      { name: 'Part 2', time: 60, bpm: 60 },  // 60 beats @ 60 bpm = 60s
+      { name: 'Part 2', time: 60, bpm: 60 }, // 60 beats @ 60 bpm = 60s
     ],
   };
   const result = calculateSetlistMetrics([song], 120, 100);
@@ -163,7 +167,10 @@ test('a section tag mid-song does not apply backwards over the intro', () => {
 
 test('the set total is summed from exact seconds, not from rounded parts', () => {
   const songs = Array.from({ length: 40 }, (_, i) => ({
-    title: `S${i}`, time: i * 133, bpm: 139, sections: [],
+    title: `S${i}`,
+    time: i * 133,
+    bpm: 139,
+    sections: [],
   }));
   const result = calculateSetlistMetrics(songs, 40 * 133, 139);
   const exact = 40 * (133 / 139) * 60;

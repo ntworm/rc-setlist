@@ -26,7 +26,11 @@ test('Ableton dependency verification explains the two required local archives',
   assert.match(output, /ABLETON_SDK_TGZ/);
   assert.match(output, /ABLETON_CLI_TGZ/);
   assert.match(output, /npm run setup:ableton/);
-  assert.doesNotMatch(output, /https?:\/\/.+\.tgz/i, 'verification must not suggest an archive download URL');
+  assert.doesNotMatch(
+    output,
+    /https?:\/\/.+\.tgz/i,
+    'verification must not suggest an archive download URL',
+  );
 });
 
 test('Ableton dependency setup rejects repository-relative archive paths', () => {
@@ -42,7 +46,9 @@ test('Ableton dependency setup rejects repository-relative archive paths', () =>
 });
 
 test('public TypeScript build resolves the SDK only through a checked-in type boundary', () => {
-  const config = JSON.parse(readFileSync(new URL('../tsconfig.public.json', import.meta.url), 'utf8'));
+  const config = JSON.parse(
+    readFileSync(new URL('../tsconfig.public.json', import.meta.url), 'utf8'),
+  );
   const shimPath = 'src/ableton-sdk-public.d.ts';
 
   assert.deepEqual(config.compilerOptions.paths?.['@ableton-extensions/sdk'], [`./${shimPath}`]);

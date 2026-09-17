@@ -4,20 +4,23 @@
 //
 // Profile storage primitives for Setlist (Task 6.4)
 
-import * as fs from "node:fs/promises";
-import * as path from "node:path";
-import { ProfileError } from "../profile-manager.js";
+import * as fs from 'node:fs/promises';
+import * as path from 'node:path';
+import { ProfileError } from './types.js';
 
+/**
+ * Writes the json atomic.
+ */
 export async function writeJsonAtomic(filePath: string, value: unknown): Promise<void> {
   const dir = path.dirname(filePath);
   await fs.mkdir(dir, { recursive: true });
 
   const tempPath = `${filePath}.tmp.${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
   const backupPath = `${filePath}.bak`;
-  const jsonStr = JSON.stringify(value, null, 2) + "\n";
+  const jsonStr = JSON.stringify(value, null, 2) + '\n';
 
   try {
-    await fs.writeFile(tempPath, jsonStr, "utf-8");
+    await fs.writeFile(tempPath, jsonStr, 'utf-8');
     try {
       await fs.copyFile(filePath, backupPath);
     } catch (err) {
@@ -27,7 +30,11 @@ export async function writeJsonAtomic(filePath: string, value: unknown): Promise
   } catch (err) {
     try {
       await fs.unlink(tempPath);
-    } catch {}
-    throw new ProfileError("profile_io_error", `Failed to atomically write ${filePath}`, { cause: err });
+    } catch {
+      // swallow: nothing to do here on purpose
+    }
+    throw new ProfileError('profile_io_error', `Failed to atomically write ${filePath}`, {
+      cause: err,
+    });
   }
 }

@@ -44,24 +44,26 @@ test('Setlist renders durations and sends UUID-based profile actions safely', as
   await page.locator('#profileSelect').selectOption('22222222-2222-4222-8222-222222222222');
   await expectControlMessage(
     page,
-    (message) => message.type === 'profile_select' &&
+    (message) =>
+      message.type === 'profile_select' &&
       message.id === '22222222-2222-4222-8222-222222222222' &&
-      /^profile-select-/.test(message.commandId)
+      /^profile-select-/.test(message.commandId),
   );
 
   await page.locator('#btnManageProfiles').click();
   await expect(page.locator('#profileManageModal')).toHaveClass(/open/);
   await expect(
-    page.locator('[data-profile-id="11111111-1111-4111-8111-111111111111"] .profile-delete-button')
+    page.locator('[data-profile-id="11111111-1111-4111-8111-111111111111"] .profile-delete-button'),
   ).toHaveCount(0);
 
   await page.locator('#profileCreateName').fill('Tour Set');
   await page.locator('#btnCreateProfile').click();
   await expectControlMessage(
     page,
-    (message) => message.type === 'profile_create' &&
+    (message) =>
+      message.type === 'profile_create' &&
       message.name === 'Tour Set' &&
-      /^profile-create-/.test(message.commandId)
+      /^profile-create-/.test(message.commandId),
   );
 
   const festivalRow = page.locator('[data-profile-id="22222222-2222-4222-8222-222222222222"]');
@@ -69,10 +71,11 @@ test('Setlist renders durations and sends UUID-based profile actions safely', as
   await festivalRow.locator('.profile-rename-button').click();
   await expectControlMessage(
     page,
-    (message) => message.type === 'profile_rename' &&
+    (message) =>
+      message.type === 'profile_rename' &&
       message.id === '22222222-2222-4222-8222-222222222222' &&
       message.name === 'Festival 2027' &&
-      /^profile-rename-/.test(message.commandId)
+      /^profile-rename-/.test(message.commandId),
   );
 
   const deleteButton = festivalRow.locator('.profile-delete-button');
@@ -82,20 +85,24 @@ test('Setlist renders durations and sends UUID-based profile actions safely', as
   await deleteButton.click();
   await expectControlMessage(
     page,
-    (message) => message.type === 'profile_delete' &&
+    (message) =>
+      message.type === 'profile_delete' &&
       message.id === '22222222-2222-4222-8222-222222222222' &&
       message.confirmationName === '<Festival>' &&
-      /^profile-delete-/.test(message.commandId)
+      /^profile-delete-/.test(message.commandId),
   );
 
   await page
-    .locator('[data-deleted-profile-id="33333333-3333-4333-8333-333333333333"] .profile-restore-button')
+    .locator(
+      '[data-deleted-profile-id="33333333-3333-4333-8333-333333333333"] .profile-restore-button',
+    )
     .click();
   await expectControlMessage(
     page,
-    (message) => message.type === 'profile_restore' &&
+    (message) =>
+      message.type === 'profile_restore' &&
       message.id === '33333333-3333-4333-8333-333333333333' &&
-      /^profile-restore-/.test(message.commandId)
+      /^profile-restore-/.test(message.commandId),
   );
 });
 
@@ -125,12 +132,15 @@ async function installFullscreenStubs(page, options = {}) {
     };
     Object.defineProperty(Element.prototype, 'requestFullscreen', {
       configurable: true,
-      value: fullscreenMode === 'unavailable' ? undefined : async function requestFullscreen() {
-        window.__fullscreenRequests += 1;
-        if (fullscreenMode === 'reject') throw new Error('fullscreen denied');
-        fullscreenElement = this;
-        document.dispatchEvent(new Event('fullscreenchange'));
-      },
+      value:
+        fullscreenMode === 'unavailable'
+          ? undefined
+          : async function requestFullscreen() {
+              window.__fullscreenRequests += 1;
+              if (fullscreenMode === 'reject') throw new Error('fullscreen denied');
+              fullscreenElement = this;
+              document.dispatchEvent(new Event('fullscreenchange'));
+            },
     });
     Object.defineProperty(Document.prototype, 'exitFullscreen', {
       configurable: true,
@@ -141,23 +151,26 @@ async function installFullscreenStubs(page, options = {}) {
     });
     Object.defineProperty(navigator, 'wakeLock', {
       configurable: true,
-      value: wakeLockMode === 'unavailable' ? undefined : {
-        request: async () => {
-          window.__wakeLockRequests += 1;
-          if (wakeLockMode === 'reject') throw new Error('wake lock denied');
-          const listeners = new Set();
-          latestLock = {
-            released: false,
-            addEventListener: (_type, listener) => listeners.add(listener),
-            release: async function release() {
-              this.released = true;
-              window.__wakeLockReleases += 1;
-              for (const listener of listeners) listener();
+      value:
+        wakeLockMode === 'unavailable'
+          ? undefined
+          : {
+              request: async () => {
+                window.__wakeLockRequests += 1;
+                if (wakeLockMode === 'reject') throw new Error('wake lock denied');
+                const listeners = new Set();
+                latestLock = {
+                  released: false,
+                  addEventListener: (_type, listener) => listeners.add(listener),
+                  release: async function release() {
+                    this.released = true;
+                    window.__wakeLockReleases += 1;
+                    for (const listener of listeners) listener();
+                  },
+                };
+                return latestLock;
+              },
             },
-          };
-          return latestLock;
-        },
-      },
     });
     window.__releaseWakeLock = async () => latestLock?.release();
   }, modes);
@@ -180,56 +193,111 @@ for (const route of ['/performance/', '/setlist/']) {
   });
 }
 
-test('Setlist Previous, Next and Stop require a real 500 ms pointer hold while Play clicks immediately', async ({ page }) => {
+test('Setlist Previous, Next and Stop require a real 500 ms pointer hold while Play clicks immediately', async ({
+  page,
+}) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/setlist/');
-  const transportSafety = await page.locator('.transport-dock .btn').evaluateAll((buttons) => buttons.map((button) => ({
-    svgCount: button.querySelectorAll('svg').length,
-    text: button.textContent.trim(),
-    touchAction: getComputedStyle(button).touchAction,
-    userSelect: getComputedStyle(button).userSelect,
-  })));
+  const transportSafety = await page.locator('.transport-dock .btn').evaluateAll((buttons) =>
+    buttons.map((button) => ({
+      svgCount: button.querySelectorAll('svg').length,
+      text: button.textContent.trim(),
+      touchAction: getComputedStyle(button).touchAction,
+      userSelect: getComputedStyle(button).userSelect,
+    })),
+  );
   expect(transportSafety).toHaveLength(6);
-  expect(transportSafety.every((button) => (
-    button.svgCount === 1
-      && button.text === ''
-      && button.touchAction === 'manipulation'
-      && button.userSelect === 'none'
-  ))).toBe(true);
+  expect(
+    transportSafety.every(
+      (button) =>
+        button.svgCount === 1 &&
+        button.text === '' &&
+        button.touchAction === 'manipulation' &&
+        button.userSelect === 'none',
+    ),
+  ).toBe(true);
 
   for (const id of ['btnPrevious', 'btnNext']) {
-    const contextMenuAllowed = await page.locator(`#${id}`).evaluate((button) => (
-      button.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, cancelable: true }))
-    ));
+    const contextMenuAllowed = await page
+      .locator(`#${id}`)
+      .evaluate((button) =>
+        button.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, cancelable: true })),
+      );
     expect(contextMenuAllowed).toBe(false);
   }
   const next = page.locator('#btnNext');
 
-  await next.dispatchEvent('pointerdown', { button: 0, pointerId: 1, pointerType: 'touch', isPrimary: true });
+  await next.dispatchEvent('pointerdown', {
+    button: 0,
+    pointerId: 1,
+    pointerType: 'touch',
+    isPrimary: true,
+  });
   await page.waitForTimeout(250);
-  await next.dispatchEvent('pointerup', { button: 0, pointerId: 1, pointerType: 'touch', isPrimary: true });
-  expect((await receivedControlMessages(page)).filter((message) => message.type === 'jump')).toHaveLength(0);
+  await next.dispatchEvent('pointerup', {
+    button: 0,
+    pointerId: 1,
+    pointerType: 'touch',
+    isPrimary: true,
+  });
+  expect(
+    (await receivedControlMessages(page)).filter((message) => message.type === 'jump'),
+  ).toHaveLength(0);
 
-  await next.dispatchEvent('pointerdown', { button: 0, pointerId: 2, pointerType: 'touch', isPrimary: true });
+  await next.dispatchEvent('pointerdown', {
+    button: 0,
+    pointerId: 2,
+    pointerType: 'touch',
+    isPrimary: true,
+  });
   await page.waitForTimeout(550);
-  await next.dispatchEvent('pointerup', { button: 0, pointerId: 2, pointerType: 'touch', isPrimary: true });
+  await next.dispatchEvent('pointerup', {
+    button: 0,
+    pointerId: 2,
+    pointerType: 'touch',
+    isPrimary: true,
+  });
   const jumps = (await receivedControlMessages(page)).filter((message) => message.type === 'jump');
   expect(jumps).toEqual([{ type: 'jump', songIndex: 2, sectionIndex: 3 }]);
 
   await page.locator('#btnPlay').click();
-  expect((await receivedControlMessages(page)).some((message) => message.type === 'play')).toBe(true);
+  expect((await receivedControlMessages(page)).some((message) => message.type === 'play')).toBe(
+    true,
+  );
 
   // Stop halts the band mid-song and sits a thumb's width from Play on a fixed
   // bottom bar. A short press must do nothing.
   const stop = page.locator('#btnStop');
-  await stop.dispatchEvent('pointerdown', { button: 0, pointerId: 3, pointerType: 'touch', isPrimary: true });
+  await stop.dispatchEvent('pointerdown', {
+    button: 0,
+    pointerId: 3,
+    pointerType: 'touch',
+    isPrimary: true,
+  });
   await page.waitForTimeout(250);
-  await stop.dispatchEvent('pointerup', { button: 0, pointerId: 3, pointerType: 'touch', isPrimary: true });
-  expect((await receivedControlMessages(page)).some((message) => message.type === 'stop')).toBe(false);
+  await stop.dispatchEvent('pointerup', {
+    button: 0,
+    pointerId: 3,
+    pointerType: 'touch',
+    isPrimary: true,
+  });
+  expect((await receivedControlMessages(page)).some((message) => message.type === 'stop')).toBe(
+    false,
+  );
 
-  await stop.dispatchEvent('pointerdown', { button: 0, pointerId: 4, pointerType: 'touch', isPrimary: true });
+  await stop.dispatchEvent('pointerdown', {
+    button: 0,
+    pointerId: 4,
+    pointerType: 'touch',
+    isPrimary: true,
+  });
   await page.waitForTimeout(550);
-  await stop.dispatchEvent('pointerup', { button: 0, pointerId: 4, pointerType: 'touch', isPrimary: true });
+  await stop.dispatchEvent('pointerup', {
+    button: 0,
+    pointerId: 4,
+    pointerType: 'touch',
+    isPrimary: true,
+  });
   const messages = await receivedControlMessages(page);
   expect(messages.some((message) => message.type === 'play')).toBe(true);
   expect(messages.some((message) => message.type === 'stop')).toBe(true);
@@ -238,14 +306,20 @@ test('Setlist Previous, Next and Stop require a real 500 ms pointer hold while P
   await page.keyboard.down('Enter');
   await page.waitForTimeout(550);
   await page.keyboard.up('Enter');
-  const keyboardJumps = (await receivedControlMessages(page)).filter((message) => message.type === 'jump');
+  const keyboardJumps = (await receivedControlMessages(page)).filter(
+    (message) => message.type === 'jump',
+  );
   expect(keyboardJumps.at(-1)).toEqual({ type: 'jump', songIndex: 2, sectionIndex: 1 });
 });
 
-test('Setlist keeps quantization pending until authoritative Ableton state arrives', async ({ page }) => {
+test('Setlist keeps quantization pending until authoritative Ableton state arrives', async ({
+  page,
+}) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/setlist/');
-  const fixture = await page.evaluate(async () => fetch('/__test__/state').then((response) => response.json()));
+  const fixture = await page.evaluate(async () =>
+    fetch('/__test__/state').then((response) => response.json()),
+  );
   const select = page.locator('#quantizationSelect');
 
   await expect(select).toHaveValue('4');
@@ -264,12 +338,16 @@ test('Setlist keeps quantization pending until authoritative Ableton state arriv
   await expect(select).toHaveValue('7');
   await expect(select).toHaveAttribute('aria-busy', 'false');
 
-  const sent = (await receivedControlMessages(page)).find((message) => message.type === 'set_quantization');
+  const sent = (await receivedControlMessages(page)).find(
+    (message) => message.type === 'set_quantization',
+  );
   expect(sent.value).toBe(7);
   expect(sent.commandId).toMatch(/^quantization-/);
 });
 
-test('Setlist disables transport for read-only and locally locked controllers', async ({ page }) => {
+test('Setlist disables transport for read-only and locally locked controllers', async ({
+  page,
+}) => {
   await page.goto('/setlist/?scenario=never-connected');
   await expect(page.locator('.transport-dock .btn:enabled')).toHaveCount(0);
 
@@ -284,31 +362,50 @@ test('Setlist disables transport for read-only and locally locked controllers', 
   await expect(page.locator('#quantizationSelect')).toBeDisabled();
 });
 
-test('Setlist jump feedback stays stable until authoritative state confirmation', async ({ page }) => {
+test('Setlist jump feedback stays stable until authoritative state confirmation', async ({
+  page,
+}) => {
   await page.goto('/setlist/');
-  const fixtureState = await page.evaluate(async () => fetch('/__test__/state').then((response) => response.json()));
+  const fixtureState = await page.evaluate(async () =>
+    fetch('/__test__/state').then((response) => response.json()),
+  );
   const oldSection = page.locator('.section-btn[data-song="2"][data-section="2"]');
   const target = page.locator('.section-btn[data-song="2"][data-section="3"]');
   await expect(oldSection).toHaveClass(/active/);
 
-  await emitServerMessage(page, { type: 'jump_pending', songIndex: 2, sectionIndex: 3, landingTime: 320 });
+  await emitServerMessage(page, {
+    type: 'jump_pending',
+    songIndex: 2,
+    sectionIndex: 3,
+    landingTime: 320,
+  });
   await expect(target).toHaveClass(/jumping/);
   await emitServerMessage(page, { type: 'jump_executed', songIndex: 2, sectionIndex: 3 });
   await expect(target).toHaveClass(/jump-confirming/);
 
-  await emitServerMessage(page, { ...fixtureState, state: { ...fixtureState.state, activeSongIndex: 2, activeSectionIndex: 2 } });
+  await emitServerMessage(page, {
+    ...fixtureState,
+    state: { ...fixtureState.state, activeSongIndex: 2, activeSectionIndex: 2 },
+  });
   await expect(oldSection).toHaveClass(/active/);
   await expect(target).toHaveClass(/jump-confirming/);
 
-  await emitServerMessage(page, { ...fixtureState, state: { ...fixtureState.state, activeSongIndex: 2, activeSectionIndex: 3 } });
+  await emitServerMessage(page, {
+    ...fixtureState,
+    state: { ...fixtureState.state, activeSongIndex: 2, activeSectionIndex: 3 },
+  });
   await expect(target).toHaveClass(/active/);
   await expect(target).not.toHaveClass(/jump-confirming/);
   await expect(oldSection).not.toHaveClass(/active/);
 });
 
-test('Setlist bar display rejects poll jitter and accepts a real sub-threshold cue jump', async ({ page }) => {
+test('Setlist bar display rejects poll jitter and accepts a real sub-threshold cue jump', async ({
+  page,
+}) => {
   await page.goto('/setlist/');
-  const fixture = await page.evaluate(async () => fetch('/__test__/state').then((response) => response.json()));
+  const fixture = await page.evaluate(async () =>
+    fetch('/__test__/state').then((response) => response.json()),
+  );
   const baseline = {
     ...fixture,
     state: {
@@ -327,7 +424,9 @@ test('Setlist bar display rejects poll jitter and accepts a real sub-threshold c
   await emitServerMessage(page, baseline);
   await page.waitForTimeout(40);
   expect(await page.locator('#hudBar').textContent()).toMatch(/^22\.1\./);
-  await page.evaluate(() => { window.__barHistory = []; });
+  await page.evaluate(() => {
+    window.__barHistory = [];
+  });
 
   const smallRollback = {
     ...baseline,
@@ -338,7 +437,9 @@ test('Setlist bar display rejects poll jitter and accepts a real sub-threshold c
   let history = await page.evaluate(() => window.__barHistory);
   expect(history.some((value) => /^21\.4\./.test(value))).toBe(false);
 
-  await page.evaluate(() => { window.__barHistory = []; });
+  await page.evaluate(() => {
+    window.__barHistory = [];
+  });
   await emitServerMessage(page, {
     ...smallRollback,
     state: {
@@ -371,8 +472,13 @@ test('Performance preserves its last state while reconnecting', async ({ page })
   await expect(page.locator('#songTitle')).toContainText('OPEN CIRCUIT');
 });
 
-for (const viewport of [{ width: 390, height: 844 }, { width: 844, height: 390 }]) {
-  test(`Performance reclaims the lyrics area at ${viewport.width}x${viewport.height}`, async ({ page }) => {
+for (const viewport of [
+  { width: 390, height: 844 },
+  { width: 844, height: 390 },
+]) {
+  test(`Performance reclaims the lyrics area at ${viewport.width}x${viewport.height}`, async ({
+    page,
+  }) => {
     await page.setViewportSize(viewport);
     await page.goto('/performance/?scenario=no-lyrics');
     await expect(page.locator('#lyricsCard')).toBeHidden();
@@ -410,12 +516,20 @@ for (const route of ['/performance/', '/setlist/']) {
     await page.goto(`${route}?scenario=never-connected`);
     await expect(page.locator('#networkErrorOverlay')).toHaveClass(/visible/);
     await expect(page.locator('body')).toHaveClass(/connection-empty/);
-    await expect(page.locator('#statusText')).toContainText(route === '/performance/' ? 'OFFLINE' : 'Disconnected');
+    await expect(page.locator('#statusText')).toContainText(
+      route === '/performance/' ? 'OFFLINE' : 'Disconnected',
+    );
     await expect(page.locator('#networkErrorOverlay h2')).toHaveText('Bridge unavailable');
-    await expect(page.locator('#networkErrorOverlay p')).toContainText('No show state has been received');
+    await expect(page.locator('#networkErrorOverlay p')).toContainText(
+      'No show state has been received',
+    );
     const overlay = await page.locator('#networkErrorOverlay').evaluate((element) => {
       const rect = element.getBoundingClientRect();
-      return { width: rect.width, height: rect.height, pointerEvents: getComputedStyle(element).pointerEvents };
+      return {
+        width: rect.width,
+        height: rect.height,
+        pointerEvents: getComputedStyle(element).pointerEvents,
+      };
     });
     expect(overlay.width).toBe(page.viewportSize().width);
     expect(overlay.height).toBe(page.viewportSize().height);
@@ -436,18 +550,31 @@ for (const route of ['/performance/', '/setlist/']) {
 
 for (const route of ['/performance/', '/setlist/']) {
   test(`${route} keeps primary stage targets at least 44px`, async ({ page }) => {
-    await page.setViewportSize(route === '/performance/' ? { width: 844, height: 390 } : { width: 1024, height: 768 });
+    await page.setViewportSize(
+      route === '/performance/' ? { width: 844, height: 390 } : { width: 1024, height: 768 },
+    );
     await page.goto(route);
-    const selector = route === '/performance/'
-      ? '#fullscreenButton'
-      : '.app-bar button, .app-bar summary, .quantization-control, .section-btn, .transport-dock .btn, .secondary-controls .btn, .log-drawer > summary';
-    const undersized = await page.locator(selector).evaluateAll((elements) => elements
-      .filter((element) => {
-        const style = getComputedStyle(element);
-        const rect = element.getBoundingClientRect();
-        return style.display !== 'none' && style.visibility !== 'hidden' && rect.width > 0 && rect.height < 44;
-      })
-      .map((element) => ({ text: element.textContent.trim(), height: element.getBoundingClientRect().height })));
+    const selector =
+      route === '/performance/'
+        ? '#fullscreenButton'
+        : '.app-bar button, .app-bar summary, .quantization-control, .section-btn, .transport-dock .btn, .secondary-controls .btn, .log-drawer > summary';
+    const undersized = await page.locator(selector).evaluateAll((elements) =>
+      elements
+        .filter((element) => {
+          const style = getComputedStyle(element);
+          const rect = element.getBoundingClientRect();
+          return (
+            style.display !== 'none' &&
+            style.visibility !== 'hidden' &&
+            rect.width > 0 &&
+            rect.height < 44
+          );
+        })
+        .map((element) => ({
+          text: element.textContent.trim(),
+          height: element.getBoundingClientRect().height,
+        })),
+    );
     expect(undersized).toEqual([]);
   });
 }
@@ -480,7 +607,9 @@ test('Wake Lock rejection and reacquisition are handled in the browser', async (
   await installFullscreenStubs(page, { wakeLockMode: 'reject' });
   await page.goto('/performance/');
   await page.locator('#fullscreenButton').click();
-  await expect(page.locator('#stageNotice')).toContainText('did not allow the screen to stay awake');
+  await expect(page.locator('#stageNotice')).toContainText(
+    'did not allow the screen to stay awake',
+  );
 
   const secondPage = await page.context().newPage();
   await installFullscreenStubs(secondPage);
@@ -510,7 +639,6 @@ test('Reduced motion and keyboard focus remain visible', async ({ page }) => {
   expect(state.transitionSeconds).toBeLessThanOrEqual(0.001);
 });
 
-
 test('Performance handles an empty project without overflow', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/performance/?scenario=no-song');
@@ -529,7 +657,9 @@ test('Performance handles an empty project without overflow', async ({ page }) =
 test('Setlist explains an empty project and keeps its workspace contained', async ({ page }) => {
   await page.setViewportSize({ width: 1024, height: 768 });
   await page.goto('/setlist/?scenario=no-song');
-  await expect(page.locator('#songList')).toContainText('No songs with locators were found in the project.');
+  await expect(page.locator('#songList')).toContainText(
+    'No songs with locators were found in the project.',
+  );
   const geometry = await page.evaluate(() => ({
     scrollWidth: document.documentElement.scrollWidth,
     clientWidth: document.documentElement.clientWidth,
@@ -549,7 +679,9 @@ test('Setlist closes a modal with Escape and restores focus to its opener', asyn
   await expect(opener).toBeFocused();
 });
 
-test('Setlist language safety follows playback and lock state and retranslates warnings', async ({ page }) => {
+test('Setlist language safety follows playback and lock state and retranslates warnings', async ({
+  page,
+}) => {
   await page.goto('/setlist/');
   const language = page.locator('#languageSelect');
   const lock = page.locator('#btnLock');
@@ -572,7 +704,9 @@ test('Setlist language safety follows playback and lock state and retranslates w
   await expect(page.locator('#lockToast')).toContainText('PAINEL BLOQUEADO');
 });
 
-test('Lyrics ownership keeps the active HUD while one selector drives every editor tab', async ({ page }) => {
+test('Lyrics ownership keeps the active HUD while one selector drives every editor tab', async ({
+  page,
+}) => {
   await page.goto('/setlist/');
   const activeTitle = 'OPEN CIRCUIT — EXTENDED DEMO TITLE FOR RESPONSIVE TESTING';
   const hudLyric = page.locator('#hudLyric');
@@ -584,9 +718,14 @@ test('Lyrics ownership keeps the active HUD while one selector drives every edit
   const selector = page.locator('#lyricsSongSelect');
   await expect(selector).toHaveValue(activeTitle);
   await expect(page.locator('#lyricsRawText')).toHaveValue(/Demo line one for synchronized text/);
-  const selectorPrecedesTabs = await page.locator('#lyricsSongControl').evaluate((node) =>
-    Boolean(node.compareDocumentPosition(document.querySelector('#lyricsTabCreate')) & Node.DOCUMENT_POSITION_FOLLOWING)
-  );
+  const selectorPrecedesTabs = await page
+    .locator('#lyricsSongControl')
+    .evaluate((node) =>
+      Boolean(
+        node.compareDocumentPosition(document.querySelector('#lyricsTabCreate')) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+      ),
+    );
   expect(selectorPrecedesTabs).toBe(true);
 
   await page.locator('#lyricsTabEdit').click();
@@ -594,7 +733,10 @@ test('Lyrics ownership keeps the active HUD while one selector drives every edit
   await page.locator('#lyricsTabCreate').click();
 
   await selector.selectOption('WALK-IN');
-  await expectControlMessage(page, (message) => message.type === 'get_lyrics' && message.song === 'WALK-IN');
+  await expectControlMessage(
+    page,
+    (message) => message.type === 'get_lyrics' && message.song === 'WALK-IN',
+  );
   await page.locator('#lyricsTabSync').click();
   await expect(selector).toHaveValue('WALK-IN');
   await expect(page.locator('#lyricsSyncSongTitle')).toHaveText('WALK-IN');
@@ -642,11 +784,13 @@ test('Lyrics keeps a failed save dirty and clears it only after confirmation', a
 
   await expectControlMessage(
     page,
-    (message) => message.type === 'save_lyrics' && /^lyrics-edit-/.test(message.commandId)
+    (message) => message.type === 'save_lyrics' && /^lyrics-edit-/.test(message.commandId),
   );
   await expect(page.locator('#btnSaveEditedLyrics')).toBeEnabled();
   await expect(page.locator('#lyricsDirtyBadge')).toBeVisible();
-  await expect(page.locator('.lyric-edit-text').first()).toHaveText('Draft that must survive a disk failure');
+  await expect(page.locator('.lyric-edit-text').first()).toHaveText(
+    'Draft that must survive a disk failure',
+  );
   await expect(page.locator('#operationToast')).toContainText('not saved');
 
   await page.goto('/setlist/');
@@ -679,9 +823,12 @@ test('Lyrics refuses to report success while an edited line has no timestamp', a
   await expect(page.locator('#lyricsDirtyBadge')).toBeVisible();
   await expect(page.locator('.lyric-edit-text').last()).toHaveText('This line must not disappear');
   const messages = await receivedControlMessages(page);
-  expect(messages.some((message) =>
-    message.type === 'save_lyrics' && message.text.includes('This line must not disappear')
-  )).toBe(false);
+  expect(
+    messages.some(
+      (message) =>
+        message.type === 'save_lyrics' && message.text.includes('This line must not disappear'),
+    ),
+  ).toBe(false);
 });
 
 test('Synchronized lyrics stay open until the matching save is confirmed', async ({ page }) => {
@@ -693,14 +840,18 @@ test('Synchronized lyrics stay open until the matching save is confirmed', async
   await page.locator('#btnLyricsTap').click();
   await page.locator('#btnSaveSyncLyrics').click();
 
-  await expect.poll(async () => (
-    await receivedControlMessages(page)
-  ).find((message) => message.type === 'save_lyrics' && /^lyrics-sync-/.test(message.commandId))).toBeTruthy();
+  await expect
+    .poll(async () =>
+      (await receivedControlMessages(page)).find(
+        (message) => message.type === 'save_lyrics' && /^lyrics-sync-/.test(message.commandId),
+      ),
+    )
+    .toBeTruthy();
   await expect(page.locator('#lyricsModal')).toHaveClass(/open/);
   await expect(page.locator('#btnSaveSyncLyrics')).toBeDisabled();
 
   const pendingSave = (await receivedControlMessages(page)).find(
-    (message) => message.type === 'save_lyrics' && /^lyrics-sync-/.test(message.commandId)
+    (message) => message.type === 'save_lyrics' && /^lyrics-sync-/.test(message.commandId),
   );
   expect(pendingSave).toBeTruthy();
   await emitServerMessage(page, {
@@ -720,12 +871,16 @@ test('Synchronized lyrics confirmation never reopens a manually closed modal', a
   await page.locator('#btnLyricsTap').click();
   await page.locator('#btnSaveSyncLyrics').click();
 
-  await expect.poll(async () => (
-    await receivedControlMessages(page)
-  ).find((message) => message.type === 'save_lyrics' && /^lyrics-sync-/.test(message.commandId))).toBeTruthy();
+  await expect
+    .poll(async () =>
+      (await receivedControlMessages(page)).find(
+        (message) => message.type === 'save_lyrics' && /^lyrics-sync-/.test(message.commandId),
+      ),
+    )
+    .toBeTruthy();
 
   const pendingSave = (await receivedControlMessages(page)).find(
-    (message) => message.type === 'save_lyrics' && /^lyrics-sync-/.test(message.commandId)
+    (message) => message.type === 'save_lyrics' && /^lyrics-sync-/.test(message.commandId),
   );
   expect(pendingSave).toBeTruthy();
   await page.locator('.lyrics-modal-header .btn-close').click();
@@ -749,7 +904,9 @@ for (const surface of [
     translatedLabel: 'Música ativa',
   },
 ]) {
-  test(`${surface.route} switches to Portuguese without translating show data and persists it`, async ({ page }) => {
+  test(`${surface.route} switches to Portuguese without translating show data and persists it`, async ({
+    page,
+  }) => {
     await page.goto(surface.route);
     await expect(page.getByText('SONG 03', { exact: true }).first()).toBeVisible();
     if (surface.route.startsWith('/setlist/')) await emitPlayingState(page, false);

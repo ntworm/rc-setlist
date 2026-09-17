@@ -36,8 +36,22 @@ const songs = songNames.map((title, songIndex) => ({
   time: songIndex * 128,
   durationSeconds: songIndex === 0 ? 60 : songIndex === 1 ? 120 : null,
   sections: [
-    { name: 'INTRO', time: songIndex * 128, loopCount: null, autoStop: false, autoNext: false, bpm: null },
-    { name: 'SECTION 1', time: songIndex * 128 + 24, loopCount: null, autoStop: false, autoNext: false, bpm: null },
+    {
+      name: 'INTRO',
+      time: songIndex * 128,
+      loopCount: null,
+      autoStop: false,
+      autoNext: false,
+      bpm: null,
+    },
+    {
+      name: 'SECTION 1',
+      time: songIndex * 128 + 24,
+      loopCount: null,
+      autoStop: false,
+      autoNext: false,
+      bpm: null,
+    },
     {
       name: 'MAIN SECTION WITH AN INTENTIONALLY LONG DEMO NAME',
       time: songIndex * 128 + 56,
@@ -46,7 +60,14 @@ const songs = songNames.map((title, songIndex) => ({
       autoNext: false,
       bpm: songIndex === 2 ? 124 : null,
     },
-    { name: 'BRIDGE / SOLO', time: songIndex * 128 + 88, loopCount: null, autoStop: false, autoNext: songIndex === 2, bpm: null },
+    {
+      name: 'BRIDGE / SOLO',
+      time: songIndex * 128 + 88,
+      loopCount: null,
+      autoStop: false,
+      autoNext: songIndex === 2,
+      bpm: null,
+    },
   ],
   loopCount: null,
   autoStop: songIndex === 6,
@@ -77,7 +98,9 @@ const relativeShowSongs = [
     title: 'INTRO',
     time: 0,
     durationSeconds: 106,
-    sections: [{ name: 'INTRO', time: 0, loopCount: null, autoStop: false, autoNext: false, bpm: null }],
+    sections: [
+      { name: 'INTRO', time: 0, loopCount: null, autoStop: false, autoNext: false, bpm: null },
+    ],
     loopCount: null,
     autoStop: false,
     autoNext: false,
@@ -87,7 +110,9 @@ const relativeShowSongs = [
     title: 'JULIA',
     time: 840,
     durationSeconds: 237,
-    sections: [{ name: 'INTRO', time: 840, loopCount: null, autoStop: false, autoNext: false, bpm: null }],
+    sections: [
+      { name: 'INTRO', time: 840, loopCount: null, autoStop: false, autoNext: false, bpm: null },
+    ],
     loopCount: null,
     autoStop: false,
     autoNext: false,
@@ -155,8 +180,22 @@ const marketingSongs = marketingSongNames.map((title, songIndex) => ({
   time: songIndex * 128,
   durationSeconds: 128,
   sections: [
-    { name: 'INTRO', time: songIndex * 128, loopCount: null, autoStop: false, autoNext: false, bpm: null },
-    { name: 'VERSE', time: songIndex * 128 + 24, loopCount: null, autoStop: false, autoNext: false, bpm: null },
+    {
+      name: 'INTRO',
+      time: songIndex * 128,
+      loopCount: null,
+      autoStop: false,
+      autoNext: false,
+      bpm: null,
+    },
+    {
+      name: 'VERSE',
+      time: songIndex * 128 + 24,
+      loopCount: null,
+      autoStop: false,
+      autoNext: false,
+      bpm: null,
+    },
     {
       name: 'CHORUS',
       time: songIndex * 128 + 56,
@@ -165,7 +204,14 @@ const marketingSongs = marketingSongNames.map((title, songIndex) => ({
       autoNext: false,
       bpm: songIndex === 2 ? 124 : null,
     },
-    { name: 'BRIDGE', time: songIndex * 128 + 88, loopCount: null, autoStop: false, autoNext: true, bpm: null },
+    {
+      name: 'BRIDGE',
+      time: songIndex * 128 + 88,
+      loopCount: null,
+      autoStop: false,
+      autoNext: true,
+      bpm: null,
+    },
   ],
   loopCount: null,
   autoStop: songIndex === 4,
@@ -249,7 +295,9 @@ const server = http.createServer((request, response) => {
   const requestUrl = new URL(request.url || '/', `http://127.0.0.1:${port}`);
   if (requestUrl.pathname === '/__test__/state') {
     response.writeHead(200, { 'content-type': 'application/json; charset=utf-8' });
-    response.end(JSON.stringify(stateForScenario(requestUrl.searchParams.get('scenario') || activeScenario)));
+    response.end(
+      JSON.stringify(stateForScenario(requestUrl.searchParams.get('scenario') || activeScenario)),
+    );
     return;
   }
   if (requestUrl.pathname === '/__test__/messages') {
@@ -296,14 +344,19 @@ webSockets.on('connection', (socket) => {
     return;
   }
 
-  const message = scenario === 'no-song'
-    ? { ...stateMessage, state: { ...stateMessage.state, songs: [], activeSongIndex: -1, activeSectionIndex: -1 } }
-    : stateForScenario(scenario);
-  const lyrics = scenario === 'no-lyrics' || scenario === 'no-song'
-    ? { ...lyricsMessage, lines: [], format: 'none' }
-    : scenario === 'marketing'
-      ? marketingLyricsMessage
-      : lyricsMessage;
+  const message =
+    scenario === 'no-song'
+      ? {
+          ...stateMessage,
+          state: { ...stateMessage.state, songs: [], activeSongIndex: -1, activeSectionIndex: -1 },
+        }
+      : stateForScenario(scenario);
+  const lyrics =
+    scenario === 'no-lyrics' || scenario === 'no-song'
+      ? { ...lyricsMessage, lines: [], format: 'none' }
+      : scenario === 'marketing'
+        ? marketingLyricsMessage
+        : lyricsMessage;
 
   socket.send(JSON.stringify({ type: 'auth_status', isController: scenario !== 'read-only' }));
   socket.send(JSON.stringify(message));
@@ -312,27 +365,41 @@ webSockets.on('connection', (socket) => {
       const parsed = JSON.parse(String(rawMessage));
       receivedMessages.push(parsed);
       if (parsed.type === 'handshake') {
-        socket.send(JSON.stringify({
-          type: 'handshake_ack',
-          stateVersion: 1,
-          state: message.state,
-        }));
+        socket.send(
+          JSON.stringify({
+            type: 'handshake_ack',
+            stateVersion: 1,
+            state: message.state,
+          }),
+        );
       } else if (parsed.type === 'get_lyrics') {
-        const requestedSong = typeof parsed.song === 'string' && parsed.song
-          ? parsed.song
-          : lyrics.song;
-        socket.send(JSON.stringify(requestedSong === lyrics.song
-          ? lyrics
-          : { type: 'lyrics', song: requestedSong, format: 'none', lines: [] }));
+        const requestedSong =
+          typeof parsed.song === 'string' && parsed.song ? parsed.song : lyrics.song;
+        socket.send(
+          JSON.stringify(
+            requestedSong === lyrics.song
+              ? lyrics
+              : { type: 'lyrics', song: requestedSong, format: 'none', lines: [] },
+          ),
+        );
       } else if (parsed.type === 'profiles_get') {
         socket.send(JSON.stringify(profilesStateMessage));
       } else if (parsed.type === 'save_lyrics' && typeof parsed.commandId === 'string') {
         if (scenario === 'lyrics-save-pending') return;
-        socket.send(JSON.stringify({
-          type: 'command_status',
-          commandId: parsed.commandId,
-          status: scenario === 'lyrics-save-fails' ? 'failed' : 'confirmed',
-        }));
+        socket.send(
+          JSON.stringify({
+            type: 'command_status',
+            commandId: parsed.commandId,
+            status: scenario === 'lyrics-save-fails' ? 'failed' : 'confirmed',
+          }),
+        );
+      } else if (parsed.type === 'trigger_count_in') {
+        socket.send(
+          JSON.stringify({
+            type: 'count_in_started',
+            sendPlayOffsetMs: parsed.sendPlayOffsetMs || 0,
+          }),
+        );
       }
     } catch {
       // The production UI ignores malformed messages, and so does the fixture.

@@ -19,7 +19,7 @@ times a second means a log file that grows without bound.
 
 - **Own port.** RC Bridge listens on **11020**, so it runs beside a stock
   AbletonOSC without either failing to bind. (`abletonosc/constants.py`)
-- **Replies go to whoever asked** — host *and* port — instead of a fixed
+- **Replies go to whoever asked** — host _and_ port — instead of a fixed
   response port. A client binds any port it likes. (`osc_server.py`,
   `process_message`)
 - **Listener updates are published to every subscriber.** One Live listener per

@@ -21,19 +21,24 @@ const desktopSetlistViewports = [
 
 async function pageGeometry(page, selectors) {
   return page.evaluate((requestedSelectors) => {
-    const regions = Object.fromEntries(requestedSelectors.map((selector) => {
-      const element = document.querySelector(selector);
-      if (!element) return [selector, null];
-      const rect = element.getBoundingClientRect();
-      return [selector, {
-        bottom: rect.bottom,
-        height: rect.height,
-        left: rect.left,
-        right: rect.right,
-        top: rect.top,
-        width: rect.width,
-      }];
-    }));
+    const regions = Object.fromEntries(
+      requestedSelectors.map((selector) => {
+        const element = document.querySelector(selector);
+        if (!element) return [selector, null];
+        const rect = element.getBoundingClientRect();
+        return [
+          selector,
+          {
+            bottom: rect.bottom,
+            height: rect.height,
+            left: rect.left,
+            right: rect.right,
+            top: rect.top,
+            width: rect.width,
+          },
+        ];
+      }),
+    );
     return {
       clientHeight: document.documentElement.clientHeight,
       clientWidth: document.documentElement.clientWidth,
@@ -66,8 +71,12 @@ for (const viewport of performanceViewports) {
       '.performance-footer',
     ]);
 
-    expect(geometry.scrollWidth, 'Performance must not scroll horizontally').toBeLessThanOrEqual(geometry.clientWidth);
-    expect(geometry.scrollHeight, 'Performance must fit in one viewport').toBeLessThanOrEqual(geometry.clientHeight);
+    expect(geometry.scrollWidth, 'Performance must not scroll horizontally').toBeLessThanOrEqual(
+      geometry.clientWidth,
+    );
+    expect(geometry.scrollHeight, 'Performance must fit in one viewport').toBeLessThanOrEqual(
+      geometry.clientHeight,
+    );
     for (const [selector, rect] of Object.entries(geometry.regions)) {
       expectContained(rect, geometry, selector);
     }
@@ -80,15 +89,28 @@ for (const viewport of desktopSetlistViewports) {
     await page.goto('/setlist/');
     await expect(page.locator('#songList .song-item')).toHaveCount(8);
 
-    const geometry = await pageGeometry(page, ['header', '.setlist-pane', '.control-pane', '.transport-dock']);
-    const overflowingSectionRows = await page.evaluate(() => (
-      Array.from(document.querySelectorAll('.song-sections'))
-        .filter((element) => element.scrollWidth > element.clientWidth + 1)
-        .length
-    ));
-    expect(geometry.scrollWidth, 'Setlist must not scroll horizontally').toBeLessThanOrEqual(geometry.clientWidth);
-    expect(geometry.scrollHeight, 'Tablet and desktop Setlist must fit in one viewport').toBeLessThanOrEqual(geometry.clientHeight);
-    expect(overflowingSectionRows, 'Section rows must wrap instead of scrolling horizontally').toBe(0);
+    const geometry = await pageGeometry(page, [
+      'header',
+      '.setlist-pane',
+      '.control-pane',
+      '.transport-dock',
+    ]);
+    const overflowingSectionRows = await page.evaluate(
+      () =>
+        Array.from(document.querySelectorAll('.song-sections')).filter(
+          (element) => element.scrollWidth > element.clientWidth + 1,
+        ).length,
+    );
+    expect(geometry.scrollWidth, 'Setlist must not scroll horizontally').toBeLessThanOrEqual(
+      geometry.clientWidth,
+    );
+    expect(
+      geometry.scrollHeight,
+      'Tablet and desktop Setlist must fit in one viewport',
+    ).toBeLessThanOrEqual(geometry.clientHeight);
+    expect(overflowingSectionRows, 'Section rows must wrap instead of scrolling horizontally').toBe(
+      0,
+    );
     expectContained(geometry.regions.header, geometry, 'header');
     expectContained(geometry.regions['.setlist-pane'], geometry, '.setlist-pane');
     expectContained(geometry.regions['.control-pane'], geometry, '.control-pane');
@@ -121,7 +143,9 @@ for (const viewport of compactSetlistViewports) {
     await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
     const after = await page.evaluate(() => {
       const dock = document.querySelector('.transport-dock').getBoundingClientRect();
-      const lastSong = document.querySelector('#songList .song-item:last-child').getBoundingClientRect();
+      const lastSong = document
+        .querySelector('#songList .song-item:last-child')
+        .getBoundingClientRect();
       return {
         clientHeight: document.documentElement.clientHeight,
         dockBottom: dock.bottom,
@@ -134,8 +158,13 @@ for (const viewport of compactSetlistViewports) {
   });
 }
 
-for (const viewport of [{ width: 360, height: 800 }, { width: 1024, height: 768 }]) {
-  test(`Setlist exposes six contained transport targets at ${viewport.width}px`, async ({ page }) => {
+for (const viewport of [
+  { width: 360, height: 800 },
+  { width: 1024, height: 768 },
+]) {
+  test(`Setlist exposes six contained transport targets at ${viewport.width}px`, async ({
+    page,
+  }) => {
     await page.setViewportSize(viewport);
     await page.goto('/setlist/');
     await expect(page.locator('#songList .song-item')).toHaveCount(8);
@@ -144,7 +173,9 @@ for (const viewport of [{ width: 360, height: 800 }, { width: 1024, height: 768 
       clientWidth: document.documentElement.clientWidth,
       scrollWidth: document.documentElement.scrollWidth,
       dock: dock.getBoundingClientRect().toJSON(),
-      buttons: Array.from(dock.querySelectorAll('button'), (button) => button.getBoundingClientRect().toJSON()),
+      buttons: Array.from(dock.querySelectorAll('button'), (button) =>
+        button.getBoundingClientRect().toJSON(),
+      ),
     }));
 
     expect(geometry.buttons).toHaveLength(6);
@@ -158,14 +189,23 @@ for (const viewport of [{ width: 360, height: 800 }, { width: 1024, height: 768 
   });
 }
 
-test('Setlist HUD keeps long active titles vertically legible in a short desktop window', async ({ page }) => {
+test('Setlist HUD keeps long active titles vertically legible in a short desktop window', async ({
+  page,
+}) => {
   await page.setViewportSize({ width: 1024, height: 560 });
   await page.goto('/setlist/');
   const geometry = await page.locator('#hudSong').evaluate((element) => {
     const value = element.getBoundingClientRect();
     const card = element.closest('.hud-card').getBoundingClientRect();
     const lineHeight = Number.parseFloat(getComputedStyle(element).lineHeight);
-    return { cardBottom: card.bottom, cardTop: card.top, lineHeight, valueBottom: value.bottom, valueHeight: value.height, valueTop: value.top };
+    return {
+      cardBottom: card.bottom,
+      cardTop: card.top,
+      lineHeight,
+      valueBottom: value.bottom,
+      valueHeight: value.height,
+      valueTop: value.top,
+    };
   });
   expect(geometry.valueTop).toBeGreaterThanOrEqual(geometry.cardTop);
   expect(geometry.valueBottom).toBeLessThanOrEqual(geometry.cardBottom);
@@ -200,22 +240,36 @@ test('Live panel keeps access links and actions usable at the SDK modal size', a
   for (const [selector, rect] of Object.entries(geometry.regions)) {
     expectContained(rect, geometry, selector);
   }
-  expect(geometry.regions['#openSetlist'].bottom).toBeLessThanOrEqual(geometry.regions['.footer'].top);
-  expect(geometry.regions['#openStage'].bottom).toBeLessThanOrEqual(geometry.regions['.footer'].top);
-  expect(geometry.regions['.footer'].bottom).toBeLessThanOrEqual(geometry.regions['.auto-start-row'].top);
+  expect(geometry.regions['#openSetlist'].bottom).toBeLessThanOrEqual(
+    geometry.regions['.footer'].top,
+  );
+  expect(geometry.regions['#openStage'].bottom).toBeLessThanOrEqual(
+    geometry.regions['.footer'].top,
+  );
+  expect(geometry.regions['.footer'].bottom).toBeLessThanOrEqual(
+    geometry.regions['.auto-start-row'].top,
+  );
 
   for (const selector of ['#openSetlist', '#openStage']) {
     const hit = await page.locator(selector).evaluate((link) => {
       const rect = link.getBoundingClientRect();
-      const target = document.elementFromPoint(rect.left + rect.width / 2, rect.top + rect.height / 2);
+      const target = document.elementFromPoint(
+        rect.left + rect.width / 2,
+        rect.top + rect.height / 2,
+      );
       return target?.closest('a')?.id || null;
     });
     expect(hit).toBe(selector.slice(1));
   }
 });
 
-for (const viewport of [{ width: 390, height: 844 }, { width: 1024, height: 768 }]) {
-  test(`Setlist profile manager stays contained at ${viewport.width}x${viewport.height}`, async ({ page }) => {
+for (const viewport of [
+  { width: 390, height: 844 },
+  { width: 1024, height: 768 },
+]) {
+  test(`Setlist profile manager stays contained at ${viewport.width}x${viewport.height}`, async ({
+    page,
+  }) => {
     await page.setViewportSize(viewport);
     await page.goto('/setlist/');
     await page.locator('#btnManageProfiles').click();
@@ -245,7 +299,10 @@ for (const viewport of [{ width: 390, height: 844 }, { width: 1024, height: 768 
   });
 }
 
-test('mobile setlist rename keeps its focused input through live state updates', async ({ page, request }) => {
+test('mobile setlist rename keeps its focused input through live state updates', async ({
+  page,
+  request,
+}) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/setlist/');
   await expect(page.locator('#profileSelect option')).toHaveCount(2);
@@ -261,7 +318,9 @@ test('mobile setlist rename keeps its focused input through live state updates',
   await request.post('/__test__/emit', { data: stoppedState });
 
   await page.locator('#btnManageProfiles').click();
-  const renameInput = page.locator('.profile-row[data-profile-id="11111111-1111-4111-8111-111111111111"] .profile-rename-input');
+  const renameInput = page.locator(
+    '.profile-row[data-profile-id="11111111-1111-4111-8111-111111111111"] .profile-rename-input',
+  );
   await expect(renameInput).toBeEnabled();
   await renameInput.fill('Mobile Rename Draft');
   await renameInput.evaluate((input) => {
@@ -325,16 +384,18 @@ test('mobile setlist rename keeps its focused input through live state updates',
   await expect(renameInput).toHaveValue('Mobile Rename Draft');
   await renameInput.press('Enter');
 
-  await expect.poll(async () => {
-    const messages = await request.get('/__test__/messages').then((response) => response.json());
-    return messages.filter((message) => message.type === 'profile_rename');
-  }).toEqual([
-    expect.objectContaining({
-      id: '11111111-1111-4111-8111-111111111111',
-      name: 'Mobile Rename Draft',
-      type: 'profile_rename',
-    }),
-  ]);
+  await expect
+    .poll(async () => {
+      const messages = await request.get('/__test__/messages').then((response) => response.json());
+      return messages.filter((message) => message.type === 'profile_rename');
+    })
+    .toEqual([
+      expect.objectContaining({
+        id: '11111111-1111-4111-8111-111111111111',
+        name: 'Mobile Rename Draft',
+        type: 'profile_rename',
+      }),
+    ]);
 });
 
 test('Lyrics header keeps its shared song selector contained on a phone', async ({ page }) => {
@@ -360,7 +421,9 @@ test('Lyrics header keeps its shared song selector contained on a phone', async 
   expect(geometry.selectorRight).toBeLessThanOrEqual(geometry.headerRight);
   expect(geometry.documentWidth).toBeLessThanOrEqual(geometry.viewportWidth);
 });
-test('Setlist compact notebook header does not overlap controls when switched to Portuguese', async ({ page }) => {
+test('Setlist compact notebook header does not overlap controls when switched to Portuguese', async ({
+  page,
+}) => {
   await page.setViewportSize({ width: 1024, height: 768 });
   await page.goto('/setlist/');
   await page.evaluate(() => {
@@ -395,7 +458,8 @@ test('Setlist compact notebook header does not overlap controls when switched to
     );
 
     const langSelectStyle = window.getComputedStyle(langSelect);
-    const hasTruncatingMaxWidth = langSelectStyle.maxWidth === '96px' || langSelectStyle.maxWidth === '6rem';
+    const hasTruncatingMaxWidth =
+      langSelectStyle.maxWidth === '96px' || langSelectStyle.maxWidth === '6rem';
 
     return {
       overlapsLangLock,
@@ -410,12 +474,22 @@ test('Setlist compact notebook header does not overlap controls when switched to
 
   expect(layoutState.missing).toBeUndefined();
   expect(layoutState.overlapsLangLock, 'languageSelect must not overlap btnLock').toBe(false);
-  expect(layoutState.hasTruncatingMaxWidth, 'languageSelect should not be restricted to 6rem max-width').toBe(false);
-  expect(layoutState.actionsBottom, 'actions container must stay within header bounds').toBeLessThanOrEqual(layoutState.headerBottom + 1);
-  expect(layoutState.scrollWidth, 'no horizontal scroll').toBeLessThanOrEqual(layoutState.clientWidth);
+  expect(
+    layoutState.hasTruncatingMaxWidth,
+    'languageSelect should not be restricted to 6rem max-width',
+  ).toBe(false);
+  expect(
+    layoutState.actionsBottom,
+    'actions container must stay within header bounds',
+  ).toBeLessThanOrEqual(layoutState.headerBottom + 1);
+  expect(layoutState.scrollWidth, 'no horizontal scroll').toBeLessThanOrEqual(
+    layoutState.clientWidth,
+  );
 });
 
-test('Setlist on large desktop (1920x1080) centers main shell with max-width and 2 columns', async ({ page }) => {
+test('Setlist on large desktop (1920x1080) centers main shell with max-width and 2 columns', async ({
+  page,
+}) => {
   await page.setViewportSize({ width: 1920, height: 1080 });
   await page.goto('/setlist/');
 
@@ -433,7 +507,8 @@ test('Setlist on large desktop (1920x1080) centers main shell with max-width and
       shellWidth: rect.width,
       leftMargin: rect.left,
       rightMargin: document.documentElement.clientWidth - rect.right,
-      isTwoColumns: Math.abs(setlistRect.top - controlRect.top) < 20 && setlistRect.left < controlRect.left,
+      isTwoColumns:
+        Math.abs(setlistRect.top - controlRect.top) < 20 && setlistRect.left < controlRect.left,
       scrollWidth: document.documentElement.scrollWidth,
       clientWidth: document.documentElement.clientWidth,
     };
@@ -441,12 +516,20 @@ test('Setlist on large desktop (1920x1080) centers main shell with max-width and
 
   expect(info.missing).toBeUndefined();
   expect(info.isTwoColumns, 'desktop must preserve 2-column layout').toBe(true);
-  expect(info.shellWidth, 'shell width should be bounded on large desktop (<= 1440px)').toBeLessThanOrEqual(1441);
-  expect(Math.abs(info.leftMargin - info.rightMargin), 'shell should be horizontally centered').toBeLessThanOrEqual(12);
+  expect(
+    info.shellWidth,
+    'shell width should be bounded on large desktop (<= 1440px)',
+  ).toBeLessThanOrEqual(1441);
+  expect(
+    Math.abs(info.leftMargin - info.rightMargin),
+    'shell should be horizontally centered',
+  ).toBeLessThanOrEqual(12);
   expect(info.scrollWidth, 'no horizontal scroll').toBeLessThanOrEqual(info.clientWidth);
 });
 
-test('Setlist on narrow panel (360x900) maintains compact vertical flow without huge gap between lyrics and controls', async ({ page }) => {
+test('Setlist on narrow panel (360x900) maintains compact vertical flow without huge gap between lyrics and controls', async ({
+  page,
+}) => {
   await page.setViewportSize({ width: 360, height: 900 });
   await page.goto('/setlist/');
 
@@ -473,12 +556,21 @@ test('Setlist on narrow panel (360x900) maintains compact vertical flow without 
   });
 
   expect(gapInfo.missing).toBeUndefined();
-  expect(gapInfo.gapBetweenLyricsAndControls, 'gap between lyrics card and controls should be compact (<= 96px)').toBeLessThanOrEqual(96);
-  expect(gapInfo.dockOverlapsControls, 'transport dock must not overlap secondary controls').toBe(false);
-  expect(gapInfo.scrollWidth, 'no horizontal scroll on narrow panel').toBeLessThanOrEqual(gapInfo.clientWidth);
+  expect(
+    gapInfo.gapBetweenLyricsAndControls,
+    'gap between lyrics card and controls should be compact (<= 96px)',
+  ).toBeLessThanOrEqual(96);
+  expect(gapInfo.dockOverlapsControls, 'transport dock must not overlap secondary controls').toBe(
+    false,
+  );
+  expect(gapInfo.scrollWidth, 'no horizontal scroll on narrow panel').toBeLessThanOrEqual(
+    gapInfo.clientWidth,
+  );
 });
 
-test('Setlist with small song list maintains compact vertical flow without stretching controls', async ({ page }) => {
+test('Setlist with small song list maintains compact vertical flow without stretching controls', async ({
+  page,
+}) => {
   await page.setViewportSize({ width: 360, height: 900 });
   await page.goto('/setlist/?scenario=empty');
 
@@ -497,10 +589,15 @@ test('Setlist with small song list maintains compact vertical flow without stret
   });
 
   expect(gapInfo.missing).toBeUndefined();
-  expect(gapInfo.gapBetweenLyricsAndControls, 'gap on small setlist must remain compact (<= 96px)').toBeLessThanOrEqual(96);
+  expect(
+    gapInfo.gapBetweenLyricsAndControls,
+    'gap on small setlist must remain compact (<= 96px)',
+  ).toBeLessThanOrEqual(96);
 });
 
-test('Setlist on 1280x900 desktop maintains compact vertical flow in control pane without stretching flex gap', async ({ page }) => {
+test('Setlist on 1280x900 desktop maintains compact vertical flow in control pane without stretching flex gap', async ({
+  page,
+}) => {
   await page.setViewportSize({ width: 1280, height: 900 });
   await page.goto('/setlist/?scenario=empty');
 
@@ -519,10 +616,15 @@ test('Setlist on 1280x900 desktop maintains compact vertical flow in control pan
   });
 
   expect(gapInfo.missing).toBeUndefined();
-  expect(gapInfo.gapBetweenLyricsAndControls, 'gap on desktop control pane must remain compact (<= 48px)').toBeLessThanOrEqual(48);
+  expect(
+    gapInfo.gapBetweenLyricsAndControls,
+    'gap on desktop control pane must remain compact (<= 48px)',
+  ).toBeLessThanOrEqual(48);
 });
 
-test('Total duration is located in Songs in Project pane and omitted from main app bar', async ({ page }) => {
+test('Total duration is located in Songs in Project pane and omitted from main app bar', async ({
+  page,
+}) => {
   await page.setViewportSize({ width: 1280, height: 800 });
   await page.goto('/setlist/');
 
@@ -541,10 +643,15 @@ test('Total duration is located in Songs in Project pane and omitted from main a
 
   expect(durationPlacement.missing).toBeUndefined();
   expect(durationPlacement.inHeader, 'total duration must be removed from main header').toBe(false);
-  expect(durationPlacement.inSetlistPane, 'total duration must be inside Songs in Project pane').toBe(true);
+  expect(
+    durationPlacement.inSetlistPane,
+    'total duration must be inside Songs in Project pane',
+  ).toBe(true);
 });
 
-test('Quantization control supports pt-BR text without clipping or colliding with Click and Refresh', async ({ page }) => {
+test('Quantization control supports pt-BR text without clipping or colliding with Click and Refresh', async ({
+  page,
+}) => {
   await page.setViewportSize({ width: 360, height: 900 });
   await page.goto('/setlist/');
   await page.evaluate(() => {
@@ -581,8 +688,13 @@ test('Quantization control supports pt-BR text without clipping or colliding wit
   });
 
   expect(quantInfo.missing).toBeUndefined();
-  expect(quantInfo.isFullLineAbove, 'quantization control should occupy full line on 360px width').toBe(true);
-  expect(quantInfo.scrollWidth, 'no horizontal scroll in pt-BR').toBeLessThanOrEqual(quantInfo.clientWidth);
+  expect(
+    quantInfo.isFullLineAbove,
+    'quantization control should occupy full line on 360px width',
+  ).toBe(true);
+  expect(quantInfo.scrollWidth, 'no horizontal scroll in pt-BR').toBeLessThanOrEqual(
+    quantInfo.clientWidth,
+  );
 });
 
 for (const viewport of [
@@ -607,10 +719,11 @@ for (const viewport of [
       const preRollRect = preRoll.getBoundingClientRect();
       const refreshRect = refresh.getBoundingClientRect();
       return {
-        sameRow: Math.abs(clickRect.top - preRollRect.top) <= 2
-          && Math.abs(preRollRect.top - refreshRect.top) <= 2,
-        ordered: clickRect.right <= preRollRect.left + 1
-          && preRollRect.right <= refreshRect.left + 1,
+        sameRow:
+          Math.abs(clickRect.top - preRollRect.top) <= 2 &&
+          Math.abs(preRollRect.top - refreshRect.top) <= 2,
+        ordered:
+          clickRect.right <= preRollRect.left + 1 && preRollRect.right <= refreshRect.left + 1,
         labelFits: preRoll.scrollWidth <= preRoll.clientWidth + 1,
         labelScrollWidth: preRoll.scrollWidth,
         labelClientWidth: preRoll.clientWidth,
@@ -645,7 +758,10 @@ test('Song duration displays with increased contrast and tabular nums', async ({
   });
 
   if (durationStyle) {
-    expect(durationStyle.fontSizePx, 'song duration font size should be >= 13px').toBeGreaterThanOrEqual(13);
+    expect(
+      durationStyle.fontSizePx,
+      'song duration font size should be >= 13px',
+    ).toBeGreaterThanOrEqual(13);
     expect(durationStyle.tabularNums, 'song duration must use tabular nums').toBe(true);
   }
 });
@@ -666,8 +782,13 @@ test('Language selector uses compact width footprint and flag labels', async ({ 
   });
 
   expect(langState.missing).toBeUndefined();
-  expect(langState.width, 'language selector should be compact (<= 110px)').toBeLessThanOrEqual(110);
-  expect(langState.optionsText.some((t) => t.includes('🇧🇷') || t.includes('PT')), 'language options should include flag or compact label').toBe(true);
+  expect(langState.width, 'language selector should be compact (<= 110px)').toBeLessThanOrEqual(
+    110,
+  );
+  expect(
+    langState.optionsText.some((t) => t.includes('🇧🇷') || t.includes('PT')),
+    'language options should include flag or compact label',
+  ).toBe(true);
 });
 
 test('Quantization select inherits site font family and avoids clipping', async ({ page }) => {
@@ -696,7 +817,9 @@ test('Quantization select inherits site font family and avoids clipping', async 
   expect(quantState.fontMatches, 'quantization select should inherit site font family').toBe(true);
 });
 
-test('Control pane outer box does not create a huge empty dark void below logs on desktop', async ({ page }) => {
+test('Control pane outer box does not create a huge empty dark void below logs on desktop', async ({
+  page,
+}) => {
   await page.setViewportSize({ width: 1280, height: 900 });
   await page.goto('/setlist/');
 
@@ -704,7 +827,8 @@ test('Control pane outer box does not create a huge empty dark void below logs o
     const pane = document.querySelector('.control-pane');
     const hud = document.querySelector('.hud');
     const sec = document.querySelector('.secondary-controls');
-    const diag = document.querySelector('#diagnosticsPanel') || document.querySelector('.diagnostics-panel');
+    const diag =
+      document.querySelector('#diagnosticsPanel') || document.querySelector('.diagnostics-panel');
 
     if (!pane || !hud || !sec) return { missing: true };
 
@@ -723,9 +847,11 @@ test('Control pane outer box does not create a huge empty dark void below logs o
   });
 
   expect(heightInfo.missing).toBeUndefined();
-  expect(heightInfo.unusedEmptyGap, 'unused empty gap inside control pane box should be <= 75px').toBeLessThanOrEqual(75);
+  expect(
+    heightInfo.unusedEmptyGap,
+    'unused empty gap inside control pane box should be <= 75px',
+  ).toBeLessThanOrEqual(75);
 });
-
 
 test('Language selector shows compact text-only labels without flag images', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 800 });
@@ -746,6 +872,68 @@ test('Language selector shows compact text-only labels without flag images', asy
   // Flag icon must NOT be present
   expect(langState.flagIconExists, 'flag icon element must not exist').toBe(false);
   // Options must show compact abbreviations only
-  expect(langState.optionsText.some((t) => t === 'EN' || t.startsWith('EN')), 'English option must be compact "EN"').toBe(true);
-  expect(langState.optionsText.some((t) => t === 'PT' || t.startsWith('PT')), 'Portuguese option must be compact "PT"').toBe(true);
+  expect(
+    langState.optionsText.some((t) => t === 'EN' || t.startsWith('EN')),
+    'English option must be compact "EN"',
+  ).toBe(true);
+  expect(
+    langState.optionsText.some((t) => t === 'PT' || t.startsWith('PT')),
+    'Portuguese option must be compact "PT"',
+  ).toBe(true);
 });
+
+for (const viewport of [
+  { width: 390, height: 844, name: 'phone portrait' },
+  { width: 412, height: 915, name: 'tall phone portrait' },
+]) {
+  test(`Performance telemetry cards keep label and value apart at ${viewport.name}`, async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: viewport.width, height: viewport.height });
+    await page.goto('/performance/');
+
+    await expect(page.locator('.telemetry-card')).toHaveCount(3);
+
+    const check = await page.evaluate(() => {
+      const footer = document.querySelector('.performance-footer');
+      const cards = Array.from(document.querySelectorAll('.telemetry-card'));
+      return {
+        footerRect: footer.getBoundingClientRect(),
+        cards: cards.map((c) => {
+          const v = c.querySelector('#timecode, #barcode, #bpm');
+          return {
+            cardRect: c.getBoundingClientRect(),
+            labelRect: c.querySelector('.card-label').getBoundingClientRect(),
+            valueRect: v.getBoundingClientRect(),
+            overflow: window.getComputedStyle(c).overflow,
+            scrollHeight: c.scrollHeight,
+            clientHeight: c.clientHeight,
+          };
+        }),
+      };
+    });
+
+    for (const c of check.cards) {
+      expect(c.labelRect.bottom).toBeLessThanOrEqual(c.valueRect.top + 1);
+
+      expect(c.labelRect.top).toBeGreaterThanOrEqual(c.cardRect.top - 1);
+      expect(c.labelRect.left).toBeGreaterThanOrEqual(c.cardRect.left - 1);
+      expect(c.labelRect.right).toBeLessThanOrEqual(c.cardRect.right + 1);
+
+      expect(c.valueRect.bottom).toBeLessThanOrEqual(c.cardRect.bottom + 1);
+      expect(c.valueRect.left).toBeGreaterThanOrEqual(c.cardRect.left - 1);
+      expect(c.valueRect.right).toBeLessThanOrEqual(c.cardRect.right + 1);
+
+      expect(c.cardRect.top).toBeGreaterThanOrEqual(-1);
+      expect(c.cardRect.bottom).toBeLessThanOrEqual(viewport.height + 1);
+      expect(c.cardRect.left).toBeGreaterThanOrEqual(-1);
+      expect(c.cardRect.right).toBeLessThanOrEqual(viewport.width + 1);
+
+      if (c.overflow === 'hidden') {
+        expect(c.scrollHeight).toBeLessThanOrEqual(c.clientHeight + 1);
+      }
+    }
+
+    expect(check.footerRect.height).toBeGreaterThanOrEqual(136);
+  });
+}

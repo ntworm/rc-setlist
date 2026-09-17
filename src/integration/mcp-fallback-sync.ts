@@ -23,7 +23,9 @@ interface McpFallbackSyncOptions {
  */
 export class McpUnavailableError extends Error {
   constructor(cause: unknown) {
-    super(`MCP bridge unavailable: ${cause instanceof Error ? cause.message : String(cause)}`, { cause });
+    super(`MCP bridge unavailable: ${cause instanceof Error ? cause.message : String(cause)}`, {
+      cause,
+    });
     this.name = 'McpUnavailableError';
   }
 }
@@ -36,6 +38,9 @@ export interface McpFallbackSnapshot {
   timeSinceLastSessionInfoMs: number | null;
 }
 
+/**
+ * Manages the lifecycle and public surface of McpFallbackSync.
+ */
 export class McpFallbackSync {
   private readonly client: McpCaller;
   private readonly onSessionInfo: McpFallbackSyncOptions['onSessionInfo'];
@@ -84,13 +89,11 @@ export class McpFallbackSync {
     return {
       inFlight: this.inFlight,
       lastResponseTime: this.lastResponseTime,
-      timeSinceLastResponseMs: this.lastResponseTime > 0
-        ? Math.max(0, current - this.lastResponseTime)
-        : null,
+      timeSinceLastResponseMs:
+        this.lastResponseTime > 0 ? Math.max(0, current - this.lastResponseTime) : null,
       lastSessionInfoTime: this.lastSessionInfoTime,
-      timeSinceLastSessionInfoMs: this.lastSessionInfoTime > 0
-        ? Math.max(0, current - this.lastSessionInfoTime)
-        : null,
+      timeSinceLastSessionInfoMs:
+        this.lastSessionInfoTime > 0 ? Math.max(0, current - this.lastSessionInfoTime) : null,
     };
   }
 
@@ -109,7 +112,9 @@ export class McpFallbackSync {
         // The fast transport snapshot remains useful when an older MCP bridge
         // does not expose get_song_length; only the request may fail quietly,
         // never our own callback.
-        const result = await this.request<{ song_length?: unknown }>('get_song_length').catch(() => null);
+        const result = await this.request<{ song_length?: unknown }>('get_song_length').catch(
+          () => null,
+        );
         const length = result?.song_length;
         if (typeof length === 'number' && Number.isFinite(length)) {
           await this.onSongLength(length);
@@ -118,14 +123,16 @@ export class McpFallbackSync {
 
       const projectMetadataRequestToken = this.getProjectMetadataRequestToken();
       if (
-        this.onProjectMetadata
-        && projectMetadataRequestToken !== null
-        && current - this.lastMetadataPollTime >= this.metadataPollIntervalMs
+        this.onProjectMetadata &&
+        projectMetadataRequestToken !== null &&
+        current - this.lastMetadataPollTime >= this.metadataPollIntervalMs
       ) {
         this.lastMetadataPollTime = current;
         // Saved-set metadata can become available after startup; retry on
         // the next slow metadata interval without disrupting transport.
-        const metadata = await this.request<ProjectMetadata>('get_project_metadata').catch(() => null);
+        const metadata = await this.request<ProjectMetadata>('get_project_metadata').catch(
+          () => null,
+        );
         if (metadata && typeof metadata === 'object') {
           await this.onProjectMetadata(metadata, projectMetadataRequestToken);
         }
@@ -134,7 +141,8 @@ export class McpFallbackSync {
       return true;
     } catch (error) {
       // Back off only when the bridge itself is the problem.
-      if (error instanceof McpUnavailableError) this.nextAttemptTime = this.now() + this.retryIntervalMs;
+      if (error instanceof McpUnavailableError)
+        this.nextAttemptTime = this.now() + this.retryIntervalMs;
       throw error;
     } finally {
       this.inFlight = false;

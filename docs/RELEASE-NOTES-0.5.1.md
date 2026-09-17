@@ -1,6 +1,6 @@
 ﻿# Release 0.5.1
 
-Ableton RC Setlist 0.5.1 is here! This release brings significant usability improvements, particularly to the stage transport controls, along with crucial bug fixes to ensure bulletproof live performance reliability.
+RC Setlist 0.5.1 is here! This release brings significant usability improvements, particularly to the stage transport controls, along with crucial bug fixes to ensure bulletproof live performance reliability.
 
 ## What's New
 
@@ -15,6 +15,6 @@ Ableton RC Setlist 0.5.1 is here! This release brings significant usability impr
 - **Safe State Tracking**: Resolved synchronization races where the server and UI could temporarily disagree about the current playing section.
 - **Robustness**: Hardened pre-roll observation races, fixed WebSocket boundaries, and stabilized the UI against fast successive clicks.
 
-*For full details on migrating from 0.4.x, please refer to the [Installation Guide](INSTALL.md).*
+_For full details on migrating from 0.4.x, please refer to the [Installation Guide](INSTALL.md)._
 
-*Leia estas notas em português: [NOTAS-DA-VERSAO-0.5.1.md](pt-BR/NOTAS-DA-VERSAO-0.5.1.md).*
+_Leia estas notas em português: [NOTAS-DA-VERSAO-0.5.1.md](pt-BR/NOTAS-DA-VERSAO-0.5.1.md)._

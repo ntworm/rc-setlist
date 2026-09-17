@@ -6,7 +6,7 @@ import * as fs from 'node:fs';
 import { tmpdir } from 'node:os';
 import { setExtensionContext, clearExtensionContext } from '../src/context.ts';
 import { startServer, stopServer, isServerRunning } from '../src/index.ts';
-import { bridgeState } from '../src/core/bridge-state.ts';
+import { bridgeState } from '../src/runtime/bridge-state.ts';
 import { closeHttpServer, getProjectMetadataRequestToken } from '../src/server-lifecycle.ts';
 
 // Helper to find a free port
@@ -39,8 +39,16 @@ test('Server Lifecycle: starts graceful close before forcing lingering connectio
 
 test('Server Lifecycle: drains the event log after stopping command intake', async () => {
   const calls = [];
-  bridgeState.commandBus = { stop() { calls.push('commandBus.stop'); } };
-  bridgeState.eventLogger = { async flush() { calls.push('eventLogger.flush'); } };
+  bridgeState.commandBus = {
+    stop() {
+      calls.push('commandBus.stop');
+    },
+  };
+  bridgeState.eventLogger = {
+    async flush() {
+      calls.push('eventLogger.flush');
+    },
+  };
   bridgeState.promotionBlockedProjectSessionId = 'blocked-session';
 
   await stopServer();
@@ -85,35 +93,41 @@ test('Server Lifecycle: shutdown no longer writes to the metronome it used to bo
   // and must leave the operator's click exactly as they set it.
   const calls = [];
   bridgeState.oscClient = {
-    setMetronome(value) { calls.push(['metronome', value]); },
-    stopPropertyListeners() { calls.push(['stop-listeners']); },
-    async stop() { calls.push(['stop-osc']); },
+    setMetronome(value) {
+      calls.push(['metronome', value]);
+    },
+    stopPropertyListeners() {
+      calls.push(['stop-listeners']);
+    },
+    async stop() {
+      calls.push(['stop-osc']);
+    },
   };
 
   await stopServer();
 
-  assert.deepStrictEqual(calls, [
-    ['stop-listeners'],
-    ['stop-osc'],
-  ]);
+  assert.deepStrictEqual(calls, [['stop-listeners'], ['stop-osc']]);
 });
 
 test('Server Lifecycle: start, stop, port collision handling', async () => {
   // Set up a clean storage directory to prevent polluting local config
-  const testStorageDir = path.join(tmpdir(), 'setlist-test-' + Math.random().toString(36).substring(7));
+  const testStorageDir = path.join(
+    tmpdir(),
+    'setlist-test-' + Math.random().toString(36).substring(7),
+  );
   fs.mkdirSync(testStorageDir, { recursive: true });
 
   setExtensionContext({
     environment: {
-      storageDirectory: testStorageDir
+      storageDirectory: testStorageDir,
     },
     application: {
       song: {
         handle: { id: 42 },
         tempo: 120,
-        cuePoints: [{ name: 'Lifecycle Song', time: 0 }]
-      }
-    }
+        cuePoints: [{ name: 'Lifecycle Song', time: 0 }],
+      },
+    },
   });
 
   const testPort = await getFreePort();
@@ -127,14 +141,17 @@ test('Server Lifecycle: start, stop, port collision handling', async () => {
       port: testPort,
       skipOsc: true,
       skipCerts: true,
-      skipProjectDetector: true
+      skipProjectDetector: true,
     });
     assert.strictEqual(isServerRunning(), true);
 
     // Keep server open to ensure pollInterval/timers are stable and don't crash
     await new Promise((resolve) => setTimeout(resolve, 300));
     assert.strictEqual(isServerRunning(), true);
-    assert.deepStrictEqual(bridgeState.manager.getState().songs.map(({ title }) => title), ['Lifecycle Song']);
+    assert.deepStrictEqual(
+      bridgeState.manager.getState().songs.map(({ title }) => title),
+      ['Lifecycle Song'],
+    );
     const firstSessionKey = bridgeState.projectIdentity.key;
     await bridgeState.profileManager.create('Second Setlist');
 
@@ -148,15 +165,18 @@ test('Server Lifecycle: start, stop, port collision handling', async () => {
       port: testPort,
       skipOsc: true,
       skipCerts: true,
-      skipProjectDetector: true
+      skipProjectDetector: true,
     });
     assert.strictEqual(bridgeState.projectIdentity.key, firstSessionKey);
     assert.deepStrictEqual(
       bridgeState.profileManager.list().map(({ name }) => name),
-      ['Main Setlist', 'Second Setlist']
+      ['Main Setlist', 'Second Setlist'],
     );
     await new Promise((resolve) => setTimeout(resolve, 150));
-    assert.deepStrictEqual(bridgeState.manager.getState().songs.map(({ title }) => title), ['Lifecycle Song']);
+    assert.deepStrictEqual(
+      bridgeState.manager.getState().songs.map(({ title }) => title),
+      ['Lifecycle Song'],
+    );
     await stopServer();
 
     // 4. Start a dummy TCP server on our test port to force collision (omitting host so Node uses the same default wildcard binding family)
@@ -165,16 +185,19 @@ test('Server Lifecycle: start, stop, port collision handling', async () => {
 
     try {
       // 5. Try starting the server - should reject with EADDRINUSE
-      await assert.rejects(async () => {
-        await startServer({
-          port: testPort,
-          skipOsc: true,
-          skipCerts: true,
-          skipProjectDetector: true
-        });
-      }, (err) => {
-        return err.code === 'EADDRINUSE';
-      });
+      await assert.rejects(
+        async () => {
+          await startServer({
+            port: testPort,
+            skipOsc: true,
+            skipCerts: true,
+            skipProjectDetector: true,
+          });
+        },
+        (err) => {
+          return err.code === 'EADDRINUSE';
+        },
+      );
 
       // 6. Verify server is NOT marked as running and is cleaned up
       assert.strictEqual(isServerRunning(), false);
@@ -188,18 +211,19 @@ test('Server Lifecycle: start, stop, port collision handling', async () => {
       port: testPort,
       skipOsc: true,
       skipCerts: true,
-      skipProjectDetector: true
+      skipProjectDetector: true,
     });
     assert.strictEqual(isServerRunning(), true);
 
     await stopServer();
     assert.strictEqual(isServerRunning(), false);
-
   } finally {
     clearExtensionContext();
     // Cleanup the temporary directory
     try {
       fs.rmSync(testStorageDir, { recursive: true, force: true });
-    } catch {}
+    } catch {
+      // swallow: nothing to do here on purpose
+    }
   }
 });

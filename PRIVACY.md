@@ -1,6 +1,6 @@
-# Privacy
+﻿# Privacy
 
-Ableton RC Setlist is local-first. It has no account system, telemetry, advertising,
+RC Setlist is local-first. It has no account system, telemetry, advertising,
 analytics or cloud synchronization.
 
 ## Data stored locally
@@ -23,12 +23,12 @@ keep controller URLs private.
 
 ## Certificates
 
-Ableton RC Setlist creates a per-install self-signed certificate and private key in the
+RC Setlist creates a per-install self-signed certificate and private key in the
 extension storage directory. Private keys are never packaged in release files.
 
 ## Third parties
 
-The runtime does not intentionally contact an Ableton RC Setlist service. Ableton Live,
+The runtime does not intentionally contact an RC Setlist service. Ableton Live,
 the Ableton Extensions host and, if you keep one installed, a stock AbletonOSC
 are separate software governed by their own terms. Package and browser-component licenses are listed in
 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).

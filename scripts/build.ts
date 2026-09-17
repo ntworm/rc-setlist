@@ -1,3 +1,4 @@
+/* global NodeJS */
 import * as esbuild from 'esbuild';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
@@ -34,7 +35,9 @@ function copyStatic(): void {
   // The RC Bridge remote script travels inside the package, beside the static
   // files but outside the HTTP root, so the panel can install it into Live's
   // User Library without a download. Its tests stay behind.
-  copyStaticTree('bridge', bridgeDst, { skip: (name) => name === 'tests' || name === '__pycache__' });
+  copyStaticTree('bridge', bridgeDst, {
+    skip: (name) => name === 'tests' || name === '__pycache__',
+  });
   console.log(`copied bridge/* → ${bridgeDst}`);
 }
 
@@ -55,7 +58,9 @@ const devSyncEnabled = process.env.ABLETON_SETLIST_DEV_SYNC === '1';
 function syncToAppData() {
   if (!appDataPath || !fs.existsSync(appDataPath)) return;
   if (!devSyncEnabled) {
-    console.log(`[dev-sync] Skipping AppData sync (${appDataPath}). Set ABLETON_SETLIST_DEV_SYNC=1 to enable.`);
+    console.log(
+      `[dev-sync] Skipping AppData sync (${appDataPath}). Set ABLETON_SETLIST_DEV_SYNC=1 to enable.`,
+    );
     return;
   }
   try {
@@ -79,15 +84,18 @@ if (watch) {
     minify: false,
     sourcemap: true,
     define: nodeEnvDefine(false),
-    plugins: [strictBinpackPlugin(), {
-      name: 'copy-static-on-end',
-      setup(build) {
-        build.onEnd(() => {
-          copyStaticWhileWatching();
-          syncToAppData();
-        });
-      }
-    }]
+    plugins: [
+      strictBinpackPlugin(),
+      {
+        name: 'copy-static-on-end',
+        setup(build) {
+          build.onEnd(() => {
+            copyStaticWhileWatching();
+            syncToAppData();
+          });
+        },
+      },
+    ],
   });
   await ctx.watch();
   console.log('esbuild is watching src/ for changes...');

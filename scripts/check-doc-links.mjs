@@ -39,13 +39,18 @@ function publicDocuments() {
 function localTargets(file, content) {
   const targets = [];
   if (file.endsWith('.html')) {
-    for (const match of content.matchAll(/\b(?:href|src)=["']([^"']+)["']/gi)) targets.push(match[1]);
+    for (const match of content.matchAll(/\b(?:href|src)=["']([^"']+)["']/gi))
+      targets.push(match[1]);
   } else {
     for (const match of content.matchAll(/!?\[[^\]]*\]\(([^)]+)\)/g)) targets.push(match[1]);
   }
   return targets.filter((target) => {
     const value = target.trim().replace(/^<|>$/g, '');
-    return value && !/^(?:https?:|mailto:|tel:|data:|javascript:|#)/i.test(value) && !value.startsWith('/');
+    return (
+      value &&
+      !/^(?:https?:|mailto:|tel:|data:|javascript:|#)/i.test(value) &&
+      !value.startsWith('/')
+    );
   });
 }
 

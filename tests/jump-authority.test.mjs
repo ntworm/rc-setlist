@@ -1,18 +1,12 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { bridgeState } from '../src/core/bridge-state.ts';
-import {
-  clearExtensionContext,
-  getExtensionContext,
-  setExtensionContext,
-} from '../src/context.ts';
+import { bridgeState } from '../src/runtime/bridge-state.ts';
+import { clearExtensionContext, getExtensionContext, setExtensionContext } from '../src/context.ts';
 import { JumpScheduler } from '../src/core/next-downbeat-jump.ts';
 import { SetlistManager } from '../src/core/setlist-manager.ts';
 import { CommandBus } from '../src/core/command-bus.ts';
-import {
-  executeCommandAction,
-  executeJumpCommand,
-} from '../src/commands/handlers.ts';
+import { executeCommandAction } from '../src/commands/handlers/index.ts';
+import { executeJumpCommand } from '../src/commands/handlers/transport.ts';
 import { handleJumpSchedulerEvent } from '../src/server-lifecycle.ts';
 
 function installHarness(initialQuantization = 0, sdkTempoSetter = null) {
@@ -42,11 +36,12 @@ function installHarness(initialQuantization = 0, sdkTempoSetter = null) {
   bridgeState.scheduler = new JumpScheduler();
   bridgeState.oscClient = {
     jumpToCuePoint: (value) => calls.push(['jump', value]),
-    send: (address, args) => calls.push(
-      address === '/live/song/set/tempo'
-        ? ['osc-tempo', args[0]?.value]
-        : ['send', address, args],
-    ),
+    send: (address, args) =>
+      calls.push(
+        address === '/live/song/set/tempo'
+          ? ['osc-tempo', args[0]?.value]
+          : ['send', address, args],
+      ),
     setClipTriggerQuantization: (value) => calls.push(['quantization', value]),
     setMetronome: (value) => calls.push(['metronome', value]),
   };
@@ -58,7 +53,15 @@ function installHarness(initialQuantization = 0, sdkTempoSetter = null) {
   bridgeState.writeTempoOnJump = true;
   clearExtensionContext();
   if (sdkTempoSetter) {
-    setExtensionContext({ application: { song: { set tempo(value) { sdkTempoSetter(value, calls); } } } });
+    setExtensionContext({
+      application: {
+        song: {
+          set tempo(value) {
+            sdkTempoSetter(value, calls);
+          },
+        },
+      },
+    });
   }
   return {
     manager,
@@ -83,15 +86,24 @@ test('immediate jumps resolve the destination section BPM before its cue jump', 
   const harness = installHarness(0, (value, calls) => calls.push(['sdk-tempo', value]));
   try {
     executeJumpCommand({ songIndex: 1, sectionIndex: null });
-    assert.deepEqual(harness.calls.slice(0, 2), [['sdk-tempo', 90], ['jump', 3]]);
+    assert.deepEqual(harness.calls.slice(0, 2), [
+      ['sdk-tempo', 90],
+      ['jump', 3],
+    ]);
 
     harness.calls.length = 0;
     executeJumpCommand({ songIndex: 1, sectionIndex: 0 });
-    assert.deepEqual(harness.calls.slice(0, 2), [['sdk-tempo', 90], ['jump', 4]]);
+    assert.deepEqual(harness.calls.slice(0, 2), [
+      ['sdk-tempo', 90],
+      ['jump', 4],
+    ]);
 
     harness.calls.length = 0;
     executeJumpCommand({ songIndex: 1, sectionIndex: 1 });
-    assert.deepEqual(harness.calls.slice(0, 2), [['sdk-tempo', 105], ['jump', 5]]);
+    assert.deepEqual(harness.calls.slice(0, 2), [
+      ['sdk-tempo', 105],
+      ['jump', 5],
+    ]);
   } finally {
     harness.restore();
   }
@@ -101,7 +113,10 @@ test('an untagged destination does not send pre-jump tempo', () => {
   const harness = installHarness(0, (value, calls) => calls.push(['sdk-tempo', value]));
   try {
     executeJumpCommand({ songIndex: 0, sectionIndex: 0 });
-    assert.equal(harness.calls.some(([kind]) => kind === 'sdk-tempo' || kind === 'osc-tempo'), false);
+    assert.equal(
+      harness.calls.some(([kind]) => kind === 'sdk-tempo' || kind === 'osc-tempo'),
+      false,
+    );
     assert.deepEqual(harness.calls.at(0), ['jump', 1]);
   } finally {
     harness.restore();
@@ -119,14 +134,26 @@ test('a quantized jump is handed to Live when it is requested, not on the landin
   try {
     executeJumpCommand({ songIndex: 1, sectionIndex: 1 });
     assert.deepEqual(harness.calls, [['jump', 5]]);
-    assert.equal(bridgeState.scheduler.hasPending(), true, 'the landing is still tracked for the page');
+    assert.equal(
+      bridgeState.scheduler.hasPending(),
+      true,
+      'the landing is still tracked for the page',
+    );
 
     handleJumpSchedulerEvent({
       type: 'executed',
       pending: bridgeState.scheduler.getPending(),
     });
-    assert.deepEqual(harness.calls.filter((call) => call[0] === 'jump'), [['jump', 5]], 'the landing sends no second jump');
-    assert.deepEqual(harness.payloads.at(-1), { type: 'jump_executed', songIndex: 1, sectionIndex: 1 });
+    assert.deepEqual(
+      harness.calls.filter((call) => call[0] === 'jump'),
+      [['jump', 5]],
+      'the landing sends no second jump',
+    );
+    assert.deepEqual(harness.payloads.at(-1), {
+      type: 'jump_executed',
+      songIndex: 1,
+      sectionIndex: 1,
+    });
   } finally {
     harness.restore();
   }
@@ -150,7 +177,10 @@ test('the landing of a quantized jump writes the destination tempo, after the cu
         scheduledAt: 0,
       },
     });
-    assert.deepEqual(harness.calls.slice(0, 2), [['jump', 5], ['sdk-tempo', 105]]);
+    assert.deepEqual(harness.calls.slice(0, 2), [
+      ['jump', 5],
+      ['sdk-tempo', 105],
+    ]);
     assert.equal(harness.calls.filter((call) => call[0] === 'jump').length, 1);
   } finally {
     harness.restore();
@@ -182,15 +212,23 @@ test('unavailable or throwing SDK tempo setters fall back to OSC before the cue 
   const unavailable = installHarness();
   try {
     executeJumpCommand({ songIndex: 1, sectionIndex: null });
-    assert.deepEqual(unavailable.calls.slice(0, 2), [['osc-tempo', 90], ['jump', 3]]);
+    assert.deepEqual(unavailable.calls.slice(0, 2), [
+      ['osc-tempo', 90],
+      ['jump', 3],
+    ]);
   } finally {
     unavailable.restore();
   }
 
-  const throwing = installHarness(0, () => { throw new Error('SDK unavailable'); });
+  const throwing = installHarness(0, () => {
+    throw new Error('SDK unavailable');
+  });
   try {
     executeJumpCommand({ songIndex: 1, sectionIndex: null });
-    assert.deepEqual(throwing.calls.slice(0, 2), [['osc-tempo', 90], ['jump', 3]]);
+    assert.deepEqual(throwing.calls.slice(0, 2), [
+      ['osc-tempo', 90],
+      ['jump', 3],
+    ]);
   } finally {
     throwing.restore();
   }
@@ -218,7 +256,10 @@ test('quantization request becomes local scheduler authority without an OSC repl
     executeJumpCommand({ songIndex: 0, sectionIndex: 1 });
     assert.equal(harness.manager.getState().clipTriggerQuantization, 0);
     assert.equal(bridgeState.scheduler.hasPending(), false);
-    assert.equal(harness.oscCalls.some(([kind]) => kind === 'jump'), true);
+    assert.equal(
+      harness.oscCalls.some(([kind]) => kind === 'jump'),
+      true,
+    );
   } finally {
     harness.restore();
   }
@@ -229,7 +270,12 @@ test('quantization command confirms through optimistic observable state', async 
   const bus = new CommandBus(harness.manager, { log() {} });
   bridgeState.commandBus = bus;
   try {
-    const command = bus.registerCommand('quantization-confirmed', 'set_quantization', { value: 0 }, 'test');
+    const command = bus.registerCommand(
+      'quantization-confirmed',
+      'set_quantization',
+      { value: 0 },
+      'test',
+    );
     const settled = new Promise((resolve) => bus.once('command_settled', resolve));
     bus.dispatch(command, () => executeCommandAction(command));
     const result = await settled;
@@ -250,9 +296,19 @@ test('immediate jump waits for observed Ableton transport before changing active
     assert.equal(harness.manager.getState().currentSongTime, 20);
     assert.equal(harness.manager.getState().activeSectionIndex, 0);
     assert.equal(harness.stateBroadcasts.length, 0);
-    assert.deepEqual(harness.payloads.at(-1), { type: 'jump_executed', songIndex: 0, sectionIndex: 1 });
-    assert.equal(harness.oscCalls.some(([kind]) => kind === 'jump'), true);
-    assert.equal(harness.oscCalls.some((call) => call[1] === '/live/song/set/loop_start'), true);
+    assert.deepEqual(harness.payloads.at(-1), {
+      type: 'jump_executed',
+      songIndex: 0,
+      sectionIndex: 1,
+    });
+    assert.equal(
+      harness.oscCalls.some(([kind]) => kind === 'jump'),
+      true,
+    );
+    assert.equal(
+      harness.oscCalls.some((call) => call[1] === '/live/song/set/loop_start'),
+      true,
+    );
   } finally {
     harness.restore();
   }
@@ -276,8 +332,15 @@ test('scheduled execution waits for observed Ableton transport before changing a
     assert.equal(harness.manager.getState().currentSongTime, 20);
     assert.equal(harness.manager.getState().activeSectionIndex, 0);
     assert.equal(harness.stateBroadcasts.length, 0);
-    assert.deepEqual(harness.payloads.at(-1), { type: 'jump_executed', songIndex: 0, sectionIndex: 1 });
-    assert.equal(harness.oscCalls.some((call) => call[1] === '/live/song/set/loop_start'), true);
+    assert.deepEqual(harness.payloads.at(-1), {
+      type: 'jump_executed',
+      songIndex: 0,
+      sectionIndex: 1,
+    });
+    assert.equal(
+      harness.oscCalls.some((call) => call[1] === '/live/song/set/loop_start'),
+      true,
+    );
   } finally {
     harness.restore();
   }
@@ -311,7 +374,12 @@ test('metronome command confirms through optimistic observable state', async () 
   const bus = new CommandBus(harness.manager, { log() {} });
   bridgeState.commandBus = bus;
   try {
-    const command = bus.registerCommand('metronome-confirmed', 'metronome', { value: true }, 'test');
+    const command = bus.registerCommand(
+      'metronome-confirmed',
+      'metronome',
+      { value: true },
+      'test',
+    );
     const settled = new Promise((resolve) => bus.once('command_settled', resolve));
     bus.dispatch(command, () => executeCommandAction(command));
     const result = await settled;
@@ -340,7 +408,11 @@ test('a jump writes no tempo by default, because writing overrides Live automati
     executeJumpCommand({ songIndex: 1, sectionIndex: null });
     const tempoWrites = harness.calls.filter(([kind]) => kind === 'sdk-tempo');
     assert.deepEqual(tempoWrites, [], 'no tempo may be written while the setting is off');
-    assert.equal(harness.calls.some(([kind]) => kind === 'jump'), true, 'the jump itself must still happen');
+    assert.equal(
+      harness.calls.some(([kind]) => kind === 'jump'),
+      true,
+      'the jump itself must still happen',
+    );
   } finally {
     harness.restore();
   }
@@ -363,7 +435,11 @@ test('a jump writes no tempo once tempo automation is suspected, even when opted
     executeJumpCommand({ songIndex: 1, sectionIndex: null });
     const tempoWrites = harness.calls.filter(([kind]) => kind === 'sdk-tempo');
     assert.deepEqual(tempoWrites, [], 'an opted-in write must still yield to observed automation');
-    assert.equal(harness.calls.some(([kind]) => kind === 'jump'), true, 'the jump itself must still happen');
+    assert.equal(
+      harness.calls.some(([kind]) => kind === 'jump'),
+      true,
+      'the jump itself must still happen',
+    );
   } finally {
     harness.restore();
   }

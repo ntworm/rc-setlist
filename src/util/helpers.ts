@@ -1,5 +1,8 @@
 import { networkInterfaces } from 'node:os';
 
+/**
+ * Returns the lan addresses.
+ */
 export function getLanAddresses(): string[] {
   const interfaces = networkInterfaces();
   const out: string[] = [];
@@ -14,6 +17,9 @@ export function getLanAddresses(): string[] {
   return out;
 }
 
+/**
+ * Reports whether the rfc1918 matches the contract.
+ */
 export function isRfc1918(ip: string): boolean {
   const m = /^(\d+)\.(\d+)\.(\d+)\.(\d+)$/.exec(ip);
   if (!m) return false;
@@ -22,6 +28,9 @@ export function isRfc1918(ip: string): boolean {
   return a === 10 || (a === 172 && b >= 16 && b <= 31) || (a === 192 && b === 168);
 }
 
+/**
+ * PickLanIps — implementation detail.
+ */
 export function pickLanIps(ips: string[]): { primary: string; others: string[] } {
   const rfc = ips.filter(isRfc1918);
   if (rfc.length === 0) {

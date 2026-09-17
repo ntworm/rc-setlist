@@ -1,5 +1,7 @@
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
+
+import { embedPanelAssets } from './panel-embed.js';
 import { initialize } from '@ableton-extensions/sdk';
 import {
   startServer,
@@ -9,19 +11,25 @@ import {
   getOscDiagnostics,
   requestOscDiagnosticProbe,
 } from '../index.js';
-import { bridgeState } from '../core/bridge-state.js';
+import { bridgeState } from '../runtime/bridge-state.js';
 import { getLanAddresses, pickLanIps } from '../util/helpers.js';
-import { getAutoStart, getUiLocale, setAutoStart, setUiLocale, type UiLocale , getWriteTempoOnJump, setWriteTempoOnJump } from '../preferences.js';
+import {
+  getAutoStart,
+  getUiLocale,
+  setAutoStart,
+  setUiLocale,
+  type UiLocale,
+  getWriteTempoOnJump,
+  setWriteTempoOnJump,
+} from '../preferences.js';
 import { buildOscDiagnosticModel } from './osc-diagnostics.js';
+import { log } from '../util/log.js';
 // __dirname is a global in CommonJS, which is our target format
 
 type ModalContext = ReturnType<typeof initialize>;
 
 function escapeHtml(value: string): string {
-  return value
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;');
+  return value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
 function panelText(
@@ -39,13 +47,16 @@ function panelText(
       'pt-BR': 'Falha ao carregar os arquivos do painel: {detail}',
     },
   } as const;
-  return templates[key][locale].replace(/\{(\w+)\}/g, (match, name: string) => params[name] ?? match);
+  return templates[key][locale].replace(
+    /\{(\w+)\}/g,
+    (match, name: string) => params[name] ?? match,
+  );
 }
 
-export async function showInfoDialog(
-  context: ModalContext,
-  message: string,
-): Promise<void> {
+/**
+ * ShowInfoDialog — implementation detail.
+ */
+export async function showInfoDialog(context: ModalContext, message: string): Promise<void> {
   const safe = escapeHtml(message);
   const html = `<!DOCTYPE html>
 <html><head><meta charset="utf-8"><style>
@@ -68,14 +79,19 @@ p{text-align:center;line-height:1.5}
   await context.ui.showModalDialog(`data:text/html,${encodeURIComponent(html)}`, 380, 180);
 }
 
+/**
+ * ShowPanelDialog — implementation detail.
+ */
 export async function showPanelDialog(context: ModalContext): Promise<void> {
   for (let turn = 0; turn < 24; turn++) {
     let action: string;
     try {
       action = await renderPanelDialog(context);
-      console.log(`[rc-setlist] renderPanelDialog returned action: "${action}"`);
+      log.info('panel', 'renderPanelDialog returned action', { action });
     } catch (err) {
-      console.error(`[rc-setlist] panel dialog error: ${err}`);
+      log.error('panel', 'panel dialog error', {
+        error: err instanceof Error ? err.message : String(err),
+      });
       return;
     }
     if (action === 'close' || !action) return;
@@ -86,31 +102,31 @@ export async function showPanelDialog(context: ModalContext): Promise<void> {
     const running = isServerRunning();
     try {
       if (action === 'start' && !running) {
-        console.log('[rc-setlist] starting server...');
+        log.info('lifecycle', 'starting server');
         await startServer();
       } else if (action === 'stop' && running) {
-        console.log('[rc-setlist] stopping server...');
+        log.info('lifecycle', 'stopping server');
         await stopServer();
       } else if (action === 'restart') {
-        console.log('[rc-setlist] restarting server...');
+        log.info('lifecycle', 'restarting server');
         await stopServer();
         await startServer();
       } else if (action === 'toggle-auto-start') {
         const next = !getAutoStart();
         const ok = setAutoStart(next);
-        console.log(`[rc-setlist] auto-start toggled to ${next} (write ok=${ok})`);
+        log.info('panel', 'auto-start toggled', { next, writeOk: ok });
       } else if (action === 'toggle-write-tempo') {
         const next = !getWriteTempoOnJump();
         const ok = setWriteTempoOnJump(next);
         bridgeState.writeTempoOnJump = next;
-        console.log(`[rc-setlist] write-tempo-on-jump toggled to ${next} (write ok=${ok})`);
+        log.info('panel', 'write-tempo-on-jump toggled', { next, writeOk: ok });
       } else if (action === 'diagnose-osc' && running) {
         requestOscDiagnosticProbe();
         await new Promise<void>((resolve) => setTimeout(resolve, 350));
       }
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
-      console.error(`[rc-setlist] panel action "${action}" failed: ${msg}`);
+      log.error('panel', 'panel action failed', { action, error: msg });
       await showInfoDialog(context, panelText('actionFailed', { action, detail: msg }));
     }
   }
@@ -127,18 +143,23 @@ async function renderPanelDialog(context: ModalContext): Promise<string> {
   });
 
   const panelDir = path.join(__dirname, 'static/panel');
+  // eslint-disable-next-line no-useless-assignment -- initial value used by the catch branch when fs.readFile fails.
   let html = '';
   try {
     html = await fs.readFile(path.join(panelDir, 'index.html'), 'utf8');
-    const uiSystemCss = await fs.readFile(path.join(__dirname, 'static/shared/ui-system.css'), 'utf8');
+    const uiSystemCss = await fs.readFile(
+      path.join(__dirname, 'static/shared/ui-system.css'),
+      'utf8',
+    );
     const qrJs = await fs.readFile(path.join(panelDir, 'qrcode.js'), 'utf8');
     const i18nJs = await fs.readFile(path.join(__dirname, 'static/shared/i18n.js'), 'utf8');
 
-    html = html.replace('<link rel="stylesheet" href="../shared/ui-system.css">', `<style>${uiSystemCss}</style>`);
-    html = html.replace('<script src="../shared/i18n.js"></script>', `<script>${i18nJs}</script>`);
-    html = html.replace('<script src="qrcode.js"></script>', `<script>${qrJs}</script>`);
+    html = embedPanelAssets(html, { uiSystemCss, i18nJs, qrJs });
 
     const durationConfidence = bridgeState.manager?.getState()?.durationConfidence ?? 'estimated';
+    const storageInitialized = bridgeState.profileManager
+      ? bridgeState.profileManager.list().length > 0
+      : false;
 
     const injection = `
       <script>
@@ -151,11 +172,14 @@ async function renderPanelDialog(context: ModalContext): Promise<string> {
         window.INITIAL_LOCALE = ${JSON.stringify(getUiLocale())};
         window.INITIAL_OSC_DIAGNOSTICS = ${JSON.stringify(oscDiagnostics)};
         window.INITIAL_DURATION_CONFIDENCE = "${durationConfidence}";
+        window.INITIAL_STORAGE_INITIALIZED = ${storageInitialized ? 'true' : 'false'};
       </script>
     `;
     html = html.replace('<body>', `<body>${injection}`);
   } catch (err) {
-    console.error('[rc-setlist] Error loading panel assets:', err);
+    log.error('panel', 'Error loading panel assets', {
+      error: err instanceof Error ? err.message : String(err),
+    });
     const message = escapeHtml(panelText('assetsFailed', { detail: String(err) }));
     html = `<!DOCTYPE html><html lang="${getUiLocale()}"><body style="background:#1c1c1e;color:#fff;padding:20px;font-family:sans-serif"><h3>${message}</h3></body></html>`;
   }
@@ -163,20 +187,17 @@ async function renderPanelDialog(context: ModalContext): Promise<string> {
   return await context.ui.showModalDialog(`data:text/html,${encodeURIComponent(html)}`, 760, 600);
 }
 
+/**
+ * Registers the panel command.
+ */
 export function registerPanelCommand(context: ReturnType<typeof initialize>): void {
+  // eslint-disable-next-line @typescript-eslint/no-misused-promises -- registerCommand callback is documented to return Promise<void>
   void context.commands.registerCommand('abletonSetlistBridge.panel', async () => {
     await showPanelDialog(context);
   });
-  
-  const SCOPES = [
-    'MidiTrack',
-    'AudioTrack',
-    'MidiClip',
-    'AudioClip',
-    'ClipSlot',
-    'Scene',
-  ] as const;
+
+  const SCOPES = ['MidiTrack', 'AudioTrack', 'MidiClip', 'AudioClip', 'ClipSlot', 'Scene'] as const;
   for (const scope of SCOPES) {
-    void context.ui.registerContextMenuAction(scope, 'Ableton RC Setlist', 'abletonSetlistBridge.panel');
+    void context.ui.registerContextMenuAction(scope, 'RC Setlist', 'abletonSetlistBridge.panel');
   }
 }

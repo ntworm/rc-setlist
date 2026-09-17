@@ -21,17 +21,17 @@ test('concurrent MCP callers share a failed connection attempt and all settle', 
   const client = new McpTcpClient({ port, connectionTimeoutMs: 100 });
 
   const result = await Promise.race([
-    Promise.allSettled([
-      client.call('get_session_info'),
-      client.call('get_song_length'),
-    ]),
+    Promise.allSettled([client.call('get_session_info'), client.call('get_song_length')]),
     new Promise((resolve) => setTimeout(() => resolve('timeout'), 750)),
   ]);
 
   client.stop();
   assert.notEqual(result, 'timeout');
   assert.equal(result.length, 2);
-  assert.equal(result.every((entry) => entry.status === 'rejected'), true);
+  assert.equal(
+    result.every((entry) => entry.status === 'rejected'),
+    true,
+  );
 });
 
 test('an MCP server that accepts but never replies times out the request and releases the connection', async () => {
@@ -51,7 +51,7 @@ test('an MCP server that accepts but never replies times out the request and rel
   const result = await Promise.race([
     client.call('get_session_info').then(
       () => 'resolved',
-      (error) => error instanceof Error ? error.message : String(error),
+      (error) => (error instanceof Error ? error.message : String(error)),
     ),
     new Promise((resolve) => setTimeout(() => resolve('test timeout'), 500)),
   ]);

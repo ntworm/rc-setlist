@@ -1,13 +1,10 @@
 import { EventEmitter } from 'node:events';
-import { OperatorError } from '../commands/operator-error.js';
+import { OperatorError } from '../core/operator-error.js';
 import { ProfileError } from './profile-manager.js';
+import { log } from '../util/log.js';
 import type { SetlistManager } from './setlist-manager.js';
 import type { EventLogger } from './event-log.js';
-import type {
-  CommandFailureReason,
-  CommandStatus,
-  ShowCommand,
-} from '../types.js';
+import type { CommandFailureReason, CommandStatus, ShowCommand } from '../types.js';
 
 type CommandCompletion = 'local' | 'observable';
 
@@ -68,16 +65,18 @@ function policyFor(type: string): CommandPolicy {
 }
 
 function isTerminal(status: CommandStatus): boolean {
-  return status === 'confirmed'
-    || status === 'failed'
-    || status === 'expired'
-    || status === 'cancelled';
+  return (
+    status === 'confirmed' || status === 'failed' || status === 'expired' || status === 'cancelled'
+  );
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
+/**
+ * Manages the lifecycle and public surface of CommandBus.
+ */
 export class CommandBus extends EventEmitter {
   private readonly processedIds = new Map<string, CommandRetention>();
   private readonly commandHistory = new Map<string, ShowCommand<unknown>>();
@@ -115,8 +114,9 @@ export class CommandBus extends EventEmitter {
       const command = this.commandHistory.get(id);
       if (command !== retention.command) continue;
 
-      const canExpire = retention.phase === 'registered'
-        || (retention.phase === 'settled' && isTerminal(command.status));
+      const canExpire =
+        retention.phase === 'registered' ||
+        (retention.phase === 'settled' && isTerminal(command.status));
       if (!canExpire || now - retention.timestamp <= COMMAND_RETENTION_MS) continue;
 
       this.processedIds.delete(id);
@@ -124,10 +124,7 @@ export class CommandBus extends EventEmitter {
     }
   }
 
-  private updateRetentionPhase(
-    command: ShowCommand<unknown>,
-    phase: CommandRetentionPhase,
-  ): void {
+  private updateRetentionPhase(command: ShowCommand<unknown>, phase: CommandRetentionPhase): void {
     const retention = this.processedIds.get(command.commandId);
     if (!retention || retention.command !== command) return;
     retention.phase = phase;
@@ -187,7 +184,7 @@ export class CommandBus extends EventEmitter {
     executeFn: () => void | Promise<void>,
   ): void {
     const policy = policyFor(command.type);
-    const safetyFailure = this.safetyFailureReason(command, policy);
+    const safetyFailure = this.safetyFailureReason(policy);
 
     if (safetyFailure) {
       this.updateCommandStatus(command, 'failed', safetyFailure);
@@ -197,7 +194,10 @@ export class CommandBus extends EventEmitter {
     if (!policy.safetyLane && this.commandQueue.length >= this.maxQueueSize) {
       // The client learns of it through the failed status; throwing here
       // would only surface as an unhandled rejection in the WS listener.
-      console.warn(`[CommandBus] Queue full (${this.maxQueueSize}); rejecting ${command.type}.`);
+      log.warn('commands', 'Queue full; rejecting command', {
+        maxQueueSize: this.maxQueueSize,
+        commandType: command.type,
+      });
       command.error = 'Command queue capacity exceeded';
       this.updateCommandStatus(command, 'failed', 'execution_failed');
       return;
@@ -232,7 +232,7 @@ export class CommandBus extends EventEmitter {
     }
 
     const policy = policyFor(command.type);
-    const safetyFailure = this.safetyFailureReason(command, policy);
+    const safetyFailure = this.safetyFailureReason(policy);
     if (safetyFailure) {
       this.updateCommandStatus(command, 'failed', safetyFailure);
       return;
@@ -249,7 +249,10 @@ export class CommandBus extends EventEmitter {
       }
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
-      console.error(`[CommandBus] ${command.type} failed: ${message}`);
+      log.error('commands', 'command failed', {
+        commandType: command.type,
+        error: message,
+      });
       // Only messages written for the operator travel to the client; a raw
       // Error may carry a path or a stack fragment that stays on the host.
       if (err instanceof OperatorError || err instanceof ProfileError) command.error = message;
@@ -259,10 +262,7 @@ export class CommandBus extends EventEmitter {
     }
   }
 
-  private safetyFailureReason(
-    command: ShowCommand<unknown>,
-    policy: CommandPolicy,
-  ): CommandFailureReason | undefined {
+  private safetyFailureReason(policy: CommandPolicy): CommandFailureReason | undefined {
     if (policy.safetyLane) return undefined;
 
     const state = this.manager.getState();
@@ -369,13 +369,15 @@ export class CommandBus extends EventEmitter {
       } else if (command.type === 'metronome') {
         matches = typeof payload.value === 'boolean' && state.metronome === payload.value;
       } else if (command.type === 'set_quantization') {
-        matches = typeof payload.value === 'number' && state.clipTriggerQuantization === payload.value;
+        matches =
+          typeof payload.value === 'number' && state.clipTriggerQuantization === payload.value;
       } else if (command.type === 'jump') {
-        matches = payload.songIndex !== undefined
-          && state.activeSongIndex === payload.songIndex
-          && (payload.sectionIndex === undefined
-            || payload.sectionIndex === null
-            || state.activeSectionIndex === payload.sectionIndex);
+        matches =
+          payload.songIndex !== undefined &&
+          state.activeSongIndex === payload.songIndex &&
+          (payload.sectionIndex === undefined ||
+            payload.sectionIndex === null ||
+            state.activeSectionIndex === payload.sectionIndex);
       }
 
       if (matches) confirmed.push(command);

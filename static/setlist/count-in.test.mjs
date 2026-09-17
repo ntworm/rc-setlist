@@ -30,10 +30,18 @@ test('four beats at 120 BPM fall every half second, with the downbeat after them
   const plan = countIn.planCountIn({ bpm: 120, beatsPerBar: 4, latencyMs: 0 });
   // Array.from rebuilds the list in this realm: the module runs inside a vm
   // context, so its arrays fail a strict deep comparison on their prototype.
-  assert.deepEqual(Array.from(plan.beats, (beat) => beat.offsetMs), [0, 500, 1000, 1500]);
+  assert.deepEqual(
+    Array.from(plan.beats, (beat) => beat.offsetMs),
+    [0, 500, 1000, 1500],
+  );
   assert.equal(plan.downbeatOffsetMs, 2000);
   assert.equal(plan.beats[0].accent, true);
-  assert.equal(Array.from(plan.beats).slice(1).every((beat) => !beat.accent), true);
+  assert.equal(
+    Array.from(plan.beats)
+      .slice(1)
+      .every((beat) => !beat.accent),
+    true,
+  );
 });
 
 test('Play is sent ahead of the downbeat by the latency, so Live lands on it', () => {
@@ -75,8 +83,14 @@ test('inputs that cannot describe a bar return null instead of a guess', () => {
 });
 
 test('a negative or nonsense latency is treated as none rather than shifting Play early', () => {
-  assert.equal(countIn.planCountIn({ bpm: 120, beatsPerBar: 4, latencyMs: -500 }).sendPlayOffsetMs, 2000);
-  assert.equal(countIn.planCountIn({ bpm: 120, beatsPerBar: 4, latencyMs: Number.NaN }).sendPlayOffsetMs, 2000);
+  assert.equal(
+    countIn.planCountIn({ bpm: 120, beatsPerBar: 4, latencyMs: -500 }).sendPlayOffsetMs,
+    2000,
+  );
+  assert.equal(
+    countIn.planCountIn({ bpm: 120, beatsPerBar: 4, latencyMs: Number.NaN }).sendPlayOffsetMs,
+    2000,
+  );
 });
 
 test('a fractional tempo keeps its precision across the bar', () => {
@@ -84,3 +98,45 @@ test('a fractional tempo keeps its precision across the bar', () => {
   assert.ok(Math.abs(plan.intervalMs - 60000 / 111.11) < 1e-9);
   assert.ok(Math.abs(plan.downbeatOffsetMs - 4 * (60000 / 111.11)) < 1e-9);
 });
+
+test('browserCountInAudioEnabled reads from storage safely', () => {
+  const key = countIn.AUDIO_STORAGE_KEY;
+  assert.equal(key, 'rc-setlist.count-in-audio');
+
+  const mockStorage = {
+    _data: new Map(),
+    getItem(k) {
+      return this._data.get(k) || null;
+    },
+    setItem(k, v) {
+      this._data.set(k, String(v));
+    },
+  };
+
+  // Default ON: key absent → enabled
+  assert.equal(countIn.browserCountInAudioEnabled(mockStorage), true, 'ausente → on');
+
+  // Explicitly enabled
+  mockStorage.setItem(key, 'true');
+  assert.equal(countIn.browserCountInAudioEnabled(mockStorage), true, 'true');
+
+  // Explicitly disabled
+  mockStorage.setItem(key, 'false');
+  assert.equal(countIn.browserCountInAudioEnabled(mockStorage), false, 'false');
+
+  // Any value other than 'false' keeps audio on
+  mockStorage.setItem(key, '1');
+  assert.equal(countIn.browserCountInAudioEnabled(mockStorage), true, '1 → on');
+
+  // Storage errors → default ON (safe fallback)
+  const throwingStorage = {
+    getItem() {
+      throw new Error('SecurityError: localStorage is not available');
+    },
+  };
+  assert.equal(countIn.browserCountInAudioEnabled(throwingStorage), true, 'lança → on');
+
+  // Null storage → default ON
+  assert.equal(countIn.browserCountInAudioEnabled(null), true, 'null → on');
+});
+

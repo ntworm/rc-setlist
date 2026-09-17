@@ -1,11 +1,18 @@
-import { bridgeState } from '../core/bridge-state.js';
+import { bridgeState } from '../runtime/bridge-state.js';
 import { getExtensionContext } from '../context.js';
+import { log } from '../util/log.js';
 
 function isValidTempo(value: number | null | undefined): value is number {
   return typeof value === 'number' && Number.isFinite(value) && value > 0;
 }
 
-export function resolveJumpTargetTempo(songIndex: number, sectionIndex: number | null): number | null {
+/**
+ * Resolves the jump target tempo.
+ */
+export function resolveJumpTargetTempo(
+  songIndex: number,
+  sectionIndex: number | null,
+): number | null {
   const song = bridgeState.manager?.getState().songs[songIndex];
   if (!song) return null;
 
@@ -21,7 +28,10 @@ export function resolveJumpTargetTempo(songIndex: number, sectionIndex: number |
  * Returns the tempo written, or null when nothing was written. A null return is
  * the normal, safe case; it is not an error.
  */
-export function applyJumpTargetTempo(songIndex: number, sectionIndex: number | null): number | null {
+export function applyJumpTargetTempo(
+  songIndex: number,
+  sectionIndex: number | null,
+): number | null {
   if (!bridgeState.writeTempoOnJump) return null;
   if (bridgeState.manager?.isTempoAutomationSuspected()) return null;
 
@@ -35,7 +45,7 @@ export function applyJumpTargetTempo(songIndex: number, sectionIndex: number | n
       return bpm;
     }
   } catch {
-    console.warn('[Jump] SDK tempo setter failed; falling back to AbletonOSC.');
+    log.warn('commands', 'SDK tempo setter failed; falling back to AbletonOSC.');
   }
 
   try {

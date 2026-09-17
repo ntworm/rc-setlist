@@ -1,4 +1,4 @@
-# Ableton RC Setlist tester guide
+﻿# RC Setlist tester guide
 
 Use only the release-candidate directory supplied by the maintainer. Start with
 `START-HERE.html` and record every result in its checklist. The version under
@@ -8,7 +8,7 @@ test is the one printed in the kit's `README.txt` and shown in the Live panel.
 
 - Operating system and version
 - Ableton Live version and edition
-- Ableton RC Setlist version shown in the panel
+- RC Setlist version shown in the panel
 - Which Remote Script the panel reports (`via RC Bridge 1.0.0 on port 11020`,
   or `via AbletonOSC on port 11000`)
 - Browser and controller device
@@ -22,7 +22,7 @@ test is the one printed in the kit's `README.txt` and shown in the Live panel.
    then choose **RCBridge** under Settings › Link, Tempo & MIDI › Control
    Surface.
 3. Install the `.ablx` package named in the kit's `README.txt`.
-4. Open **Extensions > Ableton RC Setlist** and start the server. The OSC line
+4. Open **Extensions > RC Setlist** and start the server. The OSC line
    must read `via RC Bridge`.
 5. Confirm no private path, SDK archive or real song content appears in the kit.
 6. With a fresh extension-data directory, confirm the first Start creates the

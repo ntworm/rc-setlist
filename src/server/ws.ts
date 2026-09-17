@@ -1,19 +1,28 @@
 import * as http from 'node:http';
+import type { Duplex } from 'node:stream';
+import type { Socket } from 'node:net';
 import { WebSocketServer, WebSocket } from 'ws';
 import { EventEmitter } from 'node:events';
 import { URL as NodeURL } from 'node:url';
-import { SetlistState, AugmentedWebSocket } from '../types.js';
+import type { SetlistState, AugmentedWebSocket } from '../types.js';
+import { isPlainObject } from '../util/json.js';
 import { decodeClientMessage } from './client-message.js';
+import { log } from '../util/log.js';
 
+/**
+ * Reports whether the valid origin matches the contract.
+ */
 export function isValidOrigin(origin: string, reqHost: string): boolean {
   const expected = reqHost.toLowerCase();
   // 1) Try the node:url import (works even when the global URL is masked or undefined)
   try {
     const parsed = new NodeURL(origin);
     if (parsed.host.toLowerCase() === expected) return true;
-  } catch {}
+  } catch {
+    // swallow: nothing to do here on purpose
+  }
   // 2) Fallback: extract authority (host:port) with a regex and no URL dependency
-  const m = origin.match(/^[a-z][a-z0-9+.\-]*:\/\/([^/?#]+)/i);
+  const m = origin.match(/^[a-z][a-z0-9+.-]*:\/\/([^/?#]+)/i);
   if (m && m[1]!.toLowerCase() === expected) return true;
   return false;
 }
@@ -26,6 +35,9 @@ export interface SetlistWSServerOptions {
   clearIntervalFn?: typeof clearInterval;
 }
 
+/**
+ * Manages the lifecycle and public surface of SetlistWSServer.
+ */
 export class SetlistWSServer extends EventEmitter {
   private wss: WebSocketServer | null = null;
   private clients: Set<AugmentedWebSocket> = new Set();
@@ -62,7 +74,11 @@ export class SetlistWSServer extends EventEmitter {
       }
       if (ws.isAlive === false) {
         this.clients.delete(ws);
-        try { ws.terminate(); } catch { /* already closing */ }
+        try {
+          ws.terminate();
+        } catch {
+          /* already closing */
+        }
         continue;
       }
       ws.isAlive = false;
@@ -70,7 +86,11 @@ export class SetlistWSServer extends EventEmitter {
         ws.ping();
       } catch {
         this.clients.delete(ws);
-        try { ws.terminate(); } catch { /* already closing */ }
+        try {
+          ws.terminate();
+        } catch {
+          /* already closing */
+        }
       }
     }
   }
@@ -90,7 +110,7 @@ export class SetlistWSServer extends EventEmitter {
     const now = Date.now();
     const limitWindow = 60000;
     const tracker = this.authFailures.get(ip);
-    if (tracker && (now - tracker.windowStart <= limitWindow) && tracker.count >= 5) {
+    if (tracker && now - tracker.windowStart <= limitWindow && tracker.count >= 5) {
       return true;
     }
     return false;
@@ -101,7 +121,7 @@ export class SetlistWSServer extends EventEmitter {
     const now = Date.now();
     const limitWindow = 60000;
     const tracker = this.authFailures.get(ip);
-    if (!tracker || (now - tracker.windowStart > limitWindow)) {
+    if (!tracker || now - tracker.windowStart > limitWindow) {
       this.authFailures.set(ip, { count: 1, windowStart: now });
     } else {
       tracker.count++;
@@ -112,13 +132,15 @@ export class SetlistWSServer extends EventEmitter {
     this.wss = new WebSocketServer({
       noServer: true,
       perMessageDeflate: false,
-      maxPayload: 102400 // 100KB limit
+      maxPayload: 102400, // 100KB limit
     });
-    
+
     this.wss.on('connection', (ws: AugmentedWebSocket, req) => {
       this.clients.add(ws);
       ws.isAlive = true;
-      ws.on('pong', () => { ws.isAlive = true; });
+      ws.on('pong', () => {
+        ws.isAlive = true;
+      });
       const remote = req.socket.remoteAddress ?? 'unknown';
       ws.remoteAddress = remote;
       // Parse token from connection URL query parameter
@@ -131,22 +153,28 @@ export class SetlistWSServer extends EventEmitter {
         tokenParsed = url.searchParams.get('token');
         isController = tokenParsed === this.authToken && this.authToken !== '';
       } catch {
-        console.warn('[WS] Could not parse the connection URL.');
+        log.warn('ws', 'Could not parse the connection URL.');
       }
 
       ws.isController = isController;
-      console.log(`[WS] Client connected from ${remote}, hasToken=${!!tokenParsed}, controller=${isController}`);
+      log.info('ws', 'Client connected', {
+        remote,
+        hasToken: !!tokenParsed,
+        controller: isController,
+      });
 
       // Send immediate authentication status to client
       ws.send(JSON.stringify({ type: 'auth_status', isController }));
 
       // Send WS Debug log message to client for on-screen diagnostics
-      ws.send(JSON.stringify({
-        type: 'log',
-        level: isController ? 'info' : 'warn',
-        message: `[WS Debug] Connected from ${remote}. Controller: ${isController}`,
-        timestamp: Date.now()
-      }));
+      ws.send(
+        JSON.stringify({
+          type: 'log',
+          level: isController ? 'info' : 'warn',
+          message: `[WS Debug] Connected from ${remote}. Controller: ${isController}`,
+          timestamp: Date.now(),
+        }),
+      );
 
       if (this.lastState) {
         ws.send(JSON.stringify({ type: 'state', state: this.lastState }));
@@ -154,7 +182,16 @@ export class SetlistWSServer extends EventEmitter {
 
       ws.on('message', (data) => {
         try {
-          const msg = JSON.parse(data.toString());
+          const text =
+            typeof data === 'string'
+              ? data
+              : Buffer.isBuffer(data)
+                ? data.toString('utf8')
+                : Array.isArray(data)
+                  ? Buffer.concat(data).toString('utf8')
+                  : Buffer.from(data).toString('utf8');
+          const raw: unknown = JSON.parse(text);
+          const msg = isPlainObject(raw) ? raw : null;
           if (msg && msg.type === 'auth') {
             const hasToken = typeof msg.token === 'string' && msg.token !== '';
             if (hasToken) {
@@ -164,60 +201,71 @@ export class SetlistWSServer extends EventEmitter {
                 ws.isController = true;
                 ws.send(JSON.stringify({ type: 'auth_result', success: true }));
                 ws.send(JSON.stringify({ type: 'auth_status', isController: true }));
-                console.log(`[WS] Manual authentication requested from ${remote}: SUCCESS`);
+                log.info('ws', 'Manual authentication requested: SUCCESS', { remote });
               } else {
                 if (this.isAuthRateLimited(remote)) {
-                  ws.send(JSON.stringify({ type: 'auth_result', success: false, error: 'Too many authentication attempts' }));
-                  console.warn(`[WS] Manual authentication attempt blocked by rate limit for ${remote}`);
+                  ws.send(
+                    JSON.stringify({
+                      type: 'auth_result',
+                      success: false,
+                      error: 'Too many authentication attempts',
+                    }),
+                  );
+                  log.warn('ws', 'Manual authentication attempt blocked by rate limit', { remote });
                   return;
                 }
                 this.recordAuthFailure(remote);
                 ws.send(JSON.stringify({ type: 'auth_result', success: false }));
-                console.log(`[WS] Manual authentication requested from ${remote}: FAILURE`);
+                log.info('ws', 'Manual authentication requested: FAILURE', { remote });
               }
             } else {
               // Empty token manual auth fails normally without incrementing rate limits
               ws.send(JSON.stringify({ type: 'auth_result', success: false }));
-              console.log(`[WS] Manual authentication requested from ${remote}: EMPTY/DENIED`);
+              log.info('ws', 'Manual authentication requested: EMPTY/DENIED', { remote });
             }
             return;
           }
           const decoded = decodeClientMessage(msg);
           if (!decoded.ok) {
             if (ws.readyState === WebSocket.OPEN) {
-              ws.send(JSON.stringify({
-                type: 'error',
-                code: decoded.code,
-                message: decoded.message,
-                ...(decoded.commandId ? { commandId: decoded.commandId } : {}),
-              }));
+              ws.send(
+                JSON.stringify({
+                  type: 'error',
+                  code: decoded.code,
+                  message: decoded.message,
+                  ...(decoded.commandId ? { commandId: decoded.commandId } : {}),
+                }),
+              );
             }
             return;
           }
           this.emit('client_message', decoded.message, ws);
         } catch {
-          console.warn('[WS] Rejected malformed JSON message.');
+          log.warn('ws', 'Rejected malformed JSON message.');
           if (ws.readyState === WebSocket.OPEN) {
-            ws.send(JSON.stringify({
-              type: 'error',
-              code: 'invalid_message',
-              message: 'Message must be valid JSON.',
-            }));
+            ws.send(
+              JSON.stringify({
+                type: 'error',
+                code: 'invalid_message',
+                message: 'Message must be valid JSON.',
+              }),
+            );
           }
         }
       });
 
       ws.on('close', () => {
         this.clients.delete(ws);
-        console.log('[WS] Client disconnected');
+        log.info('ws', 'Client disconnected');
       });
 
       ws.on('error', (error) => {
         const codeValue = (error as Error & { code?: unknown }).code;
-        const code = typeof codeValue === 'string' && /^[A-Z0-9_]{1,64}$/.test(codeValue)
-          ? codeValue
-          : 'UNKNOWN';
-        console.error(`[WS] Client socket error (${code}).`);
+        const code =
+          typeof codeValue === 'string' && /^[A-Z0-9_]{1,64}$/.test(codeValue)
+            ? codeValue
+            : 'UNKNOWN';
+        log.error('ws', 'Client socket error', { code });
       });
     });
 
@@ -232,17 +280,20 @@ export class SetlistWSServer extends EventEmitter {
     return this.wss;
   }
 
-  public handleUpgrade(req: http.IncomingMessage, socket: any, head: Buffer): void {
+  public handleUpgrade(req: http.IncomingMessage, socket: Duplex, head: Buffer): void {
     const urlPath = req.url ? req.url.split('?')[0] : '';
     if (urlPath === '/ws' && this.wss) {
-      const remote = socket.remoteAddress ?? 'unknown';
+      const remote = (socket as Socket).remoteAddress ?? 'unknown';
 
       // 1. Origin validation
       const origin = req.headers['origin'];
       const reqHost = req.headers['host'];
       if (origin) {
         if (!reqHost || !isValidOrigin(origin, reqHost)) {
-          console.warn(`[WS] Rejecting upgrade with an invalid origin or missing Host: ${origin} (Host: ${reqHost})`);
+          log.warn('ws', 'Rejecting upgrade with invalid origin or missing Host', {
+            origin,
+            host: reqHost,
+          });
           socket.write('HTTP/1.1 403 Forbidden\r\n\r\n');
           socket.destroy();
           return;
@@ -255,7 +306,9 @@ export class SetlistWSServer extends EventEmitter {
         const host = req.headers.host ?? 'localhost';
         const url = new NodeURL(req.url ?? '', `http://${host}`);
         tokenParsed = url.searchParams.get('token');
-      } catch {}
+      } catch {
+        // swallow: nothing to do here on purpose
+      }
 
       if (tokenParsed !== null && tokenParsed !== '') {
         const isValid = tokenParsed === this.authToken && this.authToken !== '';
@@ -263,7 +316,7 @@ export class SetlistWSServer extends EventEmitter {
           this.authFailures.delete(remote);
         } else {
           if (this.isAuthRateLimited(remote)) {
-            console.warn(`[WS] Rejecting upgrade because ${remote} exceeded the authentication-attempt limit`);
+            log.warn('ws', 'Rejecting upgrade: authentication-attempt limit exceeded', { remote });
             socket.write('HTTP/1.1 429 Too Many Requests\r\n\r\n');
             socket.destroy();
             return;
@@ -281,14 +334,23 @@ export class SetlistWSServer extends EventEmitter {
   }
 
   private sendWithBackpressure(ws: AugmentedWebSocket, payloadJson: string): boolean {
-    if (ws.bufferedAmount > 2097152) { // 2 MB disconnect limit
-      console.warn(`[WS] Disconnecting client ${ws.remoteAddress ?? 'unknown'} due to severe backpressure (${ws.bufferedAmount} bytes buffered)`);
-      try { ws.terminate(); } catch {}
+    if (ws.bufferedAmount > 2097152) {
+      // 2 MB disconnect limit
+      log.warn('ws', 'Disconnecting client due to severe backpressure', {
+        remote: ws.remoteAddress ?? 'unknown',
+        bufferedBytes: ws.bufferedAmount,
+      });
+      try {
+        ws.terminate();
+      } catch {
+        // swallow: nothing to do here on purpose
+      }
       this.clients.delete(ws);
       return false;
     }
 
-    if (ws.bufferedAmount > 524288) { // 512 KB drop threshold
+    if (ws.bufferedAmount > 524288) {
+      // 512 KB drop threshold
       return false;
     }
 
@@ -307,7 +369,7 @@ export class SetlistWSServer extends EventEmitter {
       return;
     }
     this.lastStateJson = json;
-    
+
     for (const ws of [...this.clients]) {
       if (ws.readyState === WebSocket.OPEN) {
         this.sendWithBackpressure(ws, json);
@@ -315,7 +377,7 @@ export class SetlistWSServer extends EventEmitter {
     }
   }
 
-  public broadcast(payload: any): void {
+  public broadcast(payload: unknown): void {
     const json = JSON.stringify(payload);
     for (const ws of [...this.clients]) {
       if (ws.readyState === WebSocket.OPEN) {
@@ -324,11 +386,15 @@ export class SetlistWSServer extends EventEmitter {
     }
   }
 
-  public broadcastLog(message: string, level: 'info' | 'warn' | 'error' | 'automation' = 'info'): void {
+  public broadcastLog(
+    message: string,
+    level: 'info' | 'warn' | 'error' | 'automation' = 'info',
+  ): void {
     const key = `${level}:${message}`;
     const now = this.now();
     const previous = this.lastLogTimeByKey.get(key);
-    if (previous !== undefined && now >= previous && now - previous < this.logDedupeWindowMs) return;
+    if (previous !== undefined && now >= previous && now - previous < this.logDedupeWindowMs)
+      return;
     this.lastLogTimeByKey.set(key, now);
     if (this.lastLogTimeByKey.size > 100) {
       const firstKey = this.lastLogTimeByKey.keys().next().value;
@@ -363,8 +429,16 @@ export class SetlistWSServer extends EventEmitter {
     this.lastState = null;
     this.lastStateJson = '';
     if (this.wss) {
-      try { this.wss.removeAllListeners(); } catch {}
-      try { this.wss.close(); } catch {}
+      try {
+        this.wss.removeAllListeners();
+      } catch {
+        // swallow: nothing to do here on purpose
+      }
+      try {
+        this.wss.close();
+      } catch {
+        // swallow: nothing to do here on purpose
+      }
       this.wss = null;
     }
   }

@@ -1,14 +1,14 @@
-# Ableton RC Setlist
+# RC Setlist
 
 [![PolyForm Noncommercial](https://img.shields.io/badge/license-PolyForm%20Noncommercial-orange)](LICENSE)
-[![Version](https://img.shields.io/badge/version-0.7.0-f97316)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-1.0.0-f97316)](CHANGELOG.md)
 [![CI](https://github.com/ntworm/rc-setlist/actions/workflows/ci.yml/badge.svg)](https://github.com/ntworm/rc-setlist/actions/workflows/ci.yml)
 
 > **[Landing page and screenshots](https://ntworm.github.io/rc-setlist/)**
 >
-> ![Ableton RC Setlist Stage Control](docs/media/en/stage-control.png)
+> ![RC Setlist Stage Control](docs/media/en/stage-control.png)
 
-Ableton RC Setlist is a source-available setlist extension for Ableton Live. It turns
+RC Setlist is a source-available setlist extension for Ableton Live. It turns
 Arrangement locators into an operator setlist, synchronized lyrics, tempo and
 click feedback, and guarded transport controls for rehearsals and live shows.
 
@@ -18,7 +18,7 @@ click feedback, and guarded transport controls for rehearsals and live shows.
 [Português (Brasil)](docs/pt-BR/README.md) ·
 [Latest release](https://github.com/ntworm/rc-setlist/releases/latest)
 
-> **Network safety:** Ableton RC Setlist serves browser controls on your local network.
+> **Network safety:** RC Setlist serves browser controls on your local network.
 > Use it only on a trusted LAN, keep the controller URL/token private, and never
 > expose port `4444` directly to the public internet. See [SECURITY.md](SECURITY.md).
 
@@ -53,15 +53,20 @@ until this release is exercised on real macOS hardware.
 ## Quick start
 
 1. Install RC Bridge: run the kit's `Install-RC-Bridge.cmd` / `Install RC Bridge.command`, then choose RCBridge as a Control Surface in Live.
-2. Download `Ableton-RC-Setlist-0.7.0.ablx` from the latest release.
+2. Download `RC-Setlist-1.0.1.ablx` (or `RC-Setlist-1.0.0.ablx`) from the latest release.
 3. Open the `.ablx` and approve installation in Live.
-4. In Live, open **Extensions > Ableton RC Setlist** and start the server.
+4. In Live, open **Extensions > RC Setlist** and start the server.
 5. Use the panel URL or QR code to open `/setlist` or `/performance`.
 6. Choose English or **Português (Brasil)** from the language menu.
 
-The browser may show a warning for the per-install self-signed certificate.
-Accept it only when the address matches the host shown by Ableton RC Setlist on your
-trusted local network. Full instructions are in [docs/INSTALL.md](docs/INSTALL.md).
+Users upgrading from 0.x (`Ableton-RC-Setlist-0.4.x`–`0.7.0`) run the kit's
+`Migrate-RC-Setlist-Data.cmd` (Windows) or `Migrate RC Setlist Data.command`
+(macOS) once before opening Live with 1.0. The script copies profiles,
+project-setlists and preferences into the new layout without touching the old
+one. The browser may show a warning for the per-install self-signed
+certificate. Accept it only when the address matches the host shown by RC
+Setlist on your trusted local network. Full instructions are in
+[docs/INSTALL.md](docs/INSTALL.md).
 
 ## Locator format
 
@@ -82,7 +87,7 @@ Ableton Live + RC Bridge (bundled fork of AbletonOSC)
           │ OSC 11020, replies to the asking socket
           │ (stock AbletonOSC on 11000/11001 still accepted)
           ▼
-     Ableton RC Setlist extension
+     RC Setlist extension
           │ local HTTP(S) + WebSocket :4444
           ├── /setlist       operator workspace
           └── /performance   stage display
@@ -106,13 +111,15 @@ Authorized developers can configure a complete build using
 ## Documentation
 
 - [Documentation index](docs/README.md)
-- [What is new in 0.7.0](docs/RELEASE-NOTES-0.7.0.md)
+- [What is new in 1.0.0](docs/RELEASE-NOTES-1.0.0.md)
+- [Notas da versão 1.0.0 (pt-BR)](docs/pt-BR/NOTAS-DA-VERSAO-1.0.0.md)
 - [Installation](docs/INSTALL.md)
 - [User guide](docs/USER-GUIDE.md)
 - [Português (Brasil)](docs/pt-BR/README.md)
 - [Troubleshooting](docs/TROUBLESHOOTING.md)
 - [Tester guide](docs/TESTER-GUIDE.md)
 - [Development](docs/DEVELOPMENT.md)
+- [Contracts](docs/CONTRACTS.md)
 - [Privacy](PRIVACY.md)
 - [Security](SECURITY.md)
 - [Support](SUPPORT.md)
@@ -121,7 +128,7 @@ Authorized developers can configure a complete build using
 
 ## License
 
-Ableton RC Setlist is source-available under the
+RC Setlist is source-available under the
 [PolyForm Noncommercial License 1.0.0](LICENSE). Noncommercial use,
 modification and redistribution are permitted under its terms; commercial use
 is not permitted. This is not an OSI-approved open-source license.
@@ -129,5 +136,5 @@ is not permitted. This is not an OSI-approved open-source license.
 Required Notice: Copyright © 2026 Gabriel Worm<br>
 <https://github.com/ntworm/rc-setlist>
 
-Ableton and Ableton Live are trademarks of Ableton AG. Ableton RC Setlist is an
+Ableton and Ableton Live are trademarks of Ableton AG. RC Setlist is an
 independent project and is not affiliated with or endorsed by Ableton AG.

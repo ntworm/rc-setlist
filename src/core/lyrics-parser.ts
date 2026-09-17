@@ -3,6 +3,9 @@ export interface LyricLine {
   text: string;
 }
 
+/**
+ * Parses the lrc.
+ */
 export function parseLrc(content: string): LyricLine[] {
   const lines = content.split(/\r?\n/);
   const result: LyricLine[] = [];
@@ -13,14 +16,14 @@ export function parseLrc(content: string): LyricLine[] {
     if (match) {
       const minutes = parseInt(match[1]!, 10);
       const seconds = parseInt(match[2]!, 10);
-      const centiseconds = match[3] ? parseInt(match[3]!, 10) : 0;
-      
+      const centiseconds = match[3] ? parseInt(match[3], 10) : 0;
+
       let frac = 0;
       if (match[3]) {
         const len = match[3].length;
         frac = centiseconds / Math.pow(10, len);
       }
-      
+
       const timeInSecs = minutes * 60 + seconds + frac;
       const text = match[4] ? match[4].trim() : '';
       result.push({ time: timeInSecs, text });
@@ -30,9 +33,13 @@ export function parseLrc(content: string): LyricLine[] {
   return result.sort((a, b) => a.time - b.time);
 }
 
+/**
+ * Parses the txt.
+ */
 export function parseTxt(content: string): LyricLine[] {
-  return content.split(/\r?\n/)
-    .map(line => line.trim())
-    .filter(line => line.length > 0)
+  return content
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter((line) => line.length > 0)
     .map((line, idx) => ({ time: idx * 1000000, text: line }));
 }

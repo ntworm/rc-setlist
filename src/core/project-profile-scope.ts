@@ -14,6 +14,7 @@ import {
   type ProfilePaths,
 } from './profile-manager.js';
 import { LEGACY_PROFILE_STORAGE_NAMES } from './profile-migration.js';
+import { isPlainObject, isStringArray, parseJson } from '../util/json.js';
 import type { ProjectIdentity } from './project-identity.js';
 
 export interface ProjectProfileScope {
@@ -22,6 +23,9 @@ export interface ProjectProfileScope {
   manager: ProfileManager;
 }
 
+/**
+ * Manages the lifecycle and public surface of ProjectProfilePromotionCancelledError.
+ */
 export class ProjectProfilePromotionCancelledError extends Error {
   public constructor() {
     super('Project profile scope promotion was cancelled.');
@@ -47,7 +51,9 @@ async function copyIfMissing(source: string, destination: string): Promise<void>
   try {
     await fs.access(destination);
     return;
-  } catch {}
+  } catch {
+    // swallow: nothing to do here on purpose
+  }
   await fs.mkdir(path.dirname(destination), { recursive: true });
   await fs.copyFile(source, destination);
 }
@@ -162,7 +168,9 @@ async function mergeProjectProfiles(
       continue;
     }
     const sourcePaths = source.manager.getPaths(sourceProfile.id);
-    let targetProfile = target.list().find(({ name }) => profileNameKey(name) === profileNameKey(sourceProfile.name));
+    let targetProfile = target
+      .list()
+      .find(({ name }) => profileNameKey(name) === profileNameKey(sourceProfile.name));
 
     if (targetProfile) {
       if (reusableTarget?.id === targetProfile.id) reusableTarget = null;
@@ -170,7 +178,9 @@ async function mergeProjectProfiles(
       ensurePromotionAuthorized(promotionGuard);
       if (hasConflict) {
         ensurePromotionAuthorized(promotionGuard);
-        targetProfile = await target.create(recoveredProfileName(sourceProfile.name, target.list()));
+        targetProfile = await target.create(
+          recoveredProfileName(sourceProfile.name, target.list()),
+        );
         ensurePromotionAuthorized(promotionGuard);
       }
     } else if (reusableTarget) {
@@ -204,18 +214,19 @@ async function mergeProjectProfiles(
 
 async function isPristineDefaultManager(manager: ProfileManager): Promise<boolean> {
   const profiles = manager.list();
-  return profiles.length === 1
-    && isDefaultProfileName(profiles[0]!.name)
-    && !await hasLegacyPayload(manager.getPaths(profiles[0]!.id).root);
+  return (
+    profiles.length === 1 &&
+    isDefaultProfileName(profiles[0]!.name) &&
+    !(await hasLegacyPayload(manager.getPaths(profiles[0]!.id).root))
+  );
 }
 
 function candidateStorageRoots(storageRoot: string): string[] {
   const resolved = path.resolve(storageRoot);
   const parent = path.dirname(resolved);
-  return Array.from(new Set([
-    resolved,
-    ...LEGACY_PROFILE_STORAGE_NAMES.map((name) => path.join(parent, name)),
-  ]));
+  return Array.from(
+    new Set([resolved, ...LEGACY_PROFILE_STORAGE_NAMES.map((name) => path.join(parent, name))]),
+  );
 }
 
 function normalizedSongTitle(value: string): string {
@@ -227,14 +238,16 @@ function safeSongFilename(value: string): string {
 }
 
 function exactSongSet(order: unknown, songTitles: string[]): order is string[] {
-  if (!Array.isArray(order) || order.some((value) => typeof value !== 'string')) return false;
+  if (!isStringArray(order)) return false;
   const expected = new Set(songTitles.map(normalizedSongTitle));
   const actual = new Set(order.map((value) => normalizedSongTitle(value)));
-  return songTitles.length === expected.size
-    && order.length === expected.size
-    && expected.size === actual.size
-    && expected.size > 0
-    && Array.from(expected).every((value) => actual.has(value));
+  return (
+    songTitles.length === expected.size &&
+    order.length === expected.size &&
+    expected.size === actual.size &&
+    expected.size > 0 &&
+    Array.from(expected).every((value) => actual.has(value))
+  );
 }
 
 export interface CompatibleLegacyRecoveryResult {
@@ -250,6 +263,9 @@ interface CompatibleLegacyRecoveryOptions {
   candidateRoots?: string[];
 }
 
+/**
+ * RecoverCompatibleLegacyPayload — implementation detail.
+ */
 export async function recoverCompatibleLegacyPayload({
   storageRoot,
   manager,
@@ -272,7 +288,12 @@ export async function recoverCompatibleLegacyPayload({
   for (const root of candidateRoots) {
     let registry: { profiles?: Array<{ id?: unknown }> };
     try {
-      registry = JSON.parse(await fs.readFile(path.join(root, 'profiles', 'index.json'), 'utf8'));
+      const parsed = parseJson(
+        await fs.readFile(path.join(root, 'profiles', 'index.json'), 'utf8'),
+        isPlainObject,
+      );
+      if (!parsed) continue;
+      registry = parsed;
     } catch {
       continue;
     }
@@ -284,7 +305,7 @@ export async function recoverCompatibleLegacyPayload({
       const orderPath = path.join(profileRoot, 'custom-order.json');
       let order: unknown;
       try {
-        order = JSON.parse(await fs.readFile(orderPath, 'utf8'));
+        order = parseJson(await fs.readFile(orderPath, 'utf8'), isStringArray);
       } catch {
         continue;
       }
@@ -293,7 +314,9 @@ export async function recoverCompatibleLegacyPayload({
       let entries: import('node:fs').Dirent[] = [];
       try {
         entries = await fs.readdir(path.join(profileRoot, 'lyrics'), { withFileTypes: true });
-      } catch {}
+      } catch {
+        // swallow: nothing to do here on purpose
+      }
       const fileByKey = new Map<string, import('node:fs').Dirent>();
       for (const entry of entries) {
         if (!entry.isFile() || !/\.(lrc|txt)$/iu.test(entry.name)) continue;
@@ -309,7 +332,11 @@ export async function recoverCompatibleLegacyPayload({
         if (!selected) continue;
         const source = path.join(profileRoot, 'lyrics', selected.name);
         const extension = lrc ? '.lrc' : '.txt';
-        files.push({ source, name: `${base}${extension}`, content: await fs.readFile(source, 'utf8') });
+        files.push({
+          source,
+          name: `${base}${extension}`,
+          content: await fs.readFile(source, 'utf8'),
+        });
       }
       if (files.length === 0) continue;
 
@@ -320,18 +347,19 @@ export async function recoverCompatibleLegacyPayload({
       candidates.push({
         source: `compatible-profile:${path.basename(root)}:${profile.id}`,
         orderPath,
-        order: order as string[],
+        order: order,
         files,
         fingerprint: createHash('sha256').update(fingerprintValue).digest('hex'),
       });
     }
   }
 
-  const uniquePayloads = new Map<string, typeof candidates[number]>();
+  const uniquePayloads = new Map<string, (typeof candidates)[number]>();
   for (const candidate of candidates) uniquePayloads.set(candidate.fingerprint, candidate);
-  if (uniquePayloads.size !== 1) return { recovered: false, customOrder: [], profileId: targetProfile.id };
+  if (uniquePayloads.size !== 1)
+    return { recovered: false, customOrder: [], profileId: targetProfile.id };
 
-  const selected = uniquePayloads.values().next().value as typeof candidates[number];
+  const selected = uniquePayloads.values().next().value as (typeof candidates)[number];
   const target = manager.getPaths(targetProfile.id);
   await fs.mkdir(target.lyrics, { recursive: true });
   for (const file of selected.files) {
@@ -341,8 +369,8 @@ export async function recoverCompatibleLegacyPayload({
 
   let effectiveOrder = selected.order;
   try {
-    const persistedOrder = JSON.parse(await fs.readFile(target.customOrder, 'utf8')) as unknown;
-    if (Array.isArray(persistedOrder) && persistedOrder.every((value) => typeof value === 'string')) {
+    const persistedOrder = parseJson(await fs.readFile(target.customOrder, 'utf8'), isStringArray);
+    if (persistedOrder) {
       effectiveOrder = persistedOrder;
     }
   } catch {
@@ -350,7 +378,8 @@ export async function recoverCompatibleLegacyPayload({
   }
 
   const sourceKey = `${selected.source}:${selected.fingerprint.slice(0, 16)}`;
-  if (!manager.hasLegacySource(sourceKey)) await manager.recordLegacySource(sourceKey, targetProfile.id);
+  if (!manager.hasLegacySource(sourceKey))
+    await manager.recordLegacySource(sourceKey, targetProfile.id);
   return { recovered: true, customOrder: [...effectiveOrder], profileId: targetProfile.id };
 }
 
@@ -365,7 +394,7 @@ async function migrateExactLegacyProject(
     const source = `project-scope:${path.basename(candidateRoot)}:${identity.legacyProjectKey}`;
     if (manager.hasLegacySource(source)) return;
     const legacyRoot = path.join(candidateRoot, 'projects', identity.legacyProjectKey);
-    if (!await hasLegacyPayload(legacyRoot)) continue;
+    if (!(await hasLegacyPayload(legacyRoot))) continue;
 
     const primary = await manager.ensureDefaultProfile();
     await copyLegacyPayload(legacyRoot, manager.getPaths(primary.id));
@@ -404,7 +433,10 @@ async function initializeScopeAtRoot({
 
 function transactionPaths(storageRoot: string, root: string): { staging: string; backup: string } {
   const projectSetlistsRoot = path.resolve(storageRoot, 'project-setlists');
-  if (path.dirname(root) !== projectSetlistsRoot || path.resolve(projectSetlistsRoot, path.basename(root)) !== root) {
+  if (
+    path.dirname(root) !== projectSetlistsRoot ||
+    path.resolve(projectSetlistsRoot, path.basename(root)) !== root
+  ) {
     throw new Error('Project profile transaction target is outside project-setlists.');
   }
   const prefix = `.${path.basename(root)}.promotion-${randomUUID()}`;
@@ -454,6 +486,7 @@ async function initializePromotedProjectProfileScope(
 ): Promise<ProjectProfileScope> {
   const { staging, backup } = transactionPaths(options.storageRoot, root);
   let committed = false;
+  // eslint-disable-next-line no-useless-assignment -- initial value used by the surrounding control flow.
   let hadTarget = false;
   try {
     await preparePromotionStage(root, staging, options.promotionGuard);
@@ -476,7 +509,12 @@ async function initializePromotedProjectProfileScope(
   }
 }
 
-export async function initializeProjectProfileScope(options: InitializeProjectProfileScopeOptions): Promise<ProjectProfileScope> {
+/**
+ * Initialises the project profile scope.
+ */
+export async function initializeProjectProfileScope(
+  options: InitializeProjectProfileScopeOptions,
+): Promise<ProjectProfileScope> {
   const root = path.resolve(options.storageRoot, 'project-setlists', options.identity.key);
   if (options.promoteFrom && options.promoteFrom.identity.key !== options.identity.key) {
     return initializePromotedProjectProfileScope(options, root);

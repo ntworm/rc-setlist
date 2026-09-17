@@ -1,3 +1,5 @@
+import type { ProjectIdentity } from './core/project-identity.js';
+
 export interface Section {
   name: string;
   /** The locator name exactly as Live has it, tags included. */
@@ -99,19 +101,10 @@ export interface SetlistState {
 }
 
 export type CommandStatus =
-  | 'created'
-  | 'sent'
-  | 'acknowledged'
-  | 'confirmed'
-  | 'failed'
-  | 'expired'
-  | 'cancelled';
+  'created' | 'sent' | 'acknowledged' | 'confirmed' | 'failed' | 'expired' | 'cancelled';
 
 export type CommandFailureReason =
-  | 'panic_active'
-  | 'critical_commands_locked'
-  | 'execution_failed'
-  | 'timeout';
+  'panic_active' | 'critical_commands_locked' | 'execution_failed' | 'timeout';
 
 type ClientMessageBase = {
   type: string;
@@ -145,7 +138,8 @@ export type ClientMessage =
   | (ClientMessageBase & { type: 'profile_delete'; id: string; confirmationName: string })
   | (ClientMessageBase & { type: 'edit_locator'; time: number; name: string })
   | (ClientMessageBase & { type: 'set_song_color'; time: number; color: string | null })
-  | (ClientMessageBase & { type: 'set_song_notes'; time: number; notes: string | null });
+  | (ClientMessageBase & { type: 'set_song_notes'; time: number; notes: string | null })
+  | (ClientMessageBase & { type: 'trigger_count_in'; sendPlayOffsetMs: number });
 
 export interface ShowCommand<TPayload = unknown> {
   commandId: string;
@@ -163,6 +157,22 @@ export interface ShowCommand<TPayload = unknown> {
 }
 
 import { WebSocket } from 'ws';
+
+/**
+ * Options that the SDK entry point hands to `startServer()`.
+ *
+ * Lives here (rather than in `index.ts`) so that `server-lifecycle.ts` does
+ * not have to import from `index.ts` just to take its parameter type. The
+ * facade re-exports everything from `index.ts`; `server-lifecycle.ts` is the
+ * worker behind it.
+ */
+export interface StartServerOptions {
+  port?: number;
+  skipOsc?: boolean;
+  skipCerts?: boolean;
+  skipProjectDetector?: boolean;
+  projectIdentity?: ProjectIdentity;
+}
 
 export interface AugmentedWebSocket extends WebSocket {
   isController?: boolean;

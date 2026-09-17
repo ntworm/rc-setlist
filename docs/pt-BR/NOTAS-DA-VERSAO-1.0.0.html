@@ -1,0 +1,496 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>NOTAS-DA-VERSAO-1.0.0 — RC Setlist</title>
+    <style>
+      body {
+        font:
+          16px/1.55 system-ui,
+          sans-serif;
+        max-width: 920px;
+        margin: 2rem auto;
+        padding: 0 1rem;
+        color: #f2f2f2;
+        background: #0e0e0e;
+      }
+      h1,
+      h2,
+      h3,
+      h4 {
+        line-height: 1.25;
+      }
+      h1 {
+        font-size: 2.2rem;
+        margin-top: 0;
+      }
+      h2 {
+        margin-top: 2rem;
+        padding-top: 1rem;
+        border-top: 1px solid #333;
+      }
+      h3 {
+        margin-top: 1.5rem;
+      }
+      code {
+        font:
+          0.92em ui-monospace,
+          Consolas,
+          monospace;
+        background: #1a1a1a;
+        padding: 0.1em 0.35em;
+        border-radius: 0;
+      }
+      pre {
+        background: #1a1a1a;
+        padding: 0.8rem 1rem;
+        overflow-x: auto;
+        border: 1px solid #333;
+      }
+      pre code {
+        background: transparent;
+        padding: 0;
+      }
+      a {
+        color: #ffa133;
+      }
+      ul,
+      ol {
+        padding-left: 1.2em;
+      }
+      blockquote {
+        border-left: 4px solid #ffa133;
+        margin: 1em 0;
+        padding: 0.5em 1em;
+        color: #a0a0a0;
+      }
+      .crumbs {
+        font-size: 0.85em;
+        color: #a0a0a0;
+        margin-bottom: 1rem;
+      }
+      .crumbs a {
+        color: #a0a0a0;
+        text-decoration: none;
+      }
+      .crumbs a:hover {
+        color: #f2f2f2;
+      }
+      .source {
+        font-size: 0.78em;
+        color: #a0a0a0;
+        margin-top: 2rem;
+        border-top: 1px solid #333;
+        padding-top: 0.5rem;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="crumbs">
+      <a href="https://ntworm.github.io/rc-setlist/">RC Setlist</a> · <a href="./">Docs</a>
+    </div>
+    <h1 id="notas-da-vers-o-rc-setlist-1-0-0">Notas da versão — RC Setlist 1.0.0</h1>
+    <p>
+      <strong>Data de lançamento:</strong> 2026-09-14 <strong>Linha de versões suportada:</strong>
+      <code>1.0.x</code> <strong>Also available in English:</strong>
+      <a href="../RELEASE-NOTES-1.0.0.md"><code>../RELEASE-NOTES-1.0.0.md</code></a>
+    </p>
+    <p>
+      Esta é a primeira versão do RC Setlist como uma linha única consolidada. As notas das versões
+      0.6.0, 0.6.1 e 0.7.0 continuam no repositório como registro histórico; o conteúdo está
+      resumido na seção <strong>Desde 0.5.1</strong> abaixo para quem vem da linha pública 0.5.1.
+    </p>
+    <h2 id="destaques">Destaques</h2>
+    <ul>
+      <li>
+        <strong>Renomeado para &quot;RC Setlist&quot;</strong> seguindo as diretrizes de marca da
+      </li>
+    </ul>
+    <p>Ableton, que proíbem &quot;Ableton&quot; no nome de um produto de terceiros.</p>
+    <ul>
+      <li><strong>Migração única</strong> para quem vem da 0.x: o kit traz</li>
+    </ul>
+    <p>
+      <code>Migrate-RC-Setlist-Data.cmd</code> (Windows) e
+      <code>Migrate RC Setlist Data.command</code> (macOS) que copiam perfis, project-setlists,
+      token e preferências para o novo layout sem mexer no antigo.
+    </p>
+    <ul>
+      <li><strong>Gates de qualidade</strong> — ESLint, Prettier, knip, dependency-cruiser,</li>
+    </ul>
+    <p>
+      ruff, html-validate e <code>@axe-core/playwright</code> agora fazem parte do
+      <code>ci:public</code>.
+    </p>
+    <ul>
+      <li><strong>Documento de contratos</strong> em <code>docs/CONTRACTS.md</code> (e</li>
+    </ul>
+    <p>
+      <code>docs/pt-BR/CONTRATOS.md</code>) descreve a versão 3 do protocolo WS, os formatos em
+      disco, a gramática de localizadores, os endereços OSC, os endpoints HTTP e a política SemVer.
+      Cada asserção é exercida por <code>tests/release-contracts.test.mjs</code>.
+    </p>
+    <ul>
+      <li><strong>Limpeza de ciclos e camadas</strong> — 5 ciclos de dependência removidos,</li>
+    </ul>
+    <p>
+      <code>bridgeState</code> movido de <code>core/</code> para <code>runtime/</code>,
+      <code>handlers.ts</code> dividido em um dispatcher e seis módulos por família,
+      <code>setlist-manager.ts</code> delega avaliação de tags e seguimento de transporte a helpers
+      dedicados.
+    </p>
+    <ul>
+      <li>
+        <strong>Strictness de análise estática</strong> — <code>verbatimModuleSyntax</code> está
+      </li>
+    </ul>
+    <p>ligado; o build TypeScript resolve o SDK apenas por uma fronteira de tipos versionada.</p>
+    <h3 id="corre-es-do-teste-de-palco-16-09-2026">Correções do teste de palco (16/09/2026)</h3>
+    <ul>
+      <li>
+        <strong>Carregamento do CSS do painel</strong>: estilos restaurados ao remover a barra de
+        fechamento automático da tag HTML <code>&lt;link&gt;</code>, que fazia o navegador ignorar a
+        folha de estilos.
+      </li>
+      <li>
+        <strong>Layout dos cards de telemetria</strong>: corrigido o corte de conteúdo no modo
+        retrato do celular introduzindo uma restrição de quebra de layout e proporção 58/42.
+      </li>
+      <li>
+        <strong>Áudio do count-in</strong>: metrônomo silenciado por padrão em dispositivos móveis.
+        Agora é uma configuração opcional do navegador via chave
+        <code>rc-setlist.count-in-audio</code> no localStorage.
+      </li>
+      <li>
+        <strong>Autocomplete do alvo de jump</strong>: o editor de marcadores agora exibe os nomes
+        dos alvos de forma limpa, sem as tags duplicadas de <code>[jump]</code> ou
+        <code>[loop]</code> no dropdown.
+      </li>
+    </ul>
+    <h2 id="desde-0-5-1">Desde 0.5.1</h2>
+    <h3 id="rc-bridge-control-surface-do-live-embutido">
+      RC Bridge (control surface do Live embutido)
+    </h3>
+    <p>
+      O Remote Script com que a extensão conversa agora vem dentro da extensão e do kit de
+      instalação, como fork do AbletonOSC sob MIT (upstream <code>0ca6821</code>). Ninguém baixa o
+      AbletonOSC à mão: o kit traz <code>Install-RC-Bridge.cmd</code> (Windows) e
+      <code>Install RC Bridge.command</code> (macOS) que copiam para a User Library do Live e
+      mostram o único passo que falta. Selecionar <strong>RCBridge</strong> em Settings › Link,
+      Tempo &amp; MIDI › Control Surface continua sendo passo do usuário, porque o Live não deixa
+      ninguém fazer por ele. O fork também expõe <code>last_event_time</code>, que o upstream nunca
+      expôs, então a duração total do show não precisa mais da ponte MCP.
+    </p>
+    <h3 id="jump-nome"><code>[jump NOME]</code></h3>
+    <p>
+      Um marcador que passa a reprodução para um marcador _nomeado_ em vez do próximo — uma seção da
+      mesma música, uma música, ou <code>Música &gt; Seção</code>. Nomes batem com tags removidas e
+      ignorando caixa; um nome puro é resolvido primeiro nas seções desta música, depois nos
+      títulos, depois nas seções de qualquer música na ordem do Arrangement. Usa a mesma
+      transferência imediata de <code>[next]</code> e <code>[skip]</code>, tem campo próprio no
+      editor de marcadores e selo no card, e um nome que não bate nada não faz nada.
+    </p>
+    <h3 id="notas-por-m-sica">Notas por música</h3>
+    <p>
+      Uma linha para o palco — tom, afinação, quem conta — editada no painel da música ao lado da
+      cor, mostrada sob o título no card e na tela de Performance. Guardada no song book com a cor,
+      então acompanha a música em renomeações e movimentos e nunca toca no projeto do Live.
+    </p>
+    <h3 id="count-in-repensado-0-6-1">Count-In repensado (0.6.1)</h3>
+    <p>
+      O count-in voltava o playhead do Live uma barra e iniciava ali. Aquela barra é tempo real de
+      Arrangement da música anterior, então o count era ouvido no andamento da música anterior e o
+      áudio dela também tocava. Tornar o count audível também ligava o metrônomo do Live, o que
+      sobrescrevia um click que o operador tinha desligado de propósito. O count foi movido para o
+      navegador no andamento que o setlist declara para o playhead, o Live começa no batimento em
+      que já estava, e o transporte e o metrônomo dele nunca são tocados para produzi-lo. Play é
+      enviado pouco antes do último batimento para o transporte chegar no downbeat; pressionar Play
+      de novo durante o count inicia imediatamente, e Stop cancela. O aviso &quot;count-in
+      encurtado&quot; desapareceu com o retrocesso que o causava.
+    </p>
+    <p>
+      <strong>1.0.0: click do navegador desligado por padrão.</strong> O áudio da contagem no
+      navegador agora vem desligado por padrão, tornando a contagem apenas visual, para que o
+      celular do operador não apite pelo alto-falante no palco. O click pode ser ligado por aparelho
+      através da chave <code>rc-setlist.count-in-audio</code> no <code>localStorage</code> do
+      navegador.
+    </p>
+    <h3 id="live-set-vazio-limpa-as-m-sicas-0-6-1">Live Set vazio limpa as músicas (0.6.1)</h3>
+    <p>
+      Uma lista de cue points vazia válida agora limpa as músicas e os alvos exibidos, inclusive
+      quando o último locator é deletado. Dados indisponíveis e erros de leitura continuam
+      preservando o último estado válido.
+    </p>
+    <h3 id="stop-desarma-um-jump-pendente-0-6-1">Stop desarma um jump pendente (0.6.1)</h3>
+    <p>
+      Um jump esperando o limite de quantização ficava armado pelo Stop, e o scheduler executava o
+      jump pendente assim que uma posição reportada passasse seu beat de pouso. O Stop do Live move
+      o playhead, então a próxima amostra depois do Stop podia levar o transporte para uma seção que
+      o operador já tinha mudado de ideia — chegando como jump para uma parte aparentemente
+      aleatória do set, segundos depois do Stop. Stop agora desarma.
+    </p>
+    <h3 id="next-e-skip-passam-o-playhead-direto-0-6-1">
+      <code>[next]</code> e <code>[skip]</code> passam o playhead direto (0.6.1)
+    </h3>
+    <p>
+      <code>[next]</code> e <code>[skip]</code> eram executados pelo cue jump do Live, que o Live
+      quantiza para a próxima linha de grade da quantização global: medido no set do proprietário,
+      NEXT disparou no beat 872.3 e o Live saltou para 876.0, a próxima linha de barra. Para um
+      <code>[next]</code> colocado onde o áudio de uma música termina e seguido por uma barra vazia
+      — a razão do tag existir — o jump caía exatamente onde a próxima música começava, então o
+      marcador parecia não fazer nada, e um gap de duas barras só perdia uma barra. Os dois tags
+      agora realocam o playhead direto, que o Live faz na hora: a transferência acontece cerca de um
+      décimo de segundo depois do marcador ser cruzado (poll de posição + tick de comando do
+      AbletonOSC), nunca antes, e a próxima música começa do primeiro beat.
+    </p>
+    <h3 id="jump-parado-move-o-playhead-na-hora-0-6-1">
+      Jump parado move o playhead na hora (0.6.1)
+    </h3>
+    <p>
+      Enquanto parado, o alvo do jump é adotado de imediato; o caso de ensaio para o qual o count-in
+      existe é &quot;pular para uma seção enquanto parado, depois Play imediatamente&quot;.
+    </p>
+    <h3 id="jump-quantizado-pousa-no-beat-anunciado-0-6-1">
+      Jump quantizado pousa no beat anunciado (0.6.1)
+    </h3>
+    <p>
+      Enquanto tocando com quantização ligada, o cue jump era enviado quando o clock deste lado
+      passava o beat de pouso — logo após a linha de grade do Live — e o Live, que quantiza cue
+      jumps para a próxima linha de grade, pousava uma barra inteira depois. Todo jump quantizado
+      chegava uma barra depois do que a página dizia. O jump agora é entregue ao Live no momento em
+      que é pedido e o Live pousa na exata linha de grade que a página mostra.
+    </p>
+    <h3 id="lista-de-m-sicas-n-o-reconstr-i-mais-a-cada-dois-segundos-0-6-1">
+      Lista de músicas não reconstrói mais a cada dois segundos (0.6.1)
+    </h3>
+    <p>
+      Cues chegam do SDK do Live a cada 100ms e do AbletonOSC a cada 2000ms, e os dois não concordam
+      no último decimal. O manager comparava floats exatos enquanto seus chamadores comparavam uma
+      fingerprint quantizada para 1/100 de beat, então cada fonte parecia uma mudança para a outra:
+      cada poll do OSC reparseava o setlist e o cliente reconstruía a lista inteira. O manager agora
+      usa a mesma fingerprint quantizada — uma diferença abaixo de 1/100 de beat não pode mudar como
+      um locator parsea.
+    </p>
+    <h3 id="flash-do-beat-sem-layout-cheio-0-6-1">Flash do beat sem layout cheio (0.6.1)</h3>
+    <p>
+      O card de andamento reiniciava sua animação CSS lendo <code>offsetWidth</code>, o que força
+      layout do documento inteiro. Os dois visores de palco agora piscam via Web Animations API, que
+      não invalida layout e recicla uma única animação.
+    </p>
+    <h3 id="menu-de-ferramentas-cabe-nos-r-tulos-0-6-1">
+      Menu de ferramentas cabe nos rótulos (0.6.1)
+    </h3>
+    <p>
+      O popover era uma caixa fixa de 11rem enquanto sua coluna de grid dimensionava para o rótulo
+      mais largo, então &quot;Mapeamento de Teclado&quot; empurrava todo botão para fora da borda
+      direita. O popover agora é dimensionado pelo seu rótulo mais largo, limitado à viewport.
+    </p>
+    <h3 id="listas-nativas-de-select-s-o-leg-veis-0-6-1">
+      Listas nativas de select são legíveis (0.6.1)
+    </h3>
+    <p>
+      O dropdown do seletor de setlist abria como uma lista branca com texto quase branco, porque o
+      Chromium pinta a lista de opções a partir do próprio background do select. Todo select nativo
+      agora pinta suas opções escuras.
+    </p>
+    <h3 id="guia-de-ajuda-distingue-next-e-skip-0-6-1">
+      Guia de ajuda distingue <code>[next]</code> e <code>[skip]</code> (0.6.1)
+    </h3>
+    <p>
+      As duas linhas se pareciam. O guia agora diz para onde cada tag leva o playhead, que
+      <code>[next]</code> nunca avança para a próxima seção, que ambos passam a bola no marcador em
+      vez de na próxima barra, e mostra o caso de encadeamento — marcador de fim com
+      <code>[next]</code> seguido da próxima música.
+    </p>
+    <h3 id="d-gito-do-count-substitui-o-tri-ngulo-de-play-0-6-1">
+      Dígito do count substitui o triângulo de Play (0.6.1)
+    </h3>
+    <p>Era desenhado sobre o glifo, deixando os dois visíveis ao mesmo tempo.</p>
+    <h3 id="segundo-press-silencia-o-count-0-6-1">Segundo press silencia o count (0.6.1)</h3>
+    <p>
+      Cancelar limpava os timers, o que parava os dígitos de mudar, mas os blips já estavam
+      agendados no clock de áudio e continuavam soando por baixo do playback que esse segundo press
+      tinha iniciado.
+    </p>
+    <h3 id="tags-de-m-sica-disparam-de-novo-0-6-1">Tags de música disparam de novo (0.6.1)</h3>
+    <p>
+      O avaliador de automações escolhia um alvo, <code>section || song</code>, então quando o
+      playhead estava dentro de qualquer seção as próprias tags da música nunca eram lidas de novo.
+      Uma tag de nível música só disparava no gap entre o locator da música e sua primeira seção, e
+      quando uma seção começava no próprio beat da música — o caso comum — nunca disparava. O editor
+      de marcadores oferece STOP, NEXT e SKIP no painel da música, então isso era um controle que o
+      usuário podia definir e ver não fazer nada. Tags de música e de seção são agora avaliadas
+      independentemente.
+    </p>
+    <h3 id="por-que-um-fork-do-abletonosc-0-6-1">Por que um fork do AbletonOSC (0.6.1)</h3>
+    <p>
+      AbletonOSC envia toda resposta e toda atualização de listener para uma porta fixa, 11001,
+      então só um cliente por máquina podia ouvir — RC Surface e RC Setlist no mesmo Live não podiam
+      funcionar juntos, e o perdedor mostrava &quot;OSC return port busy&quot;. O RC Bridge escuta
+      na porta dele (11020), responde para quem pediu, e publica as atualizações de cada listener
+      para todo assinante.
+    </p>
+    <h3 id="play-toca-de-onde-o-playhead-est-0-6-1">Play toca de onde o playhead está (0.6.1)</h3>
+    <p>
+      Live oferece dois inícios e nenhum é &quot;do playhead&quot;. Play retoma quando o playhead
+      não se moveu desde que o transporte parou, e inicia do marcador de início quando um jump ou um
+      clique moveu.
+    </p>
+    <h3 id="o-primeiro-play-ap-s-start-retoma-de-onde-o-live-est-0-6-1">
+      O primeiro Play após start retoma de onde o Live está (0.6.1)
+    </h3>
+    <p>
+      O SDK reporta o andamento a cada 100ms desde o momento em que a extensão inicia, e esse report
+      era roteado pela atualização de transporte, apresentando uma posição de zero como a primeira
+      observação parada. Reports só de andamento agora têm seu próprio caminho.
+    </p>
+    <h3 id="regress-o-de-transporte-osc-only-0-6-1">Regressão de transporte OSC-only (0.6.1)</h3>
+    <p>
+      O caminho de transporte só OSC, que um setup sem o Ableton MCP usa e que a máquina do próprio
+      proprietário nunca exercita, agora tem um teste de regressão fim a fim para a transferência de
+      playhead no <code>[next]</code>.
+    </p>
+    <h3 id="command-bus-e-error-sanitization-0-7-0">Command Bus e Error Sanitization (0.7.0)</h3>
+    <p>
+      O command bus agora anexa mensagens de erro voltadas ao operador (<code>OperatorError</code> e
+      <code>ProfileError</code>) em <code>command_status.error</code>, enquanto exceções internas
+      (como caminhos brutos de filesystem) permanecem estritamente sanitizadas e chegam como
+      <code>execution_failed</code> genérico.
+    </p>
+    <h3 id="parsing-de-tag-de-locator-limpo-0-7-0">Parsing de Tag de Locator limpo (0.7.0)</h3>
+    <p>
+      Extração de tag e construção de seção foram refatoradas em um pipeline único coerente, sem
+      branches duplicadas.
+    </p>
+    <h3 id="cache-do-song-book-segue-o-perfil-ativo-0-7-0">
+      Cache do Song Book segue o perfil ativo (0.7.0)
+    </h3>
+    <p>
+      Cores e notas de música são cacheadas por perfil; trocar de perfil agora limpa o cache na
+      hora, evitando que edições de um perfil vazem em outro.
+    </p>
+    <h3 id="tick-de-sync-do-mcp-loga-falhas-inesperadas-em-sil-ncio-0-7-0">
+      Tick de Sync do MCP loga falhas inesperadas em silêncio (0.7.0)
+    </h3>
+    <p>
+      Timeouts e recusas de conexão do bridge ficam em silêncio como esperado quando o MCP está
+      ausente, enquanto erros internos de callback logam limpamente.
+    </p>
+    <h3 id="c-digo-morto-e-testes-rf-os-removidos-0-7-0">
+      Código morto e testes órfãos removidos (0.7.0)
+    </h3>
+    <p>
+      Utilitários aposentados de criação de locator de sessão de teste e testes órfãos foram
+      removidos limpamente.
+    </p>
+    <h2 id="mudan-as-em-1-0">Mudanças em 1.0</h2>
+    <h3 id="renomeado-para-rc-setlist">Renomeado para &quot;RC Setlist&quot;</h3>
+    <p>
+      O nome do produto não inclui mais &quot;Ableton&quot; (diretrizes de marca da Ableton). Dados
+      antigos da 0.x ficam em <code>&lt;Extensions Data&gt;/ntworm.ableton-rc-setlist</code>; o kit
+      migra para <code>&lt;Extensions Data&gt;/ntworm.rc-setlist</code> e a entrada antiga da
+      extensão no Live deve ser removida em <strong>Configurações &gt; Extensões</strong>.
+    </p>
+    <h3 id="contratos-documentados">Contratos documentados</h3>
+    <p>
+      <code>docs/CONTRACTS.md</code> e <code>docs/pt-BR/CONTRATOS.md</code> descrevem toda
+      superfície externa. Cada contrato é reforçado por uma asserção em
+      <code>tests/release-contracts.test.mjs</code>.
+    </p>
+    <h3 id="gates-de-qualidade">Gates de qualidade</h3>
+    <p>
+      <code>ci:public</code> agora inclui <code>lint</code>, <code>format:check</code>,
+      <code>deadcode</code>, <code>deps:check</code>, <code>lint:py</code>,
+      <code>html-validate</code> e o scan de landing do <code>@axe-core/playwright</code>. O script
+      <code>gates:quality</code> coleta todos para runs manuais.
+    </p>
+    <h3 id="limpeza-de-ciclos-e-camadas">Limpeza de ciclos e camadas</h3>
+    <ul>
+      <li>
+        <code>bridgeState</code> movido de <code>src/core/</code> para <code>src/runtime/</code>.
+      </li>
+      <li><code>commands/handlers.ts</code> dividido em um dispatcher e seis módulos por</li>
+    </ul>
+    <p>família sob <code>src/commands/handlers/</code>.</p>
+    <ul>
+      <li><code>setlist-manager.ts</code> delega avaliação de tags para</li>
+    </ul>
+    <p>
+      <code>src/core/automation-evaluator.ts</code> e seguimento de transporte para
+      <code>src/core/transport-tracker.ts</code>.
+    </p>
+    <ul>
+      <li>5 ciclos de dependência removidos.</li>
+    </ul>
+    <h2 id="corre-es-em-1-0">Correções em 1.0</h2>
+    <ul>
+      <li>Os scripts <code>Migrate-RC-Setlist-Data</code> do kit são idempotentes e nunca</li>
+    </ul>
+    <p>sobrescrevem um arquivo no destino.</p>
+    <ul>
+      <li>O painel agora pede ao operador para rodar a migração quando a pasta</li>
+    </ul>
+    <p>nova de dados está vazia.</p>
+    <ul>
+      <li><code>verbatimModuleSyntax</code> está ligado; type-only imports são explícitos.</li>
+      <li>
+        <code>tsconfig.json</code> reforça <code>noUnusedLocals</code>,
+        <code>noUnusedParameters</code>,
+      </li>
+    </ul>
+    <p>
+      <code>noImplicitOverride</code>, <code>noFallthroughCasesInSwitch</code>,
+      <code>noImplicitReturns</code>.
+    </p>
+    <h2 id="removido-em-1-0">Removido em 1.0</h2>
+    <ul>
+      <li>O nome de produto <code>Ableton RC Setlist</code> em todas as superfícies</li>
+    </ul>
+    <p>
+      públicas (apenas entradas históricas no CHANGELOG e prosa de contexto de migração o mantêm).
+    </p>
+    <ul>
+      <li>A nomeação de artefato <code>Ableton-RC-Setlist-&lt;version&gt;</code>; 1.0 envia</li>
+    </ul>
+    <p><code>RC-Setlist-1.0.0.ablx</code> e <code>RC-Setlist-1.0.0-Installation-Kit.zip</code>.</p>
+    <ul>
+      <li>Código morto reportado por <code>knip</code> e exports inalcançáveis do passe</li>
+    </ul>
+    <p>de narrowing da regra <code>no-explicit-any</code>.</p>
+    <ul>
+      <li>Chamadas <code>console.*</code> em caminhos voltados ao usuário; todos esses</li>
+    </ul>
+    <p>
+      logs agora vão por <code>src/util/log.ts</code> com a mensagem para o operador e um escopo
+      legível por máquina.
+    </p>
+    <ul>
+      <li>Notas de versão para 0.6.0, 0.6.1 e 0.7.0 (incorporadas em</li>
+    </ul>
+    <p>&quot;Desde 0.5.1&quot; acima e no <code>CHANGELOG.md</code>).</p>
+    <h2 id="seguran-a">Segurança</h2>
+    <p>
+      Ver <code>internal/SECURITY-REVIEW-1.0.md</code> para a revisão item a item e
+      <code>SECURITY.md</code> para a linha de versões suportada e como reportar problemas.
+    </p>
+    <h2 id="atualizando-da-0-x">Atualizando da 0.x</h2>
+    <p>
+      1. Instale <code>RC-Setlist-1.0.0.ablx</code> da release. 2. No Live, abra
+      <strong>Configurações &gt; Extensões</strong> e remova a entrada antiga
+      <strong>Ableton RC Setlist</strong>. 3. Rode
+      <code>Migrate-RC-Setlist-Data.cmd</code> (Windows) ou
+      <code>Migrate RC Setlist Data.command</code> (macOS) uma vez antes de abrir o Live pela
+      primeira vez com a 1.0. O script copia perfis, project-setlists, token e preferências para a
+      pasta nova sem mexer na antiga. 4. Reinicie o Live; a extensão nova continua de onde a antiga
+      parou.
+    </p>
+    <p>
+      Pular a migração ou deixar as duas extensões instaladas faz seus perfis antigos ficarem
+      invisíveis para a extensão nova.
+    </p>
+    <div class="source">
+      Rendered from <code>docs\pt-BR\NOTAS-DA-VERSAO-1.0.0.md</code> on 2026-09-17.
+    </div>
+  </body>
+</html>

@@ -1,0 +1,219 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>PRIMEIROS-PASSOS — RC Setlist</title>
+    <style>
+      body {
+        font:
+          16px/1.55 system-ui,
+          sans-serif;
+        max-width: 920px;
+        margin: 2rem auto;
+        padding: 0 1rem;
+        color: #f2f2f2;
+        background: #0e0e0e;
+      }
+      h1,
+      h2,
+      h3,
+      h4 {
+        line-height: 1.25;
+      }
+      h1 {
+        font-size: 2.2rem;
+        margin-top: 0;
+      }
+      h2 {
+        margin-top: 2rem;
+        padding-top: 1rem;
+        border-top: 1px solid #333;
+      }
+      h3 {
+        margin-top: 1.5rem;
+      }
+      code {
+        font:
+          0.92em ui-monospace,
+          Consolas,
+          monospace;
+        background: #1a1a1a;
+        padding: 0.1em 0.35em;
+        border-radius: 0;
+      }
+      pre {
+        background: #1a1a1a;
+        padding: 0.8rem 1rem;
+        overflow-x: auto;
+        border: 1px solid #333;
+      }
+      pre code {
+        background: transparent;
+        padding: 0;
+      }
+      a {
+        color: #ffa133;
+      }
+      ul,
+      ol {
+        padding-left: 1.2em;
+      }
+      blockquote {
+        border-left: 4px solid #ffa133;
+        margin: 1em 0;
+        padding: 0.5em 1em;
+        color: #a0a0a0;
+      }
+      .crumbs {
+        font-size: 0.85em;
+        color: #a0a0a0;
+        margin-bottom: 1rem;
+      }
+      .crumbs a {
+        color: #a0a0a0;
+        text-decoration: none;
+      }
+      .crumbs a:hover {
+        color: #f2f2f2;
+      }
+      .source {
+        font-size: 0.78em;
+        color: #a0a0a0;
+        margin-top: 2rem;
+        border-top: 1px solid #333;
+        padding-top: 0.5rem;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="crumbs">
+      <a href="https://ntworm.github.io/rc-setlist/">RC Setlist</a> · <a href="./">Docs</a>
+    </div>
+    <h1 id="primeiros-passos-com-o-rc-setlist-1-0">Primeiros passos com o RC Setlist 1.0</h1>
+    <p>
+      Este guia leva de uma instalação nova do Live até um setlist rodando em menos de 15 minutos.
+      Se algo aqui não bater com o que você vê na tela, abra uma issue com a label
+      <code>docs/wrong</code>.
+    </p>
+    <ul>
+      <li><a href="#1-instalar">1. Instalar</a></li>
+      <li>
+        <a href="#2-abrir-o-live-e-habilitar-o-rc-setlist"
+          >2. Abrir o Live e habilitar o RC Setlist</a
+        >
+      </li>
+      <li>
+        <a href="#3-primeiro-setlist-em-três-locators">3. Primeiro setlist em três locators</a>
+      </li>
+      <li><a href="#4-abrir-o-painel">4. Abrir o painel</a></li>
+      <li><a href="#5-parear-o-celular-do-palco">5. Parear o celular do palco</a></li>
+      <li><a href="#próximos-passos">Próximos passos</a></li>
+    </ul>
+    <h2 id="1-instalar">1. Instalar</h2>
+    <p>Você precisa de:</p>
+    <ul>
+      <li>Ableton Live 12.4.5 Suite (Beta) ou mais recente, com Extensions</li>
+    </ul>
+    <p>habilitado.</p>
+    <ul>
+      <li>macOS 13+ (caminho de release) ou Windows 11 23H2+ (caminho de</li>
+    </ul>
+    <p>release). Linux não é suportado pelo host; o bridge é Python e roda onde o Live rodar.</p>
+    <ul>
+      <li>Um navegador moderno no celular (Safari 17+, Chrome 121+) para o</li>
+    </ul>
+    <p>Stage Control.</p>
+    <p>
+      Abra o kit baixado da
+      <a href="https://github.com/ntworm/rc-setlist/releases/latest">página de release</a> e dê
+      duplo clique no instalador do seu sistema. O instalador copia o RC Bridge para a User Library
+      do Live e imprime a URL final do painel local.
+    </p>
+    <p>
+      Se preferir fazer manualmente, siga <a href="INSTALL.html">INSTALL.md</a>. A instalação 1.0 é
+      uma pasta RC Bridge mais a extensão <code>.ablx</code>; nada mais precisa estar no disco.
+    </p>
+    <h2 id="2-abrir-o-live-e-habilitar-o-rc-setlist">2. Abrir o Live e habilitar o RC Setlist</h2>
+    <p>
+      1. Abra o Ableton Live. 2. Em <strong>Preferences → Extensions</strong>, confirme que
+      <code>RC Setlist</code> aparece na lista com status <strong>Enabled</strong>. 3.
+      <strong>Extensions → RC Setlist → Open panel</strong> abre o painel do host. 4. O painel
+      mostra a URL local, o token de controller como QR code, e o IP de LAN autodetectado.
+    </p>
+    <p>
+      A URL é <code>https://&lt;lan-ip&gt;:4444/</code>; o QR embute a mesma URL com o token na
+      query string. Trate o QR como senha — quem escanear consegue parar o transporte.
+    </p>
+    <h2 id="3-primeiro-setlist-em-tr-s-locators">3. Primeiro setlist em três locators</h2>
+    <p>
+      O Live usa <strong>locators</strong> (cue points no Arrangement). Cada um carrega o título da
+      música mais tags opcionais dentro de colchetes <code>[ ]</code>. O RC Setlist transforma isso
+      em músicas e seções.
+    </p>
+    <p>Crie um Set novo, marque o tempo em 120 BPM, e adicione três locators:</p>
+    <p>
+      | Beat | Nome | Notas | | ---- | -------------------- | ------------------ | | 0 |
+      <code>INTRO</code> | Primeira música | | 16 | <code>&gt; Verso</code> | Seção da INTRO | | 48
+      | <code>MÚSICA 2 [bpm 100]</code> | Próxima em 100 BPM |
+    </p>
+    <p>Abra o painel e confirme que você vê:</p>
+    <ul>
+      <li><code>INTRO</code> listada como música atual</li>
+      <li><code>Verso</code> listada como seção da INTRO</li>
+      <li><code>MÚSICA 2</code> listada como música separada com BPM 100</li>
+    </ul>
+    <p>
+      Se o painel não mostrar nada, confira o painel de logs; um locator malformado é a causa mais
+      comum.
+    </p>
+    <h2 id="4-abrir-o-painel">4. Abrir o painel</h2>
+    <p>
+      O painel é a interface principal do operador. Mostra a música atual, o cronômetro, o próximo
+      locator e os controles de play, stop, jump e edição. <strong>Espaço</strong> alterna
+      play/stop; <strong>N</strong> e <strong>P</strong> pulam para o próximo e o anterior locator;
+      <strong>J</strong> abre um diálogo para digitar o nome de um marker e pular para ele.
+    </p>
+    <p>
+      A referência completa está em <a href="USER-GUIDE.html#controles-do-painel">USER-GUIDE.md</a>.
+    </p>
+    <h2 id="5-parear-o-celular-do-palco">5. Parear o celular do palco</h2>
+    <p>
+      1. No celular do palco, escaneie o QR do painel. 2. O celular abre a página de Stage Control
+      na mesma URL, com o token já na query string. 3. Toque em
+      <strong>Confirmar controller</strong> para registrar o celular como controller desta sessão.
+    </p>
+    <p>
+      O celular passa a mostrar a próxima música, o índice da seção, o cronômetro e a letra. Não há
+      app separado de pareamento; o único estado que o celular precisa é a URL.
+    </p>
+    <p>
+      Se o celular perder a conexão, o painel re-renderiza e a URL continua válida até você
+      reiniciar o Live.
+    </p>
+    <h2 id="pr-ximos-passos">Próximos passos</h2>
+    <ul>
+      <li><a href="USER-GUIDE.html">USER-GUIDE.md</a> — referência completa do painel e</li>
+    </ul>
+    <p>do Stage Control.</p>
+    <ul>
+      <li><a href="CONTRATOS.html">CONTRATOS.md</a> — o contrato público (HTTP, WS,</li>
+    </ul>
+    <p>gramática de locators). Leia se quiser escrever seu próprio controller.</p>
+    <ul>
+      <li><a href="../THEME_CONTRACT.md">THEME_CONTRACT.md</a> — paleta e tipografia se</li>
+    </ul>
+    <p>você quer uma skin custom para o Stage Control.</p>
+    <ul>
+      <li><a href="../TESTER-GUIDE.md">TESTER-GUIDE.md</a> — o que conferir num release</li>
+    </ul>
+    <p>candidate antes de mandar pra banda.</p>
+    <ul>
+      <li><a href="../DEVELOPMENT.md">DEVELOPMENT.md</a> — como rodar os testes e buildar</li>
+    </ul>
+    <p>a extensão localmente.</p>
+    <div class="source">
+      Rendered from <code>docs\pt-BR\PRIMEIROS-PASSOS.md</code> on 2026-09-17.
+    </div>
+  </body>
+</html>

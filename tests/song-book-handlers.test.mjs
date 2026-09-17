@@ -6,8 +6,8 @@ import * as fs from 'node:fs';
 import { tmpdir } from 'node:os';
 import { setExtensionContext, clearExtensionContext } from '../src/context.ts';
 import { startServer, stopServer } from '../src/index.ts';
-import { bridgeState, selectProfile, refreshSongBook } from '../src/core/bridge-state.ts';
-import { executeCommandAction } from '../src/commands/handlers.ts';
+import { bridgeState, selectProfile, refreshSongBook } from '../src/runtime/bridge-state.ts';
+import { executeCommandAction } from '../src/commands/handlers/index.ts';
 
 /**
  * Colours and notes live in a song book per profile. The book is cached on
@@ -27,7 +27,15 @@ function getFreePort() {
 }
 
 function command(type, payload, commandId) {
-  return { commandId, type, payload, sourceClientId: 'song-book-test', createdAt: Date.now(), status: 'created', retryCount: 0 };
+  return {
+    commandId,
+    type,
+    payload,
+    sourceClientId: 'song-book-test',
+    createdAt: Date.now(),
+    status: 'created',
+    retryCount: 0,
+  };
 }
 
 function readBook(file) {
@@ -56,8 +64,13 @@ test('song colours and notes stay with the profile they were written in', async 
     refreshSongBook();
 
     await executeCommandAction(command('set_song_color', { time: 0, color: 'red' }, 'c1'));
-    await executeCommandAction(command('set_song_notes', { time: 32, notes: 'Drop D, drummer counts' }, 'n1'));
-    assert.deepEqual(Object.values(readBook(bookA).data), [{ color: 'red' }, { notes: 'Drop D, drummer counts' }]);
+    await executeCommandAction(
+      command('set_song_notes', { time: 32, notes: 'Drop D, drummer counts' }, 'n1'),
+    );
+    assert.deepEqual(Object.values(readBook(bookA).data), [
+      { color: 'red' },
+      { notes: 'Drop D, drummer counts' },
+    ]);
     assert.deepEqual(broadcasts.at(-1).songColors, { 0: 'red' });
     assert.deepEqual(broadcasts.at(-1).songNotes, { 32: 'Drop D, drummer counts' });
 
@@ -72,7 +85,11 @@ test('song colours and notes stay with the profile they were written in', async 
 
     await executeCommandAction(command('set_song_color', { time: 0, color: 'blue' }, 'c2'));
     assert.deepEqual(Object.values(readBook(bookB).data), [{ color: 'blue' }]);
-    assert.deepEqual(Object.values(readBook(bookA).data), [{ color: 'red' }, { notes: 'Drop D, drummer counts' }], 'profile A is untouched');
+    assert.deepEqual(
+      Object.values(readBook(bookA).data),
+      [{ color: 'red' }, { notes: 'Drop D, drummer counts' }],
+      'profile A is untouched',
+    );
 
     await selectProfile(profileA);
     assert.deepEqual(broadcasts.at(-1).songColors, { 0: 'red' }, 'switching back restores A');

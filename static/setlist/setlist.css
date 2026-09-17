@@ -27,9 +27,15 @@
   font-weight: 700;
 }
 
-.operation-toast[data-level="error"] { border-color: var(--danger); }
-.operation-toast[data-level="success"] { border-color: var(--success); }
-.operation-toast[data-level="warn"] { border-color: var(--warning, #f59e0b); }
+.operation-toast[data-level='error'] {
+  border-color: var(--danger);
+}
+.operation-toast[data-level='success'] {
+  border-color: var(--success);
+}
+.operation-toast[data-level='warn'] {
+  border-color: var(--warning, #f59e0b);
+}
 
 html,
 body {
@@ -52,7 +58,6 @@ body {
     linear-gradient(150deg, #08090b, #0b0c10 64%, #09090c);
   padding: 0.75rem;
 }
-
 
 .app-bar {
   position: relative;
@@ -173,7 +178,6 @@ body {
   cursor: pointer;
 }
 
-
 .app-bar-actions {
   display: flex;
   align-items: center;
@@ -213,7 +217,6 @@ body {
   font-variant-numeric: tabular-nums;
 }
 
-
 .app-bar .ui-button,
 .tools-menu > summary {
   min-height: 44px;
@@ -245,7 +248,6 @@ body {
   cursor: pointer;
   text-overflow: ellipsis;
 }
-
 
 .quantization-control {
   display: flex;
@@ -284,7 +286,6 @@ body {
   cursor: pointer;
   white-space: nowrap;
 }
-
 
 .quantization-control select.is-pending {
   color: var(--ui-accent-strong);
@@ -363,8 +364,6 @@ body {
   letter-spacing: 0;
   cursor: pointer;
 }
-
-
 
 .status-dot {
   width: 0.52rem;
@@ -464,7 +463,10 @@ body {
   padding: 0.65rem 0.65rem 0.65rem 1rem;
   cursor: grab;
   user-select: none;
-  transition: border-color 140ms ease, background 140ms ease, transform 140ms ease;
+  transition:
+    border-color 140ms ease,
+    background 140ms ease,
+    transform 140ms ease;
 }
 
 /* While the count runs, the Play button shows which beat it is on.
@@ -506,7 +508,7 @@ body {
   width: 8px;
   border-radius: 0;
   background: transparent;
-  content: "";
+  content: '';
 }
 
 .song-item:hover {
@@ -563,7 +565,7 @@ body {
   border-radius: 0;
   background: #fff;
   box-shadow: none;
-  content: "";
+  content: '';
   pointer-events: none;
 }
 
@@ -675,7 +677,6 @@ body {
   letter-spacing: 0;
 }
 
-
 .song-sections {
   display: flex;
   min-width: 0;
@@ -698,7 +699,10 @@ body {
   font-size: 0.75rem;
   font-weight: 750;
   cursor: pointer;
-  transition: border-color 140ms ease, background 140ms ease, color 140ms ease;
+  transition:
+    border-color 140ms ease,
+    background 140ms ease,
+    color 140ms ease;
 }
 
 .section-name {
@@ -736,7 +740,7 @@ body {
   width: 0;
   border-radius: inherit;
   background: rgba(255, 154, 47, 0.28);
-  content: "";
+  content: '';
   pointer-events: none;
 }
 
@@ -868,7 +872,6 @@ body {
   align-self: start;
 }
 
-
 .control-pane {
   display: flex;
   flex-direction: column;
@@ -881,8 +884,6 @@ body {
   align-self: start;
   width: 100%;
 }
-
-
 
 .hud {
   display: grid;
@@ -939,7 +940,7 @@ body {
   white-space: nowrap;
   text-overflow: ellipsis;
   box-sizing: border-box;
-  font-variation-settings: "wdth" 75;
+  font-variation-settings: 'wdth' 75;
 }
 
 .hud-value.active {
@@ -954,7 +955,7 @@ body {
   overflow: hidden;
   text-overflow: ellipsis;
   font-size: var(--t-stage-micro) !important;
-  font-variation-settings: "wdth" 75;
+  font-variation-settings: 'wdth' 75;
   color: var(--ui-text-soft) !important;
   margin-top: 0.15rem !important;
 }
@@ -991,7 +992,7 @@ body {
 #hudTime {
   font-size: clamp(0.85rem, 1.05vw, 1.15rem);
   font-weight: 700;
-  font-variation-settings: "wdth" 75;
+  font-variation-settings: 'wdth' 75;
   letter-spacing: -0.02em;
   white-space: nowrap;
 }
@@ -1000,7 +1001,7 @@ body {
   color: var(--ui-accent-strong);
   font-size: clamp(var(--t-stage-micro), 0.85vw, 0.82rem);
   font-weight: 650;
-  font-variation-settings: "wdth" 75;
+  font-variation-settings: 'wdth' 75;
   line-height: var(--ui-line-accent-safe);
   white-space: nowrap;
   overflow: hidden;
@@ -1058,8 +1059,6 @@ body {
   }
 }
 
-
-
 .hold-button {
   position: relative;
   display: grid;
@@ -1100,7 +1099,9 @@ body {
  * visually distinguishes "section imminent" from "song imminent". */
 .hold-button.is-holding .hold-progress {
   background: rgba(255, 154, 47, 0.28);
-  transition: width 500ms linear, background 120ms ease-out;
+  transition:
+    width 500ms linear,
+    background 120ms ease-out;
 }
 .hold-button.is-holding-section-ready .hold-progress,
 .hold-button.is-holding-section-ready {
@@ -1193,7 +1194,7 @@ body {
   background: var(--ui-success) !important;
   color: var(--ui-bg) !important;
   font-weight: var(--ui-wght-display) !important;
-  font-variation-settings: "wdth" 75;
+  font-variation-settings: 'wdth' 75;
 }
 
 .btn-preroll-active {
@@ -1201,7 +1202,7 @@ body {
   background: var(--ui-accent) !important;
   color: var(--ui-bg) !important;
   font-weight: var(--ui-wght-display) !important;
-  font-variation-settings: "wdth" 75;
+  font-variation-settings: 'wdth' 75;
 }
 
 .log-drawer {
@@ -1240,9 +1241,16 @@ body {
   color: var(--ui-muted);
 }
 
-.log-msg-warn { color: #f4cf70; }
-.log-msg-error { color: #ff929c; }
-.log-msg-automation { color: var(--ui-loop); font-weight: 800; }
+.log-msg-warn {
+  color: #f4cf70;
+}
+.log-msg-error {
+  color: #ff929c;
+}
+.log-msg-automation {
+  color: var(--ui-loop);
+  font-weight: 800;
+}
 
 .modal-overlay {
   position: fixed;
@@ -1485,7 +1493,9 @@ body {
   pointer-events: none;
   opacity: 0;
   transform: translateY(0.5rem);
-  transition: opacity 160ms ease, transform 160ms ease;
+  transition:
+    opacity 160ms ease,
+    transform 160ms ease;
 }
 
 .network-overlay.visible {
@@ -1527,7 +1537,10 @@ body {
 }
 
 .section-btn.flash-pending {
-  transition: background-color 80ms linear, border-color 80ms linear, color 80ms linear;
+  transition:
+    background-color 80ms linear,
+    border-color 80ms linear,
+    color 80ms linear;
 }
 
 .section-btn.flash-pending--on {
@@ -1537,9 +1550,16 @@ body {
 }
 
 @keyframes shake {
-  0%, 100% { transform: translateX(0); }
-  25% { transform: translateX(-4px); }
-  75% { transform: translateX(4px); }
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-4px);
+  }
+  75% {
+    transform: translateX(4px);
+  }
 }
 
 .section-btn.shake {
@@ -1590,7 +1610,6 @@ body {
     padding-inline: 0.5rem;
   }
 }
-
 
 @media (max-width: 899px) {
   :root {
@@ -1703,7 +1722,7 @@ body {
    below the 12px stage floor. */
 .secondary-controls .btn {
   font-weight: var(--ui-wght-display);
-  font-variation-settings: "wdth" 75;
+  font-variation-settings: 'wdth' 75;
   padding-right: 0.2rem;
   padding-left: 0.2rem;
   letter-spacing: 0;
@@ -1783,8 +1802,8 @@ body {
 
   .marker-panel > h2,
   .marker-panel > .marker-back,
-  .marker-panel > .marker-field:has([data-field="name"]),
-  .marker-panel > [data-only="song"],
+  .marker-panel > .marker-field:has([data-field='name']),
+  .marker-panel > [data-only='song'],
   .marker-panel > .marker-toggles,
   .marker-panel > .marker-error,
   .marker-panel > .marker-actions {
@@ -1797,7 +1816,7 @@ body {
   color: var(--ui-text-2);
   font-size: var(--t-stage-micro);
   font-weight: var(--ui-wght-strong);
-  font-variation-settings: "wdth" 75;
+  font-variation-settings: 'wdth' 75;
   letter-spacing: 0;
   text-transform: uppercase;
 }
@@ -1810,12 +1829,12 @@ body {
 .marker-field > span {
   color: var(--ui-text-2);
   font-size: var(--t-stage-micro);
-  font-variation-settings: "wdth" 75;
+  font-variation-settings: 'wdth' 75;
   text-transform: uppercase;
 }
 
-.marker-panel input[type="text"],
-.marker-panel input[type="number"],
+.marker-panel input[type='text'],
+.marker-panel input[type='number'],
 .marker-panel select {
   min-height: 44px;
   border: 1px solid var(--ui-rule);
@@ -1826,7 +1845,7 @@ body {
   font-size: var(--t-stage-body);
 }
 
-.marker-panel input[type="text"] {
+.marker-panel input[type='text'] {
   font-size: var(--t-stage-list);
 }
 
@@ -1844,14 +1863,14 @@ body {
   background: transparent;
   color: var(--ui-text-2);
   padding: 0 var(--s-3);
-  font-variation-settings: "wdth" 75;
+  font-variation-settings: 'wdth' 75;
   font-weight: var(--ui-wght-strong);
   font-size: var(--t-stage-micro);
   text-transform: uppercase;
   cursor: pointer;
 }
 
-.marker-toggle[aria-pressed="true"] {
+.marker-toggle[aria-pressed='true'] {
   border-color: var(--ui-text);
   background: var(--ui-text);
   color: var(--ui-bg);
@@ -1893,15 +1912,20 @@ body {
 /* The ramp has no gaps, so selection has to read from inside the cell. */
 .marker-swatch.is-selected {
   border-color: var(--ui-text);
-  box-shadow: inset 0 0 0 2px var(--ui-bg), inset 0 0 0 3px var(--ui-text);
+  box-shadow:
+    inset 0 0 0 2px var(--ui-bg),
+    inset 0 0 0 3px var(--ui-text);
   position: relative;
   z-index: 1;
 }
 
 .marker-swatch-none {
-  background:
-    linear-gradient(to top right,
-      transparent calc(50% - 1px), var(--ui-rule-strong) 50%, transparent calc(50% + 1px));
+  background: linear-gradient(
+    to top right,
+    transparent calc(50% - 1px),
+    var(--ui-rule-strong) 50%,
+    transparent calc(50% + 1px)
+  );
 }
 
 /* Arriving at a section from the song panel replaced it outright, with no way
@@ -1963,7 +1987,6 @@ body {
   color: var(--ui-bg);
 }
 
-
 /* Double-click opens the marker panel, so the header must not start a text
    selection on the way there. */
 .song-header {
@@ -1997,7 +2020,7 @@ body {
   background: var(--ui-surface-raised);
   color: var(--ui-text);
   padding: 0 var(--s-2);
-  font-variation-settings: "wdth" 75;
+  font-variation-settings: 'wdth' 75;
   font-size: var(--t-stage-micro);
   text-align: left;
   cursor: pointer;
@@ -2012,7 +2035,7 @@ body {
 }
 
 .marker-sections:empty::after {
-  content: "—";
+  content: '—';
   display: block;
   color: var(--ui-text-2);
   padding: var(--s-2);

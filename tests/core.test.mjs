@@ -10,7 +10,14 @@ test('parseLocator: simple song title', () => {
   assert.deepStrictEqual(r, {
     kind: 'song',
     songName: 'Neon Signal',
-    songTags: { loopCount: null, autoStop: false, autoNext: false, bpm: null, autoClick: null, skip: false }
+    songTags: {
+      loopCount: null,
+      autoStop: false,
+      autoNext: false,
+      bpm: null,
+      autoClick: null,
+      skip: false,
+    },
   });
 });
 
@@ -19,7 +26,16 @@ test('parseLocator: song with one section', () => {
   assert.deepStrictEqual(r, {
     kind: 'section',
     songName: 'Neon Signal',
-    section: { name: 'Verse 1', time: 0, loopCount: null, autoStop: false, autoNext: false, bpm: null, autoClick: null, skip: false }
+    section: {
+      name: 'Verse 1',
+      time: 0,
+      loopCount: null,
+      autoStop: false,
+      autoNext: false,
+      bpm: null,
+      autoClick: null,
+      skip: false,
+    },
   });
 });
 
@@ -28,7 +44,16 @@ test('parseLocator: section with loop count', () => {
   assert.deepStrictEqual(r, {
     kind: 'section',
     songName: 'Neon Signal',
-    section: { name: 'Chorus', time: 0, loopCount: 4, autoStop: false, autoNext: false, bpm: null, autoClick: null, skip: false }
+    section: {
+      name: 'Chorus',
+      time: 0,
+      loopCount: 4,
+      autoStop: false,
+      autoNext: false,
+      bpm: null,
+      autoClick: null,
+      skip: false,
+    },
   });
 });
 
@@ -37,7 +62,16 @@ test('parseLocator: section with infinite loop', () => {
   assert.deepStrictEqual(r, {
     kind: 'section',
     songName: 'Neon Signal',
-    section: { name: 'Outro', time: 0, loopCount: -1, autoStop: false, autoNext: false, bpm: null, autoClick: null, skip: false }
+    section: {
+      name: 'Outro',
+      time: 0,
+      loopCount: -1,
+      autoStop: false,
+      autoNext: false,
+      bpm: null,
+      autoClick: null,
+      skip: false,
+    },
   });
 });
 
@@ -53,7 +87,14 @@ test('parseLocator: song-level tag [loop] strips tag from title', () => {
   assert.deepStrictEqual(r, {
     kind: 'song',
     songName: 'Chorus',
-    songTags: { loopCount: -1, autoStop: false, autoNext: false, bpm: null, autoClick: null, skip: false }
+    songTags: {
+      loopCount: -1,
+      autoStop: false,
+      autoNext: false,
+      bpm: null,
+      autoClick: null,
+      skip: false,
+    },
   });
 });
 
@@ -62,7 +103,14 @@ test('parseLocator: song-level tag [stop] strips tag from title', () => {
   assert.deepStrictEqual(r, {
     kind: 'song',
     songName: 'Outro',
-    songTags: { loopCount: null, autoStop: true, autoNext: false, bpm: null, autoClick: null, skip: false }
+    songTags: {
+      loopCount: null,
+      autoStop: true,
+      autoNext: false,
+      bpm: null,
+      autoClick: null,
+      skip: false,
+    },
   });
 });
 
@@ -71,7 +119,14 @@ test('parseLocator: song-level tag [next] strips tag from title', () => {
   assert.deepStrictEqual(r, {
     kind: 'song',
     songName: 'Bridge',
-    songTags: { loopCount: null, autoStop: false, autoNext: true, bpm: null, autoClick: null, skip: false }
+    songTags: {
+      loopCount: null,
+      autoStop: false,
+      autoNext: true,
+      bpm: null,
+      autoClick: null,
+      skip: false,
+    },
   });
 });
 
@@ -80,7 +135,14 @@ test('parseLocator: song-level tag [bpm] parses tempo', () => {
   assert.deepStrictEqual(r, {
     kind: 'song',
     songName: 'Abertura',
-    songTags: { loopCount: null, autoStop: false, autoNext: false, bpm: 135, autoClick: null, skip: false }
+    songTags: {
+      loopCount: null,
+      autoStop: false,
+      autoNext: false,
+      bpm: 135,
+      autoClick: null,
+      skip: false,
+    },
   });
 });
 
@@ -89,7 +151,14 @@ test('parseLocator: song-level tag [bpm] parses floating point tempo', () => {
   assert.deepStrictEqual(r, {
     kind: 'song',
     songName: 'Abertura',
-    songTags: { loopCount: null, autoStop: false, autoNext: false, bpm: 111.11, autoClick: null, skip: false }
+    songTags: {
+      loopCount: null,
+      autoStop: false,
+      autoNext: false,
+      bpm: 111.11,
+      autoClick: null,
+      skip: false,
+    },
   });
 });
 
@@ -98,7 +167,14 @@ test('parseLocator: song-level tag [click] parses metronome on', () => {
   assert.deepStrictEqual(r, {
     kind: 'song',
     songName: 'Abertura',
-    songTags: { loopCount: null, autoStop: false, autoNext: false, bpm: null, autoClick: true, skip: false }
+    songTags: {
+      loopCount: null,
+      autoStop: false,
+      autoNext: false,
+      bpm: null,
+      autoClick: true,
+      skip: false,
+    },
   });
 });
 
@@ -107,7 +183,14 @@ test('parseLocator: song-level tag [click off] parses metronome off', () => {
   assert.deepStrictEqual(r, {
     kind: 'song',
     songName: 'Abertura',
-    songTags: { loopCount: null, autoStop: false, autoNext: false, bpm: null, autoClick: false, skip: false }
+    songTags: {
+      loopCount: null,
+      autoStop: false,
+      autoNext: false,
+      bpm: null,
+      autoClick: false,
+      skip: false,
+    },
   });
 });
 
@@ -170,7 +253,16 @@ test('parseLocator: section with [stop] tag', () => {
   assert.deepStrictEqual(r, {
     kind: 'section',
     songName: 'Neon Signal',
-    section: { name: 'Outro', time: 0, loopCount: null, autoStop: true, autoNext: false, bpm: null, autoClick: null, skip: false }
+    section: {
+      name: 'Outro',
+      time: 0,
+      loopCount: null,
+      autoStop: true,
+      autoNext: false,
+      bpm: null,
+      autoClick: null,
+      skip: false,
+    },
   });
 });
 
@@ -179,7 +271,16 @@ test('parseLocator: section with [next] tag', () => {
   assert.deepStrictEqual(r, {
     kind: 'section',
     songName: 'Neon Signal',
-    section: { name: 'Bridge', time: 0, loopCount: null, autoStop: false, autoNext: true, bpm: null, autoClick: null, skip: false }
+    section: {
+      name: 'Bridge',
+      time: 0,
+      loopCount: null,
+      autoStop: false,
+      autoNext: true,
+      bpm: null,
+      autoClick: null,
+      skip: false,
+    },
   });
 });
 
@@ -188,7 +289,16 @@ test('parseLocator: section with [bpm 140] tag', () => {
   assert.deepStrictEqual(r, {
     kind: 'section',
     songName: 'Neon Signal',
-    section: { name: 'Chorus', time: 0, loopCount: null, autoStop: false, autoNext: false, bpm: 140, autoClick: null, skip: false }
+    section: {
+      name: 'Chorus',
+      time: 0,
+      loopCount: null,
+      autoStop: false,
+      autoNext: false,
+      bpm: 140,
+      autoClick: null,
+      skip: false,
+    },
   });
 });
 
@@ -197,7 +307,16 @@ test('parseLocator: section with [click] tag', () => {
   assert.deepStrictEqual(r, {
     kind: 'section',
     songName: 'Neon Signal',
-    section: { name: 'Chorus', time: 0, loopCount: null, autoStop: false, autoNext: false, bpm: null, autoClick: true, skip: false }
+    section: {
+      name: 'Chorus',
+      time: 0,
+      loopCount: null,
+      autoStop: false,
+      autoNext: false,
+      bpm: null,
+      autoClick: true,
+      skip: false,
+    },
   });
 });
 
@@ -206,7 +325,16 @@ test('parseLocator: section with [skip] tag', () => {
   assert.deepStrictEqual(r, {
     kind: 'section',
     songName: 'Neon Signal',
-    section: { name: 'Solo', time: 0, loopCount: null, autoStop: false, autoNext: false, bpm: null, autoClick: null, skip: true }
+    section: {
+      name: 'Solo',
+      time: 0,
+      loopCount: null,
+      autoStop: false,
+      autoNext: false,
+      bpm: null,
+      autoClick: null,
+      skip: true,
+    },
   });
 });
 
@@ -215,7 +343,16 @@ test('parseLocator: section with multiple tags [loop] [stop]', () => {
   assert.deepStrictEqual(r, {
     kind: 'section',
     songName: 'Song A',
-    section: { name: 'Chorus', time: 0, loopCount: -1, autoStop: true, autoNext: false, bpm: null, autoClick: null, skip: false }
+    section: {
+      name: 'Chorus',
+      time: 0,
+      loopCount: -1,
+      autoStop: true,
+      autoNext: false,
+      bpm: null,
+      autoClick: null,
+      skip: false,
+    },
   });
 });
 
@@ -224,7 +361,16 @@ test('parseLocator: tags are case-insensitive', () => {
   assert.deepStrictEqual(r, {
     kind: 'section',
     songName: 'Song A',
-    section: { name: 'Intro', time: 0, loopCount: null, autoStop: true, autoNext: false, bpm: null, autoClick: null, skip: false }
+    section: {
+      name: 'Intro',
+      time: 0,
+      loopCount: null,
+      autoStop: true,
+      autoNext: false,
+      bpm: null,
+      autoClick: null,
+      skip: false,
+    },
   });
 });
 
@@ -263,7 +409,10 @@ test('parseSetlist: tag-only automations belong to the preceding song', () => {
     { name: 'Song B', time: 60 },
   ]);
 
-  assert.deepStrictEqual(parsed.songs.map((song) => song.title), ['Song A', 'Song B']);
+  assert.deepStrictEqual(
+    parsed.songs.map((song) => song.title),
+    ['Song A', 'Song B'],
+  );
   assert.deepStrictEqual(
     parsed.songs[0].sections.map((section) => ({
       time: section.time,
@@ -281,10 +430,13 @@ test('parseSetlist: tag-only automations belong to the preceding song', () => {
 test('parseSetlist: tag-only automation before the first song creates an implicit _Sem Música_ song', (t) => {
   const cues = [
     { name: '[bpm 120]', time: 0 },
-    { name: 'Song A', time: 16 }
+    { name: 'Song A', time: 16 },
   ];
   const parsed = parseSetlist(cues);
-  assert.deepStrictEqual(parsed.songs.map(s => s.title), ['_Sem Música_', 'Song A']);
+  assert.deepStrictEqual(
+    parsed.songs.map((s) => s.title),
+    ['_Sem Música_', 'Song A'],
+  );
   assert.strictEqual(parsed.hidden.length, 0);
 });
 
@@ -297,28 +449,28 @@ test('SetlistManager: correctly tracks state and loop regions', () => {
     { name: 'Song A > Verse', time: 30 },
     { name: 'Song A > Chorus [loop 4x]', time: 60 },
     { name: 'Song B', time: 100 },
-    { name: '_end', time: 150 }
+    { name: '_end', time: 150 },
   ];
 
   manager.updateCues(cues);
-  
+
   // Initial state check
   let state = manager.getState();
   assert.strictEqual(state.songs.length, 2);
   assert.strictEqual(state.hidden.length, 1);
-  
+
   // Set transport time
   manager.updateTransport(10, true, 120);
   state = manager.getState();
   assert.strictEqual(state.activeSongIndex, 0); // Song A starts at time 0
   assert.strictEqual(state.activeSectionIndex, -1); // no active section yet, since Verse starts at 30
-  
+
   manager.updateTransport(40, true);
   state = manager.getState();
   assert.strictEqual(state.activeSongIndex, 0);
   assert.strictEqual(state.activeSectionIndex, 0); // Verse starts at 30
   assert.strictEqual(manager.getActiveSection().name, 'Verse');
-  
+
   // Check loop region calculation
   const loopRegion = manager.getLoopRegion(0, 1); // Chorus starts at 60
   assert.deepStrictEqual(loopRegion, { start: 60, end: 100, duration: 40 }); // Next cue is Song B at 100
@@ -505,7 +657,9 @@ test('a [next] crossed late still targets the first beat of the next song', () =
   manager.updateTransport(63.8, true, 120);
   assert.deepEqual(manager.checkAutomations(), []);
   manager.updateTransport(64.4, true, 120);
-  assert.deepEqual(manager.checkAutomations(), [{ type: 'next', nextSongIndex: 1, targetTime: 80 }]);
+  assert.deepEqual(manager.checkAutomations(), [
+    { type: 'next', nextSongIndex: 1, targetTime: 80 },
+  ]);
   manager.updateTransport(64.6, true, 120);
   assert.deepEqual(manager.checkAutomations(), [], 'fires once per entry');
 });
@@ -592,7 +746,7 @@ test('SetlistManager: tracks counted loops iterations and fires deactivate_loop'
   ];
 
   manager.updateCues(cues);
-  
+
   // Enter loop region
   manager.updateTransport(35, true);
   let actions = manager.checkAutomations();
@@ -606,7 +760,7 @@ test('SetlistManager: tracks counted loops iterations and fires deactivate_loop'
   // 1st wrap-around (simulated by playhead jumping back from near 80 to 30)
   manager.updateTransport(79, true); // playing inside loop
   manager.updateTransport(31, true); // wrapped around!
-  
+
   state = manager.getState();
   assert.deepStrictEqual(state.loopIteration, { current: 2, total: 3 });
   actions = manager.checkAutomations();
@@ -615,16 +769,16 @@ test('SetlistManager: tracks counted loops iterations and fires deactivate_loop'
   // 2nd wrap-around
   manager.updateTransport(79, true);
   manager.updateTransport(31, true); // wrapped around!
-  
+
   state = manager.getState();
   assert.deepStrictEqual(state.loopIteration, { current: 3, total: 3 });
-  
+
   // As soon as iteration 3 begins, pendingDeactivateLoop is set to true
   actions = manager.checkAutomations();
   assert.strictEqual(actions.length, 1);
   assert.strictEqual(actions[0].type, 'deactivate_loop');
   assert.strictEqual(manager.isLoopActive(), false);
-  
+
   state = manager.getState();
   assert.strictEqual(state.loopIteration, null);
 });
@@ -740,7 +894,7 @@ test('SetlistManager: re-entry of [loop Nx] section restarts counter from 1', ()
   assert.deepStrictEqual(
     state.loopIteration,
     { current: 1, total: 3 },
-    'second entry into a [loop Nx] section must restart at iteration 1'
+    'second entry into a [loop Nx] section must restart at iteration 1',
   );
 
   // Wrap 1
@@ -815,7 +969,7 @@ test('SetlistManager: wrap detected anywhere in first half of loop region increm
   let state = manager.getState();
   assert.ok(
     state.loopIteration && state.loopIteration.current === 2,
-    `after first wrap iteration must be 2, got ${JSON.stringify(state.loopIteration)}`
+    `after first wrap iteration must be 2, got ${JSON.stringify(state.loopIteration)}`,
   );
 
   // Second wrap drives to 3/3 -> deactivate on next checkAutomations
@@ -854,7 +1008,7 @@ test('SetlistManager: collision — song and first section share loop start beat
   assert.strictEqual(
     manager.isLoopActive(),
     true,
-    'loop must NOT be cleared when playhead is inside the loop region (was the regression)'
+    'loop must NOT be cleared when playhead is inside the loop region (was the regression)',
   );
 
   // Wrap from end to start.
@@ -863,7 +1017,7 @@ test('SetlistManager: collision — song and first section share loop start beat
   let state = manager.getState();
   assert.ok(
     state.loopIteration && state.loopIteration.current === 2,
-    `expected iteration 2 after first wrap, got ${JSON.stringify(state.loopIteration)}`
+    `expected iteration 2 after first wrap, got ${JSON.stringify(state.loopIteration)}`,
   );
 
   // Drive to iteration 5 with a few more wraps — must deactivate exactly once.
@@ -872,12 +1026,13 @@ test('SetlistManager: collision — song and first section share loop start beat
     manager.updateTransport(900, true);
     manager.updateTransport(15, true);
     const actions = manager.checkAutomations();
-    if (actions.some(a => a.type === 'deactivate_loop')) {
+    if (actions.some((a) => a.type === 'deactivate_loop')) {
       sawDeactivate = true;
       assert.strictEqual(manager.isLoopActive(), false);
       assert.strictEqual(
-        actions.filter(a => a.type === 'deactivate_loop').length, 1,
-        'exactly one deactivate per loop'
+        actions.filter((a) => a.type === 'deactivate_loop').length,
+        1,
+        'exactly one deactivate per loop',
       );
     }
   }
@@ -890,13 +1045,13 @@ test('parseLrc: parses timestamps and text correctly', () => {
   const lrc = [
     '[00:00.00] Intro',
     '[00:10.50] Signal rising through the haze',
-    '[01:05.25] Every marker finds its place'
+    '[01:05.25] Every marker finds its place',
   ].join('\n');
   const lines = parseLrc(lrc);
   assert.strictEqual(lines.length, 3);
   assert.strictEqual(lines[0].time, 0);
   assert.strictEqual(lines[0].text, 'Intro');
-  assert.ok(Math.abs(lines[1].time - 10.50) < 0.01);
+  assert.ok(Math.abs(lines[1].time - 10.5) < 0.01);
   assert.strictEqual(lines[1].text, 'Signal rising through the haze');
   assert.ok(Math.abs(lines[2].time - 65.25) < 0.01);
 });
@@ -920,7 +1075,7 @@ test('parseTxt: returns all non-empty lines with sequential pseudo-time', () => 
 
 test('SetlistManager: correctly tracks and updates global quantization level', () => {
   const manager = new SetlistManager();
-  
+
   // Default value should be 4 (1 Bar)
   let state = manager.getState();
   assert.strictEqual(state.clipTriggerQuantization, 4);
@@ -943,11 +1098,11 @@ test('Relative syntax: Song A, > Intro, > Verse generates a song with two sectio
   assert.strictEqual(parsed.songs.length, 1);
   assert.strictEqual(parsed.songs[0].title, 'Song A');
   assert.deepStrictEqual(
-    parsed.songs[0].sections.map(s => ({ name: s.name, time: s.time })),
+    parsed.songs[0].sections.map((s) => ({ name: s.name, time: s.time })),
     [
       { name: 'Intro', time: 10 },
       { name: 'Verse', time: 30 },
-    ]
+    ],
   );
 });
 
@@ -1000,11 +1155,11 @@ test('Relative syntax: Song A > Intro legacy syntax continues working', () => {
   assert.strictEqual(parsed.songs.length, 1);
   assert.strictEqual(parsed.songs[0].title, 'Song A');
   assert.deepStrictEqual(
-    parsed.songs[0].sections.map(s => ({ name: s.name, time: s.time })),
+    parsed.songs[0].sections.map((s) => ({ name: s.name, time: s.time })),
     [
       { name: 'Intro', time: 0 },
       { name: 'Verse', time: 20 },
-    ]
+    ],
   );
 });
 
@@ -1035,11 +1190,11 @@ test('Relative syntax: Cues provided out of order are sorted by time', () => {
   assert.strictEqual(parsed.songs.length, 1);
   assert.strictEqual(parsed.songs[0].title, 'Song A');
   assert.deepStrictEqual(
-    parsed.songs[0].sections.map(s => ({ name: s.name, time: s.time })),
+    parsed.songs[0].sections.map((s) => ({ name: s.name, time: s.time })),
     [
       { name: 'Intro', time: 10 },
       { name: 'Verse', time: 20 },
-    ]
+    ],
   );
 });
 
@@ -1062,11 +1217,11 @@ test('Relative syntax: Relative sections inserted later appear in chronological 
 
   state = manager.getState();
   assert.deepStrictEqual(
-    state.songs[0].sections.map(s => ({ name: s.name, time: s.time })),
+    state.songs[0].sections.map((s) => ({ name: s.name, time: s.time })),
     [
       { name: 'Intro', time: 15 },
       { name: 'Verse', time: 30 },
-    ]
+    ],
   );
 });
 
@@ -1145,7 +1300,11 @@ test('SetlistManager caches derived songs and invalidates only duration/list inp
   // so that the show clock stays stable during the performance.
   manager.updateTransport(33, true, 90);
   const tempoState = manager.getState();
-  assert.strictEqual(tempoState.songs, initialSongs, 'live BPM change must not invalidate song duration cache');
+  assert.strictEqual(
+    tempoState.songs,
+    initialSongs,
+    'live BPM change must not invalidate song duration cache',
+  );
 
   // Arrangement end change — this DOES invalidate (new boundary changes durations)
   manager.updateArrangementEndTime(300);
@@ -1156,7 +1315,10 @@ test('SetlistManager caches derived songs and invalidates only duration/list inp
   manager.setCustomOrder(['Song B', 'Song A']);
   const orderState = manager.getState();
   assert.notStrictEqual(orderState.songs, endState.songs);
-  assert.deepEqual(orderState.songs.map(({ title }) => title), ['Song B', 'Song A']);
+  assert.deepEqual(
+    orderState.songs.map(({ title }) => title),
+    ['Song B', 'Song A'],
+  );
 
   manager.updateCues([
     { name: 'Song A', time: 0 },
@@ -1177,7 +1339,10 @@ test('SetlistManager resolves active identity chronologically under custom displ
   manager.updateTransport(150, true, 120);
 
   const state = manager.getState();
-  assert.deepEqual(state.songs.map(({ title }) => title), ['Song C', 'Song A', 'Song B']);
+  assert.deepEqual(
+    state.songs.map(({ title }) => title),
+    ['Song C', 'Song A', 'Song B'],
+  );
   assert.equal(state.activeSongIndex, 2);
   assert.equal(state.songs[state.activeSongIndex].title, 'Song B');
 });
@@ -1222,10 +1387,16 @@ test('SetlistManager clearing custom order restores chronological display order'
     { name: 'Song B', time: 100 },
   ]);
   manager.setCustomOrder(['Song B', 'Song A']);
-  assert.deepEqual(manager.getState().songs.map(({ title }) => title), ['Song B', 'Song A']);
+  assert.deepEqual(
+    manager.getState().songs.map(({ title }) => title),
+    ['Song B', 'Song A'],
+  );
 
   manager.setCustomOrder([]);
-  assert.deepEqual(manager.getState().songs.map(({ title }) => title), ['Song A', 'Song B']);
+  assert.deepEqual(
+    manager.getState().songs.map(({ title }) => title),
+    ['Song A', 'Song B'],
+  );
 });
 
 test('SetlistManager consumes duplicate saved-order title ranks by chronological occurrence', () => {
@@ -1341,8 +1512,16 @@ test('SetlistManager: live BPM changes across untagged songs maintain consistent
   // Somalia is played at 140 BPM. Nothing in the set may move because of it.
   manager.updateTransport(230, true, 140);
   const state2 = manager.getState();
-  assert.strictEqual(state2.songs[0].durationSeconds, 120, 'prior song duration must not change on tempo shift');
-  assert.strictEqual(state2.songs[1].durationSeconds, 146, 'active song duration must not follow the live tempo');
+  assert.strictEqual(
+    state2.songs[0].durationSeconds,
+    120,
+    'prior song duration must not change on tempo shift',
+  );
+  assert.strictEqual(
+    state2.songs[1].durationSeconds,
+    146,
+    'active song duration must not follow the live tempo',
+  );
   assert.strictEqual(state2.totalDurationSeconds, settledTotal);
 
   // Back to Desconforto, and again at a third tempo. Still frozen.
@@ -1351,7 +1530,11 @@ test('SetlistManager: live BPM changes across untagged songs maintain consistent
   const state3 = manager.getState();
   assert.strictEqual(state3.songs[0].durationSeconds, 120);
   assert.strictEqual(state3.songs[1].durationSeconds, 146);
-  assert.strictEqual(state3.totalDurationSeconds, settledTotal, 'total duration must stay strictly constant across navigation');
+  assert.strictEqual(
+    state3.totalDurationSeconds,
+    settledTotal,
+    'total duration must stay strictly constant across navigation',
+  );
 });
 
 test('SetlistManager: a declared [bpm] tag makes duration independent of any live tempo', () => {
@@ -1371,7 +1554,11 @@ test('SetlistManager: a declared [bpm] tag makes duration independent of any liv
 
   manager.updateTransport(200, true, 88);
   const second = manager.getState();
-  assert.strictEqual(second.totalDurationSeconds, 240, 'declared tempo is never overridden by the transport');
+  assert.strictEqual(
+    second.totalDurationSeconds,
+    240,
+    'declared tempo is never overridden by the transport',
+  );
 });
 
 test('computeCuesFingerprint: produces identical fingerprint regardless of raw cue arrival order', () => {
@@ -1439,8 +1626,6 @@ test('SetlistManager: durationConfidence reports declared with tags and estimate
   assert.strictEqual(manager.getState().durationConfidence, 'declared');
 });
 
-
-
 test('SetlistManager detects tempo automation by divergence from a declared tag', () => {
   const manager = new SetlistManager();
   manager.updateCues([
@@ -1460,7 +1645,11 @@ test('SetlistManager detects tempo automation by divergence from a declared tag'
 
   // Sticky: agreeing again later does not clear the evidence.
   manager.updateTransport(448, true, 104);
-  assert.equal(manager.isTempoAutomationSuspected(), true, 'the observation must not be cleared mid-show');
+  assert.equal(
+    manager.isTempoAutomationSuspected(),
+    true,
+    'the observation must not be cleared mid-show',
+  );
 });
 
 test('SetlistManager tolerates float noise around a declared tempo', () => {
@@ -1468,12 +1657,19 @@ test('SetlistManager tolerates float noise around a declared tempo', () => {
   manager.updateCues([{ name: 'A [bpm 120]', time: 0 }]);
   manager.updateArrangementEndTime(240);
   manager.updateTransport(0, false, 120.4);
-  assert.equal(manager.isTempoAutomationSuspected(), false, 'half a BPM of float noise is not automation');
+  assert.equal(
+    manager.isTempoAutomationSuspected(),
+    false,
+    'half a BPM of float noise is not automation',
+  );
 });
 
 test('SetlistManager suspects nothing when the setlist declares no tempo', () => {
   const manager = new SetlistManager();
-  manager.updateCues([{ name: 'A', time: 0 }, { name: 'B', time: 120 }]);
+  manager.updateCues([
+    { name: 'A', time: 0 },
+    { name: 'B', time: 120 },
+  ]);
   manager.updateArrangementEndTime(240);
   manager.updateTransport(0, true, 90);
   manager.updateTransport(60, true, 175);
@@ -1533,7 +1729,12 @@ test('a section tag still fires on its own entry while the song tag stays spent'
   const seen = [];
   for (const beat of [0, 4, 8, 12]) {
     manager.updateTransport(beat, true, 120);
-    seen.push(manager.checkAutomations().map((a) => a.type).join('+') || '-');
+    seen.push(
+      manager
+        .checkAutomations()
+        .map((a) => a.type)
+        .join('+') || '-',
+    );
   }
   assert.deepEqual(seen, ['next', '-', 'stop', '-']);
 });
@@ -1547,7 +1748,8 @@ test('a section tag overrides the song tag of the same kind', () => {
     { name: 'B', time: 64 },
   ]);
   manager.updateTransport(0, true, 160);
-  const tempos = manager.checkAutomations()
+  const tempos = manager
+    .checkAutomations()
     .filter((a) => a.type === 'change_bpm')
     .map((a) => a.bpm);
   assert.deepEqual(tempos, [160, 107]);
@@ -1577,7 +1779,11 @@ test('parseLocator: [jump NAME] keeps the target verbatim and strips the tag fro
   assert.equal(r.section.name, 'Verse 2');
   assert.equal(r.section.jumpTarget, 'Chorus II');
   assert.equal(r.section.bpm, 120);
-  assert.equal(parseLocator('Song A [JUMP  Outro ]').songTags.jumpTarget, 'Outro', 'keyword case-insensitive, target trimmed');
+  assert.equal(
+    parseLocator('Song A [JUMP  Outro ]').songTags.jumpTarget,
+    'Outro',
+    'keyword case-insensitive, target trimmed',
+  );
   assert.equal('jumpTarget' in parseLocator('> Verse').section, false, 'absent when no tag');
 });
 
@@ -1593,10 +1799,25 @@ test('a section [jump] resolves to a section of the same song first, then a song
     { name: 'C > Bridge', time: 128 },
     { name: 'D > Coda [jump B]', time: 200 },
   ]);
-  const at = (beat) => { manager.updateTransport(beat, true, 120); return manager.checkAutomations().filter((a) => a.type === 'jump_to'); };
-  assert.deepEqual(at(8.2), [{ type: 'jump_to', targetCue: 'A > Chorus', targetTime: 16 }], 'same song wins over B > Chorus');
-  assert.deepEqual(at(80.1), [{ type: 'jump_to', targetCue: 'C > Bridge', targetTime: 128 }], 'a section elsewhere when the song has none');
-  assert.deepEqual(at(200.3), [{ type: 'jump_to', targetCue: 'B', targetTime: 64 }], 'a song by title');
+  const at = (beat) => {
+    manager.updateTransport(beat, true, 120);
+    return manager.checkAutomations().filter((a) => a.type === 'jump_to');
+  };
+  assert.deepEqual(
+    at(8.2),
+    [{ type: 'jump_to', targetCue: 'A > Chorus', targetTime: 16 }],
+    'same song wins over B > Chorus',
+  );
+  assert.deepEqual(
+    at(80.1),
+    [{ type: 'jump_to', targetCue: 'C > Bridge', targetTime: 128 }],
+    'a section elsewhere when the song has none',
+  );
+  assert.deepEqual(
+    at(200.3),
+    [{ type: 'jump_to', targetCue: 'B', targetTime: 64 }],
+    'a song by title',
+  );
 });
 
 test('[jump Song > Section] names the song outright, and a target that does not exist fires nothing', () => {
@@ -1610,9 +1831,15 @@ test('[jump Song > Section] names the song outright, and a target that does not 
     { name: 'B > Tail [jump Nowhere]', time: 96 },
   ]);
   manager.updateTransport(8.1, true, 120);
-  assert.deepEqual(manager.checkAutomations().filter((a) => a.type === 'jump_to'), [{ type: 'jump_to', targetCue: 'B > Chorus', targetTime: 72 }]);
+  assert.deepEqual(
+    manager.checkAutomations().filter((a) => a.type === 'jump_to'),
+    [{ type: 'jump_to', targetCue: 'B > Chorus', targetTime: 72 }],
+  );
   manager.updateTransport(96.1, true, 120);
-  assert.deepEqual(manager.checkAutomations().filter((a) => a.type === 'jump_to'), []);
+  assert.deepEqual(
+    manager.checkAutomations().filter((a) => a.type === 'jump_to'),
+    [],
+  );
 });
 
 test('a [jump] fires once per entry and matches names case-insensitively, tags ignored', () => {
@@ -1642,7 +1869,10 @@ test('a cue reload that leaves the marker under the playhead alone does not fire
   ];
   manager.updateCues(cues);
   manager.updateTransport(17, true, 120);
-  assert.deepEqual(manager.checkAutomations().map((a) => a.type), ['stop']);
+  assert.deepEqual(
+    manager.checkAutomations().map((a) => a.type),
+    ['stop'],
+  );
   manager.updateTransport(18, true, 120);
   assert.deepEqual(manager.checkAutomations(), []);
 
@@ -1659,7 +1889,10 @@ test('a cue reload that leaves the marker under the playhead alone does not fire
   // Moving the marker itself is a new marker: its tags are fresh again.
   manager.updateCues([cues[0], { name: 'Song A > Verse [stop]', time: 20.5 }, cues[2]]);
   manager.updateTransport(21, true, 120);
-  assert.deepEqual(manager.checkAutomations().map((a) => a.type), ['stop']);
+  assert.deepEqual(
+    manager.checkAutomations().map((a) => a.type),
+    ['stop'],
+  );
 });
 
 test('a cue reload keeps an active loop whose marker still declares it, and drops one whose marker is gone', () => {
@@ -1672,14 +1905,21 @@ test('a cue reload keeps an active loop whose marker still declares it, and drop
   ];
   manager.updateCues(cues);
   manager.updateTransport(16.5, true, 120);
-  assert.deepEqual(manager.checkAutomations().map((a) => a.type), ['activate_loop']);
+  assert.deepEqual(
+    manager.checkAutomations().map((a) => a.type),
+    ['activate_loop'],
+  );
   assert.equal(manager.isLoopActive(), true);
 
   manager.updateCues([cues[0], cues[1], cues[2], { name: 'Song B (renamed)', time: 64 }]);
   assert.equal(manager.isLoopActive(), true, 'the loop marker is untouched, so the loop stays');
 
   manager.updateCues([cues[0], { name: 'Song A > Vamp', time: 16 }, cues[2], cues[3]]);
-  assert.equal(manager.isLoopActive(), false, 'the loop tag was removed from the marker, so the loop is dropped');
+  assert.equal(
+    manager.isLoopActive(),
+    false,
+    'the loop tag was removed from the marker, so the loop is dropped',
+  );
 });
 
 test('parseLocator: a tag in the song half does not turn "Song A [bpm 120] > Chorus" into a new song', () => {

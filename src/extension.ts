@@ -4,15 +4,20 @@ import { installRuntimeSafety } from './runtime/safety.js';
 import { registerPanelCommand } from './ui/panel.js';
 import { startServer, stopServer } from './index.js';
 import { getAutoStart, getWriteTempoOnJump } from './preferences.js';
-import { bridgeState } from './core/bridge-state.js';
+import { bridgeState } from './runtime/bridge-state.js';
 
 let activated = false;
 
+/**
+ * Activate — implementation detail.
+ */
 function activate(activation: ActivationContext): void {
   if (activated) {
     console.log('[rc-setlist] activate() called while already active; restarting server only');
     startServer().catch((err) => {
-      console.error(`[rc-setlist] restart startServer failed: ${err instanceof Error ? err.message : String(err)}`);
+      console.error(
+        `[rc-setlist] restart startServer failed: ${err instanceof Error ? err.message : String(err)}`,
+      );
     });
     return;
   }
@@ -35,22 +40,31 @@ function activate(activation: ActivationContext): void {
   if (getAutoStart()) {
     console.log('[rc-setlist] auto-start enabled; starting server');
     startServer().catch((err) => {
-      console.error(`[rc-setlist] initial startServer failed: ${err instanceof Error ? err.message : String(err)}`);
+      console.error(
+        `[rc-setlist] initial startServer failed: ${err instanceof Error ? err.message : String(err)}`,
+      );
     });
   } else {
-    console.log('[rc-setlist] auto-start disabled; server stays stopped until manually started from the panel');
+    console.log(
+      '[rc-setlist] auto-start disabled; server stays stopped until manually started from the panel',
+    );
   }
 
   console.log('[rc-setlist] activate() done; awaiting requests');
 }
 
+/**
+ * Deactivate — implementation detail.
+ */
 function deactivate(): void {
   if (!activated) return;
   activated = false;
 
   stopServer()
     .catch((err) => {
-      console.error(`[rc-setlist] stopServer failed: ${err instanceof Error ? err.message : String(err)}`);
+      console.error(
+        `[rc-setlist] stopServer failed: ${err instanceof Error ? err.message : String(err)}`,
+      );
     })
     .finally(() => {
       clearExtensionContext();

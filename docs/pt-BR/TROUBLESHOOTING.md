@@ -1,10 +1,10 @@
-# Solução de problemas
+﻿# Solução de problemas
 
-## O Ableton RC Setlist não aparece no Live
+## O RC Setlist não aparece no Live
 
 - Confirme o Ableton Live 12.4.5+ Suite (Beta).
 - Abra novamente o `.ablx` e confirme a instalação.
-- Reinicie o Live e procure em **Extensions > Ableton RC Setlist**.
+- Reinicie o Live e procure em **Extensions > RC Setlist**.
 
 ## O RCBridge não aparece na lista de Control Surface
 
@@ -76,9 +76,18 @@ um trecho sanitizado de `ExtensionHost.txt` sem apagar os dados do perfil.
 - Salve novamente no editor interno e atualize o estado.
 
 Ao atualizar de uma versão antiga chamada **RC SETLIST** ou **Ableton Setlist
-Bridge**, reinicie o servidor uma vez. O Ableton RC Setlist importa letras e
+Bridge**, reinicie o servidor uma vez. O RC Setlist importa letras e
 ordem ausentes das pastas conhecidas sem apagar pastas antigas ou substituir
 arquivos já existentes no perfil novo.
+
+Ao atualizar do **Ableton RC Setlist** 0.x (0.4.x–0.7.0), rode
+`Migrate-RC-Setlist-Data.cmd` (Windows) ou
+`Migrate RC Setlist Data.command` (macOS) do kit **uma vez, antes de abrir o
+Live** com a 1.0. Ele copia perfis, project-setlists, token e preferências
+para a pasta nova sem mexer na antiga. No Live, remova a entrada antiga
+**Ableton RC Setlist** em **Configurações > Extensões** para que as duas
+extensões não coexistam na mesma máquina. Pular a migração ou deixar as duas
+instaladas faz os perfis antigos ficarem invisíveis para a extensão nova.
 
 ## Outra extensão usa a porta OSC 11001
 
@@ -125,7 +134,7 @@ ambíguos permanecem intactos.
 
 ## O que incluir em um bug report
 
-Inclua sistema operacional, versão/edição do Live, versão do Ableton RC Setlist,
+Inclua sistema operacional, versão/edição do Live, versão do RC Setlist,
 navegador, passos exatos e logs sanitizados. Remova tokens, certificados,
 caminhos locais e conteúdo real do setlist ou das letras. Consulte
 [SUPPORT.md](../../SUPPORT.md).

@@ -140,7 +140,7 @@
       skip: has('skip') && checked('[data-field="skip"]'),
       hidden: has('hidden') && checked('[data-field="hidden"]'),
       ignore: has('ignore') && checked('[data-field="ignore"]'),
-      color: has('color') ? (form.dataset.color || '') : '',
+      color: has('color') ? form.dataset.color || '' : '',
     };
   }
 
@@ -152,18 +152,38 @@
   function swatchMarkup(selected) {
     const cells = PALETTE.map((swatch) => {
       const isOn = swatch.hex === selected;
-      return '<button type="button" class="marker-swatch' + (isOn ? ' is-selected' : '') + '"'
-        + ' data-swatch="' + swatch.hex + '"'
-        + ' style="--swatch: ' + swatch.hex + '"'
-        + ' aria-pressed="' + (isOn ? 'true' : 'false') + '"'
-        + ' title="' + swatch.id + '"></button>';
+      return (
+        '<button type="button" class="marker-swatch' +
+        (isOn ? ' is-selected' : '') +
+        '"' +
+        ' data-swatch="' +
+        swatch.hex +
+        '"' +
+        ' style="--swatch: ' +
+        swatch.hex +
+        '"' +
+        ' aria-pressed="' +
+        (isOn ? 'true' : 'false') +
+        '"' +
+        ' title="' +
+        swatch.id +
+        '"></button>'
+      );
     }).join('');
     const clearOn = !selected;
-    return '<div class="marker-swatches" role="group">'
-      + '<div class="marker-swatch-ramp">' + cells + '</div>'
-      + '<button type="button" class="marker-swatch marker-swatch-none' + (clearOn ? ' is-selected' : '') + '"'
-      + ' data-swatch="" aria-pressed="' + (clearOn ? 'true' : 'false') + '" title="none"></button>'
-      + '</div>';
+    return (
+      '<div class="marker-swatches" role="group">' +
+      '<div class="marker-swatch-ramp">' +
+      cells +
+      '</div>' +
+      '<button type="button" class="marker-swatch marker-swatch-none' +
+      (clearOn ? ' is-selected' : '') +
+      '"' +
+      ' data-swatch="" aria-pressed="' +
+      (clearOn ? 'true' : 'false') +
+      '" title="none"></button>' +
+      '</div>'
+    );
   }
 
   /** The `[...]` blocks of a name, in source order. */
@@ -198,11 +218,16 @@
    */
   function isSameLocatorName(a, b) {
     if (typeof a !== 'string' || typeof b !== 'string') return false;
-    const head = (raw) => raw.replace(/\s*\[[^\]]*\]/g, '').replace(/\s+/g, ' ').trim();
+    const head = (raw) =>
+      raw
+        .replace(/\s*\[[^\]]*\]/g, '')
+        .replace(/\s+/g, ' ')
+        .trim();
     if (head(a) !== head(b)) return false;
-    const blocks = (raw) => splitBlocks(raw)
-      .map((block) => block.slice(1, -1).trim().replace(/\s+/g, ' ').toLowerCase())
-      .sort();
+    const blocks = (raw) =>
+      splitBlocks(raw)
+        .map((block) => block.slice(1, -1).trim().replace(/\s+/g, ' ').toLowerCase())
+        .sort();
     const left = blocks(a);
     const right = blocks(b);
     return left.length === right.length && left.every((block, i) => block === right[i]);
@@ -243,7 +268,7 @@
 
     const carried = splitBlocks(originalName || '').filter((block) => {
       const key = blockKey(block);
-      if (key === null) return true;            // unknown: always carried
+      if (key === null) return true; // unknown: always carried
       if (key === 'loop') return !shows('loop');
       return !shows(key);
     });
@@ -267,6 +292,39 @@
     return parts.concat(carried).join(' ').trim();
   }
 
+  function jumpTargets(songs) {
+    if (!Array.isArray(songs)) return [];
+    const targets = [];
+    const simpleSections = [];
+
+    for (const song of songs) {
+      if (!song) continue;
+      if (song.title && !targets.includes(song.title)) {
+        targets.push(song.title);
+      }
+      if (Array.isArray(song.sections)) {
+        for (const sec of song.sections) {
+          if (!sec || !sec.name) continue;
+          const full = `${song.title} > ${sec.name}`;
+          if (!targets.includes(full)) {
+            targets.push(full);
+          }
+          if (!targets.includes(sec.name) && !simpleSections.includes(sec.name)) {
+            simpleSections.push(sec.name);
+          }
+        }
+      }
+    }
+
+    for (const sec of simpleSections) {
+      if (!targets.includes(sec)) {
+        targets.push(sec);
+      }
+    }
+
+    return targets;
+  }
+
   globalScope.RcMarkerEditor = {
     buildLocatorName,
     isSameLocatorName,
@@ -278,5 +336,6 @@
     fieldsFor,
     readForm,
     swatchMarkup,
+    jumpTargets,
   };
-}(typeof globalThis !== 'undefined' ? globalThis : this));
+})(typeof globalThis !== 'undefined' ? globalThis : this);

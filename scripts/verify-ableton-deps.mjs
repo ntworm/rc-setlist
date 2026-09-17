@@ -6,7 +6,9 @@ const require = createRequire(import.meta.url);
 
 function fail(message) {
   console.error(`[ableton-deps] ${message}`);
-  console.error('[ableton-deps] Set ABLETON_SDK_TGZ and ABLETON_CLI_TGZ to absolute local paths, then run npm run setup:ableton.');
+  console.error(
+    '[ableton-deps] Set ABLETON_SDK_TGZ and ABLETON_CLI_TGZ to absolute local paths, then run npm run setup:ableton.',
+  );
   process.exitCode = 2;
 }
 
@@ -15,7 +17,9 @@ const cliArchive = process.env.ABLETON_CLI_TGZ?.trim();
 
 if (!sdkArchive || !cliArchive) {
   fail('Authorized Ableton archive paths are required for the release gate.');
-} else if (![sdkArchive, cliArchive].every((archive) => path.isAbsolute(archive) && existsSync(archive))) {
+} else if (
+  ![sdkArchive, cliArchive].every((archive) => path.isAbsolute(archive) && existsSync(archive))
+) {
   fail('Archive variables must point to existing absolute local paths.');
 } else {
   try {

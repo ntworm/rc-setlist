@@ -1,4 +1,5 @@
 import * as net from 'node:net';
+import { isPlainObject, parseJson } from '../util/json.js';
 
 export interface SessionInfo {
   tempo: number;
@@ -14,6 +15,19 @@ export interface ProjectMetadata {
   is_dirty?: unknown;
 }
 
+/** Wire shape of one line of reply coming back from the MCP bridge. */
+interface McpResponse {
+  status: 'ok' | 'error';
+  result?: unknown;
+  message?: unknown;
+}
+
+function isMcpResponse(value: unknown): value is McpResponse {
+  if (!isPlainObject(value)) return false;
+  const status = value['status'];
+  return status === 'ok' || status === 'error';
+}
+
 export interface McpTcpClientOptions {
   host?: string;
   port?: number;
@@ -21,12 +35,15 @@ export interface McpTcpClientOptions {
   requestTimeoutMs?: number;
 }
 
+/**
+ * Manages the lifecycle and public surface of McpTcpClient.
+ */
 export class McpTcpClient {
   private socket: net.Socket | null = null;
   private connectingSocket: net.Socket | null = null;
   private pending: Array<{
-    resolve: (val: any) => void;
-    reject: (err: any) => void;
+    resolve: (val: unknown) => void;
+    reject: (err: unknown) => void;
     timeout: NodeJS.Timeout;
   }> = [];
   private dataBuffer = '';
@@ -56,7 +73,11 @@ export class McpTcpClient {
         if (settled) return;
         settled = true;
         this.connectingSocket = null;
-        try { sock.destroy(); } catch {}
+        try {
+          sock.destroy();
+        } catch {
+          // swallow: nothing to do here on purpose
+        }
         reject(err);
       };
 
@@ -73,11 +94,13 @@ export class McpTcpClient {
           if (p) {
             clearTimeout(p.timeout);
             try {
-              const res = JSON.parse(line);
+              const res = parseJson<McpResponse>(line, isMcpResponse);
+              if (!res) throw new Error('MCP reply is not a JSON object');
               if (res.status === 'ok') {
                 p.resolve(res.result);
               } else {
-                p.reject(new Error(res.message || 'MCP Error'));
+                const detail = typeof res.message === 'string' ? res.message : 'MCP Error';
+                p.reject(new Error(detail));
               }
             } catch (err) {
               p.reject(err);
@@ -116,21 +139,28 @@ export class McpTcpClient {
       sock.connect(this.port, this.host);
     });
 
-    let wrapped!: Promise<void>;
-    wrapped = attempt.finally(() => {
+    const wrapped: Promise<void> = attempt.finally(() => {
       if (this.connectPromise === wrapped) this.connectPromise = null;
     });
     this.connectPromise = wrapped;
     return wrapped;
   }
 
-  private destroy(err: Error): void {
+  private destroy(err: unknown): void {
     if (this.connectingSocket) {
-      try { this.connectingSocket.destroy(); } catch {}
+      try {
+        this.connectingSocket.destroy();
+      } catch {
+        // swallow: nothing to do here on purpose
+      }
       this.connectingSocket = null;
     }
     if (this.socket) {
-      try { this.socket.destroy(); } catch {}
+      try {
+        this.socket.destroy();
+      } catch {
+        // swallow: nothing to do here on purpose
+      }
       this.socket = null;
     }
     this.connectPromise = null;
@@ -143,7 +173,7 @@ export class McpTcpClient {
     }
   }
 
-  public call(type: string, params: any = {}): Promise<any> {
+  public call(type: string, params: unknown = {}): Promise<unknown> {
     return this.connect()
       .then(() => {
         if (!this.socket) throw new Error('Socket not connected');
@@ -151,20 +181,20 @@ export class McpTcpClient {
           const timeout = setTimeout(() => {
             this.destroy(new Error(`MCP request timeout after ${this.requestTimeoutMs}ms`));
           }, this.requestTimeoutMs);
-          this.pending.push({ resolve, reject, timeout });
+          this.pending.push({ resolve: (value) => resolve(value), reject, timeout });
           this.socket!.write(JSON.stringify({ type, params }) + '\n');
         });
       })
-      .catch((err) => {
-        this.destroy(err);
+      .catch((err: unknown) => {
+        this.destroy(err instanceof Error ? err : new Error(String(err)));
         throw err;
       });
   }
 
   public getProjectMetadata(): Promise<ProjectMetadata | null> {
-    return this.call('get_project_metadata').then((value) => (
-      value && typeof value === 'object' ? value as ProjectMetadata : null
-    ));
+    return this.call('get_project_metadata').then((value) =>
+      isPlainObject(value) ? (value as ProjectMetadata) : null,
+    );
   }
 
   public stop(): void {

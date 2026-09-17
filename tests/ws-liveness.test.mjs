@@ -13,10 +13,16 @@ function fakeClient(bufferedAmount = 0) {
     sent,
     terminated: false,
     close() {},
-    ping() { this.pingCount++; },
+    ping() {
+      this.pingCount++;
+    },
     removeAllListeners() {},
-    send(message) { sent.push(JSON.parse(message)); },
-    terminate() { this.terminated = true; },
+    send(message) {
+      sent.push(JSON.parse(message));
+    },
+    terminate() {
+      this.terminated = true;
+    },
   };
 }
 
@@ -29,8 +35,12 @@ function createInjectedInterval() {
       assert.equal(value, handle);
       cleared = true;
     },
-    get callback() { return callback; },
-    get cleared() { return cleared; },
+    get callback() {
+      return callback;
+    },
+    get cleared() {
+      return cleared;
+    },
     setIntervalFn(nextCallback, delay) {
       assert.equal(delay, 60_000);
       callback = nextCallback;

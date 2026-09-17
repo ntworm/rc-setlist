@@ -56,7 +56,9 @@ function writePreference(fileName: string, value: string): boolean {
       fs.writeFileSync(path.join(dir, fileName), value, 'utf8');
       return true;
     } catch (err) {
-      console.error(`[rc-setlist] preference write failed at ${dir}: ${err instanceof Error ? err.message : String(err)}`);
+      console.error(
+        `[rc-setlist] preference write failed at ${dir}: ${err instanceof Error ? err.message : String(err)}`,
+      );
       return false;
     }
   }
@@ -75,7 +77,9 @@ function writePreference(fileName: string, value: string): boolean {
       fs.writeFileSync(path.join(setlistDir, fileName), value, 'utf8');
       return true;
     } catch (err) {
-      console.error(`[rc-setlist] preference write failed at ${setlistDir}: ${err instanceof Error ? err.message : String(err)}`);
+      console.error(
+        `[rc-setlist] preference write failed at ${setlistDir}: ${err instanceof Error ? err.message : String(err)}`,
+      );
       return false;
     }
   }
@@ -83,11 +87,17 @@ function writePreference(fileName: string, value: string): boolean {
   return false;
 }
 
+/**
+ * Returns the auto start.
+ */
 export function getAutoStart(): boolean {
   const raw = readPreference(AUTO_START_FILE)?.toLowerCase();
   return raw === 'true' || raw === '1' || raw === 'on' || raw === 'yes';
 }
 
+/**
+ * Sets the auto start.
+ */
 export function setAutoStart(on: boolean): boolean {
   return writePreference(AUTO_START_FILE, on ? 'true' : 'false');
 }
@@ -111,14 +121,23 @@ export function getWriteTempoOnJump(): boolean {
   return readPreference(WRITE_TEMPO_ON_JUMP_FILE)?.toLowerCase() === 'true';
 }
 
+/**
+ * Sets the write tempo on jump.
+ */
 export function setWriteTempoOnJump(on: boolean): boolean {
   return writePreference(WRITE_TEMPO_ON_JUMP_FILE, on ? 'true' : 'false');
 }
 
+/**
+ * Returns the ui locale.
+ */
 export function getUiLocale(): UiLocale {
   return readPreference(UI_LOCALE_FILE) === 'pt-BR' ? 'pt-BR' : 'en';
 }
 
+/**
+ * Sets the ui locale.
+ */
 export function setUiLocale(locale: string): boolean {
   if (locale !== 'en' && locale !== 'pt-BR') return false;
   return writePreference(UI_LOCALE_FILE, locale);

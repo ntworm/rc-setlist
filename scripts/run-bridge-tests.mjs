@@ -3,7 +3,8 @@
 // stand-in for the routing logic under test; the Live API itself is stubbed.
 import { spawnSync } from 'node:child_process';
 
-const candidates = process.platform === 'win32' ? ['python', 'py', 'python3'] : ['python3', 'python'];
+const candidates =
+  process.platform === 'win32' ? ['python', 'py', 'python3'] : ['python3', 'python'];
 const args = ['-m', 'unittest', 'discover', '-s', 'bridge/tests', '-v'];
 
 for (const python of candidates) {
@@ -15,6 +16,8 @@ for (const python of candidates) {
   process.exit(result.status ?? 1);
 }
 
-console.error('[bridge-tests] No Python 3 interpreter found (tried: ' + candidates.join(', ') + ').');
+console.error(
+  '[bridge-tests] No Python 3 interpreter found (tried: ' + candidates.join(', ') + ').',
+);
 console.error('[bridge-tests] The RC Bridge remote script is Python; its tests need one to run.');
 process.exit(1);

@@ -20,6 +20,9 @@
 export function computeCuesFingerprint(cues: RawCue[]): string {
   const sorted = [...cues].sort((a, b) => (a.time || 0) - (b.time || 0));
   return sorted
-    .map(c => `${c.name || ''}@${typeof c.time === 'number' && Number.isFinite(c.time) ? Math.round(c.time * 100) / 100 : 0}`)
+    .map(
+      (c) =>
+        `${c.name || ''}@${typeof c.time === 'number' && Number.isFinite(c.time) ? Math.round(c.time * 100) / 100 : 0}`,
+    )
     .join('|');
 }

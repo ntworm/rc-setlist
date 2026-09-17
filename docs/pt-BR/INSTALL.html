@@ -1,0 +1,243 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>INSTALL — RC Setlist</title>
+    <style>
+      body {
+        font:
+          16px/1.55 system-ui,
+          sans-serif;
+        max-width: 920px;
+        margin: 2rem auto;
+        padding: 0 1rem;
+        color: #f2f2f2;
+        background: #0e0e0e;
+      }
+      h1,
+      h2,
+      h3,
+      h4 {
+        line-height: 1.25;
+      }
+      h1 {
+        font-size: 2.2rem;
+        margin-top: 0;
+      }
+      h2 {
+        margin-top: 2rem;
+        padding-top: 1rem;
+        border-top: 1px solid #333;
+      }
+      h3 {
+        margin-top: 1.5rem;
+      }
+      code {
+        font:
+          0.92em ui-monospace,
+          Consolas,
+          monospace;
+        background: #1a1a1a;
+        padding: 0.1em 0.35em;
+        border-radius: 0;
+      }
+      pre {
+        background: #1a1a1a;
+        padding: 0.8rem 1rem;
+        overflow-x: auto;
+        border: 1px solid #333;
+      }
+      pre code {
+        background: transparent;
+        padding: 0;
+      }
+      a {
+        color: #ffa133;
+      }
+      ul,
+      ol {
+        padding-left: 1.2em;
+      }
+      blockquote {
+        border-left: 4px solid #ffa133;
+        margin: 1em 0;
+        padding: 0.5em 1em;
+        color: #a0a0a0;
+      }
+      .crumbs {
+        font-size: 0.85em;
+        color: #a0a0a0;
+        margin-bottom: 1rem;
+      }
+      .crumbs a {
+        color: #a0a0a0;
+        text-decoration: none;
+      }
+      .crumbs a:hover {
+        color: #f2f2f2;
+      }
+      .source {
+        font-size: 0.78em;
+        color: #a0a0a0;
+        margin-top: 2rem;
+        border-top: 1px solid #333;
+        padding-top: 0.5rem;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="crumbs">
+      <a href="https://ntworm.github.io/rc-setlist/">RC Setlist</a> · <a href="./">Docs</a>
+    </div>
+    <h1 id="instalar-o-rc-setlist">Instalar o RC Setlist</h1>
+    <h2 id="requisitos">Requisitos</h2>
+    <ul>
+      <li>Ableton Live 12.4.5+ Suite (Beta) com suporte a Extensions.</li>
+      <li>RC Bridge selecionado como Control Surface no Live. Ele vem com a extensão e</li>
+    </ul>
+    <p>
+      com o kit de instalação; o passo 1 abaixo instala. (Um
+      <a href="https://github.com/ideoforms/AbletonOSC">AbletonOSC</a> comum também funciona.)
+    </p>
+    <ul>
+      <li>Windows para o caminho de lançamento validado. O macOS é experimental.</li>
+    </ul>
+    <p>
+      O Node.js 24.16.0 é necessário apenas para desenvolver a partir do código-fonte, não para
+      instalar o pacote de lançamento.
+    </p>
+    <h2 id="1-instalar-o-rc-bridge">1. Instalar o RC Bridge</h2>
+    <p>
+      O RC Bridge é o Remote Script do Live com que o RC Setlist conversa. É um fork do
+      <a href="https://github.com/ideoforms/AbletonOSC">AbletonOSC</a>, licenciado sob MIT, que
+      responde a cada cliente na porta dele — assim nunca disputa a porta de resposta com outra
+      extensão RC e convive com um AbletonOSC comum, se você tiver um. Nada para baixar: ele está
+      dentro da extensão e dentro do kit.
+    </p>
+    <p>Escolha um dos dois jeitos de colocá-lo na User Library do Live:</p>
+    <ul>
+      <li><strong>Pelo kit</strong> — na pasta <code>RC-Bridge</code>, clique duas vezes em</li>
+    </ul>
+    <p>
+      <code>Install-RC-Bridge.cmd</code> (Windows) ou <code>Install RC Bridge.command</code> (macOS;
+      na primeira vez, botão direito › Abrir). Ele copia o script e mostra o último passo.
+    </p>
+    <ul>
+      <li><strong>À mão</strong> — copie a pasta <code>RCBridge</code> do kit para</li>
+    </ul>
+    <p>
+      - Windows: <code>%USERPROFILE%\Documents\Ableton\User Library\Remote Scripts\RCBridge</code> -
+      macOS: <code>~/Music/Ableton/User Library/Remote Scripts/RCBridge</code>
+    </p>
+    <p>
+      Depois, o único passo que o Live não deixa ninguém fazer por você: abra
+      <strong>Settings/Preferences &gt; Link, Tempo &amp; MIDI</strong> e escolha
+      <strong>RCBridge</strong> como Control Surface. Input e Output podem ficar em
+      <code>None</code>. Se o Live já estava aberto quando o script foi copiado, feche e abra de
+      novo uma vez, para ele enxergar a pasta nova.
+    </p>
+    <p>
+      Use <code>User Library/Remote Scripts/</code>, e não a pasta oculta
+      <code>User Remote Scripts</code> das preferências do Live (ela serve para
+      <code>UserConfiguration.txt</code>). Confirme que <code>RCBridge/__init__.py</code> existe
+      diretamente nesse local, sem outra pasta <code>RCBridge</code> aninhada.
+    </p>
+    <p>
+      Se você já usa o AbletonOSC com outras ferramentas, pode manter. O RC Bridge escuta na porta
+      11020; o AbletonOSC fica com a 11000. O RC Setlist procura o RC Bridge primeiro e cai para o
+      AbletonOSC quando ele não está lá, então os dois funcionam — o RC Bridge é o que também
+      funciona ao lado do RC Surface. A linha OSC do painel diz qual está em uso (<code
+        >via RC Bridge 1.0.0 na porta 11020</code
+      >). A própria extensão não consegue copiar o script por você: o Live roda as extensões numa
+      sandbox que não escreve na sua User Library.
+    </p>
+    <h2 id="2-instalar-o-rc-setlist">2. Instalar o RC Setlist</h2>
+    <p>
+      1. Baixe <code>RC-Setlist-1.0.0.ablx</code> na
+      <a href="https://github.com/ntworm/rc-setlist/releases/latest"
+        >release mais recente do GitHub</a
+      >. 2. Abra o <code>.ablx</code> e siga a confirmação de instalação do Ableton Live. 3.
+      Reinicie o Live se a extensão não aparecer imediatamente. 4. Abra
+      <strong>Extensions &gt; RC Setlist</strong>.
+    </p>
+    <p>
+      O mesmo <code>.ablx</code> contém os dois idiomas. A interface começa em inglês; selecione
+      <strong>Português (Brasil)</strong> no menu de idioma do painel, do Controle de Palco ou da
+      Performance. A escolha fica salva localmente.
+    </p>
+    <p>Não instale arquivos do SDK ou da CLI como usuário final.</p>
+    <h2 id="3-iniciar-o-servidor-local">3. Iniciar o servidor local</h2>
+    <p>
+      1. No painel do RC Setlist, escolha <strong>Start Server</strong> ou
+      <strong>Iniciar servidor</strong>. 2. Confirme que o painel mostra uma URL local e um QR code.
+      3. No computador principal, abra <code>https://localhost:4444/setlist</code>. 4. Em um celular
+      ou tablet, use a URL da LAN ou o QR code mostrado no painel.
+    </p>
+    <p>
+      Primeira conexão: o navegador pode mostrar <code>ERR_CERT_AUTHORITY_INVALID</code> porque o RC
+      Setlist cria um certificado local autoassinado. Continue somente se o endereço for exatamente
+      o IP mostrado no painel do Live e a rede local for confiável. Cada navegador/aparelho pode
+      exigir isso uma vez.
+    </p>
+    <h2 id="4-abrir-as-duas-visualiza-es">4. Abrir as duas visualizações</h2>
+    <ul>
+      <li>Operação: <code>https://&lt;ip-do-host&gt;:4444/setlist</code></li>
+      <li>Performance: <code>https://&lt;ip-do-host&gt;:4444/performance</code></li>
+    </ul>
+    <h2 id="atualizando-de-0-x-ableton-rc-setlist-0-4-x-0-7-0">
+      Atualizando de 0.x (Ableton RC Setlist 0.4.x–0.7.0)
+    </h2>
+    <p>
+      O nome do produto mudou para <strong>RC Setlist</strong> na 1.0 seguindo as diretrizes de
+      marca da Ableton. Seus perfis, project-setlists, token e preferências ficam numa pasta cujo
+      nome vem do manifest, então precisam mudar.
+    </p>
+    <p>
+      Rode o <code>Migrate-RC-Setlist-Data.cmd</code> (Windows) ou
+      <code>Migrate RC Setlist Data.command</code> (macOS) do kit
+      <strong>uma vez, antes de abrir o Live</strong> com a 1.0. Ele copia os dados de
+      <code>ntworm.ableton-rc-setlist</code> para a pasta nova <code>ntworm.rc-setlist</code> sem
+      mexer na antiga e nunca sobrescreve um arquivo que já existe no destino.
+    </p>
+    <p>
+      O instalador <code>RC-Bridge/Install-RC-Bridge.ps1</code> (Windows) ou
+      <code>RC-Bridge/Install RC Bridge.command</code> (macOS) remove automaticamente qualquer
+      <code>Ableton-RC-Setlist-*.ablx</code> encontrado na User Library. Nenhum passo de
+      desinstalação separado é necessário. Se você instalou o RC Bridge antes de atualizar para
+      1.0.1, use o <code>uninstall-pre-1.0-extensions.ps1</code> incluído no kit como alternativa
+      manual (veja <a href="../TROUBLESHOOTING.md">TROUBLESHOOTING.md</a>).
+    </p>
+    <p>
+      A URL de controle contém um token. Trate esse token como uma senha local e não publique
+      capturas mostrando o endereço completo.
+    </p>
+    <h2 id="5-verificar-a-primeira-sess-o">5. Verificar a primeira sessão</h2>
+    <p>
+      1. Abra um Live Set com localizadores fictícios do
+      <a href="../../examples/README.md">exemplo</a>. 2. No painel do RC Setlist, escolha
+      <strong>Verificar OSC</strong> e confirme tráfego recebido. 3. Confirme que músicas e seções
+      aparecem em <code>/setlist</code>. 4. Abra <code>/performance</code> e confirme que a música
+      ativa acompanha o playhead do Live. 5. Teste Play/Stop e o acionamento protegido por hold de
+      Anterior/Próxima. 6. Troque o idioma e recarregue as páginas para confirmar que a escolha foi
+      salva. 7. Feche e reabra o Live para conferir o perfil e a opção de início automático.
+    </p>
+    <h2 id="atualiza-o">Atualização</h2>
+    <p>
+      Instale o <code>.ablx</code> mais recente pelo Live. Faça backup de letras e exportações
+      importantes antes de substituir uma versão de pré-lançamento. Os dados de perfil ficam
+      separados do pacote e devem continuar disponíveis após a atualização.
+    </p>
+    <h2 id="desinstala-o">Desinstalação</h2>
+    <p>
+      1. Pare o RC Setlist no painel. 2. Remova a extensão pelo gerenciamento de extensões do Live.
+      3. Reinicie o Live. 4. Para remover também perfis, letras, certificados e preferências, apague
+      somente o diretório do RC Setlist indicado nos logs de Ableton Extensions.
+    </p>
+    <p>
+      Não apague um diretório amplo da biblioteca do Ableton. Remova apenas o destino confirmado do
+      RC Setlist.
+    </p>
+    <div class="source">Rendered from <code>docs\pt-BR\INSTALL.md</code> on 2026-09-17.</div>
+  </body>
+</html>

@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict';
 import { EventEmitter } from 'node:events';
 import test from 'node:test';
-import { executeCommandAction } from '../src/commands/handlers.ts';
-import { bridgeState } from '../src/core/bridge-state.ts';
+import { executeCommandAction } from '../src/commands/handlers/index.ts';
+import { bridgeState } from '../src/runtime/bridge-state.ts';
 import { SetlistManager } from '../src/core/setlist-manager.ts';
 
 /**
@@ -21,12 +21,24 @@ import { SetlistManager } from '../src/core/setlist-manager.ts';
 class FakeOsc extends EventEmitter {
   calls = [];
 
-  setMetronome(value) { this.calls.push(['metronome', value]); }
-  setCurrentSongTime(value) { this.calls.push(['position', value]); }
-  continuePlaying() { this.calls.push(['continue']); }
-  startPlaying() { this.calls.push(['start']); }
-  stopPlaying() { this.calls.push(['stop']); }
-  send(address, args) { this.calls.push(['send', address, args]); }
+  setMetronome(value) {
+    this.calls.push(['metronome', value]);
+  }
+  setCurrentSongTime(value) {
+    this.calls.push(['position', value]);
+  }
+  continuePlaying() {
+    this.calls.push(['continue']);
+  }
+  startPlaying() {
+    this.calls.push(['start']);
+  }
+  stopPlaying() {
+    this.calls.push(['stop']);
+  }
+  send(address, args) {
+    this.calls.push(['send', address, args]);
+  }
 }
 
 function command(type, payload = {}) {
@@ -90,7 +102,9 @@ function installHarness({
     manager,
     osc,
     states,
-    restore() { Object.assign(bridgeState, saved); },
+    restore() {
+      Object.assign(bridgeState, saved);
+    },
   };
 }
 
@@ -109,7 +123,7 @@ test('Play never touches the metronome, so a click switched off stays off', asyn
   try {
     await executeCommandAction(command('play'));
     const touched = harness.osc.calls.filter(([kind]) => kind === 'metronome');
-    assert.deepEqual(touched, [], 'the count-in must not borrow Live\'s click');
+    assert.deepEqual(touched, [], "the count-in must not borrow Live's click");
     assert.equal(harness.manager.getState().metronome, false);
   } finally {
     harness.restore();
@@ -197,7 +211,9 @@ test('Stop disarms a quantized jump that has not landed yet', async () => {
     const broadcasts = [];
     bridgeState.scheduler = {
       hasPending: () => true,
-      clearPending: () => { cleared = true; },
+      clearPending: () => {
+        cleared = true;
+      },
     };
     bridgeState.wsServer.broadcast = (message) => broadcasts.push(message);
 
@@ -205,7 +221,7 @@ test('Stop disarms a quantized jump that has not landed yet', async () => {
 
     assert.equal(cleared, true, 'the pending jump must be disarmed');
     assert.deepEqual(broadcasts, [{ type: 'jump_cancelled' }]);
-    assert.deepEqual(harness.osc.calls, [['stop']], 'Stop stays exactly Live\'s Stop');
+    assert.deepEqual(harness.osc.calls, [['stop']], "Stop stays exactly Live's Stop");
   } finally {
     harness.restore();
   }
@@ -215,7 +231,12 @@ test('Stop with nothing scheduled says nothing and just stops', async () => {
   const harness = installHarness({ isPlaying: true });
   try {
     const broadcasts = [];
-    bridgeState.scheduler = { hasPending: () => false, clearPending() { throw new Error('must not clear'); } };
+    bridgeState.scheduler = {
+      hasPending: () => false,
+      clearPending() {
+        throw new Error('must not clear');
+      },
+    };
     bridgeState.wsServer.broadcast = (message) => broadcasts.push(message);
 
     await executeCommandAction(command('stop'));
@@ -279,7 +300,7 @@ test('Play after a jump while stopped starts from the start marker the jump move
     bridgeState.oscClient.jumpToCuePoint = function jumpToCuePoint(target) {
       this.calls.push(['jump', target]);
     };
-    const { executeJumpCommand } = await import('../src/commands/handlers.ts');
+    const { executeJumpCommand } = await import('../src/commands/handlers/transport.ts');
     executeJumpCommand({ type: 'jump', songIndex: 1, sectionIndex: null });
     harness.manager.updateTransport(32, false);
     harness.osc.calls.length = 0;
@@ -329,7 +350,10 @@ test('a tempo report before any position sample does not fix the resting beat at
   const harness = installHarness({ targetBeat: 0, isPlaying: false });
   try {
     const manager = new SetlistManager();
-    manager.updateCues([{ name: 'Song A [bpm 110]', time: 0 }, { name: 'Song B [bpm 160]', time: 32 }]);
+    manager.updateCues([
+      { name: 'Song A [bpm 110]', time: 0 },
+      { name: 'Song B [bpm 160]', time: 32 },
+    ]);
     bridgeState.manager = manager;
     manager.updateTempo(110);
     manager.updateTempo(110);
@@ -371,7 +395,7 @@ test('a jump while stopped moves this side to the target, so the count uses its 
 
     assert.equal(harness.manager.getState().declaredTempo, 110, 'starts on Song A');
 
-    const { executeJumpCommand } = await import('../src/commands/handlers.ts');
+    const { executeJumpCommand } = await import('../src/commands/handlers/transport.ts');
     executeJumpCommand({ type: 'jump', songIndex: 1, sectionIndex: null });
 
     const state = harness.manager.getState();
@@ -397,7 +421,7 @@ test('a jump while playing leaves the position to Live', async () => {
     };
     harness.manager.updateSignature(4, 4);
 
-    const { executeJumpCommand } = await import('../src/commands/handlers.ts');
+    const { executeJumpCommand } = await import('../src/commands/handlers/transport.ts');
     executeJumpCommand({ type: 'jump', songIndex: 1, sectionIndex: null });
 
     assert.equal(harness.manager.getState().currentSongTime, 0, 'unchanged until Live reports');

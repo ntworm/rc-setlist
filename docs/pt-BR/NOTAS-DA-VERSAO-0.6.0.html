@@ -1,0 +1,236 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>NOTAS-DA-VERSAO-0.6.0 — RC Setlist</title>
+    <style>
+      body {
+        font:
+          16px/1.55 system-ui,
+          sans-serif;
+        max-width: 920px;
+        margin: 2rem auto;
+        padding: 0 1rem;
+        color: #f2f2f2;
+        background: #0e0e0e;
+      }
+      h1,
+      h2,
+      h3,
+      h4 {
+        line-height: 1.25;
+      }
+      h1 {
+        font-size: 2.2rem;
+        margin-top: 0;
+      }
+      h2 {
+        margin-top: 2rem;
+        padding-top: 1rem;
+        border-top: 1px solid #333;
+      }
+      h3 {
+        margin-top: 1.5rem;
+      }
+      code {
+        font:
+          0.92em ui-monospace,
+          Consolas,
+          monospace;
+        background: #1a1a1a;
+        padding: 0.1em 0.35em;
+        border-radius: 0;
+      }
+      pre {
+        background: #1a1a1a;
+        padding: 0.8rem 1rem;
+        overflow-x: auto;
+        border: 1px solid #333;
+      }
+      pre code {
+        background: transparent;
+        padding: 0;
+      }
+      a {
+        color: #ffa133;
+      }
+      ul,
+      ol {
+        padding-left: 1.2em;
+      }
+      blockquote {
+        border-left: 4px solid #ffa133;
+        margin: 1em 0;
+        padding: 0.5em 1em;
+        color: #a0a0a0;
+      }
+      .crumbs {
+        font-size: 0.85em;
+        color: #a0a0a0;
+        margin-bottom: 1rem;
+      }
+      .crumbs a {
+        color: #a0a0a0;
+        text-decoration: none;
+      }
+      .crumbs a:hover {
+        color: #f2f2f2;
+      }
+      .source {
+        font-size: 0.78em;
+        color: #a0a0a0;
+        margin-top: 2rem;
+        border-top: 1px solid #333;
+        padding-top: 0.5rem;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="crumbs">
+      <a href="https://ntworm.github.io/rc-setlist/">RC Setlist</a> · <a href="./">Docs</a>
+    </div>
+    <h1 id="notas-da-vers-o-0-6-0">Notas da Versão 0.6.0</h1>
+    <p>
+      O Ableton RC Setlist 0.6.0 refaz duas coisas em que o aplicativo se apoiava sem que nenhuma
+      delas fosse sólida: como ele mede um show e como você altera um marcador. As telas de palco
+      também ganharam uma superfície desenhada para sala escura, e não para mesa iluminada.
+    </p>
+    <h2 id="o-que-h-de-novo">O que há de novo</h2>
+    <ul>
+      <li>
+        <strong>Editor de marcador</strong>: clique duplo numa música ou numa seção e toda tag vira
+      </li>
+    </ul>
+    <p>
+      um controle. Uma música carrega nome, cor, andamento inicial e os comportamentos stop, next e
+      skip, além da lista das suas seções, para entrar e voltar. Loop e click pertencem à seção,
+      porque é ali que a música está estruturada. O campo de texto cru que isso substitui juntava
+      nome e tags numa entrada só, onde <code>[bpm 107]</code> — a tag que alimenta o cálculo de
+      duração — podia ser apagada por um toque errado.
+    </p>
+    <ul>
+      <li>
+        <strong>Cores de música</strong>: dezesseis cores dessaturadas numa matriz de oito por dois.
+      </li>
+    </ul>
+    <p>
+      O matiz sobe ao longo de cada linha e o tom se aprofunda em cada coluna, então duas cores que
+      se distinguem num palco escuro são duas que ficam distantes na tira. A cor é memória do
+      próprio RC Setlist: fica guardada junto do seu setlist, nunca é escrita no projeto do Live, e
+      acompanha a música quando você a renomeia ou a move.
+    </p>
+    <ul>
+      <li>
+        <strong>A música é reconhecida por nome e posição</strong>: renomeie e continua a mesma
+      </li>
+    </ul>
+    <p>
+      música; arraste para outro lugar e continua a mesma música. Mude as duas coisas de uma vez e
+      ela é honestamente tratada como nova. Apague um localizador sem querer e recrie: o que o RC
+      Setlist lembrava volta.
+    </p>
+    <ul>
+      <li>
+        <strong>Tipografia própria de palco</strong>: Martian Mono para a interface e Barlow Semi
+      </li>
+    </ul>
+    <p>
+      Condensed para as letras cantadas, que cabe cerca de 45% mais palavras por linha no celular
+      sem descer do piso de 12px. Acentos e cedilhas não são mais cortados.
+    </p>
+    <ul>
+      <li>
+        <strong>Confiança da duração</strong>: um selo <code>EST.</code> aparece sempre que o
+        setlist não tem
+      </li>
+    </ul>
+    <p>
+      nenhuma tag <code>[bpm N]</code>, para que uma estimativa uniforme nunca seja confundida com
+      um número exato.
+    </p>
+    <ul>
+      <li>
+        <strong>Segurança com automação de tempo</strong>: um botão
+        <strong>Escrever tempo no salto</strong>,
+      </li>
+    </ul>
+    <p>
+      desligado por padrão. O RC Setlist também detecta sozinho a automação de tempo do Arrangement
+      e se recusa a escrever tempo quando a encontra, mesmo com o botão ligado.
+    </p>
+    <h2 id="corre-es">Correções</h2>
+    <ul>
+      <li><strong>A duração do show não depende mais do que estava tocando.</strong> Um campo</li>
+    </ul>
+    <p>
+      capturado devolvia o tempo ao vivo para a duração da própria música, então um set com
+      automação de tempo se media de um jeito diferente a cada passada — até 16:59 de variação num
+      show de 79 minutos. As durações agora vêm do tempo que os localizadores declaram, integrado
+      trecho a trecho numa única linha do tempo cronológica para o setlist inteiro.
+    </p>
+    <ul>
+      <li>
+        <strong>Renomear um localizador não arrisca mais perdê-lo.</strong> A renomeação acontece no
+      </li>
+    </ul>
+    <p>
+      lugar, em vez de apagar o cue point e criar um substituto, e a lista de cues do próprio Live é
+      relida em vez de confiar na palavra da ponte.
+    </p>
+    <ul>
+      <li>
+        <strong>Os prefixos das seções são preservados.</strong> O Live aceita tanto
+        <code>&gt; Verso</code>
+      </li>
+    </ul>
+    <p>
+      quanto <code>Música &gt; Verso</code>; o editor reescrevia a primeira forma na segunda e
+      renomeava toda seção em que encostava.
+    </p>
+    <ul>
+      <li><strong>A edição é recusada com o transporte tocando</strong>, em qualquer modo. A</li>
+    </ul>
+    <p>
+      renomeação move o playhead para agir sobre o cue, então com a reprodução rodando a escrita
+      caía no compasso onde a reprodução tivesse chegado.
+    </p>
+    <ul>
+      <li>
+        <strong>As edições de marcador atualizam na hora.</strong> Os cue points são lidos a cada
+      </li>
+    </ul>
+    <p>
+      dois segundos, e dentro dessa janela o editor reabria com valores velhos e os gravava de volta
+      — o que fazia as tags parecerem cair aleatoriamente.
+    </p>
+    <ul>
+      <li>
+        <strong>Toda tag que o painel escreve agora tem selo.</strong> <code>[skip]</code> e
+        <code>[click]</code> mudavam
+      </li>
+    </ul>
+    <p>o que acontece no palco sem deixar marca nenhuma no card.</p>
+    <ul>
+      <li>
+        <strong>O play não vira mais um símbolo de pause</strong>, que dava a impressão de que
+      </li>
+    </ul>
+    <p>clicar de novo pausaria.</p>
+    <p>
+      <em
+        >Para detalhes completos sobre a migração a partir da 0.5.x, consulte o
+        <a href="INSTALL.html">Guia de Instalação</a>.</em
+      >
+    </p>
+    <p>
+      <em
+        >Read these notes in English:
+        <a href="../RELEASE-NOTES-0.6.0.md">RELEASE-NOTES-0.6.0.md</a>.</em
+      >
+    </p>
+    <div class="source">
+      Rendered from <code>docs\pt-BR\NOTAS-DA-VERSAO-0.6.0.md</code> on 2026-09-17.
+    </div>
+  </body>
+</html>

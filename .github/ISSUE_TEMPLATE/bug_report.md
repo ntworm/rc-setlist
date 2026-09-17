@@ -1,9 +1,9 @@
 ---
 name: Bug report
 about: Report a reproducible RC SETLIST problem
-title: "[bug] "
+title: '[bug] '
 labels: bug
-assignees: ""
+assignees: ''
 ---
 
 ## Summary

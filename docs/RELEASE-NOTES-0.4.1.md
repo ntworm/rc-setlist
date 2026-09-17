@@ -1,4 +1,4 @@
-# Ableton RC Setlist 0.4.1 release notes
+﻿# RC Setlist 0.4.1 release notes
 
 [Português (Brasil)](pt-BR/NOTAS-DA-VERSAO-0.4.1.md)
 

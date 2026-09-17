@@ -6,12 +6,7 @@ import path from 'node:path';
 import test from 'node:test';
 import { WebSocket } from 'ws';
 import { clearExtensionContext, setExtensionContext } from '../src/context.ts';
-import {
-  getAuthToken,
-  getSetlistManager,
-  startServer,
-  stopServer,
-} from '../src/index.ts';
+import { getAuthToken, getSetlistManager, startServer, stopServer } from '../src/index.ts';
 
 function getFreePort() {
   return new Promise((resolve, reject) => {
@@ -60,9 +55,10 @@ test('sync_confirm accepts the snapshot issued to the socket after live state ad
     manager.updateMetronome(!before.metronome);
     assert.notEqual(manager.getState().stateVersion, ack.stateVersion);
 
-    const resultPromise = nextMessage(ws, (message) => (
-      message.type === 'preflight_result' || message.code === 'not_synchronized'
-    ));
+    const resultPromise = nextMessage(
+      ws,
+      (message) => message.type === 'preflight_result' || message.code === 'not_synchronized',
+    );
     ws.send(JSON.stringify({ type: 'sync_confirm', stateVersion: ack.stateVersion }));
     ws.send(JSON.stringify({ type: 'preflight_check', commandId: 'preflight-after-sync-race' }));
     const result = await resultPromise;

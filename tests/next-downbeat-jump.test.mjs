@@ -1,6 +1,10 @@
 import { test } from 'node:test';
 import assert from 'node:assert';
-import { nextDownbeat, JumpScheduler, getQuantizationBeats } from '../src/core/next-downbeat-jump.ts';
+import {
+  nextDownbeat,
+  JumpScheduler,
+  getQuantizationBeats,
+} from '../src/core/next-downbeat-jump.ts';
 
 const STATE = { tempo: 120, isPlaying: true, signatureNumerator: 4, currentSongTime: 10.0 };
 
@@ -29,7 +33,10 @@ test('JumpScheduler.schedule: Live stopped → immediate=true, landingTime=curre
   const events = [];
   s.on((e) => events.push(e.type));
   const r = s.schedule(0, 1, 'Verse 1', 50.0, {
-    tempo: 120, isPlaying: false, signatureNumerator: 4, currentSongTime: 12.0,
+    tempo: 120,
+    isPlaying: false,
+    signatureNumerator: 4,
+    currentSongTime: 12.0,
   });
   assert.strictEqual(r.immediate, true);
   assert.strictEqual(r.landingTime, 12.0);
@@ -96,7 +103,9 @@ test('JumpScheduler.tick: executes at landingTime and returns executed Pending',
 test('JumpScheduler.tick: tick after landingTime also fires (small overshoot is OK)', () => {
   const s = new JumpScheduler();
   let fired = 0;
-  s.on((e) => { if (e.type === 'executed') fired++; });
+  s.on((e) => {
+    if (e.type === 'executed') fired++;
+  });
   s.schedule(0, 1, 'Verse 1', 10.5, STATE);
   // Live scheduler latency — first tick after landingTime can be slightly past 12.
   s.tick(12.3);

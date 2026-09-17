@@ -4,7 +4,7 @@
 //
 // Profile registry state & index operations (Task 6.4)
 
-import { ProfileSummary, DeletedProfileSummary } from "../profile-manager.js";
+import type { ProfileSummary, DeletedProfileSummary } from './types.js';
 
 export interface ProfileRegistryData {
   schemaVersion: 2;
@@ -15,7 +15,14 @@ export interface ProfileRegistryData {
   migrationVersion: number;
 }
 
-export function createInitialRegistry(defaultId: string, defaultName: string, nowIso: string): ProfileRegistryData {
+/**
+ * Creates the initial registry.
+ */
+export function createInitialRegistry(
+  defaultId: string,
+  defaultName: string,
+  nowIso: string,
+): ProfileRegistryData {
   return {
     schemaVersion: 2,
     activeProfileId: defaultId,
@@ -31,14 +38,4 @@ export function createInitialRegistry(defaultId: string, defaultName: string, no
     legacySources: {},
     migrationVersion: 1,
   };
-}
-
-export function validateRegistryData(data: unknown): data is ProfileRegistryData {
-  if (!data || typeof data !== "object") return false;
-  const obj = data as Record<string, any>;
-  return (
-    obj.schemaVersion === 2 &&
-    typeof obj.activeProfileId === "string" &&
-    Array.isArray(obj.profiles)
-  );
 }

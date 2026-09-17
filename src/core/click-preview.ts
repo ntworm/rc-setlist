@@ -11,13 +11,16 @@ const SAMPLE_RATE = 44100;
 
 export interface ClickPreviewOptions {
   bpm: number;
-  beats?: number;        // number of clicks (default 4 = one measure of 4/4)
-  accentHz?: number;     // beat-1 frequency (default 1000)
-  normalHz?: number;     // other beats (default 800)
-  amplitude?: number;    // 0..1 (default 0.5)
+  beats?: number; // number of clicks (default 4 = one measure of 4/4)
+  accentHz?: number; // beat-1 frequency (default 1000)
+  normalHz?: number; // other beats (default 800)
+  amplitude?: number; // 0..1 (default 0.5)
   clickDurationMs?: number; // each click length (default 30ms)
 }
 
+/**
+ * Builds the click preview wav.
+ */
 export function buildClickPreviewWav(opts: ClickPreviewOptions): Buffer {
   const bpm = Math.max(20, Math.min(300, Math.round(opts.bpm)));
   const beats = Math.max(1, Math.min(64, Math.round(opts.beats ?? 4)));
@@ -27,10 +30,7 @@ export function buildClickPreviewWav(opts: ClickPreviewOptions): Buffer {
   const clickDur = Math.max(5, Math.min(200, opts.clickDurationMs ?? 30));
   const totalDurationSec = (60 / bpm) * beats;
   const totalSamples = Math.ceil(totalDurationSec * SAMPLE_RATE);
-  const clickSamples = Math.min(
-    Math.ceil((clickDur / 1000) * SAMPLE_RATE),
-    totalSamples
-  );
+  const clickSamples = Math.min(Math.ceil((clickDur / 1000) * SAMPLE_RATE), totalSamples);
   const samples = new Int16Array(totalSamples);
   const beatIntervalSec = 60 / bpm;
 
@@ -65,13 +65,13 @@ function encodeWavPcm16Mono(samples: Int16Array, sampleRate: number): Buffer {
   buf.write('WAVE', 8);
   // fmt chunk
   buf.write('fmt ', 12);
-  buf.writeUInt32LE(16, 16);          // chunk size
-  buf.writeUInt16LE(1, 20);           // PCM
-  buf.writeUInt16LE(1, 22);           // mono
-  buf.writeUInt32LE(sampleRate, 24);  // sample rate
+  buf.writeUInt32LE(16, 16); // chunk size
+  buf.writeUInt16LE(1, 20); // PCM
+  buf.writeUInt16LE(1, 22); // mono
+  buf.writeUInt32LE(sampleRate, 24); // sample rate
   buf.writeUInt32LE(sampleRate * 2, 28); // byte rate (sampleRate * channels * bytesPerSample)
-  buf.writeUInt16LE(2, 32);           // block align
-  buf.writeUInt16LE(16, 34);          // bits per sample
+  buf.writeUInt16LE(2, 32); // block align
+  buf.writeUInt16LE(16, 34); // bits per sample
   // data chunk
   buf.write('data', 36);
   buf.writeUInt32LE(dataBytes, 40);

@@ -1,11 +1,11 @@
-import { SessionInfo } from '../integration/mcp-client.js';
-import {
-  bridgeState,
-  broadcastState,
-  checkAndBroadcastLyrics,
-} from '../core/bridge-state.js';
+import type { SessionInfo } from '../integration/mcp-client.js';
+import { bridgeState, broadcastState, checkAndBroadcastLyrics } from '../runtime/bridge-state.js';
 import { executeAutomationActions } from '../automation/executor.js';
+import { log } from '../util/log.js';
 
+/**
+ * SyncFromMcpInfo — implementation detail.
+ */
 export function syncFromMcpInfo(info: SessionInfo): void {
   if (!bridgeState.manager) return;
 
@@ -22,16 +22,20 @@ export function syncFromMcpInfo(info: SessionInfo): void {
     bridgeState.manager.updateTransport(
       info.current_song_time,
       info.is_playing,
-      typeof info.tempo === 'number' ? info.tempo : undefined
+      typeof info.tempo === 'number' ? info.tempo : undefined,
     );
 
     const newState = bridgeState.manager.getState();
 
     // Log active changes
-    if (newState && (prevActiveSongIdx !== newState.activeSongIndex || prevActiveSectionIdx !== newState.activeSectionIndex)) {
+    if (
+      newState &&
+      (prevActiveSongIdx !== newState.activeSongIndex ||
+        prevActiveSectionIdx !== newState.activeSectionIndex)
+    ) {
       const song = newState.songs[newState.activeSongIndex];
       const msg = `Active cue changed → Song: "${song?.title}" (idx ${newState.activeSongIndex}), Section idx: ${newState.activeSectionIndex}, time: ${info.current_song_time.toFixed(1)}s`;
-      console.log(`[Transport-MCP] ${msg}`);
+      log.info('sync', msg);
       bridgeState.wsServer?.broadcastLog(msg, 'info');
     }
 
@@ -43,7 +47,10 @@ export function syncFromMcpInfo(info: SessionInfo): void {
     }
   }
 
-  if (typeof info.signature_numerator === 'number' && typeof info.signature_denominator === 'number') {
+  if (
+    typeof info.signature_numerator === 'number' &&
+    typeof info.signature_denominator === 'number'
+  ) {
     bridgeState.manager.updateSignature(info.signature_numerator, info.signature_denominator);
   }
 
