@@ -410,6 +410,7 @@ test('Setlist bar display rejects poll jitter and accepts a real sub-threshold c
     ...fixture,
     state: {
       ...fixture.state,
+      tempo: 60,
       currentSongTime: 84,
       isPlaying: true,
     },
@@ -422,15 +423,14 @@ test('Setlist bar display rejects poll jitter and accepts a real sub-threshold c
     window.__barObserver.observe(target, { childList: true, characterData: true, subtree: true });
   });
   await emitServerMessage(page, baseline);
-  await page.waitForTimeout(40);
-  expect(await page.locator('#hudBar').textContent()).toMatch(/^22\.1\./);
+  await expect(page.locator('#hudBar')).toHaveText(/^22\.1\./);
   await page.evaluate(() => {
     window.__barHistory = [];
   });
 
   const smallRollback = {
     ...baseline,
-    state: { ...baseline.state, currentSongTime: 83.75 },
+    state: { ...baseline.state, currentSongTime: 83.65 },
   };
   await emitServerMessage(page, smallRollback);
   await page.waitForTimeout(120);
