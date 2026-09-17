@@ -9,6 +9,7 @@ Run: python -m unittest discover -s bridge/tests
 import os
 import socket
 import sys
+import time
 import types
 import unittest
 
@@ -160,6 +161,7 @@ class RoutingTest(unittest.TestCase):
 
     def pump(self):
         """Drain one tick of pending OSC traffic on the server."""
+        time.sleep(0.02)
         self.server.process()
 
     def test_bridge_listens_on_its_own_port_by_default(self):
