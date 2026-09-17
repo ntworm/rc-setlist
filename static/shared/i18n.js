@@ -382,7 +382,10 @@
     'midi.previousSection': { en: 'Previous Section', 'pt-BR': 'Seção anterior' },
     'midi.toggleClick': { en: 'Toggle Click', 'pt-BR': 'Alternar clique' },
     'midi.toggleLock': { en: 'Toggle Panel Lock', 'pt-BR': 'Alternar bloqueio do painel' },
-    'midi.toggleCountIn': { en: 'Toggle Count-In Bar', 'pt-BR': 'Alternar compasso de contagem' },
+    'midi.toggleCountIn': {
+      en: 'Toggle Count-In Bar',
+      'pt-BR': 'Alternar contagem de entrada (1 comp.)',
+    },
 
     'keyboard.title': { en: 'Keyboard Mapping', 'pt-BR': 'Mapeamento de Teclado' },
     'keyboard.intro': {
@@ -406,7 +409,7 @@
     'keyboard.toggleLock': { en: 'Toggle Panel Lock', 'pt-BR': 'Alternar bloqueio do painel' },
     'keyboard.toggleCountIn': {
       en: 'Toggle Count-In Bar',
-      'pt-BR': 'Alternar compasso de contagem',
+      'pt-BR': 'Alternar contagem de entrada (1 comp.)',
     },
 
     'lyrics.create': { en: 'Create', 'pt-BR': 'Criar' },
@@ -563,61 +566,61 @@
     'help.behavior': { en: 'Expected behavior', 'pt-BR': 'Comportamento esperado' },
     'help.loop': {
       en: 'Keeps the section or song playing in an infinite loop.',
-      'pt-BR': 'Mantém a seção ou música em reprodução em um loop infinito.',
+      'pt-BR': 'Mantém a seção ou música em reprodução contínua em loop infinito.',
     },
     'help.loopCount': {
       en: 'Repeats the section exactly four times, then exits the loop.',
-      'pt-BR': 'Repete a seção exatamente quatro vezes e depois encerra o loop.',
+      'pt-BR': 'Repete a seção exatamente 4 vezes e depois segue com a reprodução normal.',
     },
     'help.stop': {
       en: 'Stops Ableton Live playback when the locator is reached.',
-      'pt-BR': 'Interrompe a reprodução do Ableton Live quando o localizador é alcançado.',
+      'pt-BR': 'Interrompe a reprodução do Ableton Live assim que o localizador é atingido.',
     },
     'help.next': {
       en: "When the playhead reaches this marker, playback moves to the start of the next song and keeps going. Put it on the marker where a song's audio ends to chain straight into the next song.",
       'pt-BR':
-        'Quando o playhead alcança este marcador, a reprodução vai para o início da próxima música e segue. Coloque no marcador onde o áudio da música termina para emendar direto na próxima.',
+        'Quando a reprodução atinge este marcador, o Live salta imediatamente para o início da próxima música e continua tocando. Posicione no ponto em que o áudio da música termina para emendar diretamente na próxima faixa.',
     },
     'help.skip': {
       en: 'When the playhead reaches this marker, playback moves to the marker after it: the next section, or the next song if this was the last section. The tagged part is never heard.',
       'pt-BR':
-        'Quando o playhead alcança este marcador, a reprodução vai para o marcador seguinte: a próxima seção, ou a próxima música se esta era a última seção. O trecho marcado nunca toca.',
+        'Ao atingir este marcador, a reprodução avança para o marcador seguinte (a próxima seção ou, se for a última seção, a próxima música). O trecho posterior ao marcador é ignorado e não toca.',
     },
     'help.jump': {
       en: 'When the playhead reaches this marker, playback moves to the marker called NAME: a section of this song, a song, or Song > Section. Same timing as [next] and [skip].',
       'pt-BR':
-        'Quando o playhead alcança este marcador, a reprodução vai para o marcador chamado NOME: uma seção desta música, uma música, ou Música > Seção. Mesmo timing de [next] e [skip].',
+        'Ao atingir este marcador, a reprodução salta para o marcador indicado em NOME: uma seção da mesma música, outra música ou Música > Seção. Mesma resposta de tempo de [next] e [skip].',
     },
     'help.nextVsSkip': { en: '[next] or [skip]?', 'pt-BR': '[next] ou [skip]?' },
     'help.nextVsSkipNext': {
       en: '[next] always goes to the next song. On a section it leaves the song from that point; it never advances to the next section.',
       'pt-BR':
-        '[next] sempre vai para a próxima música. Numa seção, sai da música a partir dali; nunca avança para a próxima seção.',
+        '[next] sempre pula para a próxima música. Quando usado em uma seção, encerra a música atual imediatamente a partir daquele ponto, sem avançar para a próxima seção.',
     },
     'help.nextVsSkipSkip': {
       en: '[skip] goes to whatever comes right after the marker. On a section that is the next section of the same song; on a song, or on its last section, it is the next song.',
       'pt-BR':
-        '[skip] vai para o que vem logo depois do marcador. Numa seção, é a próxima seção da mesma música; numa música, ou na sua última seção, é a próxima música.',
+        '[skip] avança para o elemento imediatamente posterior na timeline. Em uma seção, pula para a próxima seção da mesma música; na última seção ou na música, pula para a próxima música.',
     },
     'help.nextVsSkipTiming': {
       en: 'Both hand over the moment the marker is reached — about a tenth of a second later, never before — not on the next bar. The target always starts from its first beat.',
       'pt-BR':
-        'As duas passam a reprodução no instante em que o marcador é alcançado — cerca de um décimo de segundo depois, nunca antes — e não no compasso seguinte. O destino sempre começa do seu primeiro tempo.',
+        'Ambos executam a transição no instante exato em que o marcador é atingido (com atraso imperceptível de ~100 ms, nunca antes), sem esperar o próximo compasso. O destino sempre inicia no primeiro tempo (downbeat).',
     },
     'help.exampleChain': {
       en: 'Chaining songs: skip the empty bars between them',
-      'pt-BR': 'Emendar músicas: pular os compassos vazios entre elas',
+      'pt-BR': 'Emendando músicas: pulando os compassos vazios entre elas',
     },
     'help.exampleChainBody': {
       en: "> End sits where Song A's audio ends. Reaching it starts Song B at once, so the gap between the two is never played.",
       'pt-BR':
-        '> End fica onde o áudio de Song A termina. Ao alcançá-lo, Song B começa na hora, e o vão entre as duas nunca toca.',
+        '> End deve ser posicionado exatamente onde termina o áudio da Música A. Ao atingi-lo, a Música B inicia imediatamente, sem tocar o silêncio ou compassos vazios entre as duas.',
     },
-    'help.tempo': { en: 'Metronome & Tempo Tags:', 'pt-BR': 'Tags de metrônomo e tempo:' },
+    'help.tempo': { en: 'Metronome & Tempo Tags:', 'pt-BR': 'Tags de metrônomo e andamento:' },
     'help.bpm': {
       en: 'Declares the tempo of this song or section, which is what the setlist durations are calculated from. Decimals are supported. It only writes the tempo into Live when Set Live tempo on jump is switched on in the Live panel, and RC Setlist disarms that write on its own when it detects arrangement tempo automation.',
       'pt-BR':
-        'Declara o tempo desta música ou seção, que é de onde as durações do setlist são calculadas. Aceita decimais. Só escreve o tempo no Live quando Escrever tempo no salto está ligado no painel do Live, e o RC Setlist desarma essa escrita sozinho ao detectar automação de tempo do Arrangement.',
+        'Define o andamento (BPM) da música ou seção, servindo de base para o cálculo de duração no setlist. Aceita decimais. Só altera o tempo no Live quando a opção "Definir o tempo do Live ao pular" estiver ativa no painel do Live; o RC Setlist desativa essa alteração automaticamente ao detectar automação de andamento no Arrangement.',
     },
     'help.clickOn': {
       en: "Enables Ableton Live's native metronome.",
@@ -627,15 +630,15 @@
       en: "Disables Ableton Live's native metronome.",
       'pt-BR': 'Desativa o metrônomo nativo do Ableton Live.',
     },
-    'help.extra': { en: 'Extra Features & Filters:', 'pt-BR': 'Recursos extras e filtros:' },
+    'help.extra': { en: 'Extra Features & Filters:', 'pt-BR': 'Recursos adicionais e filtros:' },
     'help.hidden': {
       en: '[hidden] or the _ prefix: hides the locator from the visual setlist.',
-      'pt-BR': '[hidden] ou o prefixo _: oculta o localizador do setlist visual.',
+      'pt-BR': '[hidden] ou o prefixo _: oculta o localizador da visualização do setlist.',
     },
     'help.ignore': {
       en: 'Hides the marker and overrides any other tag on it: no song, section or automation is created.',
       'pt-BR':
-        'Oculta o marcador e sobrepõe qualquer outra tag nele: nenhuma música, seção ou automação é criada.',
+        'Oculta o marcador e anula qualquer outra tag nele: nenhuma música, seção ou automação é criada.',
     },
     'help.relativeSyntax': {
       en: '> Section: relative locator attached to the preceding song (e.g. > Intro).',
@@ -644,50 +647,50 @@
     'help.lock': {
       en: '🔒 Lock Mode: blocks taps and drags on phones or tablets to prevent accidental stage input.',
       'pt-BR':
-        '🔒 Modo bloqueado: impede toques e arrastes em celulares ou tablets para evitar comandos acidentais no palco.',
+        '🔒 Bloqueio de tela: bloqueia toques e arrastes em celulares ou tablets, evitando comandos acidentais no palco.',
     },
     'help.metronome': {
       en: '⚡ Visual Metronome: the BPM and bar card flashes with the click using +90 ms network compensation.',
       'pt-BR':
-        '⚡ Metrônomo visual: o cartão de BPM e compasso pisca com o clique usando compensação de rede de +90 ms.',
+        '⚡ Metrônomo visual: o card de BPM e compasso pisca em sincronia com o clique (com compensação de rede de +90 ms).',
     },
     'help.loops': {
       en: '↻ Dynamic Loops: the next-section cue shows Next: [Name] (Repeat) while loop iterations remain.',
       'pt-BR':
-        '↻ Loops dinâmicos: a indicação da próxima seção mostra Próxima: [Nome] (Repetir) enquanto restarem iterações.',
+        '↻ Loops dinâmicos: a indicação de próxima seção exibe Próxima: [Nome] (Repetir) enquanto restarem repetições.',
     },
     'help.network': {
       en: '🔌 Network Loss: shows an alert if Wi-Fi or the WebSocket connection to Ableton Live drops.',
       'pt-BR':
-        '🔌 Perda de rede: mostra um alerta se o Wi-Fi ou a conexão WebSocket com o Ableton Live cair.',
+        '🔌 Queda de conexão: exibe um alerta caso o Wi-Fi ou a conexão WebSocket com o Ableton Live seja interrompida.',
     },
     'help.editing': {
       en: 'Writing tags without typing them:',
-      'pt-BR': 'Escrever tags sem digitá-las:',
+      'pt-BR': 'Configurando tags sem precisar digitá-las:',
     },
     'help.editingBody': {
       en: 'Double-click a song row or a section chip to open the marker editor. Every tag there is a control, so you never type brackets and cannot delete one by accident. A tag the panel does not show is carried through your edit untouched. Editing is refused while the transport is playing.',
       'pt-BR':
-        'Dê um clique duplo na linha de uma música ou no chip de uma seção para abrir o editor de marcador. Ali toda tag é um controle, então você nunca digita colchetes e não consegue apagar uma sem querer. Uma tag que o painel não mostra atravessa a sua edição intacta. A edição é recusada com o transporte tocando.',
+        'Dê um duplo clique na linha de uma música ou no chip de uma seção para abrir o editor de marcadores. Nele, cada tag é acionada por um botão visual interativo, dispensando a digitação manual de colchetes e evitando exclusões acidentais. Tags não exibidas no editor são preservadas intactas. A edição fica bloqueada enquanto o Live estiver em reprodução.',
     },
     'help.colour': {
       en: 'Colour is not a tag. It is chosen in the same panel, stored beside your setlist, never written into the Live project, and it follows a song through renames and moves.',
       'pt-BR':
-        'A cor não é uma tag. Ela é escolhida no mesmo painel, fica guardada junto do seu setlist, nunca é escrita no projeto do Live, e acompanha a música quando você a renomeia ou a move.',
+        'A cor não é uma tag. Ela é selecionada no mesmo painel e salva junto ao setlist (sem alterar o projeto do Live), acompanhando a música mesmo ao renomeá-la ou reposicioná-la.',
     },
     'help.prefixEquivalence': {
       en: 'Both spellings of a section are valid and are never rewritten: > Verse attaches to the song above it, and Song A > Verse names the song outright.',
       'pt-BR':
-        'As duas grafias de uma seção são válidas e nunca são reescritas: > Verso se liga à música acima dela, e Música A > Verso nomeia a música explicitamente.',
+        'Ambas as formas de declarar uma seção são válidas e mantidas intactas: "> Verso" vincula-se à música anterior, enquanto "Música A > Verso" especifica a música diretamente no nome.',
     },
     'help.durationNote': {
       en: 'Without any [bpm] tag the whole set is timed at one frozen tempo, and an EST. badge marks the durations as estimates. One tag per song, plus one wherever the tempo changes inside a song, is what makes the times exact.',
       'pt-BR':
-        'Sem nenhuma tag [bpm] o set inteiro é cronometrado num tempo congelado, e um selo EST. marca as durações como estimativas. Uma tag por música, mais uma onde o tempo muda dentro da música, é o que torna os tempos exatos.',
+        'Sem nenhuma tag [bpm], todo o setlist calcula o tempo com base em um andamento fixo, indicando durações estimadas com o selo EST.. Inserir uma tag por música (e onde o andamento mudar dentro da música) é o que torna os tempos exatos.',
     },
     'help.exampleTempo': {
       en: 'A song whose tempo changes partway through:',
-      'pt-BR': 'Uma música cujo tempo muda no meio:',
+      'pt-BR': 'Música com mudança de andamento no decorrer do arranjo:',
     },
     'help.hierarchy': {
       en: 'Locator Hierarchy in Ableton Live:',
