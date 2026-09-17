@@ -27,14 +27,34 @@ import { fileURLToPath } from 'node:url';
 import { test } from 'node:test';
 
 const root = path.resolve(fileURLToPath(new URL('../', import.meta.url)));
-const bashPath = 'C:/Program Files/Git/bin/bash.exe';
+const bashPath =
+  process.platform === 'win32'
+    ? existsSync('C:/Program Files/Git/bin/bash.exe')
+      ? 'C:/Program Files/Git/bin/bash.exe'
+      : 'bash'
+    : 'bash';
 
 function hasExec(bin) {
-  const probe = spawnSync(bin, ['--version'], { stdio: 'ignore' });
-  return probe.status === 0 || probe.status === 1;
+  try {
+    const probe = spawnSync(bin, ['--version'], { stdio: 'ignore' });
+    return probe.status === 0 || probe.status === 1;
+  } catch {
+    return false;
+  }
 }
 
+const powershellBin = hasExec('powershell')
+  ? 'powershell'
+  : hasExec('pwsh')
+    ? 'pwsh'
+    : null;
+
+const hasBash = hasExec(bashPath);
+
 function bashSyntax(file) {
+  if (!hasBash) {
+    return { ok: false, stderr: 'bash not found' };
+  }
   const probe = spawnSync(bashPath, ['-n', file], { encoding: 'utf8' });
   return {
     ok: probe.status === 0,
@@ -45,8 +65,11 @@ function bashSyntax(file) {
 }
 
 function powershellSyntax(file) {
+  if (!powershellBin) {
+    return { ok: false, stderr: 'PowerShell not found' };
+  }
   const probe = spawnSync(
-    'powershell',
+    powershellBin,
     [
       '-NoProfile',
       '-Command',
@@ -74,31 +97,31 @@ function nodeSyntax(file) {
 
 const skip = (label) => ({ skipped: true, label });
 
-test('bash syntax: macOS migration command', { skip: !existsSync(bashPath) ? true : false }, () => {
+test('bash syntax: macOS migration command', { skip: !hasBash }, () => {
   const file = path.join(root, 'release-template', 'Migrate RC Setlist Data.command');
   const result = bashSyntax(file);
   assert.equal(result.ok, true, `${file} did not parse: ${result.stderr}`);
 });
 
-test('bash syntax: macOS bridge installer command', () => {
+test('bash syntax: macOS bridge installer command', { skip: !hasBash }, () => {
   const file = path.join(root, 'release-template', 'RC-Bridge', 'Install RC Bridge.command');
   const result = bashSyntax(file);
   assert.equal(result.ok, true, `${file} did not parse: ${result.stderr}`);
 });
 
-test('PowerShell syntax: Windows migration script', () => {
+test('PowerShell syntax: Windows migration script', { skip: !powershellBin }, () => {
   const file = path.join(root, 'release-template', 'Migrate-RC-Setlist-Data.ps1');
   const result = powershellSyntax(file);
   assert.equal(result.ok, true, `${file} did not parse: ${result.stderr}`);
 });
 
-test('PowerShell syntax: Windows migration launcher', () => {
+test('PowerShell syntax: Windows migration launcher', { skip: !powershellBin }, () => {
   const file = path.join(root, 'release-template', 'Migrate-RC-Setlist-Data.cmd');
   const result = powershellSyntax(file);
   assert.equal(result.ok, true, `${file} did not parse: ${result.stderr}`);
 });
 
-test('PowerShell syntax: Windows bridge installer', () => {
+test('PowerShell syntax: Windows bridge installer', { skip: !powershellBin }, () => {
   const file = path.join(root, 'release-template', 'RC-Bridge', 'Install-RC-Bridge.ps1');
   const result = powershellSyntax(file);
   assert.equal(result.ok, true, `${file} did not parse: ${result.stderr}`);

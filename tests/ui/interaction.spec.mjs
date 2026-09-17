@@ -447,9 +447,12 @@ test('Setlist bar display rejects poll jitter and accepts a real sub-threshold c
       activeSectionIndex: smallRollback.state.activeSectionIndex + 1,
     },
   });
-  await page.waitForTimeout(120);
-  history = await page.evaluate(() => window.__barHistory);
-  expect(history.some((value) => /^21\.4\./.test(value))).toBe(true);
+  await expect
+    .poll(async () => {
+      const history = await page.evaluate(() => window.__barHistory);
+      return history.some((value) => /^21\.4\./.test(value));
+    })
+    .toBe(true);
 });
 
 test('Setlist bar display freezes its last valid value while disconnected', async ({ page }) => {
