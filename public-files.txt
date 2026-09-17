@@ -78,11 +78,13 @@ scripts/check-doc-links.mjs
 scripts/export-public-repo.ps1
 scripts/generate-third-party-notices.mjs
 scripts/install-ableton-deps.mjs
+scripts/installer-cleanup-legacy.mjs
 scripts/package-release-candidate.ps1
 scripts/render-site-assets.mjs
 scripts/media-kit-template.html
 scripts/render-media-kit.mjs
 scripts/run-bridge-tests.mjs
+scripts/sync-version.mjs
 scripts/verify-ableton-deps.mjs
 scripts/verify-production-bundle.mjs
 scripts/verify-public-snapshot.mjs

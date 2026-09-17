@@ -416,8 +416,8 @@ test('the public CI gate includes browser and release-surface regressions', () =
   assert.equal(typeof publicGate, 'string', 'package.json must define ci:public');
   assert.match(publicGate, /test:ui/);
   assert.match(publicGate, /test:release-surface/);
-  assert.match(workflow, /actions\/checkout@v7/);
-  assert.match(workflow, /actions\/setup-node@v7/);
+  assert.match(workflow, /actions\/checkout@v4/);
+  assert.match(workflow, /actions\/setup-node@v4/);
 });
 
 test('production build cleans generated output and enables minification', () => {
@@ -527,9 +527,13 @@ test('1.0.0 notes are bilingual and describe the consolidated release', () => {
   assert.doesNotMatch(landing, /v0\.6\.\d|v0\.5\.\d/);
 });
 
-test('the repository map only names paths that exist', () => {
+test('the repository map only names paths that exist', (t) => {
   // docs/agent/PROJECT_MAP.md is the map agents are told to read first; a
   // path that no longer exists sends them to a module that moved or died.
+  if (!existsSync(new URL('../docs/agent/PROJECT_MAP.md', import.meta.url))) {
+    t.skip('docs/agent/PROJECT_MAP.md is excluded from public snapshot');
+    return;
+  }
   const map = readRequired('docs/agent/PROJECT_MAP.md');
   const roots = [
     'src/',
