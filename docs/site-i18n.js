@@ -1,223 +1,335 @@
 (function rcSetlistSiteI18n(globalScope) {
   'use strict';
 
+  // English is the markup itself: every translatable node carries a key, and
+  // its English text is read from the page on load. Only Portuguese lives here,
+  // so the two languages cannot drift apart by one side being edited alone.
   const STORAGE_KEY = 'rc-setlist.locale';
-  const copy = {
-    en: {
-      title: 'RC Setlist — your Ableton Live setlist on stage',
-      description:
-        'RC Setlist is a source-available setlist extension for Ableton Live with locator-driven songs, synchronized lyrics and guarded stage controls.',
-      skip: 'Skip to content',
-      navAria: 'Primary navigation',
-      navProduct: 'Product',
-      navWorkflow: 'Workflow',
-      navInstall: 'Install',
-      navDocs: 'Docs',
-      navSource: 'Source',
-      language: 'Language',
-      heroEyebrow: 'Ableton Live extension · v1.0.0',
-      heroLede:
-        'Turn Arrangement locators into a real operator setlist, synchronized lyric display and guarded stage controls — running locally between Ableton Live and your browser.',
-      download: 'Download .ablx',
-      readDocs: 'Read the docs',
-      fine: 'No account · no subscription · no analytics · source-available',
-      heroAlt:
-        'Product truth composition of the real RC Setlist Performance and Stage Control interfaces',
-      productTruth: 'Product truth',
-      realInterfaces: 'Real interfaces · neutral demo data',
-      principlesAria: 'Product principles',
-      localFirst: 'Local first',
-      localFirstBody: 'Live ↔ browser on your trusted LAN',
-      twoViews: 'Two real views',
-      twoViewsBody: 'Stage Control + Performance display',
-      oneAblx: 'One .ablx',
-      oneAblxBody: 'Install through Ableton Live',
-      noTelemetry: 'No telemetry',
-      noTelemetryBody: 'Your show data stays local',
-      shipped: 'The shipped interface',
-      seeShow: 'See the show.',
-      runSet: 'Run the set.',
-      productIntro:
-        'The product stays anchored to Ableton Live. The browser gives the operator and performer the information each one needs without inventing a second timeline.',
-      performanceAlt:
-        'Performance interface showing current and next song, section, lyrics, timecode, bar, BPM and click',
-      performanceBody:
-        'High-contrast show state, current and next cues, synchronized lyrics, timecode, bar, tempo and click.',
-      stageControl: 'Stage Control',
-      stageAlt:
-        'Stage Control interface showing the setlist, section controls, show state and transport',
-      stageBody:
-        'Song and section navigation, guarded transport, quantization, click, refresh, tools, lock and live feedback.',
-      workflowEyebrow: 'Three-step workflow',
-      fromLocators: 'From locators',
-      toStage: 'to stage.',
-      workflowBody:
-        'Write the show structure once in Arrangement with automation tags. RC Setlist turns that structure into operator and performer views.',
-      workflowAlt:
-        'From locators to stage workflow: mark the Arrangement, conduct the set and read the show',
-      builtFor: 'Built for rehearsal and stage',
-      liveSet: 'A Live Set that reads like a show.',
-      truthful:
-        'The interface mirrors the functions that ship in v1.0.0. No fictional dashboard metrics and no show content bundled with the extension.',
-      feature1Label: '01 · STRUCTURE',
-      feature1Title: 'Locator-driven setlist',
-      feature1Body:
-        'Turn Arrangement markers into ordered songs and sections with optional automation tags.',
-      feature2Label: '02 · SAFETY',
-      feature2Title: 'Guarded transport',
-      feature2Body:
-        'Previous and Next require a deliberate hold. Jump and quantization feedback wait for confirmation from Live.',
-      feature3Label: '03 · LYRICS',
-      feature3Title: 'Synchronized words',
-      feature3Body:
-        'Create, time, edit and display authorized LRC or plain text inside local show profiles.',
-      feature4Label: '04 · FEEDBACK',
-      feature4Title: 'Current and next cues',
-      feature4Body:
-        'See song and total duration, section, loop progress, stable bar/beat, BPM and click state at a glance.',
-      feature5Label: '05 · SHOW DATA',
-      feature5Title: 'Saved setlists and export',
-      feature5Body:
-        'Keep multiple setlists inside the current Live Set, preserve local ordering and lyrics, recover deleted profiles, and export CSV.',
-      feature6Label: '06 · NETWORK',
-      feature6Title: 'Local browser access',
-      feature6Body:
-        'Open Stage Control or the read-only Performance view from a trusted laptop, tablet or phone on the LAN.',
-      editorialAlt:
-        'Stage editorial composition using the real Performance and Stage Control interfaces',
-      oneSession: 'One session · two views',
-      controlShow: 'Control the show.',
-      notScreen: 'Not the screen.',
-      editorialBody:
-        'Operate from Stage Control and keep Performance visible for the information that matters in the next second.',
-      release: 'Release 1.0.0',
-      installTitle: 'Install, rehearse, verify.',
-      'setlist.songTime': {
-        en: 'Song {elapsed} / {duration}',
-        'pt-BR': 'Música {elapsed} / {duration}',
-      },
-      installBody:
-        'RC Setlist requires Ableton Live 12.4.5+ Suite (Beta) with Extensions support and the bundled RC Bridge Control Surface (a fork of AbletonOSC; a stock AbletonOSC also works). Windows is validated; macOS remains experimental for this release.',
-      installGuide: 'Installation guide',
-      releaseNotes: 'What is new',
-      check1: 'Install the single Ableton-RC-Setlist-1.0.0.ablx package',
-      check2: 'Install RC Bridge from the kit or the panel, and choose it as a Control Surface',
-      check3: 'Start the local server from Extensions in Live',
-      check4: 'Open Stage Control or Performance on a trusted LAN',
-      check5: 'Rehearse transport, cues, click and lyrics before stage use',
-      license: 'License:',
-      licenseBody:
-        'RC Setlist is source-available under the PolyForm Noncommercial 1.0.0 license. Commercial use is not permitted.',
-      copyright: 'Copyright © 2026 Gabriel Worm.',
-      trademark: 'Ableton and Ableton Live are trademarks of Ableton AG.',
-      independence:
-        'RC Setlist is an independent project and is not affiliated with or endorsed by Ableton AG.',
-    },
-    'pt-BR': {
-      title: 'RC Setlist — seu setlist do Ableton Live no palco',
-      description:
-        'RC Setlist é uma extensão source-available para Ableton Live, com setlist guiado por localizadores do Arrangement, letras sincronizadas e controles protegidos para o palco.',
-      skip: 'Pular para o conteúdo',
-      navAria: 'Navegação principal',
-      navProduct: 'Produto',
-      navWorkflow: 'Fluxo',
-      navInstall: 'Instalação',
-      navDocs: 'Documentação',
-      navSource: 'Código-fonte',
-      language: 'Idioma',
-      heroEyebrow: 'Extensão para Ableton Live · v1.0.0',
-      heroLede:
-        'Transforme os localizadores do Arrangement em um setlist de verdade para a operação, com letras sincronizadas e controles protegidos para o palco — tudo rodando localmente entre o Ableton Live e o navegador.',
-      download: 'Baixar .ablx',
-      readDocs: 'Ver a documentação',
-      fine: 'Sem conta · sem assinatura · sem analytics · source-available',
-      heroAlt: 'Composição com as interfaces reais Performance e Controle de Palco do RC Setlist',
-      productTruth: 'Produto real',
-      realInterfaces: 'Interfaces reais · dados de demonstração neutros',
-      principlesAria: 'Princípios do produto',
-      localFirst: 'Local primeiro',
-      localFirstBody: 'Live ↔ navegador na sua rede local confiável',
-      twoViews: 'Duas telas reais',
-      twoViewsBody: 'Controle de Palco + tela de Performance',
-      oneAblx: 'Um único .ablx',
-      oneAblxBody: 'Instalação pelo Ableton Live',
-      noTelemetry: 'Sem telemetria',
-      noTelemetryBody: 'Os dados do seu show permanecem locais',
-      shipped: 'A interface entregue',
-      seeShow: 'Veja o show.',
-      runSet: 'Rode o set.',
-      productIntro:
-        'O produto fica ancorado no Ableton Live. O navegador entrega ao operador e ao performer a informação que cada um precisa, sem inventar uma segunda timeline.',
-      performanceAlt:
-        'Interface Performance com música atual e próxima, seção, letras, timecode, compasso, BPM e clique',
-      performanceBody:
-        'Estado do show em alto contraste, cue atual e próximo, letras sincronizadas, timecode, compasso, tempo e clique.',
-      stageControl: 'Controle de palco',
-      stageAlt:
-        'Interface Controle de Palco com setlist, controles de seção, estado do show e transporte',
-      stageBody:
-        'Navegação por músicas e seções, transporte protegido, quantização, clique, refresh, ferramentas, bloqueio e retorno ao vivo.',
-      workflowEyebrow: 'Fluxo em três etapas',
-      fromLocators: 'Dos localizadores',
-      toStage: 'ao palco.',
-      workflowBody:
-        'Escreva uma vez a estrutura do show no Arrangement com tags de automação. O RC Setlist transforma essa estrutura em telas para operador e performer.',
-      workflowAlt:
-        'Fluxo dos localizadores ao palco: marque o Arrangement, rode o set e leia o show',
-      builtFor: 'Feito para ensaio e palco',
-      liveSet: 'Um Live Set que pode ser lido como um show.',
-      truthful:
-        'A interface mostra as funções que já fazem parte da v1.0.0. Sem métricas fictícias e sem conteúdo de shows incluído na extensão.',
-      feature1Label: '01 · ESTRUTURA',
-      feature1Title: 'Setlist guiado por localizadores',
-      feature1Body:
-        'Transforme marcadores do Arrangement em músicas e seções ordenadas, com tags opcionais de automação.',
-      feature2Label: '02 · SEGURANÇA',
-      feature2Title: 'Transporte protegido',
-      feature2Body:
-        'Anterior e Próxima exigem confirmação deliberada. Saltos e quantização só acontecem depois da confirmação do Live.',
-      feature3Label: '03 · LETRAS',
-      feature3Title: 'Palavras sincronizadas',
-      feature3Body:
-        'Crie, marque o tempo, edite e exiba LRC autorizado ou texto simples em perfis locais de show.',
-      feature4Label: '04 · RETORNO',
-      feature4Title: 'Cue atual e próximo',
-      feature4Body:
-        'Veja a duração da música e do setlist, a seção, o progresso do loop, o compasso estável, o BPM e o estado do clique de uma vez só.',
-      feature5Label: '05 · DADOS DO SHOW',
-      feature5Title: 'Setlists salvos e exportação',
-      feature5Body:
-        'Mantenha vários setlists dentro do Live Set atual, preserve a ordem e as letras, recupere perfis apagados e exporte em CSV.',
-      feature6Label: '06 · REDE',
-      feature6Title: 'Acesso local pelo navegador',
-      feature6Body:
-        'Abra o Controle de Palco ou a tela Performance em modo somente leitura a partir de um notebook, tablet ou celular confiável na LAN.',
-      editorialAlt:
-        'Composição editorial de palco com as interfaces reais Performance e Controle de Palco',
-      oneSession: 'Uma sessão · duas telas',
-      controlShow: 'Controle o show.',
-      notScreen: 'Não a tela.',
-      editorialBody:
-        'Opere pelo Controle de Palco e mantenha a Performance visível para a informação que importa no próximo segundo.',
-      release: 'Versão 1.0.0',
-      installTitle: 'Instale, ensaie, verifique.',
-      installBody:
-        'O RC Setlist precisa do Ableton Live 12.4.5+ Suite (Beta) com suporte a Extensions e da Control Surface RC Bridge, que vem junto (um fork do AbletonOSC; um AbletonOSC comum também funciona). O Windows está validado; o macOS segue experimental nesta versão.',
-      installGuide: 'Guia de instalação',
-      releaseNotes: 'O que há de novo',
-      check1: 'Instale o único pacote Ableton-RC-Setlist-1.0.0.ablx',
-      check2: 'Instale o RC Bridge pelo kit ou pelo painel, e escolha-o como Control Surface',
-      check3: 'Inicie o servidor local em Extensions no Live',
-      check4: 'Abra Controle de Palco ou Performance em uma LAN confiável',
-      check5: 'Ensaie transporte, cues, clique e letras antes de usar no palco',
-      license: 'Licença:',
-      licenseBody:
-        'RC Setlist é source-available sob a licença PolyForm Noncommercial 1.0.0. Uso comercial não é permitido.',
-      copyright: 'Copyright © 2026 Gabriel Worm.',
-      trademark: 'Ableton e Ableton Live são marcas da Ableton AG.',
-      independence: 'RC Setlist é um projeto independente, sem afiliação ou endosso da Ableton AG.',
-    },
+
+  const ptBR = {
+    'meta.title': 'RC Setlist 1.0.0 — Folha de operação',
+    'meta.description':
+      'Extensão de setlist para Ableton Live: os localizadores do Arrangement viram um setlist para quem opera e uma tela de palco para a banda, na rede local.',
+
+    skip: 'Pular para o conteúdo',
+    'top.req': 'Live 12.4.5+ Suite',
+    'top.language': 'Idioma',
+    'top.navAria': 'Seções',
+    'nav.about': 'Sobre',
+    'nav.chain': 'Cadeia',
+    'nav.locators': 'Localizadores',
+    'nav.views': 'Duas telas',
+    'nav.safety': 'Segurança',
+    'nav.install': 'Instalação',
+    'nav.trouble': 'Quando falha',
+    'nav.docs': 'Docs',
+
+    'about.lede':
+      'Os localizadores do seu Arrangement viram o show: um setlist para quem conduz, uma tela de palco para quem toca. O Live marca o tempo; o navegador só lê.',
+    'about.spec1': 'Live 12.4.5+ Suite (Beta)',
+    'about.spec2': 'RC Bridge incluído',
+    'about.spec3': 'Qualquer navegador da sua rede',
+    'about.spec4': 'Sem conta · sem telemetria',
+    'about.download': 'Baixar .ablx',
+    'about.docs': 'Ler a documentação',
+    'about.new': 'O que há de novo na 1.0.0',
+    'about.source': 'Código-fonte',
+    'about.release':
+      'Versão 1.0.0&nbsp;· source-available sob a PolyForm Noncommercial 1.0.0&nbsp;· inglês e português (Brasil) no mesmo pacote',
+    'about.figCap': 'As duas telas, como são entregues',
+    'about.figMeta': 'Capturas reais · dados neutros de demonstração',
+    'about.figAlt':
+      'Controle de palco: setlist de cinco músicas com seções e selos de tags, a música três destacada como ativa, estado do show, quantização, clique e transporte.',
+
+    'chain.title': 'Cadeia de sinal <span class="tail">— quem manda no tempo é o Live</span>',
+    'chain.why':
+      'O Live toca; o RC Setlist lê a posição e pede para ele se mover; os navegadores só mostram o que o Live confirmou.',
+    'chain.node0': 'Arrangement · localizadores · transporte · andamento',
+    'chain.node1': 'Leitor · agendador de saltos · perfis · letras',
+    'chain.node2': 'Controle de palco · operação',
+    'chain.node3': 'Performance · banda · somente leitura',
+    'chain.down': '<i>▼</i> Comandos (saída)',
+    'chain.up': '<i>▲</i> Estado (entrada)',
+    'chain.needTitle': 'O que você precisa',
+    'chain.thPiece': 'Peça',
+    'chain.thWhere': 'Onde',
+    'chain.thRole': 'Papel',
+    'chain.liveWhere': 'O computador',
+    'chain.liveRole': 'Hospeda a extensão. O Arrangement é a fonte da verdade.',
+    'chain.bridgeWhere': 'No Live, como Control Surface',
+    'chain.bridgeRole':
+      'Transporte, saltos e posição da música. Vem no kit; um AbletonOSC comum também funciona.',
+    'chain.browser': 'Um navegador',
+    'chain.browserWhere': 'Notebook, tablet ou celular',
+    'chain.browserRole': 'Abre as duas telas por link ou QR code. Nada para instalar.',
+    'chain.lanTag': 'SÓ NA LAN',
+    'chain.lan': 'Mantenha o link do controlador privado e nunca exponha a porta 4444 na internet.',
+
+    'loc.title': 'Localizadores <span class="tail">— do Arrangement ao palco</span>',
+    'loc.why':
+      'Nomeie os localizadores uma vez. Músicas, seções e tags saem direto do Arrangement, e nada escondido é gravado no seu projeto.',
+    'loc.figCap': 'O que você digita no Live, o que o operador vê',
+    'loc.figMeta': 'Desenhado para esta folha',
+    'loc.inLive': 'No Live — localizadores do Arrangement',
+    'loc.end': 'Fim do Arrangement · compasso 81',
+    'loc.reads': 'O RC Setlist lê',
+    'loc.inStage': 'No Controle de palco — os cartões que ele desenha',
+    'loc.songs': 'Músicas no projeto',
+    'loc.total': 'Duração total',
+    'loc.figFoot':
+      'Uma música vai até o próximo localizador de música, com o intervalo: 40 compassos a 120 BPM dão 1:20. O [next] pula os compassos vazios.',
+    'loc.tagsTitle': 'Gramática das tags',
+    'loc.thTag': 'No localizador',
+    'loc.thDoes': 'O que acontece',
+    'loc.thCard': 'No cartão',
+    'loc.tBpm': 'Declara o andamento. As durações ficam exatas.',
+    'loc.tClick': 'Liga ou desliga o metrônomo do Live no marcador.',
+    'loc.tLoop': 'Repete a seção até você desligar o loop, ou N vezes.',
+    'loc.tNext': 'Passa para a próxima música no instante em que o marcador é cruzado.',
+    'loc.tStop': 'Para o transporte no marcador.',
+    'loc.tSkip': 'Pula esta música ou seção.',
+    'loc.tJump': 'Leva a reprodução a uma música ou seção pelo nome.',
+    'loc.tHidden': 'Mantém uma âncora de automação fora do setlist.',
+    'loc.tIgnore': 'Marcador técnico: fica oculto e as tags dele não fazem nada.',
+    'loc.tagsNote':
+      'As tags não diferenciam maiúsculas de minúsculas e somem do nome exibido. Fora [hidden] e [ignore], você não precisa digitá-las: dê dois cliques numa música ou seção no Controle de palco e cada tag vira um controle.',
+    'loc.durTitle': 'Duração do set',
+    'loc.durCap': 'Um set medido, três formas de contar',
+    'loc.durMeta': '21 músicas · de 93 a 166 BPM',
+    'loc.durA': '[bpm] em todas as músicas',
+    'loc.durAsub': 'Exata, trecho a trecho',
+    'loc.durB': 'Sem tags · Live a 99 BPM',
+    'loc.durBsub': '16:59 a mais',
+    'loc.durC': 'Sem tags · Live a 136 BPM',
+    'loc.durCsub': '9:03 a menos',
+    'loc.durFoot':
+      'Nenhuma extensão consegue ler a automação de andamento sem tocá-la. Declare [bpm] e o selo EST. desaparece.',
+
+    'views.title': 'Duas telas <span class="tail">— figs. 4 a 6</span>',
+    'views.why':
+      'O Controle de palco é de quem conduz o show. A Performance é de quem toca: somente leitura, alto contraste, legível do pedestal do microfone.',
+    'views.pick': 'Escolha uma tela',
+    'views.tabStage': 'Controle de palco',
+    'views.tabPerf': 'Performance',
+    'views.tabPhone': 'Performance · celular',
+    'views.stageCap': 'Controle de palco — /setlist, para a operação',
+    'views.stageAlt': 'Controle de palco com regiões numeradas.',
+    'views.thRegion': 'Região',
+    'views.thWhat': 'O que faz',
+    'views.s1': 'Setlist ativo',
+    'views.s1d': 'Vários setlists salvos por Live Set: ordem do show, ensaio, um set mais curto.',
+    'views.s2': 'Músicas',
+    'views.s2d':
+      'Um cartão por música, selos vindos das tags, duração à direita. Arraste para reordenar.',
+    'views.s3': 'Tocando agora',
+    'views.s3d':
+      'Borda âmbar na música, seção âmbar dentro dela. Segure uma seção e solte para acioná-la.',
+    'views.s4': 'Duração total',
+    'views.s4d': 'O set inteiro, do primeiro localizador de música até o fim do Arrangement.',
+    'views.s5': 'Estado do show',
+    'views.s5d': 'Música e seção ativas e seguintes, BPM, compasso, tempo do show e da música.',
+    'views.s6': 'Linha da letra',
+    'views.s6d': 'A linha que está sendo cantada agora.',
+    'views.s7': 'Quantização · clique',
+    'views.s7d':
+      'Grade dos saltos, metrônomo do Live, contagem de um compasso e atualização manual.',
+    'views.s8': 'Transporte',
+    'views.s8d':
+      'Música ou seção anterior e seguinte, Play, Stop. Tudo menos o Play precisa ser segurado — veja 5.0.',
+    'views.s9': 'Cabeçalho',
+    'views.s9d':
+      'Idioma, bloqueio do painel, ferramentas de letra e exportação, tela cheia, conexão.',
+    'views.perfCap': 'Performance — /performance, para a banda',
+    'views.perfAlt': 'Tela Performance com regiões numeradas.',
+    'views.p1': 'Música atual',
+    'views.p1d': 'Título, selos e a próxima música.',
+    'views.p2': 'Seção ativa',
+    'views.p2d': 'Onde a banda está, quantas repetições faltam, qual seção vem depois.',
+    'views.p3': 'Letra · cifras',
+    'views.p3d': 'As linhas com tempo acompanham a música; a atual fica acesa.',
+    'views.p4': 'Timecode',
+    'views.p4d': 'Tempo do show sobre o total, e o tempo dentro da música.',
+    'views.p5': 'Compasso · tempo',
+    'views.p5d': 'Onde está o cursor do Live, em tempo musical.',
+    'views.p6': 'BPM · clique',
+    'views.p6d': 'O andamento, e se o metrônomo está ligado — por escrito, não só pela cor.',
+    'views.p7': 'Conexão · tela cheia',
+    'views.p7d': 'Estado da conexão; a tela cheia mantém a tela acesa onde o navegador permite.',
+    'views.phoneCap': 'Performance no celular, na vertical',
+    'views.phoneAlt':
+      'Tela Performance num celular na vertical: cartões de música e seção, letra, timecode, compasso e BPM.',
+    'views.f1': 'Música',
+    'views.f1d': 'Atual e seguinte.',
+    'views.f2': 'Seção',
+    'views.f2d': 'Repetições e andamento como selos.',
+    'views.f3': 'Letra',
+    'views.f3d': 'A linha cantada, numa fonte condensada para o verso caber na largura.',
+    'views.f4': 'Leituras',
+    'views.f4d': 'Timecode, compasso e tempo, BPM e clique.',
+    'views.lrcTitle': 'A letra é LRC simples',
+    'views.lrcAria': 'Exemplo de LRC',
+    'views.lrcNote':
+      'Cole, marque o tempo enquanto a música toca, edite e salve. Ficam no perfil ativo, fora do Live Set. Texto simples também funciona.',
+
+    'safety.title': 'Segurança no palco <span class="tail">— nada dispara sem querer</span>',
+    'safety.why':
+      'Todo controle que pode parar o show pede pressionar e segurar. Nenhuma caixa de confirmação no meio da música.',
+    'safety.figCap': 'Pressione e segure — próxima música, seção anterior, parar',
+    'safety.figMeta': 'De 0 a 800 ms',
+    'safety.holdAria':
+      'Toque: nada é enviado. Segurar por 500 milissegundos: o comando é enviado. Deslizar para fora antes de 500 milissegundos: cancelado.',
+    'safety.tap': 'Toque',
+    'safety.tapOut': 'Nada enviado',
+    'safety.hold': 'Segurar',
+    'safety.holdOut': 'Enviado aos 500 ms',
+    'safety.slide': 'Deslizar para fora',
+    'safety.slideOut': 'Cancelado',
+    'safety.figFoot':
+      'O Play é o único controle que responde a um toque. O bloqueio do painel desativa todos os controles, inclusive o Play, no aparelho que o ativou.',
+    'safety.qTitle': 'Saltos quantizados',
+    'safety.qBody': 'O salto vai para o Live na hora e o Live o encaixa na próxima linha da grade.',
+    'safety.ask': 'Salto pedido, compasso 2 tempo 3',
+    'safety.land': 'Chega, compasso 3 tempo 1',
+    'safety.cTitle': 'Contagem de um compasso',
+    'safety.cBody':
+      'Com a CONTAGEM ligada e o Live parado, o Play conta um compasso no próprio botão, no andamento que o setlist declara, e inicia o Live no tempo forte. Por padrão é só visual: o celular nunca apita no palco.',
+    'safety.lTitle': 'Recusado enquanto toca',
+    'safety.lBody':
+      'Editar marcadores, trocar de setlist e mudar o idioma ficam bloqueados enquanto o Live toca.',
+    'safety.rTitle': 'Quedas rápidas',
+    'safety.rBody':
+      'Uma reconexão mantém na tela o último estado válido e avisa, em vez de apagar tudo.',
+
+    'install.title': 'Instalação <span class="tail">— cinco passos até o primeiro cue</span>',
+    'install.s1': 'Baixe',
+    'install.s1d':
+      '<code>RC-Setlist-1.0.0.ablx</code> e o kit de instalação, na <a href="https://github.com/ntworm/rc-setlist/releases/latest">versão mais recente</a>.',
+    'install.s2': 'Instale o RC Bridge',
+    'install.s2d':
+      'Rode <code>Install-RC-Bridge.cmd</code> (Windows) ou <code>Install RC Bridge.command</code> (macOS) a partir do kit. No Live, abra <b>Settings › Link, Tempo &amp; MIDI</b> e escolha <b>RCBridge</b> como Control Surface.',
+    'install.s3': 'Instale a extensão',
+    'install.s3d': 'Abra o .ablx e aprove a instalação no Live.',
+    'install.s4': 'Inicie o servidor',
+    'install.s4d':
+      'Abra <b>Extensions › RC Setlist</b> e clique em <b>Iniciar</b>. O painel mostra um link e um QR code para cada tela.',
+    'install.s5': 'Abra as telas',
+    'install.s5d':
+      'Leia o QR code ou abra o link. Aceite o certificado local só quando o endereço for igual ao que o painel mostra.',
+    'install.figCap': 'O painel dentro do Live',
+    'install.panelAria':
+      'O painel do RC Setlist no Live: servidor em execução na porta 4444, RC Bridge conectado, dois QR codes para Controle de palco e Performance, e os botões Iniciar, Parar e Reiniciar.',
+    'install.pRun': 'Servidor em execução',
+    'install.pOsc': 'Live conectado',
+    'install.figFoot': 'Esquema · os QR codes não são legíveis',
+    'install.note':
+      'Vindo da 0.x? Rode uma vez o script de migração do kit antes de abrir o Live com a 1.0 — veja o <a href="./pt-BR/INSTALL.html">guia de instalação</a>. O Windows está validado; o macOS é experimental nesta versão.',
+
+    'trouble.title': 'Quando não funciona',
+    'trouble.tsTitle': 'Solução de problemas',
+    'trouble.a': 'O RC Setlist não aparece no Live',
+    'trouble.ad':
+      'Confira o Live 12.4.5+ Suite (Beta). Abra o .ablx de novo, reinicie o Live, procure em Extensions.',
+    'trouble.b': 'O RCBridge não está na lista',
+    'trouble.bd':
+      'O lugar dele é <code>User Library/Remote Scripts/RCBridge</code> — o instalador do kit põe lá. Reinicie o Live uma vez.',
+    'trouble.c': 'O cursor não anda',
+    'trouble.cd':
+      'Aperte Verificar OSC no painel; a linha de OSC diz qual script responde. Depois de instalar o RC Bridge, aperte Reiniciar.',
+    'trouble.d': 'Nenhuma música aparece',
+    'trouble.dd':
+      'O Set precisa de localizadores no Arrangement. Primeiro as músicas; seções como <code>Música &gt; Seção</code> ou <code>&gt; Seção</code>.',
+    'trouble.e': 'A página não abre',
+    'trouble.ed':
+      'Mesma rede, e não uma rede de convidados. Libere TCP 4444 só no perfil de rede privada.',
+    'trouble.f': 'Os controles estão em somente leitura',
+    'trouble.fd':
+      'Abra o link ou o QR code do controlador no painel: o token dele libera o transporte.',
+    'trouble.faqTitle': 'Perguntas frequentes',
+    'faq.a': 'Um app no celular?',
+    'faq.ad': 'Não. Qualquer navegador atual na mesma rede.',
+    'faq.b': 'Preciso do AbletonOSC?',
+    'faq.bd': 'Não. O RC Bridge vem no kit e roda ao lado de um AbletonOSC comum ou do RC Surface.',
+    'faq.c': 'Para onde vão os dados do show?',
+    'faq.cd': 'Para lugar nenhum. Setlists, letras e exportações ficam em perfis locais.',
+    'faq.d': 'Por que a contagem não tem som?',
+    'faq.dd':
+      'Ela é visual por padrão. Um notebook que alimenta o retorno de ouvido pode ativar o som, um aparelho por vez.',
+    'faq.e': 'Session View?',
+    'faq.ed': 'Ainda não. Esta versão lê os localizadores do Arrangement.',
+    'faq.f': 'Posso usar comercialmente?',
+    'faq.fd':
+      'Não. Use, altere e compartilhe para fins não comerciais, sob a PolyForm Noncommercial 1.0.0.',
+
+    'docs.title': 'Documentos de referência',
+    'docs.install': 'Instalação',
+    'docs.guide': 'Guia de uso',
+    'docs.trouble': 'Solução de problemas',
+    'docs.faq': 'Perguntas frequentes',
+    'docs.notes': 'O que há de novo na 1.0.0',
+    'docs.security': 'Segurança · privacidade',
+
+    'foot.made': 'Feito por <b>Gabriel Worm</b>',
+    'foot.credits': 'Créditos e licenças',
+    'foot.legal':
+      'RC Setlist é um projeto independente, sem afiliação ou endosso da Ableton AG. Ableton e Live são marcas da Ableton AG.',
+    'about.figStage': 'Controle de palco, no notebook de quem opera',
+    'about.figPhone': 'Performance, no celular da banda',
+    'about.figPhoneAlt':
+      'Performance num celular: música e seção atuais, letra, timecode, compasso e BPM.',
+    'chain.hop2': 'HTTPS · WebSocket · porta 4444 · token',
+    'loc.scrollHint': 'Arraste o desenho para o lado para ver o set inteiro.',
+    'install.pLang': 'PT',
+    'install.pStart': 'Iniciar',
+    'install.pStop': 'Parar',
+    'install.pRestart': 'Reiniciar',
+    'docs.lInstall': 'Ler INSTALL',
+    'docs.lGuide': 'Ler USER-GUIDE',
+    'docs.lTrouble': 'Ler TROUBLESHOOTING',
+    'docs.lFaq': 'Ler FAQ',
+    'docs.lNotes': 'Ler as notas da 1.0.0',
   };
+
+  const documentRef = globalScope.document;
+  const html = documentRef.documentElement;
+  const description = documentRef.querySelector('meta[name="description"]');
+
+  const bindings = [
+    {
+      selector: '[data-i18n]',
+      key: 'i18n',
+      read: (el) => el.textContent,
+      write: (el, v) => (el.textContent = v),
+    },
+    {
+      selector: '[data-i18n-html]',
+      key: 'i18nHtml',
+      read: (el) => el.innerHTML,
+      write: (el, v) => (el.innerHTML = v),
+    },
+    {
+      selector: '[data-i18n-alt]',
+      key: 'i18nAlt',
+      read: (el) => el.alt,
+      write: (el, v) => (el.alt = v),
+    },
+    {
+      selector: '[data-i18n-aria]',
+      key: 'i18nAria',
+      read: (el) => el.getAttribute('aria-label') || '',
+      write: (el, v) => el.setAttribute('aria-label', v),
+    },
+  ];
+
+  // Snapshot the English page once, before anything is translated. Source
+  // indentation is folded to single spaces, as the browser renders it anyway.
+  for (const binding of bindings) {
+    binding.english = new WeakMap();
+    for (const element of documentRef.querySelectorAll(binding.selector)) {
+      binding.english.set(element, binding.read(element).replace(/\s+/g, ' ').trim());
+    }
+  }
+  const englishTitle = documentRef.title;
+  const englishDescription = description ? description.content : '';
 
   function normalizeLocale(value) {
     return String(value || '')
@@ -227,65 +339,68 @@
       : 'en';
   }
 
-  function storedLocale() {
+  function initialLocale() {
     try {
-      return globalScope.localStorage?.getItem(STORAGE_KEY);
+      const fromUrl = new URL(globalScope.location.href).searchParams.get('lang');
+      if (fromUrl) return normalizeLocale(fromUrl);
     } catch {
-      return null;
+      // A page opened from disk still works; it just has no query string.
     }
+    try {
+      const stored = globalScope.localStorage?.getItem(STORAGE_KEY);
+      if (stored) return normalizeLocale(stored);
+    } catch {
+      // Storage can be blocked; fall through to the browser language.
+    }
+    return normalizeLocale(globalScope.navigator?.language);
   }
 
-  let locale = normalizeLocale(storedLocale());
+  function apply(locale) {
+    const pt = locale === 'pt-BR';
+    html.lang = locale;
+    documentRef.title = pt ? ptBR['meta.title'] : englishTitle;
+    if (description) description.content = pt ? ptBR['meta.description'] : englishDescription;
 
-  function apply() {
-    const active = copy[locale];
-    document.documentElement.lang = locale;
-    document.title = active.title;
-    const description = document.querySelector('meta[name="description"]');
-    if (description) description.content = active.description;
-
-    for (const element of document.querySelectorAll('[data-site-i18n], [data-i18n]')) {
-      const key = element.dataset.siteI18n || element.dataset.i18n;
-      element.textContent = active[key] || key;
+    for (const binding of bindings) {
+      for (const element of documentRef.querySelectorAll(binding.selector)) {
+        const key = element.dataset[binding.key];
+        const value = pt && ptBR[key] !== undefined ? ptBR[key] : binding.english.get(element);
+        if (value !== undefined) binding.write(element, value);
+      }
     }
-    for (const element of document.querySelectorAll('[data-site-i18n-aria-label]')) {
-      element.setAttribute(
-        'aria-label',
-        active[element.dataset.siteI18nAriaLabel] || element.dataset.siteI18nAriaLabel,
-      );
-    }
-    for (const element of document.querySelectorAll('[data-site-i18n-alt], [data-i18n-attr]')) {
-      const key = element.dataset.siteI18nAlt || element.dataset.i18nAttr;
-      element.alt = active[key] || key;
-    }
-    for (const image of document.querySelectorAll('[data-site-image]')) {
+    for (const image of documentRef.querySelectorAll('[data-site-image]')) {
       image.src = `./media/${locale}/${image.dataset.siteImage}`;
     }
-
-    const documentation = document.getElementById('documentation');
-    const navDocumentation = document.getElementById('navDocumentation');
-    const installGuide = document.getElementById('installGuide');
-    const docsHref = locale === 'pt-BR' ? './pt-BR/README.md' : './README.md';
-    const installHref = locale === 'pt-BR' ? './pt-BR/INSTALL.md' : './INSTALL.md';
-    if (documentation) documentation.href = docsHref;
-    if (navDocumentation) navDocumentation.href = docsHref;
-    if (installGuide) installGuide.href = installHref;
-
-    const selector = document.getElementById('languageSelect');
+    for (const link of documentRef.querySelectorAll('[data-href-pt-br]')) {
+      if (!link.dataset.hrefEn) link.dataset.hrefEn = link.getAttribute('href');
+      link.href = pt ? link.dataset.hrefPtBr : link.dataset.hrefEn;
+    }
+    const selector = documentRef.getElementById('languageSelect');
     if (selector) selector.value = locale;
+    html.classList.remove('i18n-wait');
   }
 
   function setLocale(value) {
-    locale = normalizeLocale(value);
+    const locale = normalizeLocale(value);
     try {
       globalScope.localStorage?.setItem(STORAGE_KEY, locale);
     } catch {
-      // The page remains bilingual even if persistence is unavailable.
+      // The page stays bilingual even when the choice cannot be remembered.
     }
-    apply();
+    // A ?lang link would otherwise bring the old language back on reload.
+    try {
+      const url = new URL(globalScope.location.href);
+      if (url.searchParams.has('lang')) {
+        url.searchParams.set('lang', locale);
+        globalScope.history.replaceState(null, '', url);
+      }
+    } catch {
+      // Without a history API the page still switches.
+    }
+    apply(locale);
   }
 
-  const selector = document.getElementById('languageSelect');
+  const selector = documentRef.getElementById('languageSelect');
   selector?.addEventListener('change', () => setLocale(selector.value));
-  apply();
+  apply(initialLocale());
 })(globalThis);

@@ -21,6 +21,7 @@ const outputs = [
   { id: 'product-truth-discord', file: 'product-truth-discord.png', width: 1200, height: 675 },
   { id: 'performance', file: 'performance.png', width: 1600, height: 900 },
   { id: 'stage-control', file: 'stage-control.png', width: 1600, height: 900 },
+  { id: 'performance-phone', file: 'performance-phone.png', width: 860, height: 1864 },
   { id: 'workflow', file: 'workflow.png', width: 1200, height: 675 },
   { id: 'stage-editorial', file: 'stage-editorial.png', width: 1200, height: 675 },
 ];
@@ -28,6 +29,7 @@ const publicOutputIds = new Set([
   'product-truth-discord',
   'performance',
   'stage-control',
+  'performance-phone',
   'workflow',
   'stage-editorial',
 ]);
@@ -64,10 +66,11 @@ async function waitForServer(url, timeoutMs = 10_000) {
   throw new Error(`Timed out waiting for ${url}`);
 }
 
-async function captureInterface(browser, route, outputPath, locale) {
+async function captureInterface(browser, route, outputPath, locale, device = {}) {
   const page = await browser.newPage({
     viewport: { width: 1600, height: 900 },
     deviceScaleFactor: 1,
+    ...device,
   });
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.addInitScript(
@@ -196,8 +199,32 @@ try {
   const rawTemplate = await fs.readFile(templatePath, 'utf8');
   for (const locale of locales) {
     const localeDir = path.join(siteMediaDir, locale);
-    await captureInterface(browser, 'performance', path.join(localeDir, 'performance.png'), locale);
+    // A 1080p screen, the usual stage display, stored at 1600 x 900.
+    await captureInterface(
+      browser,
+      'performance',
+      path.join(localeDir, 'performance.png'),
+      locale,
+      {
+        viewport: { width: 1920, height: 1080 },
+        deviceScaleFactor: 1600 / 1920,
+      },
+    );
     await captureInterface(browser, 'setlist', path.join(localeDir, 'stage-control.png'), locale);
+    // The phone the band reads from a mic stand: portrait, at twice the density
+    // so the landing can show it at its real size without softening the type.
+    await captureInterface(
+      browser,
+      'performance',
+      path.join(localeDir, 'performance-phone.png'),
+      locale,
+      {
+        viewport: { width: 430, height: 932 },
+        deviceScaleFactor: 2,
+        isMobile: true,
+        hasTouch: true,
+      },
+    );
 
     const performanceData = (await fs.readFile(path.join(localeDir, 'performance.png'))).toString(
       'base64',
@@ -209,7 +236,7 @@ try {
       .replaceAll('{{PERFORMANCE_DATA_URI}}', `data:image/png;base64,${performanceData}`)
       .replaceAll('{{STAGE_CONTROL_DATA_URI}}', `data:image/png;base64,${stageControlData}`);
     for (const output of outputs.filter(
-      (item) => !['performance', 'stage-control'].includes(item.id),
+      (item) => !['performance', 'stage-control', 'performance-phone'].includes(item.id),
     )) {
       const page = await browser.newPage({
         viewport: { width: output.width, height: output.height },

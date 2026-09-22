@@ -53,11 +53,13 @@ docs/fonts/MartianMono-latin.woff2
 docs/fonts/OFL.txt
 docs/index.html
 docs/media/en/performance.png
+docs/media/en/performance-phone.png
 docs/media/en/product-truth-discord.png
 docs/media/en/stage-control.png
 docs/media/en/stage-editorial.png
 docs/media/en/workflow.png
 docs/media/pt-BR/performance.png
+docs/media/pt-BR/performance-phone.png
 docs/media/pt-BR/product-truth-discord.png
 docs/media/pt-BR/stage-control.png
 docs/media/pt-BR/stage-editorial.png

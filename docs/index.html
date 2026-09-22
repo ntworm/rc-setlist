@@ -3,593 +3,3254 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta name="color-scheme" content="dark" />
+    <meta name="theme-color" content="#0e0e0e" />
+    <title>RC Setlist 1.0.0 — Operator Sheet</title>
     <meta
       name="description"
-      content="RC Setlist is a source-available setlist extension for Ableton Live with locator-driven songs, synchronized lyrics and guarded stage controls."
+      content="Setlist extension for Ableton Live: Arrangement locators become a setlist for the operator and a stage display for the band, over your local network."
     />
-    <meta name="theme-color" content="#0e0e0e" />
     <link rel="canonical" href="https://ntworm.github.io/rc-setlist/" />
-    <title>RC Setlist — your Ableton Live setlist on stage</title>
+    <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
+    <link rel="icon" type="image/png" sizes="32x32" href="./favicon-32.png" />
+    <link rel="apple-touch-icon" href="./apple-touch-icon.png" />
+    <meta property="og:type" content="website" />
+    <meta property="og:locale" content="en_US" />
+    <meta property="og:locale:alternate" content="pt_BR" />
+    <meta property="og:site_name" content="RC Setlist" />
+    <meta property="og:title" content="RC Setlist — Operator Sheet" />
+    <meta
+      property="og:description"
+      content="Arrangement locators become a setlist to run the show and a stage display for the band. Ableton Live 12.4.5+ Suite, local network, release 1.0.0."
+    />
+    <meta property="og:url" content="https://ntworm.github.io/rc-setlist/" />
+    <meta property="og:image" content="https://ntworm.github.io/rc-setlist/og-image.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta
+      property="og:image:alt"
+      content="RC Setlist Stage Control running a five-song setlist from Ableton Live locators."
+    />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:image" content="https://ntworm.github.io/rc-setlist/og-image.png" />
+    <meta
+      name="twitter:image:alt"
+      content="RC Setlist Stage Control running a five-song setlist from Ableton Live locators."
+    />
+    <script>
+      // A Portuguese visitor would otherwise see the English page for a moment
+      // before site-i18n.js swaps it. site-i18n.js lifts this; the timer is the
+      // fallback if it never loads.
+      try {
+        var wanted =
+          new URLSearchParams(location.search).get('lang') ||
+          localStorage.getItem('rc-setlist.locale') ||
+          navigator.language;
+        if (/^pt/i.test(wanted || '')) {
+          document.documentElement.classList.add('i18n-wait');
+          setTimeout(function () {
+            document.documentElement.classList.remove('i18n-wait');
+          }, 3000);
+        }
+      } catch (_) {}
+    </script>
+    <noscript
+      ><style>
+        .lang {
+          display: none;
+        }
+      </style></noscript
+    >
     <style>
+      /* One technical mono per product, served from this folder. The extension
+         ships the same file; see docs/THEME_CONTRACT.md. */
       @font-face {
         font-family: 'Martian Mono';
-        font-weight: 400;
         font-style: normal;
+        font-weight: 100 800;
+        font-stretch: 75% 112.5%;
         font-display: swap;
         src: url('./fonts/MartianMono-latin.woff2') format('woff2');
       }
       @font-face {
         font-family: 'Martian Mono';
-        font-weight: 400;
         font-style: normal;
+        font-weight: 100 800;
+        font-stretch: 75% 112.5%;
         font-display: swap;
         src: url('./fonts/MartianMono-latin-ext.woff2') format('woff2');
         unicode-range: U+0100-024F, U+1E00-1EFF, U+02B0-02FF, U+2000-206F;
       }
+
+      /* The extension's tokens, copied from static/shared/ui-system.css.
+         Amber is RC focus. The four other hues only ever carry a tag's meaning,
+         and small text always uses the -ink variant. */
       :root {
         --bg: #0e0e0e;
         --surface: #141414;
+        --raised: #1a1a1a;
+        --soft: #222222;
+        --rule: #333333;
+        --rule-strong: #444444;
         --text: #f2f2f2;
-        --muted: #a0a0a0;
-        --border: #333333;
+        --display: #e4e4e4;
+        --text-2: #a0a0a0;
+        --ink: #cccccc;
+        --text-3: #636363;
         --accent: #ffa133;
-        --link: #ffa133;
-        --max: 1120px;
+        --accent-ink: #ffb35c;
+        --accent-soft: rgba(255, 161, 51, 0.12);
+        --success: #30d158;
+        --success-ink: #5ce08b;
+        --success-soft: rgba(48, 209, 88, 0.12);
+        --danger: #ff375f;
+        --danger-ink: #ff8f99;
+        --danger-soft: rgba(255, 55, 95, 0.12);
+        --info: #0a84ff;
+        --info-ink: #8ab4ff;
+        --info-soft: rgba(10, 132, 255, 0.12);
+        --loop: #bf5af2;
+        --loop-ink: #cdaaff;
+        --loop-soft: rgba(191, 90, 242, 0.12);
+        --mono: 'Martian Mono', ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
       }
+
       *,
       *::before,
       *::after {
         box-sizing: border-box;
+        margin: 0;
+        padding: 0;
       }
       html {
         background: var(--bg);
-        color: var(--text);
-        font:
-          16px/1.6 'Martian Mono',
-          ui-monospace,
-          'SF Mono',
-          Menlo,
-          Consolas,
-          monospace;
-        margin: 0;
         -webkit-text-size-adjust: 100%;
-        overflow-x: hidden;
+        scroll-behavior: auto;
+        /* Anchor jumps and keyboard focus both land below the pinned header. */
+        scroll-padding-top: 104px;
       }
       body {
-        margin: 0;
-        padding: 0;
-        max-width: 100%;
+        background: var(--bg);
+        /* Running copy at about APCA Lc 75, the contract's floor for blocks of
+           text; --text-2 stays for captions and meta. */
+        color: var(--ink);
+        font-family: var(--mono);
+        font-size: 14px;
+        line-height: 1.7;
+        font-variant-numeric: tabular-nums;
         overflow-x: hidden;
       }
-      a {
-        color: var(--link);
-        text-decoration: none;
-        border-bottom: 1px solid rgba(255, 161, 51, 0.35);
+      ::selection {
+        background: var(--accent);
+        color: var(--bg);
       }
-      a:hover,
-      a:focus {
-        border-bottom-color: var(--link);
+      .i18n-wait .sheet {
+        visibility: hidden;
+      }
+      a {
+        color: var(--accent-ink);
+        text-decoration: none;
+        border-bottom: 1px solid var(--rule-strong);
+      }
+      a:hover {
+        border-bottom-color: var(--accent);
+      }
+      /* Inside a sentence a link has to be found without comparing hues. */
+      p a {
+        border-bottom-color: currentColor;
+      }
+      p a:hover {
+        border-bottom-width: 2px;
+      }
+      :focus-visible {
+        outline: 2px solid var(--accent);
+        outline-offset: 2px;
       }
       img {
+        display: block;
         max-width: 100%;
         height: auto;
-        display: block;
       }
-      h1,
-      h2,
-      h3 {
-        font-weight: 400;
-        letter-spacing: -0.01em;
-        line-height: 1.25;
+      code,
+      kbd {
+        font-family: var(--mono);
+        font-size: 0.93em;
+        color: var(--text);
+        background: var(--raised);
+        border: 1px solid var(--rule);
+        padding: 0 0.3em;
+        overflow-wrap: anywhere;
       }
-      .skip {
+      b,
+      strong {
+        color: var(--text);
+        font-weight: 600;
+      }
+      .sr-only {
         position: absolute;
-        left: -9999px;
-        top: auto;
         width: 1px;
         height: 1px;
         overflow: hidden;
+        clip: rect(0 0 0 0);
+        white-space: nowrap;
+      }
+      .skip {
+        position: absolute;
+        left: 16px;
+        top: -64px;
+        z-index: 100;
+        padding: 10px 14px;
+        background: var(--accent);
+        color: var(--bg);
+        font-weight: 800;
+        border: 0;
       }
       .skip:focus {
-        position: static;
-        left: 1rem;
-        top: 1rem;
-        width: auto;
-        height: auto;
-        padding: 0.5rem 1rem;
-        background: var(--accent);
-        color: #000;
+        top: 12px;
+      }
+
+      .sheet {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 0 20px;
+      }
+
+      /* ================= pinned masthead ================= */
+      .stick {
+        position: sticky;
+        top: 0;
+        z-index: 50;
+        background: var(--bg);
+        border-bottom: 1px solid var(--rule-strong);
+      }
+      .mast {
+        display: flex;
+        align-items: stretch;
+        border-bottom: 1px solid var(--rule);
+        font-size: 12px;
+        line-height: 18px;
+        font-stretch: 87.5%;
+      }
+      .mast > span {
+        padding: 9px 12px;
+        border-left: 1px solid var(--rule);
+        white-space: nowrap;
+        text-transform: uppercase;
+      }
+      .mast > .brand {
+        border-left: 0;
+        padding-left: 0;
+        color: var(--text);
+        font-weight: 800;
+      }
+      .mast .grow {
+        flex: 1 1 auto;
+        min-width: 0;
+      }
+      .mast .req {
+        color: var(--text-2);
+      }
+      .lang {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 4px 0 4px 12px;
+        border-left: 1px solid var(--rule);
+      }
+      .lang select {
+        appearance: none;
+        font: inherit;
+        font-weight: 600;
+        color: var(--text);
+        background: var(--raised)
+          url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%23a0a0a0' stroke-width='1.5'/%3E%3C/svg%3E")
+          no-repeat right 9px center / 10px 6px;
+        border: 1px solid var(--rule-strong);
+        border-radius: 0;
+        padding: 5px 28px 5px 10px;
+        cursor: pointer;
       }
       .nav {
         display: flex;
-        align-items: center;
-        gap: 1.5rem;
-        padding: 1.5rem 2rem;
-        border-bottom: 1px solid var(--border);
-        position: sticky;
-        top: 0;
-        background: rgba(14, 14, 14, 0.85);
-        backdrop-filter: blur(8px);
-        z-index: 10;
+        overflow-x: auto;
+        scrollbar-width: none;
       }
-      .nav__brand {
-        font-weight: 400;
-        letter-spacing: 0.05em;
-        font-size: 1.1rem;
-        border: none;
-        color: var(--text);
+      .nav::-webkit-scrollbar {
+        display: none;
       }
-      .nav__brand span {
-        color: var(--accent);
-      }
-      .nav__links {
-        display: flex;
-        gap: 1.25rem;
-        margin-left: auto;
-        align-items: center;
-      }
-      .nav__links a {
-        border: none;
-        color: var(--muted);
-        font-size: 0.95rem;
-      }
-      .nav__links a:hover {
-        color: var(--text);
-      }
-      .nav__lang {
-        margin-left: 0.5rem;
+      .nav a {
+        flex: 0 0 auto;
+        padding: 10px 14px;
+        margin: 6px 0 6px -1px;
+        border: 1px solid var(--rule);
         background: var(--surface);
         color: var(--text);
-        border: 1px solid var(--border);
-        padding: 0.35rem 0.55rem;
-        font: inherit;
-      }
-      .hero {
-        padding: 6rem 2rem 4rem;
-        max-width: var(--max);
-        margin: 0 auto;
-      }
-      .hero__eyebrow {
-        color: var(--accent);
-        font-size: 0.85rem;
-        letter-spacing: 0.18em;
-        text-transform: uppercase;
-        margin-bottom: 1rem;
-      }
-      .hero h1 {
-        font-size: clamp(2.4rem, 5vw, 3.6rem);
-        margin: 0 0 1.5rem;
-        max-width: 32ch;
-      }
-      .hero__lede {
-        font-size: 1.15rem;
-        color: var(--muted);
-        max-width: 60ch;
-        margin: 0 0 2.5rem;
-      }
-      .hero__ctas {
-        display: flex;
-        gap: 1rem;
-        flex-wrap: wrap;
-      }
-      .hero-visual {
-        position: relative;
-        min-width: 0;
-        max-width: 760px;
-        margin: 2rem auto 0;
-      }
-      .hero-visual img {
-        width: 100%;
-        height: auto;
-        aspect-ratio: 16 / 9;
-        object-fit: contain;
-        border: 1px solid var(--border);
-        border-radius: 8px;
-        background: var(--surface);
-        display: block;
-      }
-      .hero__tagline {
-        font-size: 1.05rem;
-        color: var(--muted);
-        margin: 1.5rem 0 0;
-        max-width: 60ch;
-      }
-      .btn {
-        display: inline-block;
-        padding: 0.85rem 1.4rem;
-        border: 1px solid var(--accent);
-        background: var(--accent);
-        color: #0e0e0e;
+        font-size: 12px;
+        line-height: 16px;
         font-weight: 600;
-        letter-spacing: 0.02em;
-        border-bottom-width: 1px;
+        font-stretch: 87.5%;
+        text-transform: uppercase;
+        white-space: nowrap;
       }
-      .btn--ghost {
-        background: transparent;
+      .nav a:first-child {
+        margin-left: 0;
+      }
+      .nav a:hover {
+        background: var(--soft);
+        border-color: var(--rule-strong);
+      }
+      /* The section under the header is marked the way the extension marks the
+         song that is playing: a 4px edge bar, not a colour change alone. */
+      .nav a[aria-current='true'] {
+        color: var(--accent-ink);
+        border-bottom: 4px solid var(--accent);
+        padding-bottom: 7px;
+        position: relative;
+        z-index: 1;
+      }
+
+      /* ================= numbered section rail ================= */
+      .sec {
+        display: grid;
+        grid-template-columns: 76px minmax(0, 1fr);
+        border-top: 1px solid var(--rule);
+      }
+      .sec:first-of-type {
+        border-top: 0;
+      }
+      .sec > .n {
+        padding: 46px 12px 0 0;
+        color: var(--accent);
+        font-size: 20px;
+        line-height: 28px;
+        font-weight: 600;
+      }
+      .sec > .c {
+        padding: 44px 0 56px;
+        min-width: 0;
+      }
+      h2 {
+        font-size: 20px;
+        line-height: 28px;
+        font-weight: 600;
         color: var(--text);
-        border-color: var(--border);
-      }
-      .btn--ghost:hover {
-        color: var(--accent);
-        border-color: var(--accent);
-      }
-      .btn--accent {
-        border-bottom-color: var(--accent);
-      }
-      section {
-        padding: 4rem 2rem;
-        max-width: var(--max);
-        margin: 0 auto;
-      }
-      section h2 {
-        font-size: clamp(1.6rem, 3vw, 2.2rem);
-        margin: 0 0 0.5rem;
-      }
-      section .eyebrow {
-        color: var(--accent);
-        font-size: 0.78rem;
-        letter-spacing: 0.18em;
         text-transform: uppercase;
-        margin-bottom: 0.75rem;
-        display: block;
+        margin-bottom: 14px;
       }
-      section .lede {
-        color: var(--muted);
-        max-width: 60ch;
-        margin: 0 0 2.5rem;
+      h2 .tail {
+        color: var(--text-2);
+        font-weight: 400;
+        text-transform: none;
       }
-      .principles {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-        gap: 1.5rem;
-      }
-      .principle {
-        padding: 1.5rem;
-        border: 1px solid var(--border);
-        background: var(--surface);
-      }
-      .principle__label {
-        color: var(--accent);
-        font-size: 0.78rem;
-        letter-spacing: 0.16em;
+      h3 {
+        font-size: 12px;
+        line-height: 18px;
+        font-weight: 600;
+        font-stretch: 87.5%;
+        color: var(--text);
         text-transform: uppercase;
-        margin-bottom: 0.5rem;
+        margin: 34px 0 12px;
       }
-      .principle h3 {
-        margin: 0 0 0.75rem;
-        font-size: 1.1rem;
-      }
-      .principle p {
-        margin: 0;
-        color: var(--muted);
-        font-size: 0.95rem;
-      }
-      .gallery {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-        gap: 1.5rem;
-      }
-      .gallery figure {
-        margin: 0;
-      }
-      .gallery figcaption {
-        margin-top: 0.5rem;
-        color: var(--muted);
-        font-size: 0.85rem;
-      }
-      .workflow {
-        display: grid;
-        grid-template-columns: repeat(3, 1fr);
-        gap: 1.5rem;
-      }
-      .workflow .step {
-        padding: 1.5rem;
-        border: 1px solid var(--border);
-        background: var(--surface);
-      }
-      .workflow .step__num {
-        color: var(--accent);
-        font-size: 0.78rem;
-        letter-spacing: 0.18em;
-      }
-      .workflow .step h3 {
-        margin: 0.5rem 0 0.75rem;
-        font-size: 1.1rem;
-      }
-      .workflow .step p {
-        margin: 0;
-        color: var(--muted);
-        font-size: 0.95rem;
-      }
-      .install {
-        padding: 3rem 2rem;
-        border: 1px solid var(--border);
-        background: var(--surface);
-        max-width: var(--max);
-        margin: 2rem auto;
-      }
-      .install h2 {
+      .duo h3:first-child {
         margin-top: 0;
       }
-      .install ol {
+      h3 .num {
+        color: var(--accent-ink);
+        margin-right: 0.3em;
+      }
+      h4,
+      .h4 {
+        font-size: 12px;
+        line-height: 18px;
+        font-weight: 600;
+        font-stretch: 87.5%;
+        text-transform: uppercase;
+        color: var(--text);
+      }
+      /* Card and step titles are h3 for the outline, set like the old h4. */
+      .card h3,
+      .steps h3 {
         margin: 0;
-        padding-left: 1.4rem;
+        color: var(--text);
+      }
+      p {
+        max-width: 68ch;
+      }
+      p + p {
+        margin-top: 10px;
+      }
+      /* The one sentence that says what a section is for, read before the reader
+         decides whether to keep going. */
+      .why {
+        font-size: 16px;
+        line-height: 1.6;
+        color: var(--display);
+        max-width: 60ch;
+        margin-bottom: 26px;
+      }
+      .note {
+        font-size: 12px;
+        line-height: 1.6;
+        color: var(--text-2);
+        margin-top: 14px;
+        max-width: 80ch;
+      }
+      .scroll {
+        overflow-x: auto;
+        overflow-y: hidden;
+      }
+      .arr-hint {
+        display: none;
+        margin-top: 8px;
+        font-size: 11px;
+        font-stretch: 87.5%;
+        color: var(--text-2);
+      }
+
+      /* ================= 1.0 hero ================= */
+      h1 {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 0 0.28em;
+        font-size: clamp(44px, 8.4vw, 104px);
+        line-height: 1;
+        font-weight: 800;
+        font-stretch: 112.5%;
+        color: var(--display);
+        margin: 4px 0 26px;
+      }
+      h1 .rc {
+        background: var(--accent);
+        color: var(--bg);
+        padding: 0.06em 0.14em 0.04em;
+      }
+      .lede {
+        font-size: 17px;
+        line-height: 1.6;
+        color: var(--display);
+        max-width: 56ch;
+      }
+      .spec {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1px;
+        margin: 22px 0 0;
+        border: 1px solid var(--rule);
+        background: var(--rule);
+        max-width: max-content;
+        font-size: 12px;
+        line-height: 18px;
+        font-stretch: 87.5%;
+        list-style: none;
+      }
+      .spec li {
+        flex: 1 1 auto;
+        padding: 7px 12px;
+        background: var(--bg);
+      }
+      .acts {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 26px;
+      }
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        min-height: 44px;
+        padding: 0 18px;
+        border: 1px solid var(--rule-strong);
+        background: var(--surface);
+        color: var(--text);
+        font-size: 13px;
+        font-weight: 600;
+        white-space: nowrap;
+      }
+      .btn:hover {
+        border-color: var(--text-2);
+        background: var(--raised);
+      }
+      .btn.primary {
+        background: var(--accent);
+        border-color: var(--accent);
+        color: var(--bg);
+        font-weight: 800;
+      }
+      .btn.primary:hover {
+        background: var(--accent-ink);
+        border-color: var(--accent-ink);
+      }
+      .release {
+        margin-top: 16px;
+        font-size: 12px;
+        font-stretch: 87.5%;
+        color: var(--text-2);
+      }
+
+      /* ================= figures ================= */
+      .fig {
+        margin-top: 34px;
+        border: 1px solid var(--rule);
+        background: var(--surface);
+      }
+      .fig:first-child {
+        margin-top: 0;
+      }
+      .fig-bar {
+        display: flex;
+        align-items: stretch;
+        border-bottom: 1px solid var(--rule);
+        font-size: 11px;
+        line-height: 16px;
+        font-stretch: 87.5%;
+        text-transform: uppercase;
+      }
+      .fig-bar > span {
+        padding: 7px 12px;
+        border-left: 1px solid var(--rule);
+        white-space: nowrap;
+      }
+      .fig-bar > .id {
+        border-left: 0;
+        color: var(--accent-ink);
+        font-weight: 800;
+      }
+      .fig-bar > .cap {
+        flex: 1 1 auto;
+        min-width: 0;
+        white-space: normal;
+        color: var(--text);
+      }
+      .fig-bar > .meta {
+        color: var(--text-2);
+      }
+      .fig-body {
+        padding: 18px;
+      }
+      .fig-foot {
+        border-top: 1px solid var(--rule);
+        padding: 8px 12px;
+        font-size: 11px;
+        line-height: 16px;
+        font-stretch: 87.5%;
+        color: var(--text-2);
+      }
+      /* The key to a figure's pins lives inside the figure, under a rule. */
+      .fig-legend {
+        border-top: 1px solid var(--rule);
+        padding: 4px 18px 10px;
+      }
+      .hero-visual {
+        margin-top: 40px;
+      }
+      /* Both views at once: the operator's laptop and the band's phone. */
+      .hero-duo {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 0.235fr);
+        gap: 18px;
+        align-items: end;
+      }
+      .hero-duo figcaption {
+        margin-top: 8px;
+        font-size: 11px;
+        line-height: 16px;
+        font-stretch: 87.5%;
+        color: var(--text-2);
+      }
+      .hero-duo .phone {
+        max-width: none;
+      }
+
+      /* A capture carries numbered pins; the legend below names each one. Pins
+         are inverted blocks, the same idiom the extension uses for "active". */
+      .shot {
+        position: relative;
+        border: 1px solid var(--rule);
+      }
+      .shot img {
+        width: 100%;
+        height: auto;
+      }
+      /* A pin hangs from the top edge of its region, so it never covers the
+         label the legend names. */
+      .pin {
+        position: absolute;
+        left: var(--x);
+        top: var(--y);
+        transform: translate(-50%, calc(-100% - 2px));
+        min-width: 22px;
+        height: 22px;
+        padding: 0 4px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: var(--accent);
+        color: var(--bg);
+        font-size: 12px;
+        line-height: 1;
+        font-weight: 800;
+        outline: 2px solid var(--bg);
+      }
+      /* The Portuguese captures lay the header out wider, so a few pins move. */
+      html[lang='pt-BR'] .pin {
+        left: var(--xp, var(--x));
+      }
+      .pane .fig-body {
+        padding-top: 30px;
+      }
+      /* Beside its label where a region has no free edge above it. */
+      .pin.side {
+        transform: translate(calc(-100% - 4px), -50%);
+      }
+      /* In the empty top-left corner of a card whose label is centred, where
+         the phone's own header leaves no room above. */
+      .pin.in {
+        transform: translate(3px, 3px);
+      }
+      .phone-wrap {
+        display: grid;
+        grid-template-columns: minmax(0, 300px) minmax(0, 1fr);
+        gap: 28px;
+        align-items: start;
+      }
+      .phone {
+        border: 6px solid var(--raised);
+        outline: 1px solid var(--rule-strong);
+        max-width: 300px;
+      }
+      .phone .shot {
+        border: 0;
+      }
+
+      /* ================= tables ================= */
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 12px;
+        line-height: 1.55;
+      }
+      th {
+        text-align: left;
+        font-weight: 600;
+        font-stretch: 87.5%;
+        color: var(--text);
+        text-transform: uppercase;
+        padding: 8px 12px 8px 0;
+        border-bottom: 1px solid var(--rule-strong);
+        white-space: nowrap;
+      }
+      td {
+        padding: 9px 12px 9px 0;
+        border-bottom: 1px solid var(--rule);
+        vertical-align: top;
+      }
+      td.k {
+        color: var(--text);
+        white-space: nowrap;
+      }
+      .legend td:first-child {
+        width: 34px;
+      }
+      .legend .key {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 22px;
+        height: 22px;
+        background: var(--accent);
+        color: var(--bg);
+        font-weight: 800;
+      }
+      .legend td:nth-child(2) {
+        color: var(--text);
+        width: 26%;
+      }
+
+      /* ================= tag badges, drawn with the extension's rules ================= */
+      .b {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3em;
+        border: 1px solid var(--rule);
+        padding: 0.18em 0.4em;
+        font-size: 11px;
+        line-height: 1.25;
+        font-weight: 800;
+        white-space: nowrap;
+        color: var(--text-2);
+      }
+      .b svg {
+        width: 1.05em;
+        height: 1.05em;
+        fill: currentColor;
+        flex: 0 0 auto;
+      }
+      .b-loop {
+        border-color: rgba(189, 145, 255, 0.35);
+        background: var(--loop-soft);
+        color: var(--loop-ink);
+      }
+      .b-stop {
+        border-color: rgba(255, 93, 108, 0.35);
+        background: var(--danger-soft);
+        color: var(--danger-ink);
+      }
+      .b-next {
+        border-color: rgba(115, 169, 255, 0.35);
+        background: var(--info-soft);
+        color: var(--info-ink);
+      }
+      .b-bpm {
+        border-color: rgba(66, 216, 137, 0.35);
+        background: var(--success-soft);
+        color: var(--success-ink);
+      }
+      .b-quiet {
+        border-color: var(--rule-strong);
+      }
+      .b-off {
+        text-decoration: line-through;
+      }
+      .b-jump {
+        border-color: var(--rule-strong);
+        color: var(--text);
+      }
+      .none {
+        color: var(--text-2);
+      }
+
+      /* ================= 2.0 chain ================= */
+      .duo {
+        display: grid;
+        grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.05fr);
+        gap: 34px;
+        align-items: start;
+      }
+      .chain {
+        display: grid;
+        gap: 0;
+      }
+      .node {
+        border: 1px solid var(--rule-strong);
+        background: var(--surface);
+        padding: 12px 14px;
+      }
+      .node .tag {
+        display: inline-block;
+        background: var(--accent);
+        color: var(--bg);
+        font-size: 11px;
+        line-height: 16px;
+        font-weight: 800;
+        padding: 0 6px;
+        margin-bottom: 8px;
+      }
+      .node b {
+        display: block;
+        font-weight: 800;
+        text-transform: uppercase;
+        color: var(--text);
+      }
+      .node span {
+        display: block;
+        font-size: 11px;
+        line-height: 17px;
+        font-stretch: 87.5%;
+        text-transform: uppercase;
+        color: var(--text-2);
+      }
+      .hop {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 0 10px 22px;
+        font-size: 11px;
+        line-height: 16px;
+        font-stretch: 87.5%;
+        text-transform: uppercase;
+        color: var(--text);
+        border-left: 1px solid var(--rule-strong);
+        margin-left: 26px;
+      }
+      .hop i {
+        font-style: normal;
+        color: var(--accent-ink);
+      }
+      .pair {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+      }
+      .dirs {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px 18px;
+        margin-top: 12px;
+        font-size: 11px;
+        font-stretch: 87.5%;
+        text-transform: uppercase;
+        color: var(--text-2);
+      }
+      .dirs i {
+        font-style: normal;
+        color: var(--accent-ink);
+      }
+      .flag {
+        display: flex;
+        gap: 12px;
+        margin-top: 18px;
+        padding: 10px 14px;
+        border: 1px solid var(--rule);
+        border-left: 4px solid var(--danger);
+        font-size: 12px;
+        line-height: 1.6;
+      }
+      .flag b {
+        color: var(--danger-ink);
+        font-weight: 800;
+        white-space: nowrap;
+      }
+
+      /* ================= 3.0 locators: arrangement strip ================= */
+      .arr-scroll {
+        overflow-x: auto;
+        overflow-y: hidden;
+      }
+      .arr {
+        position: relative;
+        min-width: 1000px;
+        height: 178px;
+        font-size: 11px;
+        line-height: 14px;
+        font-stretch: 87.5%;
+      }
+      .arr .ruler {
+        position: absolute;
+        left: 0;
+        right: 0;
+        top: 0;
+        height: 22px;
+        border-bottom: 1px solid var(--rule-strong);
+        background: repeating-linear-gradient(
+          to right,
+          var(--rule-strong) 0 1px,
+          transparent 1px 1.25%
+        );
+        background-size: 100% 6px;
+        background-repeat: no-repeat;
+        background-position: 0 100%;
+      }
+      .arr .bar {
+        position: absolute;
+        top: 3px;
+        transform: translateX(3px);
+        color: var(--text-2);
+        font-size: 11px;
+      }
+      .arr .lane {
+        position: absolute;
+        left: 0;
+        right: 0;
+        height: 26px;
+        border-bottom: 1px solid var(--rule);
+      }
+      .arr .lane.songs {
+        top: 30px;
+      }
+      .arr .lane.sections {
+        top: 62px;
+      }
+      .loc {
+        position: absolute;
+        top: 5px;
+        padding-left: 12px;
+        white-space: nowrap;
+        color: var(--text);
+      }
+      .loc::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 1px;
+        border-left: 7px solid var(--text-2);
+        border-top: 6px solid transparent;
+        border-bottom: 6px solid transparent;
+      }
+      .lane.songs .loc {
+        font-weight: 800;
+      }
+      .loc em {
+        font-style: normal;
+        color: var(--accent-ink);
+      }
+      .arr .clips {
+        position: absolute;
+        left: 0;
+        right: 0;
+        top: 100px;
+        height: 60px;
+      }
+      .clip {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        border: 1px solid var(--rule-strong);
+        background: repeating-linear-gradient(to right, #262626 0 2px, #1d1d1d 2px 5px);
+      }
+      .clip span {
+        position: absolute;
+        left: 6px;
+        top: 4px;
+        color: var(--text-2);
+        font-size: 11px;
+      }
+      .arr .end {
+        position: absolute;
+        top: 22px;
+        bottom: 0;
+        border-left: 1px dashed var(--text-2);
+      }
+      .arr .end span {
+        position: absolute;
+        bottom: 0;
+        right: 6px;
+        white-space: nowrap;
+        color: var(--text-2);
+        font-size: 11px;
+      }
+      .reads {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin: 16px 0;
+        font-size: 11px;
+        font-stretch: 87.5%;
+        text-transform: uppercase;
+        color: var(--text);
+      }
+      .reads::before,
+      .reads::after {
+        content: '';
+        flex: 1 1 auto;
+        border-top: 1px solid var(--rule-strong);
+      }
+      .reads i {
+        font-style: normal;
+        color: var(--accent-ink);
+      }
+
+      /* ================= 3.0 locators: the card the extension draws ================= */
+      .list {
+        border: 1px solid var(--rule);
+        background: var(--bg);
+        padding: 10px;
+        display: grid;
+        gap: 8px;
+      }
+      .list-head {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 2px 2px 6px;
+        border-bottom: 1px solid var(--rule);
+        font-size: 11px;
+        font-weight: 600;
+        font-stretch: 87.5%;
+        text-transform: uppercase;
+        color: var(--text);
+      }
+      .list-head b {
+        color: var(--accent-ink);
+        font-weight: 800;
+      }
+      .song {
+        position: relative;
+        border: 1px solid var(--rule);
+        background: var(--surface);
+        padding: 10px 12px 12px;
+      }
+      .song.now {
+        border-color: var(--accent);
+        background:
+          linear-gradient(90deg, var(--accent-soft), rgba(255, 161, 51, 0) 72%), var(--surface);
+      }
+      .song.now::before {
+        content: '';
+        position: absolute;
+        left: -1px;
+        top: -1px;
+        bottom: -1px;
+        width: 4px;
+        background: var(--accent);
+      }
+      .song-head {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 6px 8px;
+      }
+      .song-no {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 22px;
+        height: 22px;
+        border: 1px solid var(--rule-strong);
+        font-size: 11px;
+        font-weight: 600;
+        color: var(--text-2);
+      }
+      .song.now .song-no {
+        border-color: var(--accent);
+        color: var(--accent-ink);
+      }
+      .song-title {
+        font-weight: 800;
+        color: var(--text);
+        text-transform: uppercase;
+      }
+      .song-time {
+        margin-left: auto;
+        font-weight: 800;
+        color: var(--accent-ink);
+      }
+      .chips {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin-top: 10px;
+      }
+      .chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        border: 1px solid var(--rule);
+        background: var(--raised);
+        padding: 6px 9px;
+        font-size: 11px;
+        line-height: 1.2;
+        font-weight: 800;
+        text-transform: uppercase;
+        color: var(--text-2);
+      }
+      .chip.now {
+        border-color: var(--accent);
+        background: var(--accent-soft);
+        color: var(--accent-ink);
+      }
+
+      /* ================= 3.2 duration ================= */
+      .dur {
+        display: grid;
+        gap: 10px;
+      }
+      .dur-row {
+        display: grid;
+        grid-template-columns: minmax(0, 15rem) minmax(0, 1fr);
+        gap: 14px;
+        align-items: center;
+        font-size: 12px;
+      }
+      .dur-label {
+        color: var(--text);
+      }
+      .dur-label small {
+        display: block;
+        font-size: 11px;
+        color: var(--text-2);
+      }
+      .dur-track {
+        position: relative;
+        height: 26px;
+        background: var(--raised);
+      }
+      .dur-fill {
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 8px;
+        padding: 0 8px;
+        background: var(--text-2);
+        color: var(--bg);
+        font-weight: 800;
+        white-space: nowrap;
+      }
+      .dur-fill.exact {
+        background: var(--display);
+      }
+      .dur-fill.est {
+        background: repeating-linear-gradient(
+          135deg,
+          var(--rule-strong) 0 5px,
+          var(--soft) 5px 10px
+        );
+        color: var(--text);
+        border: 1px solid var(--text-2);
+      }
+      .est-tag {
+        border: 1px solid var(--accent);
+        color: var(--accent-ink);
+        padding: 0 4px;
+        font-size: 11px;
+        line-height: 16px;
+      }
+
+      /* ================= 4.0 views: radio tabs, no script needed ================= */
+      .viewer {
+        border: 0;
+        min-width: 0;
+      }
+      .viewer > input {
+        position: absolute;
+        opacity: 0;
+        pointer-events: none;
+      }
+      .tabs {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0;
+        margin-bottom: 16px;
+      }
+      .tabs label {
+        padding: 10px 16px;
+        margin-left: -1px;
+        border: 1px solid var(--rule-strong);
+        background: var(--surface);
+        color: var(--text);
+        font-size: 12px;
+        line-height: 16px;
+        font-weight: 600;
+        font-stretch: 87.5%;
+        text-transform: uppercase;
+        cursor: pointer;
+        white-space: nowrap;
+      }
+      .tabs label:first-child {
+        margin-left: 0;
+      }
+      .tabs label:hover {
+        background: var(--soft);
+      }
+      .pane {
+        display: none;
+      }
+      #view-stage:checked ~ .tabs label[for='view-stage'],
+      #view-performance:checked ~ .tabs label[for='view-performance'],
+      #view-phone:checked ~ .tabs label[for='view-phone'] {
+        background: var(--accent);
+        border-color: var(--accent);
+        color: var(--bg);
+        font-weight: 800;
+        position: relative;
+        z-index: 1;
+      }
+      #view-stage:focus-visible ~ .tabs label[for='view-stage'],
+      #view-performance:focus-visible ~ .tabs label[for='view-performance'],
+      #view-phone:focus-visible ~ .tabs label[for='view-phone'] {
+        outline: 2px solid var(--accent);
+        outline-offset: 2px;
+        position: relative;
+        z-index: 2;
+      }
+      #view-stage:checked ~ .panes .pane-stage,
+      #view-performance:checked ~ .panes .pane-performance,
+      #view-phone:checked ~ .panes .pane-phone {
+        display: block;
+      }
+      .lrc {
+        font-family: var(--mono);
+        margin-top: 18px;
+        border: 1px solid var(--rule);
+        background: var(--bg);
+        padding: 12px 14px;
+        font-size: 12px;
         line-height: 1.8;
+        color: var(--text-2);
+        white-space: pre-wrap;
       }
-      .install li {
-        margin-bottom: 0.5rem;
+      .lrc span {
+        color: var(--accent-ink);
       }
-      footer {
-        padding: 3rem 2rem 4rem;
-        border-top: 1px solid var(--border);
-        color: var(--muted);
-        font-size: 0.85rem;
+
+      /* ================= 5.0 safety ================= */
+      .hold {
+        display: grid;
+        gap: 14px;
+        font-size: 12px;
+      }
+      .hold-row {
+        display: grid;
+        grid-template-columns: 7.5rem minmax(0, 1fr) 11rem;
+        gap: 14px;
+        align-items: center;
+      }
+      .hold-row > b {
+        font-weight: 800;
+        text-transform: uppercase;
+        font-stretch: 87.5%;
+      }
+      .track {
+        position: relative;
+        height: 22px;
+        background: var(--raised);
+        border: 1px solid var(--rule);
+      }
+      .track .gate {
+        position: absolute;
+        top: -7px;
+        bottom: -7px;
+        left: 62.5%;
+        border-left: 1px dashed var(--accent-ink);
+      }
+      .track .fill {
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        background: var(--text-2);
+      }
+      .track .fill.go {
+        background: var(--accent);
+      }
+      .track .fill.cut {
+        background: repeating-linear-gradient(
+          135deg,
+          var(--rule-strong) 0 4px,
+          var(--soft) 4px 8px
+        );
+      }
+      .track .mark {
+        position: absolute;
+        top: 50%;
+        transform: translate(-50%, -50%);
+        font-size: 11px;
+        line-height: 1;
+        font-weight: 800;
+        color: var(--bg);
+        background: var(--text);
+        padding: 3px 4px;
+      }
+      .outcome {
+        font-stretch: 87.5%;
+        text-transform: uppercase;
+      }
+      .outcome.go {
+        color: var(--accent-ink);
+        font-weight: 800;
+      }
+      .hold-scale {
+        display: grid;
+        grid-template-columns: 7.5rem minmax(0, 1fr) 11rem;
+        gap: 14px;
+        font-size: 11px;
+        color: var(--text-2);
+      }
+      .hold-scale .ticks {
+        position: relative;
+        height: 14px;
+      }
+      .hold-scale .ticks span {
+        position: absolute;
+        transform: translateX(-50%);
+      }
+      .hold-scale .ticks span:first-child {
+        transform: none;
+      }
+      .hold-scale .ticks .g {
+        color: var(--accent-ink);
+        font-weight: 800;
+      }
+
+      /* quantized jump: one row of beats, four bars */
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(16, minmax(0, 1fr));
+        gap: 3px;
+        margin-top: 8px;
+      }
+      .beat {
+        height: 26px;
+        background: var(--raised);
+        border: 1px solid var(--rule);
+      }
+      .beat.down {
+        border-left: 3px solid var(--rule-strong);
+      }
+      .beat.ask {
+        background: var(--text-2);
+      }
+      .beat.land {
+        background: var(--accent);
+        border-color: var(--accent);
+      }
+      .qkey {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px 16px;
+        margin-top: 8px;
+        font-size: 11px;
+        line-height: 16px;
+        font-stretch: 87.5%;
+      }
+      .qkey > span {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .sw {
+        width: 10px;
+        height: 10px;
+        flex: 0 0 auto;
+      }
+      .sw.ask {
+        background: var(--text-2);
+      }
+      .sw.land {
+        background: var(--accent);
+      }
+
+      /* ================= cards ================= */
+      .cards {
+        display: grid;
+        border-top: 1px solid var(--rule);
+        border-left: 1px solid var(--rule);
+      }
+      .cards.c2 {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+      .cards.c3 {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+      .card {
+        display: flex;
+        gap: 12px;
+        padding: 16px;
+        border-right: 1px solid var(--rule);
+        border-bottom: 1px solid var(--rule);
+        background: var(--surface);
+        min-width: 0;
+      }
+      .card .ic {
+        flex: 0 0 22px;
+        width: 22px;
+        height: 22px;
+        color: var(--text-2);
+      }
+      .card .ic svg {
+        width: 22px;
+        height: 22px;
+        display: block;
+      }
+      .card p {
+        font-size: 12px;
+        line-height: 1.65;
+        margin-top: 4px;
+      }
+
+      /* ================= 6.0 install ================= */
+      .install {
+        display: grid;
+        grid-template-columns: minmax(0, 1.25fr) minmax(0, 0.75fr);
+        gap: 34px;
+        align-items: start;
+      }
+      .install > .fig {
+        margin-top: 0;
+      }
+      .steps {
+        list-style: none;
+        counter-reset: step;
+      }
+      .steps li {
+        counter-increment: step;
+        display: grid;
+        grid-template-columns: 44px minmax(0, 1fr);
+        padding: 14px 0;
+        border-bottom: 1px solid var(--rule);
+      }
+      .steps li:first-child {
+        padding-top: 0;
+      }
+      .steps li::before {
+        content: counter(step, decimal-leading-zero);
+        color: var(--accent-ink);
+        font-weight: 800;
+      }
+      .steps p {
+        font-size: 13px;
+        margin-top: 2px;
+      }
+      /* the Live panel, drawn for this sheet */
+      .panel {
+        border: 1px solid var(--rule-strong);
+        background: var(--surface);
+        font-size: 11px;
+        line-height: 16px;
+        font-stretch: 87.5%;
+      }
+      .panel-head {
+        display: flex;
+        justify-content: space-between;
+        padding: 8px 10px;
+        border-bottom: 1px solid var(--rule);
+        color: var(--text);
+        font-weight: 800;
+        text-transform: uppercase;
+      }
+      .panel-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 7px 10px;
+        border-bottom: 1px solid var(--rule);
+        color: var(--text-2);
+      }
+      .dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: var(--success);
+        flex: 0 0 auto;
+      }
+      .panel-row b {
+        color: var(--success-ink);
+        font-weight: 800;
+        text-transform: uppercase;
+      }
+      .qrs {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+        padding: 10px;
+        border-bottom: 1px solid var(--rule);
+      }
+      .qr {
         text-align: center;
+        color: var(--text);
+        text-transform: uppercase;
+        font-weight: 600;
       }
-      footer p {
-        margin: 0.25rem 0;
+      /* Schematic, not a scannable code: three finder squares and a hatch. */
+      .qr i {
+        display: block;
+        aspect-ratio: 1;
+        margin-bottom: 6px;
+        border: 6px solid var(--bg);
+        background:
+          radial-gradient(circle at 50% 50%, transparent 0, transparent 0),
+          conic-gradient(from 0deg, var(--text) 0 25%, var(--bg) 0 50%) 0 0 / 9px 9px;
+        position: relative;
+        opacity: 0.85;
       }
-      @media (max-width: 720px) {
-        .nav {
-          flex-wrap: wrap;
-          padding: 1rem;
+      .qr i::before,
+      .qr i::after {
+        content: '';
+        position: absolute;
+        width: 30%;
+        aspect-ratio: 1;
+        border: 4px solid var(--text);
+        background: var(--bg);
+        box-shadow:
+          inset 0 0 0 4px var(--bg),
+          inset 0 0 0 20px var(--text);
+      }
+      .qr i::before {
+        left: 0;
+        top: 0;
+      }
+      .qr i::after {
+        right: 0;
+        top: 0;
+      }
+      .qr small {
+        font-size: 11px;
+        display: block;
+        color: var(--text-2);
+        font-weight: 400;
+        text-transform: none;
+      }
+      .panel-btns {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 6px;
+        padding: 10px;
+      }
+      .panel-btns span {
+        border: 1px solid var(--rule-strong);
+        text-align: center;
+        padding: 5px 0;
+        color: var(--text);
+        text-transform: uppercase;
+        font-weight: 600;
+      }
+      .panel-btns span.on {
+        background: var(--accent);
+        border-color: var(--accent);
+        color: var(--bg);
+        font-weight: 800;
+      }
+
+      /* ================= 8.0 docs ================= */
+      .docs {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        border-top: 1px solid var(--rule);
+        border-left: 1px solid var(--rule);
+      }
+      .doc {
+        padding: 14px 16px;
+        border-right: 1px solid var(--rule);
+        border-bottom: 1px solid var(--rule);
+        background: var(--surface);
+      }
+      .doc div {
+        color: var(--text);
+        font-weight: 600;
+        font-size: 12px;
+        text-transform: uppercase;
+        font-stretch: 87.5%;
+        margin-bottom: 4px;
+      }
+      .doc a {
+        font-size: 12px;
+      }
+
+      /* ================= colophon ================= */
+      .colophon {
+        border-top: 1px solid var(--rule-strong);
+        padding: 22px 0 48px;
+        display: grid;
+        gap: 6px;
+        font-size: 12px;
+        line-height: 1.6;
+      }
+      .colophon .line {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px 18px;
+      }
+
+      @media (max-width: 1040px) {
+        .arr-hint {
+          display: block;
         }
-        .nav__links {
-          margin-left: 0;
+      }
+      @media (max-width: 1000px) {
+        .duo,
+        .install {
+          grid-template-columns: minmax(0, 1fr);
+        }
+        .install > .fig {
+          margin-top: 28px;
+        }
+        .cards.c3,
+        .docs {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+      }
+      @media (max-width: 760px) {
+        .sec {
+          grid-template-columns: minmax(0, 1fr);
+        }
+        .sec > .n {
+          color: var(--accent-ink);
+        }
+        .mast .grow {
+          padding: 0;
+          border-left: 0;
+        }
+        .tabs {
+          padding-top: 1px;
+        }
+        .tabs label {
+          flex: 1 1 40%;
+          text-align: center;
+          margin-top: -1px;
+        }
+        .hero-duo {
+          grid-template-columns: minmax(0, 1fr);
+        }
+        .hero-duo > figure:last-child {
+          width: 62%;
+          margin: 0 auto;
+        }
+        .sec > .n {
+          padding: 34px 0 0;
+          font-size: 14px;
+          line-height: 20px;
+        }
+        .sec > .c {
+          padding-top: 8px;
+        }
+        .mast .req {
+          display: none;
+        }
+        .cards.c2,
+        .cards.c3,
+        .docs {
+          grid-template-columns: minmax(0, 1fr);
+        }
+        .phone-wrap {
+          grid-template-columns: minmax(0, 1fr);
+        }
+        .phone {
+          margin: 0 auto;
           width: 100%;
-          flex-wrap: wrap;
+          max-width: 280px;
         }
-        .workflow {
-          grid-template-columns: 1fr;
+        .dur-row,
+        .hold-row,
+        .hold-scale {
+          grid-template-columns: minmax(0, 1fr);
+          gap: 6px;
+        }
+        .hold-scale > span {
+          display: none;
+        }
+        .pair {
+          grid-template-columns: minmax(0, 1fr);
+        }
+        /* A three-column table in a wide mono face does not fit a phone: each
+           row becomes a key line with its description underneath. */
+        table.stack thead {
+          position: absolute;
+          width: 1px;
+          height: 1px;
+          overflow: hidden;
+          clip: rect(0 0 0 0);
+        }
+        table.stack,
+        table.stack tbody {
+          display: block;
+        }
+        table.stack tr {
+          display: grid;
+          grid-template-columns: auto minmax(0, 1fr);
+          gap: 4px 12px;
+          padding: 10px 0;
+          border-bottom: 1px solid var(--rule);
+        }
+        table.stack td {
+          display: block;
+          width: auto !important;
+          padding: 0;
+          border: 0;
+        }
+        table.stack td:nth-child(3) {
+          grid-column: 1 / -1;
+        }
+        table.stack.tags td:nth-child(2) {
+          order: 3;
+          grid-column: 1 / -1;
+        }
+        table.stack.tags td:nth-child(3) {
+          order: 2;
+          grid-column: auto;
+        }
+        .pin {
+          min-width: 16px;
+          height: 16px;
+          font-size: 10px;
+          padding: 0 2px;
+        }
+        .fig-bar .meta {
+          display: none;
+        }
+        .fig-body {
+          padding: 12px;
+        }
+        .why,
+        .lede {
+          font-size: 15px;
+        }
+      }
+      @media (max-width: 400px) {
+        .mast > .ver {
+          display: none;
+        }
+      }
+      /* On a landscape phone the pinned header would take a quarter of the
+         screen and hide whatever has focus. */
+      @media (max-height: 500px) {
+        .stick {
+          position: static;
+        }
+        html {
+          scroll-padding-top: 16px;
+        }
+      }
+      @media (forced-colors: active) {
+        .nav a[aria-current='true'] {
+          border-bottom-color: Highlight;
+        }
+        #view-stage:checked ~ .tabs label[for='view-stage'],
+        #view-performance:checked ~ .tabs label[for='view-performance'],
+        #view-phone:checked ~ .tabs label[for='view-phone'] {
+          forced-color-adjust: none;
+          background: Highlight;
+          color: HighlightText;
+          border-color: Highlight;
+        }
+        .song.now::before {
+          background: Highlight;
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        * {
+          transition: none !important;
         }
       }
     </style>
   </head>
   <body>
-    <a class="skip" href="#content">Skip to content</a>
-    <nav class="nav" aria-label="Primary navigation">
-      <a class="nav__brand" href="#content">RC <span>Setlist</span></a>
-      <div class="nav__links">
-        <a href="#principles">Product</a>
-        <a href="#workflow">Workflow</a>
-        <a href="#install">Install</a>
-        <a href="./USER-GUIDE.md">Docs</a>
-        <a href="https://github.com/ntworm/rc-setlist">Source</a>
+    <a class="skip" href="#main" data-i18n="skip">Skip to content</a>
+
+    <!-- Glyphs: 24px grid, currentColor, square ends. The tag glyphs are the ones
+         static/setlist/setlist.js draws on the badges. -->
+    <svg width="0" height="0" style="position: absolute" aria-hidden="true" focusable="false">
+      <symbol id="i-loop" viewBox="0 0 24 24">
+        <path d="M12 5V2L8 6l4 4V7a5 5 0 1 1-5 5H5a7 7 0 1 0 7-7Z" />
+      </symbol>
+      <symbol id="i-stop" viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" /></symbol>
+      <symbol id="i-next" viewBox="0 0 24 24"><path d="M5 5v14l9-7-9-7Zm11 0h3v14h-3V5Z" /></symbol>
+      <symbol id="i-beat" viewBox="0 0 24 24">
+        <path d="M14 3v10.6a3.4 3.4 0 1 0 2 3.1V7h3V3h-5Z" />
+      </symbol>
+      <symbol id="i-skip" viewBox="0 0 24 24"><path d="M4 5v14l8-7-8-7Zm9 0v14l8-7-8-7Z" /></symbol>
+      <symbol id="i-click" viewBox="0 0 24 24"><path d="M12 2 4 20h3l5-11 5 11h3L12 2Z" /></symbol>
+      <symbol id="g-hold" viewBox="0 0 24 24">
+        <g fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="3" y="3" width="18" height="18" />
+          <path d="M12 7v5h4" />
+        </g>
+      </symbol>
+      <symbol id="g-grid" viewBox="0 0 24 24">
+        <g fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M2 18h20M6 18V8M12 18V4M18 18V8" />
+        </g>
+      </symbol>
+      <symbol id="g-count" viewBox="0 0 24 24">
+        <g fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="2" y="7" width="4" height="10" />
+          <rect x="8" y="7" width="4" height="10" />
+          <rect x="14" y="7" width="4" height="10" />
+        </g>
+        <path d="M20 7h2v10h-2z" fill="currentColor" />
+      </symbol>
+      <symbol id="g-lock" viewBox="0 0 24 24">
+        <g fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="4" y="10" width="16" height="11" />
+          <path d="M8 10V7a4 4 0 0 1 8 0v3" />
+        </g>
+      </symbol>
+      <symbol id="g-live" viewBox="0 0 24 24">
+        <g fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="3" y="4" width="18" height="14" />
+          <path d="M3 9h18M8 21h8" />
+        </g>
+      </symbol>
+      <symbol id="g-plug" viewBox="0 0 24 24">
+        <g fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M8 2v6M16 2v6M5 8h14v4a7 7 0 0 1-14 0V8ZM12 19v3" />
+        </g>
+      </symbol>
+      <symbol id="g-song" viewBox="0 0 24 24">
+        <g fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M3 6h18M3 12h12M3 18h8" />
+        </g>
+      </symbol>
+      <symbol id="g-net" viewBox="0 0 24 24">
+        <g fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="2" y="14" width="6" height="7" />
+          <rect x="16" y="14" width="6" height="7" />
+          <path d="M5 14V8h14v6" />
+          <rect x="9" y="2" width="6" height="6" />
+        </g>
+      </symbol>
+      <symbol id="g-key" viewBox="0 0 24 24">
+        <g fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="3" y="9" width="8" height="8" />
+          <path d="M11 13h10M17 13v4M21 13v3" />
+        </g>
+      </symbol>
+      <symbol id="g-phone" viewBox="0 0 24 24">
+        <g fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="6" y="2" width="12" height="20" />
+          <path d="M10 18h4" />
+        </g>
+      </symbol>
+      <symbol id="g-osc" viewBox="0 0 24 24">
+        <g fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M2 16h4V8h4v10h4V8h4v8h4" />
+        </g>
+      </symbol>
+      <symbol id="g-mute" viewBox="0 0 24 24">
+        <g fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M3 9h4l5-4v14l-5-4H3z" />
+          <path d="M16 9l5 6M21 9l-5 6" />
+        </g>
+      </symbol>
+      <symbol id="g-cloud" viewBox="0 0 24 24">
+        <g fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M6 18h11a4 4 0 0 0 0-8 6 6 0 0 0-11.5 1.5A3.3 3.3 0 0 0 6 18Z" />
+          <path d="M3 3l18 18" />
+        </g>
+      </symbol>
+      <symbol id="g-law" viewBox="0 0 24 24">
+        <g fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="4" y="2" width="16" height="20" />
+          <path d="M8 7h8M8 11h8M8 15h5" />
+        </g>
+      </symbol>
+      <symbol id="g-session" viewBox="0 0 24 24">
+        <g fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="3" y="3" width="7" height="7" />
+          <rect x="14" y="3" width="7" height="7" />
+          <rect x="3" y="14" width="7" height="7" />
+          <rect x="14" y="14" width="7" height="7" />
+        </g>
+      </symbol>
+    </svg>
+
+    <div class="sheet">
+      <!-- ===================== MASTHEAD + NAV, both pinned ===================== -->
+      <div class="stick">
+        <header class="mast">
+          <span class="brand">RC Setlist</span>
+          <span class="ver">v1.0.0</span>
+          <span class="req" data-i18n="top.req">Live 12.4.5+ Suite</span>
+          <span class="grow"></span>
+          <label class="lang">
+            <span class="sr-only" data-i18n="top.language">Language</span>
+            <select id="languageSelect">
+              <option value="en">EN · English</option>
+              <option value="pt-BR">PT · Português</option>
+            </select>
+          </label>
+        </header>
+        <nav class="nav" aria-label="Sections" data-i18n-aria="top.navAria">
+          <a href="#about" data-i18n="nav.about">About</a>
+          <a href="#chain" data-i18n="nav.chain">Chain</a>
+          <a href="#locators" data-i18n="nav.locators">Locators</a>
+          <a href="#views" data-i18n="nav.views">Two views</a>
+          <a href="#safety" data-i18n="nav.safety">Safety</a>
+          <a href="#install" data-i18n="nav.install">Install</a>
+          <a href="#trouble" data-i18n="nav.trouble">When it fails</a>
+          <a href="#docs" data-i18n="nav.docs">Docs</a>
+        </nav>
       </div>
-      <select class="nav__lang" id="languageSelect" aria-label="Language">
-        <option value="en">English</option>
-        <option value="pt-BR">Português (Brasil)</option>
-      </select>
-    </nav>
 
-    <header class="hero" id="content">
-      <span class="hero__eyebrow" data-i18n="heroEyebrow"
-        >Release 1.0.0 · Ableton Live extension</span
-      >
-      <h1 data-i18n="title">RC Setlist — your Ableton Live setlist on stage</h1>
-      <p class="hero__lede" data-i18n="heroLede">
-        Turn Arrangement locators into a real operator setlist, synchronized lyric display and
-        guarded stage controls — running locally between Ableton Live and your browser.
-      </p>
-      <p class="hero__tagline">
-        <span data-i18n="fromLocators">From locators</span>
-        <span data-i18n="toStage">to stage.</span>
-      </p>
-      <div class="hero-visual">
-        <img src="./media/en/workflow.png" alt="Workflow diagram" data-i18n-attr="heroAlt" />
-      </div>
-      <div class="hero__ctas">
-        <a
-          class="btn btn--accent"
-          id="download"
-          href="https://github.com/ntworm/rc-setlist/releases/latest"
-          data-i18n="download"
-          >Download .ablx</a
-        >
-        <a class="btn btn--ghost" id="documentation" href="./USER-GUIDE.md" data-i18n="readDocs"
-          >Read the docs</a
-        >
-        <a class="btn btn--ghost" id="whatsnew" href="./RELEASE-NOTES-1.0.0.md"
-          >What is new in 1.0.0</a
-        >
-        <span class="hero__hint"
-          >Release notes source: <code>docs/RELEASE-NOTES-1.0.0.md</code></span
-        >
-        <a class="btn btn--ghost" id="source" href="https://github.com/ntworm/rc-setlist"
-          >Source on GitHub</a
-        >
-      </div>
-    </header>
+      <main id="main">
+        <!-- ===================== 1.0 WHAT IT IS ===================== -->
+        <section class="sec" id="about" aria-labelledby="about-title">
+          <div class="n">1.0</div>
+          <div class="c">
+            <h1 id="about-title"><span class="rc">RC</span> Setlist</h1>
+            <p class="lede" data-i18n="about.lede">
+              Your Arrangement locators become the show: a setlist for whoever runs it, a stage
+              display for whoever plays it. Live keeps the clock; the browser reads it.
+            </p>
+            <ul class="spec">
+              <li data-i18n="about.spec1">Live 12.4.5+ Suite (Beta)</li>
+              <li data-i18n="about.spec2">RC Bridge included</li>
+              <li data-i18n="about.spec3">Any browser on your network</li>
+              <li data-i18n="about.spec4">No account · no telemetry</li>
+            </ul>
+            <div class="acts">
+              <a
+                class="btn primary"
+                id="download"
+                href="https://github.com/ntworm/rc-setlist/releases/latest"
+                data-i18n="about.download"
+                >Download .ablx</a
+              >
+              <a
+                class="btn"
+                id="documentation"
+                href="https://github.com/ntworm/rc-setlist/blob/main/docs/README.md"
+                data-href-pt-br="./pt-BR/README.html"
+                data-i18n="about.docs"
+                >Read the docs</a
+              >
+              <a
+                class="btn"
+                id="whatsnew"
+                href="https://github.com/ntworm/rc-setlist/blob/main/docs/RELEASE-NOTES-1.0.0.md"
+                data-href-pt-br="./pt-BR/NOTAS-DA-VERSAO-1.0.0.html"
+                data-i18n="about.new"
+                >What is new in 1.0.0</a
+              >
+              <a
+                class="btn"
+                id="source"
+                href="https://github.com/ntworm/rc-setlist"
+                data-i18n="about.source"
+                >Source</a
+              >
+            </div>
+            <p class="release" data-i18n-html="about.release">
+              Release 1.0.0&nbsp;· source-available under PolyForm Noncommercial 1.0.0&nbsp;·
+              English and Português (Brasil) in the same package
+            </p>
 
-    <section id="principles" aria-label="Product principles">
-      <span class="eyebrow">Product truth</span>
-      <h2>Real interfaces · neutral demo data</h2>
-      <p class="lede">
-        The product stays anchored to Ableton Live. The browser gives the operator and performer the
-        information each one needs without inventing a second timeline.
-      </p>
-      <div class="principles">
-        <div class="principle">
-          <div class="principle__label">01 · LOCAL FIRST</div>
-          <h3>Live ↔ browser on your trusted LAN</h3>
-          <p>
-            HTTPS + token on your own machine. No cloud relay, no analytics, no third-party service.
-          </p>
-        </div>
-        <div class="principle">
-          <div class="principle__label">02 · TWO REAL VIEWS</div>
-          <h3>Stage Control + Performance display</h3>
-          <p>
-            The operator drives the show. The performer reads the next cue, lyrics and timecode.
-          </p>
-        </div>
-        <div class="principle">
-          <div class="principle__label">03 · ONE .ABLX</div>
-          <h3>Install through Ableton Live</h3>
-          <p>
-            Drop the .ablx into Live's Packages folder. No separate installer, no second process.
-          </p>
-        </div>
-        <div class="principle">
-          <div class="principle__label">04 · NO TELEMETRY</div>
-          <h3>Your show data stays local</h3>
-          <p>
-            Profiles, lyrics and song book live under your Ableton storage. Nothing leaves your
-            network.
-          </p>
-        </div>
-      </div>
-    </section>
+            <figure class="fig hero-visual">
+              <figcaption class="fig-bar">
+                <span class="id">Fig. 1</span>
+                <span class="cap" data-i18n="about.figCap">The two views, as shipped</span>
+                <span class="meta" data-i18n="about.figMeta"
+                  >Real captures · neutral demo data</span
+                >
+              </figcaption>
+              <div class="fig-body hero-duo">
+                <figure>
+                  <img
+                    class="hero-stage"
+                    src="./media/en/stage-control.png"
+                    data-site-image="stage-control.png"
+                    width="1600"
+                    height="900"
+                    alt="Stage Control: a five-song setlist with section chips and tag badges, song three highlighted as active, show state, quantization, click and the transport."
+                    data-i18n-alt="about.figAlt"
+                  />
+                  <figcaption data-i18n="about.figStage">
+                    Stage Control, on the operator's laptop
+                  </figcaption>
+                </figure>
+                <figure>
+                  <div class="phone">
+                    <img
+                      class="hero-phone"
+                      src="./media/en/performance-phone.png"
+                      data-site-image="performance-phone.png"
+                      width="860"
+                      height="1864"
+                      alt="Performance on a phone: current song and section, lyrics, timecode, bar and BPM."
+                      data-i18n-alt="about.figPhoneAlt"
+                    />
+                  </div>
+                  <figcaption data-i18n="about.figPhone">
+                    Performance, on the band's phone
+                  </figcaption>
+                </figure>
+              </div>
+            </figure>
+          </div>
+        </section>
 
-    <section id="showcase" aria-label="The shipped interface">
-      <span class="eyebrow">The shipped interface</span>
-      <h2>See the show. Run the set.</h2>
-      <p class="lede">
-        Three captures from the real extension. Neutral demo data; no fictional dashboard metrics
-        and no show content bundled with the .ablx.
-      </p>
-      <div class="gallery">
-        <figure>
-          <img
-            src="./media/en/performance.png"
-            data-site-image="performance.png"
-            alt="Performance interface showing current and next song, section, lyrics, timecode, bar, BPM and click"
-          />
-          <figcaption>
-            Performance display — high-contrast show state, current and next cues, synchronized
-            lyrics, timecode, bar, tempo and click.
-          </figcaption>
-        </figure>
-        <figure>
-          <img
-            src="./media/en/stage-control.png"
-            data-site-image="stage-control.png"
-            alt="Stage Control interface showing the setlist, section controls, show state and transport"
-          />
-          <figcaption>
-            Stage Control — song and section navigation, guarded transport, quantization, click,
-            refresh, tools, lock and live feedback.
-          </figcaption>
-        </figure>
-        <figure>
-          <img
-            src="./media/en/workflow.png"
-            data-site-image="workflow.png"
-            alt="From locators to stage workflow: mark the Arrangement, conduct the set and read the show"
-          />
-          <figcaption>
-            From locators to stage — mark the Arrangement, conduct the set, read the show.
-          </figcaption>
-        </figure>
-      </div>
-    </section>
+        <!-- ===================== 2.0 SIGNAL CHAIN ===================== -->
+        <section class="sec" id="chain" aria-labelledby="chain-title">
+          <div class="n">2.0</div>
+          <div class="c">
+            <h2 id="chain-title" data-i18n-html="chain.title">
+              Signal chain <span class="tail">— Live owns the time</span>
+            </h2>
+            <p class="why" data-i18n="chain.why">
+              Live plays; RC Setlist reads its position and asks it to move; the browsers show only
+              what Live confirmed.
+            </p>
+            <div class="duo">
+              <div>
+                <div class="chain">
+                  <div class="node">
+                    <span class="tag">NODE 0</span>
+                    <b>Ableton Live 12.4.5+</b>
+                    <span data-i18n="chain.node0">Arrangement · locators · transport · tempo</span>
+                  </div>
+                  <div class="hop">
+                    <i>▼▲</i> <span>RC Bridge · OSC 11020 · Extensions SDK</span>
+                  </div>
+                  <div class="node">
+                    <span class="tag">NODE 1</span>
+                    <b>RC Setlist v1.0.0</b>
+                    <span data-i18n="chain.node1">Parser · jump scheduler · profiles · lyrics</span>
+                  </div>
+                  <div class="hop">
+                    <i>▼▲</i>
+                    <span data-i18n="chain.hop2">HTTPS · WebSocket · port 4444 · token</span>
+                  </div>
+                  <div class="pair">
+                    <div class="node">
+                      <span class="tag">NODE 2</span>
+                      <b>/setlist</b>
+                      <span data-i18n="chain.node2">Stage Control · operator</span>
+                    </div>
+                    <div class="node">
+                      <span class="tag">NODE 3</span>
+                      <b>/performance</b>
+                      <span data-i18n="chain.node3">Performance · band · read-only</span>
+                    </div>
+                  </div>
+                </div>
+                <div class="dirs">
+                  <span data-i18n-html="chain.down"><i>▼</i> Commands, outbound</span>
+                  <span data-i18n-html="chain.up"><i>▲</i> State, inbound</span>
+                </div>
+              </div>
+              <div>
+                <h3>
+                  <span class="num">2.1</span>
+                  <span data-i18n="chain.needTitle">What you need</span>
+                </h3>
+                <div class="scroll">
+                  <table class="stack">
+                    <thead>
+                      <tr>
+                        <th data-i18n="chain.thPiece">Piece</th>
+                        <th data-i18n="chain.thWhere">Where</th>
+                        <th data-i18n="chain.thRole">Role</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td class="k">Live 12.4.5+ Suite (Beta)</td>
+                        <td data-i18n="chain.liveWhere">The computer</td>
+                        <td data-i18n="chain.liveRole">
+                          Hosts the extension. The Arrangement is the source of truth.
+                        </td>
+                      </tr>
+                      <tr>
+                        <td class="k">RC Bridge</td>
+                        <td data-i18n="chain.bridgeWhere">Live, as a Control Surface</td>
+                        <td data-i18n="chain.bridgeRole">
+                          Transport, jumps and song position. Ships in the kit; a stock AbletonOSC
+                          also works.
+                        </td>
+                      </tr>
+                      <tr>
+                        <td class="k" data-i18n="chain.browser">A browser</td>
+                        <td data-i18n="chain.browserWhere">Laptop, tablet or phone</td>
+                        <td data-i18n="chain.browserRole">
+                          Opens both views from a link or QR code. Nothing to install.
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+                <div class="flag">
+                  <b data-i18n="chain.lanTag">LAN ONLY</b>
+                  <span data-i18n="chain.lan"
+                    >Keep the controller link private and never expose port 4444 to the
+                    internet.</span
+                  >
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
 
-    <section id="workflow" aria-label="Workflow">
-      <span class="eyebrow">Three-step workflow</span>
-      <h2>From locators to stage.</h2>
-      <p class="lede">
-        Write the show structure once in Arrangement with automation tags. RC Setlist turns that
-        structure into operator and performer views.
-      </p>
-      <div class="workflow">
-        <div class="step">
-          <span class="step__num">01 · MARK</span>
-          <h3>Set up locators in Arrangement</h3>
-          <p>
-            Drop `[stop]`, `[next]`, `[bpm]`, `[loop]`, `[click]` markers on the timeline. RC
-            Setlist reads them as you build the Set.
-          </p>
+        <!-- ===================== 3.0 LOCATORS ===================== -->
+        <section class="sec" id="locators" aria-labelledby="locators-title">
+          <div class="n">3.0</div>
+          <div class="c">
+            <h2 id="locators-title" data-i18n-html="loc.title">
+              Locators <span class="tail">— from Arrangement to stage</span>
+            </h2>
+            <p class="why" data-i18n="loc.why">
+              Name the locators once. Songs, sections and tags come straight from the Arrangement,
+              and nothing hidden is written into your project.
+            </p>
+
+            <figure class="fig">
+              <figcaption class="fig-bar">
+                <span class="id">Fig. 2</span>
+                <span class="cap" data-i18n="loc.figCap"
+                  >What you type in Live, what the operator sees</span
+                >
+                <span class="meta" data-i18n="loc.figMeta">Drawn for this sheet</span>
+              </figcaption>
+              <div class="fig-body">
+                <p class="h4" data-i18n="loc.inLive">In Live — Arrangement locators</p>
+                <p class="arr-hint" data-i18n="loc.scrollHint">
+                  Swipe the drawing sideways to see the whole set.
+                </p>
+                <div
+                  class="arr-scroll"
+                  tabindex="0"
+                  role="region"
+                  aria-label="Arrangement locators"
+                  data-i18n-aria="loc.inLive"
+                >
+                  <div class="arr" style="margin-top: 10px">
+                    <div class="ruler" aria-hidden="true">
+                      <span class="bar" style="left: 0%">1</span>
+                      <span class="bar" style="left: 10%">9</span>
+                      <span class="bar" style="left: 20%">17</span>
+                      <span class="bar" style="left: 30%">25</span>
+                      <span class="bar" style="left: 40%">33</span>
+                      <span class="bar" style="left: 50%">41</span>
+                      <span class="bar" style="left: 60%">49</span>
+                      <span class="bar" style="left: 70%">57</span>
+                      <span class="bar" style="left: 80%">65</span>
+                      <span class="bar" style="left: 90%">73</span>
+                    </div>
+                    <div class="lane songs">
+                      <span class="loc" style="left: 0%">Song A <em>[bpm 120] [click]</em></span>
+                      <span class="loc" style="left: 50%">Song B <em>[bpm 96]</em></span>
+                    </div>
+                    <div class="lane sections">
+                      <span class="loc" style="left: 0%">&gt; Intro</span>
+                      <span class="loc" style="left: 10%">&gt; Verse</span>
+                      <span class="loc" style="left: 20%">&gt; Chorus <em>[loop 2x]</em></span>
+                      <span class="loc" style="left: 35%">&gt; End <em>[next]</em></span>
+                      <span class="loc" style="left: 50%">&gt; Intro</span>
+                      <span class="loc" style="left: 60%">&gt; Verse</span>
+                      <span class="loc" style="left: 75%">&gt; Chorus</span>
+                      <span class="loc" style="left: 85%">&gt; Outro <em>[stop]</em></span>
+                    </div>
+                    <div class="clips" aria-hidden="true">
+                      <div class="clip" style="left: 0%; width: 35%"><span>Song A</span></div>
+                      <div class="clip" style="left: 50%; width: 46%"><span>Song B</span></div>
+                    </div>
+                    <div class="end" style="left: 100%" aria-hidden="true">
+                      <span data-i18n="loc.end">Arrangement end · bar 81</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="reads">
+                  <i>▼</i> <span data-i18n="loc.reads">RC Setlist reads</span>
+                </div>
+
+                <p class="h4" data-i18n="loc.inStage">In Stage Control — the cards it draws</p>
+                <div class="list" style="margin-top: 10px">
+                  <div class="list-head">
+                    <span data-i18n="loc.songs">Songs in project</span>
+                    <span><span data-i18n="loc.total">Total duration</span> <b>3:00</b></span>
+                  </div>
+                  <div class="song now">
+                    <div class="song-head">
+                      <span class="song-no">1</span>
+                      <span class="song-title">Song A</span>
+                      <span class="b b-bpm"
+                        ><svg aria-hidden="true"><use href="#i-beat" /></svg>120 BPM</span
+                      >
+                      <span class="b b-quiet"
+                        ><svg aria-hidden="true"><use href="#i-click" /></svg>CLICK</span
+                      >
+                      <span class="song-time">1:20</span>
+                    </div>
+                    <div class="chips">
+                      <span class="chip">Intro</span>
+                      <span class="chip">Verse</span>
+                      <span class="chip now"
+                        >Chorus
+                        <span class="b b-loop"
+                          ><svg aria-hidden="true"><use href="#i-loop" /></svg>LOOP 2x</span
+                        ></span
+                      >
+                      <span class="chip"
+                        >End
+                        <span class="b b-next"
+                          ><svg aria-hidden="true"><use href="#i-next" /></svg>NEXT</span
+                        ></span
+                      >
+                    </div>
+                  </div>
+                  <div class="song">
+                    <div class="song-head">
+                      <span class="song-no">2</span>
+                      <span class="song-title">Song B</span>
+                      <span class="b b-bpm"
+                        ><svg aria-hidden="true"><use href="#i-beat" /></svg>96 BPM</span
+                      >
+                      <span class="song-time">1:40</span>
+                    </div>
+                    <div class="chips">
+                      <span class="chip">Intro</span>
+                      <span class="chip">Verse</span>
+                      <span class="chip">Chorus</span>
+                      <span class="chip"
+                        >Outro
+                        <span class="b b-stop"
+                          ><svg aria-hidden="true"><use href="#i-stop" /></svg>STOP</span
+                        ></span
+                      >
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="fig-foot" data-i18n="loc.figFoot">
+                A song runs to the next song locator, gap included: 40 bars at 120 BPM is 1:20.
+                [next] skips the empty bars.
+              </div>
+            </figure>
+
+            <h3><span class="num">3.1</span> <span data-i18n="loc.tagsTitle">Tag grammar</span></h3>
+            <div class="scroll">
+              <table class="stack tags">
+                <thead>
+                  <tr>
+                    <th data-i18n="loc.thTag">In the locator</th>
+                    <th data-i18n="loc.thDoes">What happens</th>
+                    <th data-i18n="loc.thCard">On the card</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td class="k"><code>[bpm 120]</code></td>
+                    <td data-i18n="loc.tBpm">Declares the tempo. Durations become exact.</td>
+                    <td>
+                      <span class="b b-bpm"
+                        ><svg aria-hidden="true"><use href="#i-beat" /></svg>120 BPM</span
+                      >
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="k"><code>[click]</code> <code>[click off]</code></td>
+                    <td data-i18n="loc.tClick">Turns Live's metronome on or off at the marker.</td>
+                    <td>
+                      <span class="b b-quiet"
+                        ><svg aria-hidden="true"><use href="#i-click" /></svg>CLICK</span
+                      >
+                      <span class="b b-quiet b-off"
+                        ><svg aria-hidden="true"><use href="#i-click" /></svg>CLICK OFF</span
+                      >
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="k"><code>[loop]</code> <code>[loop 2x]</code></td>
+                    <td data-i18n="loc.tLoop">Loops the section until released, or N times.</td>
+                    <td>
+                      <span class="b b-loop"
+                        ><svg aria-hidden="true"><use href="#i-loop" /></svg>LOOP 2x</span
+                      >
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="k"><code>[next]</code></td>
+                    <td data-i18n="loc.tNext">
+                      Hands playback to the next song the moment the marker is crossed.
+                    </td>
+                    <td>
+                      <span class="b b-next"
+                        ><svg aria-hidden="true"><use href="#i-next" /></svg>NEXT</span
+                      >
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="k"><code>[stop]</code></td>
+                    <td data-i18n="loc.tStop">Stops the transport at the marker.</td>
+                    <td>
+                      <span class="b b-stop"
+                        ><svg aria-hidden="true"><use href="#i-stop" /></svg>STOP</span
+                      >
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="k"><code>[skip]</code></td>
+                    <td data-i18n="loc.tSkip">Passes over this song or section.</td>
+                    <td>
+                      <span class="b b-quiet"
+                        ><svg aria-hidden="true"><use href="#i-skip" /></svg>SKIP</span
+                      >
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="k"><code>[jump Chorus]</code></td>
+                    <td data-i18n="loc.tJump">Hands playback to a named song or section.</td>
+                    <td>
+                      <span class="b b-jump"
+                        ><svg aria-hidden="true"><use href="#i-next" /></svg>JUMP → Chorus</span
+                      >
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="k"><code>[hidden]</code></td>
+                    <td data-i18n="loc.tHidden">Keeps an automation anchor off the setlist.</td>
+                    <td class="none">—</td>
+                  </tr>
+                  <tr>
+                    <td class="k"><code>[ignore]</code></td>
+                    <td data-i18n="loc.tIgnore">
+                      A technical marker: hidden, and its tags do nothing.
+                    </td>
+                    <td class="none">—</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <p class="note" data-i18n="loc.tagsNote">
+              Tags are case-insensitive and vanish from the displayed name. Except [hidden] and
+              [ignore], you never type them: double-click a song or section in Stage Control and
+              each tag is a control.
+            </p>
+
+            <h3><span class="num">3.2</span> <span data-i18n="loc.durTitle">Set duration</span></h3>
+            <figure class="fig">
+              <figcaption class="fig-bar">
+                <span class="id">Fig. 3</span>
+                <span class="cap" data-i18n="loc.durCap"
+                  >One measured set, three ways to count it</span
+                >
+                <span class="meta" data-i18n="loc.durMeta">21 songs · 93 to 166 BPM</span>
+              </figcaption>
+              <div class="fig-body">
+                <div class="dur">
+                  <div class="dur-row">
+                    <div class="dur-label">
+                      <span data-i18n="loc.durA">[bpm] on every song</span>
+                      <small data-i18n="loc.durAsub">Exact, piece by piece</small>
+                    </div>
+                    <div class="dur-track">
+                      <div class="dur-fill exact" style="width: 82.2%">78:41</div>
+                    </div>
+                  </div>
+                  <div class="dur-row">
+                    <div class="dur-label">
+                      <span data-i18n="loc.durB">No tags · Live at 99 BPM</span>
+                      <small data-i18n="loc.durBsub">16:59 too long</small>
+                    </div>
+                    <div class="dur-track">
+                      <div class="dur-fill est" style="width: 100%">
+                        <span class="est-tag">EST.</span>95:40
+                      </div>
+                    </div>
+                  </div>
+                  <div class="dur-row">
+                    <div class="dur-label">
+                      <span data-i18n="loc.durC">No tags · Live at 136 BPM</span>
+                      <small data-i18n="loc.durCsub">9:03 too short</small>
+                    </div>
+                    <div class="dur-track">
+                      <div class="dur-fill est" style="width: 72.8%">
+                        <span class="est-tag">EST.</span>69:38
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="fig-foot" data-i18n="loc.durFoot">
+                No extension can read tempo automation without playing it. Declare [bpm] and the
+                EST. badge goes away.
+              </div>
+            </figure>
+          </div>
+        </section>
+
+        <!-- ===================== 4.0 TWO VIEWS ===================== -->
+        <section class="sec" id="views" aria-labelledby="views-title">
+          <div class="n">4.0</div>
+          <div class="c">
+            <h2 id="views-title" data-i18n-html="views.title">
+              Two views <span class="tail">— figs. 4 to 6</span>
+            </h2>
+            <p class="why" data-i18n="views.why">
+              Stage Control is for whoever runs the show. Performance is for whoever plays it:
+              read-only, high contrast, readable from the mic stand.
+            </p>
+
+            <fieldset class="viewer">
+              <legend class="sr-only" data-i18n="views.pick">Choose a view</legend>
+              <input type="radio" name="view" id="view-stage" value="stage" checked />
+              <input type="radio" name="view" id="view-performance" value="performance" />
+              <input type="radio" name="view" id="view-phone" value="phone" />
+              <div class="tabs">
+                <label for="view-stage" data-i18n="views.tabStage">Stage Control</label>
+                <label for="view-performance" data-i18n="views.tabPerf">Performance</label>
+                <label for="view-phone" data-i18n="views.tabPhone">Performance · phone</label>
+              </div>
+
+              <div class="panes">
+                <!-- Pin coordinates are percentages of the 1600 x 900 capture. -->
+                <div class="pane pane-stage">
+                  <figure class="fig">
+                    <figcaption class="fig-bar">
+                      <span class="id">Fig. 4</span>
+                      <span class="cap" data-i18n="views.stageCap"
+                        >Stage Control — /setlist, for the operator</span
+                      >
+                      <span class="meta">1600 × 900</span>
+                    </figcaption>
+                    <div class="fig-body">
+                      <div class="shot">
+                        <img
+                          src="./media/en/stage-control.png"
+                          data-site-image="stage-control.png"
+                          width="1600"
+                          height="900"
+                          loading="lazy"
+                          alt="Stage Control with numbered regions."
+                          data-i18n-alt="views.stageAlt"
+                        />
+                        <span
+                          class="pin"
+                          style="--x: 16.96%; --xp: 18.99%; --y: 2.6%"
+                          aria-hidden="true"
+                          >1</span
+                        >
+                        <span class="pin" style="--x: 5.75%; --y: 10.11%" aria-hidden="true"
+                          >2</span
+                        >
+                        <span class="pin" style="--x: 6.56%; --y: 43.56%" aria-hidden="true"
+                          >3</span
+                        >
+                        <span
+                          class="pin side"
+                          style="--x: 54.51%; --xp: 55.04%; --y: 12.64%"
+                          aria-hidden="true"
+                          >4</span
+                        >
+                        <span class="pin" style="--x: 67.25%; --y: 10.11%" aria-hidden="true"
+                          >5</span
+                        >
+                        <span class="pin" style="--x: 68%; --y: 32.78%" aria-hidden="true">6</span>
+                        <span class="pin" style="--x: 68%; --y: 42.44%" aria-hidden="true">7</span>
+                        <span class="pin" style="--x: 67.25%; --y: 63.56%" aria-hidden="true"
+                          >8</span
+                        >
+                        <span
+                          class="pin"
+                          style="--x: 57.65%; --xp: 52.77%; --y: 2.6%"
+                          aria-hidden="true"
+                          >9</span
+                        >
+                      </div>
+                    </div>
+                    <div class="fig-legend">
+                      <table class="legend stack">
+                        <thead>
+                          <tr>
+                            <th>N</th>
+                            <th data-i18n="views.thRegion">Region</th>
+                            <th data-i18n="views.thWhat">What it does</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <tr>
+                            <td><span class="key">1</span></td>
+                            <td data-i18n="views.s1">Active setlist</td>
+                            <td data-i18n="views.s1d">
+                              Several saved setlists per Live Set: show order, rehearsal, a shorter
+                              set.
+                            </td>
+                          </tr>
+                          <tr>
+                            <td><span class="key">2</span></td>
+                            <td data-i18n="views.s2">Songs</td>
+                            <td data-i18n="views.s2d">
+                              One card per song, badges from its tags, duration on the right. Drag
+                              to reorder.
+                            </td>
+                          </tr>
+                          <tr>
+                            <td><span class="key">3</span></td>
+                            <td data-i18n="views.s3">Now playing</td>
+                            <td data-i18n="views.s3d">
+                              Amber edge on the song, amber chip on the section. Hold a chip and
+                              release to cue it.
+                            </td>
+                          </tr>
+                          <tr>
+                            <td><span class="key">4</span></td>
+                            <td data-i18n="views.s4">Total duration</td>
+                            <td data-i18n="views.s4d">
+                              The whole set, from the first song locator to the end of the
+                              Arrangement.
+                            </td>
+                          </tr>
+                          <tr>
+                            <td><span class="key">5</span></td>
+                            <td data-i18n="views.s5">Show state</td>
+                            <td data-i18n="views.s5d">
+                              Active and next song and section, BPM, bar, show time and song time.
+                            </td>
+                          </tr>
+                          <tr>
+                            <td><span class="key">6</span></td>
+                            <td data-i18n="views.s6">Lyric line</td>
+                            <td data-i18n="views.s6d">The line being sung right now.</td>
+                          </tr>
+                          <tr>
+                            <td><span class="key">7</span></td>
+                            <td data-i18n="views.s7">Quantization · click</td>
+                            <td data-i18n="views.s7d">
+                              Grid for jumps, Live's metronome, the one-bar count-in and a manual
+                              refresh.
+                            </td>
+                          </tr>
+                          <tr>
+                            <td><span class="key">8</span></td>
+                            <td data-i18n="views.s8">Transport</td>
+                            <td data-i18n="views.s8d">
+                              Previous and next song or section, Play, Stop. Everything but Play is
+                              held — see 5.0.
+                            </td>
+                          </tr>
+                          <tr>
+                            <td><span class="key">9</span></td>
+                            <td data-i18n="views.s9">Header</td>
+                            <td data-i18n="views.s9d">
+                              Language, panel lock, lyrics and export tools, full screen,
+                              connection.
+                            </td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                  </figure>
+                </div>
+
+                <div class="pane pane-performance">
+                  <figure class="fig">
+                    <figcaption class="fig-bar">
+                      <span class="id">Fig. 5</span>
+                      <span class="cap" data-i18n="views.perfCap"
+                        >Performance — /performance, for the band</span
+                      >
+                      <span class="meta">1920 × 1080</span>
+                    </figcaption>
+                    <div class="fig-body">
+                      <div class="shot">
+                        <img
+                          src="./media/en/performance.png"
+                          data-site-image="performance.png"
+                          width="1600"
+                          height="900"
+                          loading="lazy"
+                          alt="Performance view with numbered regions."
+                          data-i18n-alt="views.perfAlt"
+                        />
+                        <span class="pin" style="--x: 13%; --y: 6.52%" aria-hidden="true">1</span>
+                        <span class="pin" style="--x: 23.54%; --y: 6.52%" aria-hidden="true"
+                          >2</span
+                        >
+                        <span class="pin" style="--x: 46.54%; --y: 6.52%" aria-hidden="true"
+                          >3</span
+                        >
+                        <span class="pin" style="--x: 0.54%; --y: 84.96%" aria-hidden="true"
+                          >4</span
+                        >
+                        <span class="pin" style="--x: 20.97%; --y: 84.96%" aria-hidden="true"
+                          >5</span
+                        >
+                        <span class="pin" style="--x: 34.35%; --y: 84.96%" aria-hidden="true"
+                          >6</span
+                        >
+                        <span
+                          class="pin"
+                          style="--x: 86.14%; --xp: 86.54%; --y: 0.96%"
+                          aria-hidden="true"
+                          >7</span
+                        >
+                      </div>
+                    </div>
+                    <div class="fig-legend">
+                      <table class="legend stack">
+                        <thead>
+                          <tr>
+                            <th>N</th>
+                            <th data-i18n="views.thRegion">Region</th>
+                            <th data-i18n="views.thWhat">What it does</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <tr>
+                            <td><span class="key">1</span></td>
+                            <td data-i18n="views.p1">Current song</td>
+                            <td data-i18n="views.p1d">Title, its badges and the next song.</td>
+                          </tr>
+                          <tr>
+                            <td><span class="key">2</span></td>
+                            <td data-i18n="views.p2">Active section</td>
+                            <td data-i18n="views.p2d">
+                              Where the band is now, how many loops remain, which section comes
+                              next.
+                            </td>
+                          </tr>
+                          <tr>
+                            <td><span class="key">3</span></td>
+                            <td data-i18n="views.p3">Lyrics · chords</td>
+                            <td data-i18n="views.p3d">
+                              Timed lines follow the song; the current one is lit.
+                            </td>
+                          </tr>
+                          <tr>
+                            <td><span class="key">4</span></td>
+                            <td data-i18n="views.p4">Timecode</td>
+                            <td data-i18n="views.p4d">
+                              Show time over total, and time inside the song.
+                            </td>
+                          </tr>
+                          <tr>
+                            <td><span class="key">5</span></td>
+                            <td data-i18n="views.p5">Bar · beat</td>
+                            <td data-i18n="views.p5d">
+                              Where Live's playhead is, in musical time.
+                            </td>
+                          </tr>
+                          <tr>
+                            <td><span class="key">6</span></td>
+                            <td data-i18n="views.p6">BPM · click</td>
+                            <td data-i18n="views.p6d">
+                              Tempo, and whether the metronome is on — in words, not only colour.
+                            </td>
+                          </tr>
+                          <tr>
+                            <td><span class="key">7</span></td>
+                            <td data-i18n="views.p7">Connection · full screen</td>
+                            <td data-i18n="views.p7d">
+                              Connection state; full screen keeps the screen awake where the browser
+                              allows.
+                            </td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                  </figure>
+                </div>
+
+                <div class="pane pane-phone">
+                  <figure class="fig">
+                    <figcaption class="fig-bar">
+                      <span class="id">Fig. 6</span>
+                      <span class="cap" data-i18n="views.phoneCap"
+                        >Performance on a phone, portrait</span
+                      >
+                      <span class="meta">430 × 932</span>
+                    </figcaption>
+                    <div class="fig-body">
+                      <div class="phone-wrap">
+                        <div class="phone">
+                          <div class="shot">
+                            <img
+                              src="./media/en/performance-phone.png"
+                              data-site-image="performance-phone.png"
+                              width="860"
+                              height="1864"
+                              loading="lazy"
+                              alt="Performance view on a phone in portrait: song and section cards, lyrics, timecode, bar and BPM."
+                              data-i18n-alt="views.phoneAlt"
+                            />
+                            <span class="pin in" style="--x: 1.63%; --y: 6.22%" aria-hidden="true"
+                              >1</span
+                            >
+                            <span class="pin in" style="--x: 50.93%; --y: 6.22%" aria-hidden="true"
+                              >2</span
+                            >
+                            <span class="pin in" style="--x: 1.63%; --y: 27.04%" aria-hidden="true"
+                              >3</span
+                            >
+                            <span class="pin in" style="--x: 1.63%; --y: 80.36%" aria-hidden="true"
+                              >4</span
+                            >
+                          </div>
+                        </div>
+                        <div>
+                          <table class="legend stack">
+                            <thead>
+                              <tr>
+                                <th>N</th>
+                                <th data-i18n="views.thRegion">Region</th>
+                                <th data-i18n="views.thWhat">What it does</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              <tr>
+                                <td><span class="key">1</span></td>
+                                <td data-i18n="views.f1">Song</td>
+                                <td data-i18n="views.f1d">Current and next.</td>
+                              </tr>
+                              <tr>
+                                <td><span class="key">2</span></td>
+                                <td data-i18n="views.f2">Section</td>
+                                <td data-i18n="views.f2d">Loop count and tempo as badges.</td>
+                              </tr>
+                              <tr>
+                                <td><span class="key">3</span></td>
+                                <td data-i18n="views.f3">Lyrics</td>
+                                <td data-i18n="views.f3d">
+                                  The sung line, set in a condensed face so a verse fits the width.
+                                </td>
+                              </tr>
+                              <tr>
+                                <td><span class="key">4</span></td>
+                                <td data-i18n="views.f4">Readouts</td>
+                                <td data-i18n="views.f4d">
+                                  Timecode, bar and beat, BPM and click.
+                                </td>
+                              </tr>
+                            </tbody>
+                          </table>
+                          <p class="h4" style="margin-top: 22px" data-i18n="views.lrcTitle">
+                            Lyrics are plain LRC
+                          </p>
+                          <pre
+                            class="lrc"
+                            tabindex="0"
+                            role="region"
+                            aria-label="LRC example"
+                            data-i18n-aria="views.lrcAria"
+                          ><span>[00:00.00]</span> The room wakes under amber light
+<span>[00:04.50]</span> A quiet pulse becomes our guide</pre>
+                          <p class="note" data-i18n="views.lrcNote">
+                            Paste, time them while the song plays, edit and save. They are stored in
+                            the active profile, outside the Live Set. Plain text works too.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </figure>
+                </div>
+              </div>
+            </fieldset>
+          </div>
+        </section>
+
+        <!-- ===================== 5.0 STAGE SAFETY ===================== -->
+        <section class="sec" id="safety" aria-labelledby="safety-title">
+          <div class="n">5.0</div>
+          <div class="c">
+            <h2 id="safety-title" data-i18n-html="safety.title">
+              Stage safety <span class="tail">— nothing fires by accident</span>
+            </h2>
+            <p class="why" data-i18n="safety.why">
+              Every control that can stop the show is held, not tapped. No confirmation dialogs
+              mid-song.
+            </p>
+
+            <figure class="fig">
+              <figcaption class="fig-bar">
+                <span class="id">Fig. 7</span>
+                <span class="cap" data-i18n="safety.figCap"
+                  >The hold gate — next song, previous section, stop</span
+                >
+                <span class="meta" data-i18n="safety.figMeta">0 to 800 ms</span>
+              </figcaption>
+              <div class="fig-body">
+                <div
+                  class="hold"
+                  role="img"
+                  aria-label="Tap: nothing is sent. Hold for 500 milliseconds: the command is sent. Slide off before 500 milliseconds: cancelled."
+                  data-i18n-aria="safety.holdAria"
+                >
+                  <div class="hold-row">
+                    <b data-i18n="safety.tap">Tap</b>
+                    <div class="track">
+                      <div class="fill" style="width: 18%"></div>
+                      <span class="gate"></span>
+                    </div>
+                    <span class="outcome" data-i18n="safety.tapOut">Nothing sent</span>
+                  </div>
+                  <div class="hold-row">
+                    <b data-i18n="safety.hold">Hold</b>
+                    <div class="track">
+                      <div class="fill go" style="width: 62.5%"></div>
+                      <span class="gate"></span>
+                    </div>
+                    <span class="outcome go" data-i18n="safety.holdOut">Sent at 500 ms</span>
+                  </div>
+                  <div class="hold-row">
+                    <b data-i18n="safety.slide">Slide off</b>
+                    <div class="track">
+                      <div class="fill cut" style="width: 40%"></div>
+                      <span class="gate"></span>
+                    </div>
+                    <span class="outcome" data-i18n="safety.slideOut">Cancelled</span>
+                  </div>
+                  <div class="hold-scale" aria-hidden="true">
+                    <span></span>
+                    <div class="ticks">
+                      <span style="left: 0">0</span>
+                      <span style="left: 31.25%">250</span>
+                      <span class="g" style="left: 62.5%">500 ms</span>
+                      <span style="left: 93.75%">750</span>
+                    </div>
+                    <span></span>
+                  </div>
+                </div>
+              </div>
+              <div class="fig-foot" data-i18n="safety.figFoot">
+                Play is the one control that answers a tap. The panel lock disables every control,
+                Play included, on the device that set it.
+              </div>
+            </figure>
+
+            <div class="cards c2" style="margin-top: 26px">
+              <div class="card">
+                <span class="ic"
+                  ><svg aria-hidden="true"><use href="#g-grid" /></svg
+                ></span>
+                <div>
+                  <h3 data-i18n="safety.qTitle">Quantized jumps</h3>
+                  <p data-i18n="safety.qBody">
+                    A cue goes to Live at once and Live lands it on its next grid line.
+                  </p>
+                  <div class="grid" aria-hidden="true">
+                    <span class="beat down"></span><span class="beat"></span
+                    ><span class="beat"></span><span class="beat"></span>
+                    <span class="beat down"></span><span class="beat"></span
+                    ><span class="beat ask"></span><span class="beat"></span>
+                    <span class="beat down land"></span><span class="beat"></span
+                    ><span class="beat"></span><span class="beat"></span>
+                    <span class="beat down"></span><span class="beat"></span
+                    ><span class="beat"></span><span class="beat"></span>
+                  </div>
+                  <div class="qkey">
+                    <span
+                      ><i class="sw ask"></i
+                      ><span data-i18n="safety.ask">Cue, bar 2 beat 3</span></span
+                    >
+                    <span
+                      ><i class="sw land"></i
+                      ><span data-i18n="safety.land">Lands, bar 3 beat 1</span></span
+                    >
+                  </div>
+                </div>
+              </div>
+              <div class="card">
+                <span class="ic"
+                  ><svg aria-hidden="true"><use href="#g-count" /></svg
+                ></span>
+                <div>
+                  <h3 data-i18n="safety.cTitle">Count-in, one bar</h3>
+                  <p data-i18n="safety.cBody">
+                    With COUNT-IN on and Live stopped, Play counts one bar on its own button at the
+                    tempo the setlist declares, then starts Live on the downbeat. Visual only by
+                    default: the phone never beeps on stage.
+                  </p>
+                </div>
+              </div>
+              <div class="card">
+                <span class="ic"
+                  ><svg aria-hidden="true"><use href="#g-lock" /></svg
+                ></span>
+                <div>
+                  <h3 data-i18n="safety.lTitle">Refused while it plays</h3>
+                  <p data-i18n="safety.lBody">
+                    Marker edits, setlist switches and language changes are refused while Live
+                    plays.
+                  </p>
+                </div>
+              </div>
+              <div class="card">
+                <span class="ic"
+                  ><svg aria-hidden="true"><use href="#g-plug" /></svg
+                ></span>
+                <div>
+                  <h3 data-i18n="safety.rTitle">Brief drops</h3>
+                  <p data-i18n="safety.rBody">
+                    A reconnect keeps the last valid state on screen and says so, instead of going
+                    blank.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ===================== 6.0 INSTALL ===================== -->
+        <section class="sec" id="install" aria-labelledby="install-title">
+          <div class="n">6.0</div>
+          <div class="c">
+            <h2 id="install-title" data-i18n-html="install.title">
+              Installation <span class="tail">— five steps to the first cue</span>
+            </h2>
+            <div class="install">
+              <ol class="steps">
+                <li>
+                  <div>
+                    <h3 data-i18n="install.s1">Download</h3>
+                    <p data-i18n-html="install.s1d">
+                      <code>RC-Setlist-1.0.0.ablx</code> and the installation kit, from the
+                      <a href="https://github.com/ntworm/rc-setlist/releases/latest"
+                        >latest release</a
+                      >.
+                    </p>
+                  </div>
+                </li>
+                <li>
+                  <div>
+                    <h3 data-i18n="install.s2">Install RC Bridge</h3>
+                    <p data-i18n-html="install.s2d">
+                      Run <code>Install-RC-Bridge.cmd</code> (Windows) or
+                      <code>Install RC Bridge.command</code> (macOS) from the kit. In Live, open
+                      <b>Settings › Link, Tempo &amp; MIDI</b> and pick <b>RCBridge</b> as a Control
+                      Surface.
+                    </p>
+                  </div>
+                </li>
+                <li>
+                  <div>
+                    <h3 data-i18n="install.s3">Install the extension</h3>
+                    <p data-i18n="install.s3d">
+                      Open the .ablx and approve the installation in Live.
+                    </p>
+                  </div>
+                </li>
+                <li>
+                  <div>
+                    <h3 data-i18n="install.s4">Start the server</h3>
+                    <p data-i18n-html="install.s4d">
+                      Open <b>Extensions › RC Setlist</b> and press <b>Start</b>. The panel shows a
+                      link and a QR code for each view.
+                    </p>
+                  </div>
+                </li>
+                <li>
+                  <div>
+                    <h3 data-i18n="install.s5">Open the views</h3>
+                    <p data-i18n="install.s5d">
+                      Scan the QR code or open the link. Accept the local certificate only when the
+                      address matches the one the panel shows.
+                    </p>
+                  </div>
+                </li>
+              </ol>
+
+              <figure class="fig">
+                <figcaption class="fig-bar">
+                  <span class="id">Fig. 8</span>
+                  <span class="cap" data-i18n="install.figCap">The panel inside Live</span>
+                </figcaption>
+                <div class="fig-body">
+                  <div
+                    class="panel"
+                    role="img"
+                    aria-label="The RC Setlist panel in Live: server running on port 4444, RC Bridge connected, two QR codes for Stage Control and Performance, and Start, Stop and Restart buttons."
+                    data-i18n-aria="install.panelAria"
+                  >
+                    <div class="panel-head">
+                      <span>RC Setlist</span><span data-i18n="install.pLang">EN</span>
+                    </div>
+                    <div class="panel-row">
+                      <span class="dot"></span><b data-i18n="install.pRun">Server running</b
+                      ><span>· 4444</span>
+                    </div>
+                    <div class="panel-row">
+                      <span class="dot"></span><b data-i18n="install.pOsc">Live connected</b
+                      ><span>· RC Bridge 11020</span>
+                    </div>
+                    <div class="qrs">
+                      <div class="qr">
+                        <i></i><span data-i18n="views.tabStage">Stage Control</span
+                        ><small>/setlist</small>
+                      </div>
+                      <div class="qr"><i></i>Performance<small>/performance</small></div>
+                    </div>
+                    <div class="panel-btns">
+                      <span class="on" data-i18n="install.pStart">Start</span
+                      ><span data-i18n="install.pStop">Stop</span
+                      ><span data-i18n="install.pRestart">Restart</span>
+                    </div>
+                  </div>
+                </div>
+                <div class="fig-foot" data-i18n="install.figFoot">
+                  Schematic · the QR codes are not scannable
+                </div>
+              </figure>
+            </div>
+            <p class="note" data-i18n-html="install.note">
+              Coming from 0.x? Run the kit's migration script once, before opening Live with 1.0 —
+              see the
+              <a href="https://github.com/ntworm/rc-setlist/blob/main/docs/INSTALL.md"
+                >installation guide</a
+              >. Windows is validated; macOS is experimental in this release.
+            </p>
+          </div>
+        </section>
+
+        <!-- ===================== 7.0 WHEN IT FAILS ===================== -->
+        <section class="sec" id="trouble" aria-labelledby="trouble-title">
+          <div class="n">7.0</div>
+          <div class="c">
+            <h2 id="trouble-title" data-i18n="trouble.title">When it does not work</h2>
+            <h3>
+              <span class="num">7.1</span> <span data-i18n="trouble.tsTitle">Troubleshooting</span>
+            </h3>
+            <div class="cards c2">
+              <div class="card">
+                <span class="ic"
+                  ><svg aria-hidden="true"><use href="#g-live" /></svg
+                ></span>
+                <div>
+                  <h4 data-i18n="trouble.a">RC Setlist is not in Live</h4>
+                  <p data-i18n="trouble.ad">
+                    Check Live 12.4.5+ Suite (Beta). Reopen the .ablx, restart Live, look under
+                    Extensions.
+                  </p>
+                </div>
+              </div>
+              <div class="card">
+                <span class="ic"
+                  ><svg aria-hidden="true"><use href="#g-osc" /></svg
+                ></span>
+                <div>
+                  <h4 data-i18n="trouble.b">RCBridge is not in the list</h4>
+                  <p data-i18n-html="trouble.bd">
+                    It belongs in <code>User Library/Remote Scripts/RCBridge</code> — the kit's
+                    installer puts it there. Restart Live once.
+                  </p>
+                </div>
+              </div>
+              <div class="card">
+                <span class="ic"
+                  ><svg aria-hidden="true"><use href="#g-hold" /></svg
+                ></span>
+                <div>
+                  <h4 data-i18n="trouble.c">The playhead does not move</h4>
+                  <p data-i18n="trouble.cd">
+                    Press Check OSC in the panel; its OSC line names the script that answers. After
+                    installing RC Bridge, press Restart.
+                  </p>
+                </div>
+              </div>
+              <div class="card">
+                <span class="ic"
+                  ><svg aria-hidden="true"><use href="#g-song" /></svg
+                ></span>
+                <div>
+                  <h4 data-i18n="trouble.d">No songs appear</h4>
+                  <p data-i18n-html="trouble.dd">
+                    The Set needs Arrangement locators. Songs first; sections as
+                    <code>Song &gt; Section</code> or <code>&gt; Section</code>.
+                  </p>
+                </div>
+              </div>
+              <div class="card">
+                <span class="ic"
+                  ><svg aria-hidden="true"><use href="#g-net" /></svg
+                ></span>
+                <div>
+                  <h4 data-i18n="trouble.e">The page does not open</h4>
+                  <p data-i18n="trouble.ed">
+                    Same network, not a guest one. Allow TCP 4444 on the private profile only.
+                  </p>
+                </div>
+              </div>
+              <div class="card">
+                <span class="ic"
+                  ><svg aria-hidden="true"><use href="#g-key" /></svg
+                ></span>
+                <div>
+                  <h4 data-i18n="trouble.f">Controls are read-only</h4>
+                  <p data-i18n="trouble.fd">
+                    Open the controller link or QR code from the panel: its token enables the
+                    transport.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <h3 id="faq">
+              <span class="num">7.2</span>
+              <span data-i18n="trouble.faqTitle">Frequently asked</span>
+            </h3>
+            <div class="cards c3">
+              <div class="card">
+                <span class="ic"
+                  ><svg aria-hidden="true"><use href="#g-phone" /></svg
+                ></span>
+                <div>
+                  <h4 data-i18n="faq.a">An app on the phone?</h4>
+                  <p data-i18n="faq.ad">No. Any current browser on the same network.</p>
+                </div>
+              </div>
+              <div class="card">
+                <span class="ic"
+                  ><svg aria-hidden="true"><use href="#g-osc" /></svg
+                ></span>
+                <div>
+                  <h4 data-i18n="faq.b">Do I need AbletonOSC?</h4>
+                  <p data-i18n="faq.bd">
+                    No. RC Bridge ships in the kit and runs beside a stock AbletonOSC or RC Surface.
+                  </p>
+                </div>
+              </div>
+              <div class="card">
+                <span class="ic"
+                  ><svg aria-hidden="true"><use href="#g-cloud" /></svg
+                ></span>
+                <div>
+                  <h4 data-i18n="faq.c">Where does my show data go?</h4>
+                  <p data-i18n="faq.cd">
+                    Nowhere. Setlists, lyrics and exports stay in local profiles.
+                  </p>
+                </div>
+              </div>
+              <div class="card">
+                <span class="ic"
+                  ><svg aria-hidden="true"><use href="#g-mute" /></svg
+                ></span>
+                <div>
+                  <h4 data-i18n="faq.d">Why no count-in sound?</h4>
+                  <p data-i18n="faq.dd">
+                    It is visual by default. A notebook feeding in-ears can opt in, one device at a
+                    time.
+                  </p>
+                </div>
+              </div>
+              <div class="card">
+                <span class="ic"
+                  ><svg aria-hidden="true"><use href="#g-session" /></svg
+                ></span>
+                <div>
+                  <h4 data-i18n="faq.e">Session View?</h4>
+                  <p data-i18n="faq.ed">Not yet. This release reads Arrangement locators.</p>
+                </div>
+              </div>
+              <div class="card">
+                <span class="ic"
+                  ><svg aria-hidden="true"><use href="#g-law" /></svg
+                ></span>
+                <div>
+                  <h4 data-i18n="faq.f">Can I use it commercially?</h4>
+                  <p data-i18n="faq.fd">
+                    No. Use, change and share it for noncommercial purposes under PolyForm
+                    Noncommercial 1.0.0.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ===================== 8.0 DOCS ===================== -->
+        <section class="sec" id="docs" aria-labelledby="docs-title">
+          <div class="n">8.0</div>
+          <div class="c">
+            <h2 id="docs-title" data-i18n="docs.title">Reference documents</h2>
+            <div class="docs">
+              <div class="doc">
+                <div data-i18n="docs.install">Installation</div>
+                <a
+                  href="https://github.com/ntworm/rc-setlist/blob/main/docs/INSTALL.md"
+                  data-href-pt-br="./pt-BR/INSTALL.html"
+                  data-i18n="docs.lInstall"
+                  >Read INSTALL.md</a
+                >
+              </div>
+              <div class="doc">
+                <div data-i18n="docs.guide">User guide</div>
+                <a
+                  href="https://github.com/ntworm/rc-setlist/blob/main/docs/USER-GUIDE.md"
+                  data-href-pt-br="./pt-BR/USER-GUIDE.html"
+                  data-i18n="docs.lGuide"
+                  >Read USER-GUIDE.md</a
+                >
+              </div>
+              <div class="doc">
+                <div data-i18n="docs.trouble">Troubleshooting</div>
+                <a
+                  href="https://github.com/ntworm/rc-setlist/blob/main/docs/TROUBLESHOOTING.md"
+                  data-href-pt-br="./pt-BR/TROUBLESHOOTING.html"
+                  data-i18n="docs.lTrouble"
+                  >Read TROUBLESHOOTING.md</a
+                >
+              </div>
+              <div class="doc">
+                <div data-i18n="docs.faq">FAQ</div>
+                <a
+                  href="https://github.com/ntworm/rc-setlist/blob/main/docs/FAQ.md"
+                  data-href-pt-br="./pt-BR/FAQ.html"
+                  data-i18n="docs.lFaq"
+                  >Read FAQ.md</a
+                >
+              </div>
+              <div class="doc">
+                <div data-i18n="docs.notes">What is new in 1.0.0</div>
+                <a
+                  href="https://github.com/ntworm/rc-setlist/blob/main/docs/RELEASE-NOTES-1.0.0.md"
+                  data-href-pt-br="./pt-BR/NOTAS-DA-VERSAO-1.0.0.html"
+                  data-i18n="docs.lNotes"
+                  >Read RELEASE-NOTES-1.0.0.md</a
+                >
+              </div>
+              <div class="doc">
+                <div data-i18n="docs.security">Security · privacy</div>
+                <a href="https://github.com/ntworm/rc-setlist/blob/main/SECURITY.md">SECURITY</a> ·
+                <a href="https://github.com/ntworm/rc-setlist/blob/main/PRIVACY.md">PRIVACY</a>
+              </div>
+            </div>
+          </div>
+        </section>
+      </main>
+
+      <!-- ===================== COLOPHON ===================== -->
+      <footer class="colophon">
+        <div class="line">
+          <span data-i18n-html="foot.made">Made by <b>Gabriel Worm</b></span>
+          <span>PolyForm Noncommercial 1.0.0</span>
+          <a href="https://github.com/ntworm/rc-setlist/blob/main/NOTICE" data-i18n="foot.credits"
+            >Credits and licences</a
+          >
         </div>
-        <div class="step">
-          <span class="step__num">02 · CONDUCT</span>
-          <h3>Drive from the Stage Control</h3>
-          <p>
-            Open the browser page. Previous, Next, Jump, Quantization, Click — guarded by 500 ms
-            holds and confirmation from Live.
-          </p>
-        </div>
-        <div class="step">
-          <span class="step__num">03 · READ</span>
-          <h3>Perform from the second view</h3>
-          <p>
-            The performer sees the next song, the current section, the synchronized lyrics and the
-            timecode on a high-contrast display.
-          </p>
-        </div>
-      </div>
-      <pre><code class="lang-text">Song A [bpm 122]<br>
-&gt; Verse<br>
-&gt; Chorus<br>
-&gt; End [next]<br>
-Song B [bpm 96]</code></pre>
-    </section>
+        <p data-i18n="foot.legal">
+          RC Setlist is an independent project and is not affiliated with or endorsed by Ableton AG.
+          Ableton and Live are trademarks of Ableton AG.
+        </p>
+      </footer>
+    </div>
 
-    <section id="install" class="install">
-      <span class="eyebrow">Install</span>
-      <h2>Five steps from zero to first cue</h2>
-      <ol>
-        <li>Download <code>RC-Setlist-1.0.0.ablx</code> from the GitHub release.</li>
-        <li>
-          Double-click the <code>.ablx</code> — Ableton Live installs it under
-          <code>~/Music/Ableton/User Library/Packages/RC Setlist/</code>.
-        </li>
-        <li>
-          Restart Live. Open the <strong>RC Setlist</strong> context menu on any MIDI/Audio track
-          and start the bridge from the Live panel.
-        </li>
-        <li>
-          Scan the QR on the panel with your phone, or open the URL on the same computer. Stage
-          Control loads in the browser.
-        </li>
-        <li>
-          Open <code>docs/INSTALL.md</code> (or <code>docs/pt-BR/INSTALL.md</code>) for the
-          migration step from a 0.x install and the macOS path of <code>Extensions Data</code>.
-        </li>
-      </ol>
-      <p class="lede">
-        Ableton Live 12.4.5+ Suite (Beta) is required. The development Node floor is 24.16.0. The
-        bundled <code>RC Bridge</code> is our fork of
-        <a href="https://github.com/ideoforms/AbletonOSC">AbletonOSC</a> — same protocol,
-        distributed with the extension.
-      </p>
-    </section>
-
-    <footer>
-      <p>
-        <strong>RC Setlist 1.0.0</strong> — source-available under the PolyForm Noncommercial 1.0.0
-        license.
-      </p>
-      <p>
-        RC Setlist is an independent project and is not affiliated with or endorsed by Ableton AG.
-        Ableton, Live, Push, and Link are trademarks of Ableton AG.
-      </p>
-      <p>No account · no subscription · no analytics · source-available.</p>
-    </footer>
-
-    <script src="./site-i18n.js"></script>
     <script>
+      /* Marks the nav item for the section under the header. No smooth scrolling:
+         a nav click jumps, which is the point. */
       (function () {
-        var select = document.getElementById('languageSelect');
-        if (!select) return;
-        var stored = null;
-        try {
-          stored = localStorage.getItem('rc-setlist.locale');
-        } catch (_) {}
-        var initial = stored || 'en';
-        if (Array.prototype.indexOf.call(select.options, initial) >= 0) {
-          select.value = initial;
+        var links = [].slice.call(document.querySelectorAll('.nav a[href^="#"]'));
+        var targets = links
+          .map(function (a) {
+            return { link: a, el: document.getElementById(a.getAttribute('href').slice(1)) };
+          })
+          .filter(function (t) {
+            return t.el;
+          });
+        if (!targets.length) return;
+        var current = null;
+        function mark(link) {
+          if (link === current) return;
+          if (current) current.removeAttribute('aria-current');
+          if (link) {
+            link.setAttribute('aria-current', 'true');
+            var nav = link.parentNode;
+            var left = link.offsetLeft;
+            if (left < nav.scrollLeft || left + link.offsetWidth > nav.scrollLeft + nav.clientWidth)
+              nav.scrollLeft = left - 20;
+          }
+          current = link;
         }
-        document.documentElement.setAttribute('lang', select.value);
-        if (typeof window.rcSetlistSiteI18n === 'function') {
-          window.rcSetlistSiteI18n(window);
+        function update() {
+          var doc = document.documentElement;
+          if (window.innerHeight + window.scrollY >= doc.scrollHeight - 2) {
+            mark(targets[targets.length - 1].link);
+            return;
+          }
+          var line = 120;
+          var best = null;
+          for (var i = 0; i < targets.length; i++) {
+            if (targets[i].el.getBoundingClientRect().top <= line) best = targets[i].link;
+          }
+          mark(best);
         }
-        select.addEventListener('change', function () {
-          document.documentElement.setAttribute('lang', select.value);
-          try {
-            localStorage.setItem('rc-setlist.locale', select.value);
-          } catch (_) {}
+        // A click marks its own item: near the foot of the page the jump cannot
+        // bring a short section under the header, and the scroll it causes
+        // would otherwise mark the last one.
+        var clicked = false;
+        links.forEach(function (a) {
+          a.addEventListener('click', function () {
+            mark(a);
+            clicked = true;
+          });
         });
+        addEventListener(
+          'scroll',
+          function () {
+            if (clicked) {
+              clicked = false;
+              return;
+            }
+            update();
+          },
+          { passive: true },
+        );
+        addEventListener('resize', update, { passive: true });
+        addEventListener('hashchange', update);
+        update();
       })();
     </script>
+    <script src="./site-i18n.js"></script>
   </body>
 </html>

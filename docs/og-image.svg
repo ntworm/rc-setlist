@@ -1,36 +1,73 @@
-﻿<?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630" role="img" aria-label="RC Setlist — real setlist and performance interfaces on stage">
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Social preview, drawn as a page of the operator sheet. Rendered to
+     og-image.png by scripts/render-site-assets.mjs, which supplies Martian Mono
+     and the capture; opened from docs/ it resolves both on its own. -->
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 1200 630" width="1200" height="630" role="img" aria-label="RC Setlist: Arrangement locators become a setlist to run the show and a display the band reads.">
+  <style>
+    text { font-family: 'Martian Mono', ui-monospace, monospace; }
+    .mast { font-size: 15px; font-weight: 600; font-stretch: 87.5%; fill: #a0a0a0; }
+    .lede { font-size: 25px; font-weight: 400; fill: #e4e4e4; }
+    .badge { font-size: 16px; font-weight: 800; }
+    .foot { font-size: 14px; font-weight: 600; font-stretch: 87.5%; fill: #a0a0a0; }
+  </style>
   <defs>
-    <radialGradient id="glow" cx="88%" cy="5%" r="72%"><stop offset="0" stop-color="#ff6b1a" stop-opacity=".30"/><stop offset="1" stop-color="#ff6b1a" stop-opacity="0"/></radialGradient>
-    <filter id="shadow" x="-20%" y="-20%" width="140%" height="160%"><feDropShadow dx="0" dy="20" stdDeviation="18" flood-color="#000" flood-opacity=".58"/></filter>
+    <symbol id="beat" viewBox="0 0 24 24"><path d="M14 3v10.6a3.4 3.4 0 1 0 2 3.1V7h3V3h-5Z"/></symbol>
+    <symbol id="loop" viewBox="0 0 24 24"><path d="M12 5V2L8 6l4 4V7a5 5 0 1 1-5 5H5a7 7 0 1 0 7-7Z"/></symbol>
+    <symbol id="next" viewBox="0 0 24 24"><path d="M5 5v14l9-7-9-7Zm11 0h3v14h-3V5Z"/></symbol>
+    <symbol id="stop" viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12"/></symbol>
   </defs>
-  <rect width="1200" height="630" fill="#0b0b0d"/><rect width="1200" height="630" fill="url(#glow)"/>
-  <rect x="58" y="48" width="52" height="52" rx="12" fill="#ff6b1a"/><text x="84" y="82" font-family="Arial,sans-serif" font-size="20" font-weight="900" fill="#160b05" text-anchor="middle">RC</text>
-  <text x="126" y="82" font-family="Arial,sans-serif" font-size="24" font-weight="900" fill="#f5f1e8">RC Setlist</text>
-  <text x="58" y="206" font-family="Arial,sans-serif" font-size="65" font-weight="900" fill="#f5f1e8" letter-spacing="-3">Your Live Set.</text>
-  <text x="58" y="278" font-family="Arial,sans-serif" font-size="52" font-weight="900" fill="#ff6b1a" letter-spacing="-2">Ready for the stage.</text>
-  <text x="58" y="335" font-family="Arial,sans-serif" font-size="22" fill="#cbc6be">Setlist · guarded transport · synchronized lyrics</text>
-  <text x="58" y="570" font-family="Consolas,monospace" font-size="15" font-weight="700" fill="#ffb07d" letter-spacing="2">PRODUCT TRUTH · v0.5.0 · LOCAL FIRST</text>
 
-  <g filter="url(#shadow)" transform="translate(590 74) rotate(1 270 160)">
-    <rect width="570" height="320" rx="15" fill="#0d0e11" stroke="#3b3c43"/>
-    <rect x="18" y="18" width="20" height="20" rx="5" fill="#6d3c16"/><text x="28" y="32" font-family="Arial,sans-serif" font-size="8" font-weight="900" fill="#f5f1e8" text-anchor="middle">SB</text>
-    <text x="46" y="32" font-family="Arial,sans-serif" font-size="10" font-weight="800" fill="#f5f1e8">ABLETON RC SETLIST / PERFORMANCE</text>
-    <circle cx="522" cy="28" r="4" fill="#47db90"/><text x="530" y="32" font-family="Consolas,monospace" font-size="8" font-weight="700" fill="#9ee4b9">CONNECTED</text>
-    <rect x="18" y="56" width="150" height="170" rx="10" fill="#15161b" stroke="#3a3b43"/><text x="30" y="78" font-family="Consolas,monospace" font-size="8" font-weight="700" fill="#aaa5a0">MÚSICA ATUAL</text><text x="30" y="112" font-family="Arial,sans-serif" font-size="26" font-weight="900" fill="#f5f1e8">MÚSICA 03</text><text x="30" y="212" font-family="Arial,sans-serif" font-size="8" fill="#aaa5a0">Próxima</text><text x="112" y="212" font-family="Arial,sans-serif" font-size="9" font-weight="800" fill="#f5f1e8">MÚSICA 04</text>
-    <rect x="180" y="56" width="150" height="170" rx="10" fill="#15161b" stroke="#b05d23"/><text x="192" y="78" font-family="Consolas,monospace" font-size="8" font-weight="700" fill="#aaa5a0">SEÇÃO ATIVA</text><text x="192" y="112" font-family="Arial,sans-serif" font-size="26" font-weight="900" fill="#ffb46f">REFRÃO</text><rect x="192" y="124" width="48" height="14" rx="5" fill="#402755"/><text x="216" y="134" font-family="Arial,sans-serif" font-size="7" font-weight="800" fill="#d6a4ff" text-anchor="middle">↻ LOOP 2X</text><text x="192" y="212" font-family="Arial,sans-serif" font-size="8" fill="#aaa5a0">Próxima</text><text x="284" y="212" font-family="Arial,sans-serif" font-size="9" font-weight="800" fill="#f5f1e8">PONTE</text>
-    <rect x="342" y="56" width="210" height="246" rx="10" fill="#15161b" stroke="#3a3b43"/><text x="354" y="78" font-family="Consolas,monospace" font-size="8" font-weight="700" fill="#aaa5a0">LETRA / CIFRAS</text><text x="354" y="146" font-family="Arial,sans-serif" font-size="11" font-weight="700" fill="#55565e">Linha anterior</text><text x="354" y="168" font-family="Arial,sans-serif" font-size="13" font-weight="900" fill="#ffb46f">Linha atual sincronizada</text><text x="354" y="190" font-family="Arial,sans-serif" font-size="11" font-weight="700" fill="#55565e">Próxima linha preparada</text>
-    <rect x="18" y="238" width="96" height="64" rx="9" fill="#15161b" stroke="#3a3b43"/><text x="30" y="255" font-family="Consolas,monospace" font-size="7" fill="#aaa5a0">TIMECODE</text><text x="30" y="282" font-family="Consolas,monospace" font-size="20" font-weight="800" fill="#f5f1e8">2:34:24</text>
-    <rect x="126" y="238" width="96" height="64" rx="9" fill="#15161b" stroke="#3a3b43"/><text x="138" y="255" font-family="Consolas,monospace" font-size="7" fill="#aaa5a0">COMPASSO</text><text x="138" y="282" font-family="Consolas,monospace" font-size="20" font-weight="800" fill="#ffb46f">80.3.4</text>
-    <rect x="234" y="238" width="96" height="64" rx="9" fill="#15161b" stroke="#3a3b43"/><text x="246" y="255" font-family="Consolas,monospace" font-size="7" fill="#aaa5a0">BPM &amp; CLICK</text><text x="246" y="282" font-family="Consolas,monospace" font-size="20" font-weight="800" fill="#f5f1e8">124.0</text>
+  <rect width="1200" height="630" fill="#0e0e0e"/>
+
+  <!-- masthead -->
+  <text x="56" y="50" class="mast" style="fill:#f2f2f2;font-weight:800">RC SETLIST</text>
+  <line x1="186" y1="30" x2="186" y2="60" stroke="#333333"/>
+  <text x="206" y="50" class="mast">V1.0.0</text>
+  <line x1="290" y1="30" x2="290" y2="60" stroke="#333333"/>
+  <text x="310" y="50" class="mast">ABLETON LIVE 12.4.5+ SUITE</text>
+  <text x="1144" y="50" class="mast" text-anchor="end">SOURCE-AVAILABLE</text>
+  <line x1="56" y1="72" x2="1144" y2="72" stroke="#444444"/>
+
+  <!-- title: the inverted RC block -->
+  <rect x="56" y="112" width="184" height="112" fill="#ffa133"/>
+  <text x="70" y="206" style="font-size:98px;font-weight:800;font-stretch:112.5%;fill:#0e0e0e">RC</text>
+  <text x="262" y="206" style="font-size:98px;font-weight:800;font-stretch:112.5%;fill:#e4e4e4">Setlist</text>
+
+  <!-- lede -->
+  <text x="56" y="298" class="lede">Arrangement locators become</text>
+  <text x="56" y="336" class="lede">a setlist to run the show</text>
+  <text x="56" y="374" class="lede">and a display the band reads.</text>
+
+  <!-- the tags, as the extension draws them -->
+  <g transform="translate(56 430)">
+    <rect width="124" height="34" fill="rgba(48,209,88,0.12)" stroke="rgba(66,216,137,0.45)"/>
+    <use href="#beat" x="10" y="8" width="18" height="18" fill="#5ce08b"/>
+    <text x="34" y="23" class="badge" fill="#5ce08b">120 BPM</text>
+  </g>
+  <g transform="translate(192 430)">
+    <rect width="124" height="34" fill="rgba(191,90,242,0.12)" stroke="rgba(189,145,255,0.45)"/>
+    <use href="#loop" x="10" y="8" width="18" height="18" fill="#cdaaff"/>
+    <text x="34" y="23" class="badge" fill="#cdaaff">LOOP 2x</text>
+  </g>
+  <g transform="translate(328 430)">
+    <rect width="90" height="34" fill="rgba(10,132,255,0.12)" stroke="rgba(115,169,255,0.45)"/>
+    <use href="#next" x="10" y="8" width="18" height="18" fill="#8ab4ff"/>
+    <text x="34" y="23" class="badge" fill="#8ab4ff">NEXT</text>
+  </g>
+  <g transform="translate(430 430)">
+    <rect width="90" height="34" fill="rgba(255,55,95,0.12)" stroke="rgba(255,93,108,0.45)"/>
+    <use href="#stop" x="10" y="8" width="18" height="18" fill="#ff8f99"/>
+    <text x="34" y="23" class="badge" fill="#ff8f99">STOP</text>
   </g>
 
-  <g filter="url(#shadow)" transform="translate(560 390) rotate(-1 290 85)">
-    <rect width="600" height="170" rx="13" fill="#111217" stroke="#3b3c43"/><text x="20" y="26" font-family="Arial,sans-serif" font-size="9" font-weight="800" fill="#f5f1e8">STAGE CONTROL</text>
-    <rect x="18" y="42" width="388" height="110" rx="9" fill="#15161b" stroke="#36373e"/>
-    <rect x="30" y="54" width="360" height="26" rx="6" fill="#111217" stroke="#33343a"/><text x="42" y="71" font-family="Arial,sans-serif" font-size="9" font-weight="800" fill="#f5f1e8">3 · MÚSICA 03</text><text x="278" y="71" font-family="Arial,sans-serif" font-size="8" font-weight="800" fill="#ffb46f">REFRÃO · LOOP 2X</text>
-    <rect x="30" y="88" width="72" height="26" rx="6" fill="#191a1f"/><text x="66" y="105" font-family="Arial,sans-serif" font-size="8" fill="#f5f1e8" text-anchor="middle">INTRO</text><rect x="110" y="88" width="72" height="26" rx="6" fill="#191a1f"/><text x="146" y="105" font-family="Arial,sans-serif" font-size="8" fill="#f5f1e8" text-anchor="middle">VERSO</text><rect x="190" y="88" width="88" height="26" rx="6" fill="#392615" stroke="#ff8b34"/><text x="234" y="105" font-family="Arial,sans-serif" font-size="8" font-weight="800" fill="#ffb46f" text-anchor="middle">REFRÃO</text><rect x="286" y="88" width="72" height="26" rx="6" fill="#191a1f"/><text x="322" y="105" font-family="Arial,sans-serif" font-size="8" fill="#f5f1e8" text-anchor="middle">PONTE</text>
-    <rect x="420" y="42" width="162" height="72" rx="9" fill="#15161b" stroke="#36373e"/><text x="432" y="61" font-family="Consolas,monospace" font-size="7" fill="#aaa5a0">MÚSICA ATIVA</text><text x="432" y="83" font-family="Arial,sans-serif" font-size="15" font-weight="900" fill="#f5f1e8">MÚSICA 03</text><text x="432" y="103" font-family="Arial,sans-serif" font-size="8" fill="#aaa5a0">Próxima: MÚSICA 04</text>
-    <rect x="420" y="122" width="34" height="28" rx="6" fill="#191a1f"/><text x="437" y="141" font-family="Arial,sans-serif" font-size="12" fill="#f5f1e8" text-anchor="middle">◀</text><rect x="462" y="122" width="34" height="28" rx="6" fill="#173427" stroke="#378c63"/><text x="479" y="141" font-family="Arial,sans-serif" font-size="12" fill="#70e2a3" text-anchor="middle">▶</text><rect x="504" y="122" width="34" height="28" rx="6" fill="#3a1e27" stroke="#934052"/><text x="521" y="141" font-family="Arial,sans-serif" font-size="10" fill="#ff8da1" text-anchor="middle">■</text><rect x="546" y="122" width="34" height="28" rx="6" fill="#191a1f"/><text x="563" y="141" font-family="Arial,sans-serif" font-size="12" fill="#f5f1e8" text-anchor="middle">▶</text>
-  </g>
+  <!-- the real capture -->
+  <text x="700" y="252" class="mast" style="fill:#ffa133;font-weight:800">FIG. 1</text>
+  <text x="772" y="252" class="mast" style="fill:#f2f2f2">STAGE CONTROL, AS SHIPPED</text>
+  <rect x="699.5" y="265.5" width="445" height="251" fill="#141414" stroke="#444444"/>
+  <image href="media/en/stage-control.png" x="700" y="266" width="444" height="250" preserveAspectRatio="xMidYMid slice"/>
+
+  <!-- foot -->
+  <line x1="56" y1="556" x2="1144" y2="556" stroke="#333333"/>
+  <text x="56" y="590" class="foot" style="fill:#ffb35c">NTWORM.GITHUB.IO/RC-SETLIST</text>
+  <text x="1144" y="590" class="foot" text-anchor="end">LOCAL NETWORK · NO ACCOUNT · NO TELEMETRY</text>
 </svg>

@@ -26,9 +26,11 @@ test('public landing presents RC Setlist as source-available and noncommercial',
   // announcing v0.5.0 for the whole of the 0.5.1 release with nothing failing.
   const version = JSON.parse(read('package.json')).version;
   assert.ok(landing.includes(`Release ${version}`), `the landing must announce ${version}`);
+  // site-i18n.js holds the Portuguese copy of the landing ("Versão ..."), so it
+  // must name the same release rather than repeat the English label.
   assert.ok(
-    read('docs/site-i18n.js').includes(`Release ${version}`),
-    'site-i18n.js overrides the landing markup, so it must announce the same version',
+    read('docs/site-i18n.js').includes(`Versão ${version}`),
+    'site-i18n.js translates the landing, so it must announce the same version',
   );
   assert.match(landing, /id=["']languageSelect["']/);
   assert.doesNotMatch(landing, /Release candidate/i);
@@ -343,11 +345,13 @@ test('public landing contains truthful site media and keeps the owner media kit 
   const required = [
     'docs/media/en/product-truth-discord.png',
     'docs/media/en/performance.png',
+    'docs/media/en/performance-phone.png',
     'docs/media/en/stage-control.png',
     'docs/media/en/workflow.png',
     'docs/media/en/stage-editorial.png',
     'docs/media/pt-BR/product-truth-discord.png',
     'docs/media/pt-BR/performance.png',
+    'docs/media/pt-BR/performance-phone.png',
     'docs/media/pt-BR/stage-control.png',
     'docs/media/pt-BR/workflow.png',
     'docs/media/pt-BR/stage-editorial.png',
