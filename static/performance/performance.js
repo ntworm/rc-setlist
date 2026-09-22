@@ -32,6 +32,7 @@ const nextSong = document.getElementById('nextSong');
 const sectionName = document.getElementById('sectionName');
 const nextSection = document.getElementById('nextSection');
 const timecode = document.getElementById('timecode');
+const [timecodeElapsed, timecodeTotal] = timecode.children;
 const bpm = document.getElementById('bpm');
 const barcode = document.getElementById('barcode');
 const clickCard = document.getElementById('clickCard');
@@ -188,6 +189,31 @@ function formatSecondsAsTime(seconds) {
   return `${m}:${s.toString().padStart(2, '0')}`;
 }
 
+/**
+ * The stylesheet sizes each readout to fit its card from a glyph count. Setting
+ * it only when it changes keeps the per-frame tick from restyling the card.
+ */
+function setReadoutGlyphs(element, name, count) {
+  const value = String(count);
+  if (element.style.getPropertyValue(name) !== value) element.style.setProperty(name, value);
+}
+
+/**
+ * Writes "elapsed / total" as two spans, so the portrait layout can stack them.
+ * The glyph budget comes from the widest elapsed time this show can reach, not
+ * from the current one: the readout keeps one size for the whole show instead
+ * of shrinking the moment the elapsed time gains a digit.
+ */
+function renderShowTime(elapsedSeconds, totalSeconds, totalUsesHours) {
+  const elapsed = formatSecondsAsTime(elapsedSeconds);
+  const total = `/ ${formatDuration(totalSeconds, totalUsesHours)}`;
+  const widestElapsed = Math.max(elapsed.length, formatSecondsAsTime(totalSeconds).length);
+  timecodeElapsed.textContent = elapsed;
+  timecodeTotal.textContent = total;
+  setReadoutGlyphs(timecode, '--glyphs', widestElapsed + 1 + total.length);
+  setReadoutGlyphs(timecode, '--glyphs-stacked', Math.max(widestElapsed, total.length));
+}
+
 function formatDuration(seconds, includeHours = false) {
   if (typeof seconds !== 'number' || !Number.isFinite(seconds) || seconds < 0) return '—';
   const rounded = Math.round(seconds);
@@ -333,7 +359,11 @@ function tick() {
     // Show elapsed / total
     const showUsesHours =
       setlistProgress.showTotalSeconds !== null && setlistProgress.showTotalSeconds >= 3600;
-    timecode.textContent = `${formatSecondsAsTime(setlistProgress.showElapsedSeconds)} / ${formatDuration(setlistProgress.showTotalSeconds, showUsesHours)}`;
+    renderShowTime(
+      setlistProgress.showElapsedSeconds,
+      setlistProgress.showTotalSeconds,
+      showUsesHours,
+    );
 
     const timecodeEstEl = document.getElementById('timecodeEst');
     if (timecodeEstEl) {
@@ -363,7 +393,10 @@ function tick() {
     const remainingBeats = estimatedBeats % num;
     const beat = Math.floor(remainingBeats) + 1;
     const sixteenths = Math.floor((remainingBeats % 1) * 4) + 1;
-    barcode.textContent = `${bar}.${beat}.${sixteenths}`;
+    const barText = `${bar}.${beat}.${sixteenths}`;
+    barcode.textContent = barText;
+    // Seven glyphs holds bar 999 in 4/4; only a longer value widens the budget.
+    setReadoutGlyphs(barcode, '--glyphs', Math.max(7, barText.length));
 
     // Metronome Visual Beat Flash
     const currentIntBeat = Math.floor(estimatedBeats);

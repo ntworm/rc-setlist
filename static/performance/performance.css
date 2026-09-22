@@ -375,16 +375,27 @@ body {
 }
 
 .timecode-display {
-  font-size: clamp(1.85rem, 4vw, 4.4rem);
+  /* Below the song title at every width: the song outranks the clock. */
+  --readout-size: clamp(1.6rem, 3.2vw, 3.4rem);
+  --glyphs: 13;
 }
 
 .bar-card .timecode-display {
   color: var(--ui-accent-strong);
-  font-size: clamp(1.6rem, 3.4vw, 3.5rem);
+  --readout-size: clamp(1.6rem, 3.4vw, 3.5rem);
+  --glyphs: 7;
 }
 
 .bpm-display {
-  font-size: clamp(1.55rem, 3.2vw, 3.2rem);
+  --readout-size: clamp(1.55rem, 3.2vw, 3.2rem);
+  --glyphs: 5;
+}
+
+/* The wrapper carries the EST. badge beside the timecode. Left at its content
+   width it grew past the card, so the readout's own max-width never bit. */
+.timecode-card > div {
+  max-width: 100%;
+  justify-content: center;
 }
 
 .song-timecode {
@@ -400,9 +411,11 @@ body {
 .click-state {
   margin-top: 0.22rem;
   color: var(--ui-muted);
-  font-size: clamp(0.75rem, 0.9vw, 0.7rem);
+  font-size: var(--t-stage-micro);
   font-weight: 900;
+  font-variation-settings: 'wdth' var(--ui-wdth-dense);
   letter-spacing: 0;
+  text-align: center;
   text-transform: uppercase;
 }
 
@@ -529,6 +542,10 @@ body {
   .card-value {
     font-size: clamp(1.45rem, 3.1vw, 2.7rem);
   }
+
+  .timecode-display {
+    --readout-size: clamp(1.3rem, 2.6vw, 2.4rem);
+  }
 }
 
 @media (max-width: 600px) and (orientation: portrait) {
@@ -604,7 +621,7 @@ body {
   }
 
   .display-card {
-    border-radius: var(--ui-radius-md, 6px);
+    border-radius: var(--ui-radius);
     padding: 0.6rem 0.75rem;
   }
 
@@ -669,7 +686,7 @@ body {
   }
 
   .telemetry-card {
-    border-radius: var(--ui-radius-md, 6px);
+    border-radius: var(--ui-radius);
     padding: 0.65rem 0.35rem 0.55rem;
     display: flex;
     flex-direction: column;
@@ -688,16 +705,14 @@ body {
     width: 100%;
     margin: 0;
     padding: 0;
-    font-size: 0.7rem;
+    font-size: var(--t-stage-micro);
     font-weight: 850;
-    letter-spacing: 0.05em;
+    letter-spacing: 0;
     text-transform: uppercase;
     color: var(--ui-muted);
     text-align: center;
     line-height: 1.1;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    white-space: normal;
   }
 
   .timecode-card > div {
@@ -708,15 +723,23 @@ body {
     overflow: hidden;
   }
 
+  /* Elapsed on one line, "/ total" on the next: the card is tall and narrow
+     here, and two short lines read larger than one long one. */
   .timecode-display {
-    font-size: clamp(1.15rem, 4.4vw, 1.55rem);
+    --readout-size: clamp(1.15rem, 4.8vw, 1.9rem);
     line-height: 1.15;
     margin: 0.15rem 0;
     text-align: center;
+    white-space: normal;
+  }
+
+  .timecode-display > span {
+    display: block;
+    white-space: nowrap;
   }
 
   .bar-card .timecode-display {
-    font-size: clamp(1.35rem, 5.8vw, 1.95rem);
+    --readout-size: clamp(1.35rem, 5.8vw, 1.95rem);
     line-height: 1.15;
     margin: 0.15rem 0;
     color: var(--ui-accent-strong);
@@ -724,7 +747,7 @@ body {
   }
 
   .bpm-display {
-    font-size: clamp(1.35rem, 5.8vw, 1.95rem);
+    --readout-size: clamp(1.35rem, 5.8vw, 1.95rem);
     line-height: 1.15;
     margin: 0.15rem 0;
     text-align: center;
@@ -733,24 +756,23 @@ body {
   .song-timecode {
     display: block;
     margin: 0;
-    font-size: 0.76rem;
+    font-size: var(--t-stage-micro);
     font-weight: 800;
+    font-variation-settings: 'wdth' var(--ui-wdth-dense);
     line-height: 1.1;
     color: var(--ui-accent-strong);
-    white-space: nowrap;
     text-align: center;
   }
 
   .click-state {
     display: block;
     margin: 0;
-    font-size: 0.74rem;
+    font-size: var(--t-stage-micro);
     font-weight: 850;
     line-height: 1.1;
     color: var(--ui-muted);
-    letter-spacing: 0.03em;
+    letter-spacing: 0;
     text-transform: uppercase;
-    white-space: nowrap;
     text-align: center;
   }
 }
@@ -909,9 +931,9 @@ body {
     width: 100%;
     margin: 0 0 0.08rem 0;
     padding: 0;
-    font-size: 0.62rem;
+    font-size: var(--t-stage-micro);
     font-weight: 850;
-    letter-spacing: 0.04em;
+    letter-spacing: 0;
     text-transform: uppercase;
     color: var(--ui-muted);
     text-align: center;
@@ -930,14 +952,14 @@ body {
   }
 
   .timecode-display {
-    font-size: clamp(0.85rem, 3.8vh, 1.2rem);
+    --readout-size: clamp(0.85rem, 3.8vh, 1.2rem);
     line-height: 1.1;
     margin: 0;
     text-align: center;
   }
 
   .bar-card .timecode-display {
-    font-size: clamp(1rem, 4.5vh, 1.45rem);
+    --readout-size: clamp(1rem, 4.5vh, 1.45rem);
     line-height: 1.1;
     margin: 0;
     color: var(--ui-accent-strong);
@@ -945,7 +967,7 @@ body {
   }
 
   .bpm-display {
-    font-size: clamp(1rem, 4.5vh, 1.45rem);
+    --readout-size: clamp(1rem, 4.5vh, 1.45rem);
     line-height: 1.1;
     margin: 0;
     text-align: center;
@@ -954,7 +976,8 @@ body {
   .song-timecode {
     display: block;
     margin: 0.08rem 0 0 0;
-    font-size: clamp(0.62rem, 2.5vh, 0.72rem);
+    font-size: var(--t-stage-micro);
+    font-variation-settings: 'wdth' var(--ui-wdth-dense);
     line-height: 1;
     color: var(--ui-accent-strong);
     white-space: nowrap;
@@ -964,10 +987,10 @@ body {
   .click-state {
     display: block;
     margin: 0.08rem 0 0 0;
-    font-size: clamp(0.62rem, 2.5vh, 0.72rem);
+    font-size: var(--t-stage-micro);
     line-height: 1;
     color: var(--ui-muted);
-    letter-spacing: 0.02em;
+    letter-spacing: 0;
     text-transform: uppercase;
     white-space: nowrap;
     text-align: center;
@@ -993,11 +1016,13 @@ body {
     gap: var(--s-1);
   }
 
+  /* A long label ("COMPASSO / TEMPO") wraps onto a second line rather than
+     running past a narrow card. */
   .telemetry-card .card-label {
     position: static;
     top: auto;
     left: auto;
-    white-space: nowrap;
+    white-space: normal;
   }
 }
 
@@ -1018,5 +1043,30 @@ body {
 @media (max-width: 900px) {
   .stage-brand-copy {
     display: none;
+  }
+}
+
+/* Readouts are sized by their card, not by the viewport. A value set in vw
+   outgrew its card at every desktop width and the card clipped both ends of the
+   timecode. Each readout keeps its design size unless that many glyphs
+   (--glyphs; performance.js sets it for the timecode from the show total, so it
+   stays fixed for the whole show) would not fit the card's content box. 0.66em
+   is one Martian Mono glyph at wdth 100 with the -0.06em tracking (0.64em
+   measured) plus slack for rounding. */
+.telemetry-card {
+  container-type: inline-size;
+}
+
+.timecode-display,
+.bpm-display {
+  font-size: min(var(--readout-size), calc(100cqi / (var(--glyphs) * 0.66)));
+}
+
+@media (max-width: 600px) and (orientation: portrait) {
+  .timecode-display {
+    font-size: min(
+      var(--readout-size),
+      calc(100cqi / (var(--glyphs-stacked, var(--glyphs)) * 0.66))
+    );
   }
 }
