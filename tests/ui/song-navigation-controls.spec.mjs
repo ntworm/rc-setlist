@@ -1,5 +1,10 @@
 import { expect, test } from '@playwright/test';
 
+// Past the 500 ms hold gate with room to spare: on a loaded CI runner the
+// gate's own timer can fire late, and a release 50 ms after it cancelled
+// the hold before it completed.
+const HOLD_PAST_GATE_MS = 900;
+
 async function fixtureState(page) {
   return page.evaluate(async () => fetch('/__test__/state').then((response) => response.json()));
 }
@@ -17,7 +22,7 @@ async function emitServerMessage(page, payload) {
   }, payload);
 }
 
-async function pointerHold(page, locator, pointerId, holdMs = 550) {
+async function pointerHold(page, locator, pointerId, holdMs = HOLD_PAST_GATE_MS) {
   await locator.dispatchEvent('pointerdown', {
     button: 0,
     pointerId,

@@ -1,5 +1,10 @@
 import { expect, test } from '@playwright/test';
 
+// Past the 500 ms hold gate with room to spare: on a loaded CI runner the
+// gate's own timer can fire late, and a release 50 ms after it cancelled
+// the hold before it completed.
+const HOLD_PAST_GATE_MS = 900;
+
 async function jumpMessages(page) {
   const messages = await page.evaluate(async () =>
     fetch('/__test__/messages').then((response) => response.json()),
@@ -105,7 +110,7 @@ test('mobile hold works while stopped, active targets stay inert, and drag cance
     clientX: 10,
     clientY: 24,
   });
-  await page.waitForTimeout(550);
+  await page.waitForTimeout(HOLD_PAST_GATE_MS);
   await target.dispatchEvent('pointerup', {
     pointerType: 'touch',
     pointerId: 22,
@@ -134,7 +139,7 @@ test('armed mobile song movement previews one insertion slot and commits the adj
     clientX: sourceBox.x + 10,
     clientY: sourceBox.y + 10,
   });
-  await page.waitForTimeout(550);
+  await page.waitForTimeout(HOLD_PAST_GATE_MS);
   await source.dispatchEvent('pointermove', {
     pointerType: 'touch',
     pointerId: 41,
@@ -183,7 +188,7 @@ test('native Chrome touch hold then vertical drag previews and commits a song re
   const destinationY = targetBox.y + targetBox.height - 4;
 
   await nativeTouch(session, 'touchStart', x, startY);
-  await page.waitForTimeout(550);
+  await page.waitForTimeout(HOLD_PAST_GATE_MS);
   await nativeTouch(session, 'touchMove', x, startY + 24);
   await nativeTouch(session, 'touchMove', x, destinationY);
   await expect(page.locator('.song-item[data-song="0"]')).toHaveClass(/is-reordering/);
@@ -294,7 +299,7 @@ test('armed mobile section movement cancels without a jump or reorder', async ({
     clientX: box.x + 10,
     clientY: box.y + 10,
   });
-  await page.waitForTimeout(550);
+  await page.waitForTimeout(HOLD_PAST_GATE_MS);
   await section.dispatchEvent('pointermove', {
     pointerType: 'pen',
     pointerId: 42,

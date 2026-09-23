@@ -1,5 +1,10 @@
 import { expect, test } from '@playwright/test';
 
+// Past the 500 ms hold gate with room to spare: on a loaded CI runner the
+// gate's own timer can fire late, and a release 50 ms after it cancelled
+// the hold before it completed.
+const HOLD_PAST_GATE_MS = 900;
+
 async function receivedControlMessages(page) {
   return page.evaluate(async () => fetch('/__test__/messages').then((response) => response.json()));
 }
@@ -250,7 +255,7 @@ test('Setlist Previous, Next and Stop require a real 500 ms pointer hold while P
     pointerType: 'touch',
     isPrimary: true,
   });
-  await page.waitForTimeout(550);
+  await page.waitForTimeout(HOLD_PAST_GATE_MS);
   await next.dispatchEvent('pointerup', {
     button: 0,
     pointerId: 2,
@@ -291,7 +296,7 @@ test('Setlist Previous, Next and Stop require a real 500 ms pointer hold while P
     pointerType: 'touch',
     isPrimary: true,
   });
-  await page.waitForTimeout(550);
+  await page.waitForTimeout(HOLD_PAST_GATE_MS);
   await stop.dispatchEvent('pointerup', {
     button: 0,
     pointerId: 4,
@@ -304,12 +309,13 @@ test('Setlist Previous, Next and Stop require a real 500 ms pointer hold while P
 
   await page.locator('#btnPrevious').focus();
   await page.keyboard.down('Enter');
-  await page.waitForTimeout(550);
+  await page.waitForTimeout(HOLD_PAST_GATE_MS);
   await page.keyboard.up('Enter');
-  const keyboardJumps = (await receivedControlMessages(page)).filter(
-    (message) => message.type === 'jump',
-  );
-  expect(keyboardJumps.at(-1)).toEqual({ type: 'jump', songIndex: 2, sectionIndex: 1 });
+  await expect
+    .poll(async () =>
+      (await receivedControlMessages(page)).filter((message) => message.type === 'jump').at(-1),
+    )
+    .toEqual({ type: 'jump', songIndex: 2, sectionIndex: 1 });
 });
 
 test('Setlist keeps quantization pending until authoritative Ableton state arrives', async ({
