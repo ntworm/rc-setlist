@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { existsSync, readFileSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import { test } from 'node:test';
+import { fileURLToPath } from 'node:url';
 
 function read(path) {
   return readFileSync(new URL(`../${path}`, import.meta.url), 'utf8');
@@ -339,6 +340,21 @@ test('0.4.1 release notes remain preserved, bilingual and describe the tested re
     /\[Landing page and screenshots\]\(https:\/\/ntworm\.github\.io\/rc-setlist\/\)/,
   );
   assert.match(readme, /!\[RC Setlist Stage Control\]\(docs\/media\/en\/stage-control\.png\)/);
+});
+
+test('Portuguese HTML docs match their Markdown sources', () => {
+  // The landing links Portuguese readers to these rendered pages. A Markdown
+  // edit without a re-render published a user guide 116 lines out of date.
+  const result = spawnSync(
+    process.execPath,
+    [
+      fileURLToPath(new URL('../scripts/render-docs.mjs', import.meta.url)),
+      '--check',
+      fileURLToPath(new URL('../docs/pt-BR', import.meta.url)),
+    ],
+    { encoding: 'utf8' },
+  );
+  assert.equal(result.status, 0, result.stderr);
 });
 
 test('public landing contains truthful site media and keeps the owner media kit private', () => {

@@ -49,8 +49,8 @@ try {
       ${svg}
     `);
     await page.evaluate(async () => {
-      await document.fonts.load("800 16px 'Martian Mono'");
-      await document.fonts.ready;
+      await globalThis.document.fonts.load("800 16px 'Martian Mono'");
+      await globalThis.document.fonts.ready;
     });
     await page
       .locator('svg')

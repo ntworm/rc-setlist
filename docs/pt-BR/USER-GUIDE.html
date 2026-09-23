@@ -117,20 +117,22 @@
 Marcador Técnico [ignore]</code></pre>
     <p>
       | Tag | Efeito | | ------------------------- |
-      ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-      | | <code>[loop]</code> | Repete a seção atual até ser desativado. | |
-      <code>[loop Nx]</code> | Repete a seção N vezes. | | <code>[stop]</code> | Para quando o
-      localizador é alcançado. | | <code>[next]</code> | Passa a reprodução para a próxima música no
-      instante em que este marcador é alcançado. Escrita numa seção, ela ainda sai da música — não
-      avança para a próxima seção. | | <code>[bpm N]</code> | Define o BPM esperado. | |
-      <code>[click]</code> / <code>[click off]</code> | Liga ou desliga o metrônomo do Live. | |
-      <code>[skip]</code> | Ignora esta seção ou música: passa a reprodução para a próxima seção (ou
-      música) no instante em que este marcador é alcançado. | | <code>[jump NOME]</code> | Passa a
-      reprodução para o marcador chamado NOME no instante em que este marcador é alcançado — uma
-      seção desta música, uma música, ou <code>Música &gt; Seção</code>. Nomes são comparados sem as
-      tags e sem diferenciar maiúsculas. | | <code>[hidden]</code> | Oculta uma âncora de automação
-      do setlist visível. | | <code>[ignore]</code> | Marcador técnico que oculta o localizador e
-      tem precedência sobre qualquer tag de ação. |
+      -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+      | | <code>[loop]</code> | Repete a seção atual em loop contínuo até ser desativado. | |
+      <code>[loop Nx]</code> | Repete a seção exatamente N vezes. | | <code>[stop]</code> |
+      Interrompe a reprodução quando o localizador é alcançado. | | <code>[next]</code> | Salta a
+      reprodução para a próxima música no instante em que este marcador é alcançado. Usada em uma
+      seção, encerra a música atual a partir dali, sem avançar para as seções seguintes. | |
+      <code>[bpm N]</code> | Define o andamento (BPM) esperado. | | <code>[click]</code> /
+      <code>[click off]</code> | Ativa ou desativa o metrônomo nativo do Live. | |
+      <code>[skip]</code> | Avança para a próxima seção (ou para a próxima música, caso seja a
+      última seção) no instante em que este marcador é alcançado. O trecho posterior ao marcador não
+      toca. | | <code>[jump NOME]</code> | Salta a reprodução para o marcador indicado em NOME no
+      instante em que este marcador é alcançado — uma seção desta música, uma música, ou
+      <code>Música &gt; Seção</code>. Nomes são comparados sem as tags e sem diferenciar
+      maiúsculas/minúsculas. | | <code>[hidden]</code> | Oculta uma âncora de automação do setlist
+      visível. | | <code>[ignore]</code> | Marcador técnico que oculta o localizador e tem
+      precedência sobre qualquer tag de ação. |
     </p>
     <p>
       As tags não diferenciam maiúsculas de minúsculas e não aparecem no nome exibido. A tag
@@ -140,7 +142,7 @@ Marcador Técnico [ignore]</code></pre>
     <h3 id="emendar-m-sicas-com-next">Emendar músicas com <code>[next]</code></h3>
     <p>
       Para ir direto do fim de uma música para a próxima, pulando os compassos vazios entre elas,
-      coloque um marcador onde o áudio da música termina e dê a ele <code>[next]</code>:
+      coloque um marcador onde o áudio da música termina e adicione a tag <code>[next]</code>:
     </p>
     <pre><code class="lang-text">Música A [bpm 122]
 &gt; Verso
@@ -148,13 +150,13 @@ Marcador Técnico [ignore]</code></pre>
 &gt; Fim [next]
 Música B [bpm 96]</code></pre>
     <p>
-      Quando o playhead alcança <code>&gt; Fim</code>, o RC Setlist o move para o localizador de
-      <code>Música B</code> na hora — não no próximo compasso. Os saltos de localizador do próprio
-      Live são quantizados pela quantização global, o que, num marcador seguido de um compasso
-      vazio, cairia exatamente onde <code>Música B</code> já estaria começando; por isso essa
-      transição não é um salto de cue do Live. A passagem acontece cerca de um décimo de segundo
-      depois de o marcador ser cruzado (a posição é lida a cada 100 ms e o AbletonOSC processa
-      comandos a cada 100 ms), nunca antes, e a próxima música sempre começa do seu primeiro tempo.
+      Quando o cursor alcança <code>&gt; Fim</code>, o RC Setlist move a reprodução para o
+      localizador de <code>Música B</code> imediatamente — sem esperar o próximo compasso. Os saltos
+      de localizador do próprio Live são quantizados pela quantização global, o que, em um marcador
+      seguido de compassos vazios, atrasaria a transição; por isso essa mudança não usa o salto de
+      cue nativo do Live. A transição ocorre cerca de um décimo de segundo depois de o marcador ser
+      cruzado (a posição é lida a cada 100 ms e o AbletonOSC processa comandos a cada 100 ms), nunca
+      antes, e a próxima música sempre começa do seu primeiro tempo (downbeat).
       <code>[skip]</code> passa a reprodução do mesmo jeito.
     </p>
     <p>
@@ -173,15 +175,15 @@ Música B [bpm 96]</code></pre>
     <h2 id="editar-um-marcador">Editar um marcador</h2>
     <p>
       Dê um clique duplo na linha de uma música ou no chip de uma seção no Controle de Palco para
-      abrir o editor de marcador. Ali toda tag é um controle — você nunca digita uma
-      <code>[tag]</code> à mão, e não consegue apagar uma sem querer.
+      abrir o editor de marcadores. Nele, cada tag é um controle visual — você nunca digita uma
+      <code>[tag]</code> à mão nem corre o risco de apagar uma sem querer.
     </p>
     <p>
       Uma <strong>música</strong> carrega nome, cor, notas, andamento inicial e os comportamentos
       <code>[stop]</code>, <code>[next]</code> e <code>[skip]</code>. As notas são uma linha para o
       palco — tom, afinação, quem começa — mostrada abaixo do título no card e na tela de
-      performance; como a cor, ficam guardadas ao lado do setlist e nunca vão para o projeto do
-      Live. Ela também lista suas seções; clique em uma para editá-la, e a seta no topo do painel
+      performance; assim como a cor, ficam guardadas no perfil do setlist e nunca vão para o projeto
+      do Live. Ela também lista suas seções: clique em uma para editá-la, e a seta no topo do painel
       traz você de volta para a música.
     </p>
     <p>
@@ -211,16 +213,16 @@ Música B [bpm 96]</code></pre>
     </ul>
     <p>significado, então reordená-las não é uma mudança.</p>
     <p>
-      A edição é recusada com o transporte tocando. Renomear um localizador significa apagá-lo e
-      criá-lo de novo, e o Live só cria um cue point onde o playhead está — com a reprodução
-      rodando, o marcador novo cairia onde quer que o playhead tivesse chegado. Pare o transporte
-      antes.
+      A edição não é permitida com o transporte em reprodução. Renomear um localizador significa
+      apagá-lo e criá-lo de novo, e o Live só cria um cue point onde o playhead está — com a
+      reprodução rodando, o marcador novo cairia na posição em que o playhead tivesse chegado no
+      momento. Pare o transporte antes de editar.
     </p>
     <p>
-      A cor é memória do próprio RC Setlist. Ela fica guardada junto do seu setlist, nunca é escrita
-      no projeto do Live, e acompanha a música quando você a renomeia ou a move. Os oito tons são
-      dessaturados de propósito: no card, cor é identidade, e as cores vivas ficam reservadas para
-      estado.
+      A atribuição de cor é gerenciada pelo próprio RC Setlist. Ela fica guardada junto ao seu
+      setlist, nunca é escrita no projeto do Live, e acompanha a música quando você a renomeia ou a
+      move. Os oito tons são dessaturados de propósito: no card, a cor define a identidade da faixa,
+      e as cores vivas ficam reservadas para indicar estados operacionais.
     </p>
     <h2 id="perfis">Perfis</h2>
     <p>
@@ -447,53 +449,57 @@ Música B [bpm 96]</code></pre>
     </p>
     <h2 id="automa-o-de-tempo-desenhada-no-live">Automação de tempo desenhada no Live</h2>
     <p>
-      Se o seu Arrangement tem automação de tempo própria, mantenha
-      <strong>Definir o tempo do Live ao pular</strong> <strong>desligado</strong> no painel do
-      Live. Ele já vem desligado, e o motivo é este.
+      Se o seu Arrangement tem automação de andamento desenhada na faixa master, mantenha a opção
+      <strong>Definir o tempo do Live ao pular</strong> <strong>desligada</strong> no painel do Live
+      (ela já vem desligada por padrão).
     </p>
     <p>
-      Um pulo explícito pode escrever o tempo de destino no Live antes de mover o playhead. Escrever
-      <code>song.tempo</code> sobrepõe a automação de tempo do Live: o arranjo para de seguir o
-      próprio envelope até você clicar em <strong>Re-Enable Automation</strong> na barra de
-      transporte. Um pulo no meio do show achataria o tempo do resto do set.
+      Um salto explícito pode aplicar o andamento de destino ao Live antes de mover o cursor.
+      Escrever <code>song.tempo</code> sobrepõe a automação de andamento nativa do Live: o arranjo
+      para de seguir o envelope desenhado até que você clique no botão
+      <strong>Re-Enable Automation</strong> na barra de transporte. Executar um salto nessas
+      condições fixaria um andamento estático para o restante do show.
     </p>
     <p>
-      O RC Setlist também vigia isso sozinho. Quando o tempo que o Live reporta diverge da tag
-      <code>[bpm N]</code> declarada naquele ponto do setlist, a extensão conclui que alguém além do
-      setlist é dono do tempo e se recusa a escrever, mesmo com a opção ligada.
+      O RC Setlist monitora isso ativamente: quando o andamento reportado pelo Live diverge da tag
+      <code>[bpm N]</code> declarada para aquele trecho, a extensão identifica que o andamento é
+      controlado pelo arranjo e suspende a escrita de tempo, mesmo que a opção esteja ligada no
+      painel.
     </p>
     <p>
-      Uma tag <code>[bpm N]</code> significa &quot;meça a duração com isto&quot;. Ela não significa
-      &quot;imponha isto ao Live&quot;. Marcar as suas músicas é seguro com automação de tempo, e é
-      o que transforma uma duração estimada do set numa duração exata.
+      A inclusão da tag <code>[bpm N]</code> funciona como &quot;calcule a duração usando esta
+      referência&quot;, e não como imposição obrigatória de andamento ao Live. Declarar o BPM das
+      músicas é totalmente seguro em projetos com automação de andamento e é o que converte uma
+      estimativa de duração em um cálculo 100% exato.
     </p>
     <p>
-      Ligue a opção apenas quando as tags forem a sua fonte de verdade para o tempo e o Arrangement
-      não tiver automação de tempo.
+      Ligue essa opção apenas quando as tags forem a fonte primária de andamento do seu show e o
+      Arrangement não contiver envelopes de automação de tempo.
     </p>
     <h2 id="como-o-rc-setlist-reconhece-as-suas-m-sicas">
       Como o RC Setlist reconhece as suas músicas
     </h2>
     <p>
       <strong
-        >O locator do Ableton é a fonte de verdade. O RC Setlist nunca escreve nada escondido no seu
-        projeto.</strong
+        >O localizador do Ableton é a fonte da verdade. O RC Setlist nunca grava dados ocultos no
+        seu projeto.</strong
       >
-      Ele reconhece uma música por nome e posição, nessa ordem.
+      Ele identifica uma música por nome e posição, nessa ordem:
     </p>
     <ul>
       <li>Renomeie uma música e ela continua a mesma — a posição não mudou.</li>
-      <li>Arraste para outro lugar e ela continua a mesma — o nome não mudou.</li>
-      <li>Mude os dois ao mesmo tempo e ela é tratada como música nova.</li>
+      <li>Mova o marcador para outro compasso e ela continua a mesma — o nome não mudou.</li>
+      <li>Altere ambos simultaneamente e ela será tratada como uma nova música.</li>
     </ul>
     <p>
-      Tudo que o RC Setlist guarda por fora segue essa identidade. Apague um locator sem querer e
-      recrie: o que ele lembrava volta.
+      Tudo o que o RC Setlist armazena externamente (cores, notas e letras) respeita essa
+      identidade. Caso você exclua um localizador por engano e o recrie na mesma posição ou com o
+      mesmo nome, os dados associados são restaurados automaticamente.
     </p>
     <p>
       O raciocínio completo está em
       <a href="../architecture/song-identity.md">docs/architecture/song-identity.md</a>.
     </p>
-    <div class="source">Rendered from <code>docs\pt-BR\USER-GUIDE.md</code> on 2026-09-17.</div>
+    <div class="source">Rendered from <code>docs\pt-BR\USER-GUIDE.md</code> on 2026-09-23.</div>
   </body>
 </html>
