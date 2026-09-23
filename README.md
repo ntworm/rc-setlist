@@ -55,7 +55,7 @@ until this release is exercised on real macOS hardware.
 ## Quick start
 
 1. Install RC Bridge: run the kit's `Install-RC-Bridge.cmd` / `Install RC Bridge.command`, then choose RCBridge as a Control Surface in Live.
-2. Download `RC-Setlist-1.0.1.ablx` (or `RC-Setlist-1.0.0.ablx`) from the latest release.
+2. Download `RC-Setlist-1.0.0.ablx` from the latest release.
 3. Open the `.ablx` and approve installation in Live.
 4. In Live, open **Extensions > RC Setlist** and start the server.
 5. Use the panel URL or QR code to open `/setlist` or `/performance`.

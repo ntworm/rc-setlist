@@ -94,7 +94,7 @@ The kit's `RC-Bridge/Install-RC-Bridge.ps1` (Windows) or
 `RC-Bridge/Install RC Bridge.command` (macOS) automatically removes any
 `Ableton-RC-Setlist-*.ablx` that was previously installed in your User Library.
 No separate uninstall step is needed. If you ran the installer before upgrading
-to 1.0.1, use the included `uninstall-pre-1.0-extensions.ps1` as a manual
+to 1.0, use the included `uninstall-pre-1.0-extensions.ps1` as a manual
 fallback (see [TROUBLESHOOTING.md](TROUBLESHOOTING.md)).
 
 The controller URL contains a token. Treat it like a local password and do not
