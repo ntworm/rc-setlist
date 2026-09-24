@@ -87,6 +87,23 @@ can focus on semantics.
 The public TypeScript configuration excludes SDK-facing files but checks the
 portable core. The release gate checks the complete application.
 
+## Public site
+
+`docs/` is published by GitHub Pages at <https://ntworm.github.io/rc-setlist/>.
+`docs/index.html`, `docs/site-i18n.js`, `docs/llms.txt` and the Markdown guides
+are written by hand; the Portuguese pages, the structured data, the sitemap and
+`docs/llms-full.txt` are rendered from them:
+
+```bash
+npm run site:render   # re-render after editing the landing, its strings, the README or a guide
+npm run site:check    # fails when a rendered file is stale
+```
+
+Keep `docs/googlea8031c5d5ee880ce.html` (Google Search Console verification)
+and `docs/72299ed2a8455f83ed49011642aeb172.txt` (IndexNow key) exactly as they
+are. Why the site is built this way:
+[architecture/site-discoverability.md](architecture/site-discoverability.md).
+
 ## Generated files
 
 Do not commit `node_modules/`, `dist/`, `.ablx`, release candidates, certificates,

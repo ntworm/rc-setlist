@@ -45,6 +45,7 @@ docs/TESTER-GUIDE.md
 docs/TROUBLESHOOTING.md
 docs/USER-GUIDE.md
 docs/apple-touch-icon.png
+docs/architecture/site-discoverability.md
 docs/architecture/song-identity.md
 docs/architecture/tempo-automation-limitation.md
 docs/favicon-32.png

@@ -12,6 +12,8 @@ All notable public changes to Ableton RC Setlist are recorded here.
 - **IndexNow workflow** (`.github/workflows/indexnow.yml`): after a site change reaches GitHub Pages, it tells Bing and the other IndexNow engines about every page in the sitemap.
 - Three landing FAQ entries (price, lyrics on stage, backing tracks) and a one-line description under the title.
 - `npm run site:render` and `npm run site:check`; `tests/documentation-contract.test.mjs` fails when a rendered site file is stale.
+- **Google Search Console verification** file (`docs/googlea8031c5d5ee880ce.html`), kept byte for byte by a documentation test.
+- **`docs/architecture/site-discoverability.md`** records why the site is built this way, what must stay true, and what is left to do.
 
 ### Changed
 
@@ -19,6 +21,10 @@ All notable public changes to Ableton RC Setlist are recorded here.
 - Portuguese guides are rendered with `lang="pt-BR"`, their own heading as the title, a description, a canonical address and navigation back to the Portuguese landing.
 - **Brazilian Portuguese wording**: the landing, the current guides, the README, the test checklist and the interface use the terms Brazilian musicians use — "locators" as Live shows them, "click" for the metronome, "cards" and "tags" — instead of literal translations such as "localizadores" and "clique". Release notes before 1.0 keep their original wording.
 - The README introductions describe the extension in the words people search for.
+
+### Fixed
+
+- The landing's structured data lists the dev.to article and the KVR thread as plain references (`CreativeWork`), which clears Search Console's "Discussion forum: 1 invalid item".
 
 ## [1.0.0] - 2026-09-14
 

@@ -125,6 +125,7 @@ test('every user-facing English doc has a Portuguese counterpart under docs/pt-B
     'agent/NEXT_AGENT_HANDOFF.md',
     'agent/PROJECT_MAP.md',
     'agent/COMPETITIVE-LANDSCAPE-2026-09.md',
+    'architecture/site-discoverability.md',
     'architecture/song-identity.md',
     'architecture/tempo-automation-limitation.md',
     'RELEASE-NOTES-0.4.1.md',
