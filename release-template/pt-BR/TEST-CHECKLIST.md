@@ -35,7 +35,7 @@ primeiro teste durante um show real.
 
 ## Set fictício
 
-Crie um Arrangement descartável com estes localizadores, nesta ordem:
+Crie um Arrangement descartável com estes locators, nesta ordem:
 
 ```text
 TESTE 01 [bpm 120] [click]
@@ -47,7 +47,7 @@ TESTE 02 [bpm 128] [click off]
 TESTE 02 > REFRÃO
 ```
 
-- [ ] Os dois localizadores que contêm somente tags aparecem como seções de
+- [ ] Os dois locators que contêm somente tags aparecem como seções de
       automação dentro de TESTE 01, e não como músicas vazias.
 - [ ] Adicione `TESTE 01B` entre TESTE 01 e TESTE 02; **Atualizar** deve
       colocá-lo na posição cronológica em vez de anexá-lo ao final.

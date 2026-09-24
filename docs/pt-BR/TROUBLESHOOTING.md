@@ -37,7 +37,7 @@
 
 ## Nenhuma música aparece
 
-- Confirme que o Live Set tem localizadores no Arrangement.
+- Confirme que o Live Set tem locators no Arrangement.
 - Comece o nome com uma música; use `Música > Seção` nas seções.
 - Reinicie pelo painel depois de mudar a configuração da integração.
 
@@ -72,7 +72,7 @@ um trecho sanitizado de `ExtensionHost.txt` sem apagar os dados do perfil.
 
 - Confirme o perfil ativo.
 - Confirme que a letra está associada ao título limpo da música.
-- Remova tags de localizador do nome usado na letra.
+- Remova tags de locator do nome usado na letra.
 - Salve novamente no editor interno e atualize o estado.
 
 Ao atualizar de uma versão antiga chamada **RC SETLIST** ou **Ableton Setlist

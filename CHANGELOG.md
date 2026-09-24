@@ -17,7 +17,7 @@ All notable public changes to Ableton RC Setlist are recorded here.
 
 - The landing title and description say what the extension does ("setlist & lyrics extension for Ableton Live") instead of "Operator Sheet".
 - Portuguese guides are rendered with `lang="pt-BR"`, their own heading as the title, a description, a canonical address and navigation back to the Portuguese landing.
-- **Brazilian Portuguese wording** on the landing and in the README: the terms Brazilian musicians use — "locators" as Live shows them, "click" for the metronome, "cards" and "tags" — instead of literal translations such as "localizadores" and "clique".
+- **Brazilian Portuguese wording**: the landing, the current guides, the README, the test checklist and the interface use the terms Brazilian musicians use — "locators" as Live shows them, "click" for the metronome, "cards" and "tags" — instead of literal translations such as "localizadores" and "clique". Release notes before 1.0 keep their original wording.
 - The README introductions describe the extension in the words people search for.
 
 ## [1.0.0] - 2026-09-14

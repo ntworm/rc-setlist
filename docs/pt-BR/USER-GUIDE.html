@@ -6,7 +6,7 @@
     <title>Guia do RC Setlist — Ableton Live</title>
     <meta
       name="description"
-      content="O RC Setlist transforma localizadores do Arrangement do Ableton Live em um setlist e uma tela de performance. Leia INSTALL.md primeiro."
+      content="O RC Setlist transforma locators do Arrangement do Ableton Live em um setlist e uma tela de performance. Leia INSTALL.md primeiro."
     />
     <link rel="canonical" href="https://ntworm.github.io/rc-setlist/pt-BR/USER-GUIDE.html" />
     <link rel="alternate" type="text/markdown" href="./USER-GUIDE.md" />
@@ -17,7 +17,7 @@
     <meta property="og:title" content="Guia do RC Setlist — Ableton Live" />
     <meta
       property="og:description"
-      content="O RC Setlist transforma localizadores do Arrangement do Ableton Live em um setlist e uma tela de performance. Leia INSTALL.md primeiro."
+      content="O RC Setlist transforma locators do Arrangement do Ableton Live em um setlist e uma tela de performance. Leia INSTALL.md primeiro."
     />
     <meta property="og:url" content="https://ntworm.github.io/rc-setlist/pt-BR/USER-GUIDE.html" />
     <meta property="og:image" content="https://ntworm.github.io/rc-setlist/og-image.png" />
@@ -107,8 +107,8 @@
     <div class="crumbs"><a href="./">RC Setlist</a> · <a href="./README.html">Documentação</a></div>
     <h1 id="guia-do-rc-setlist">Guia do RC Setlist</h1>
     <p>
-      O RC Setlist transforma localizadores do Arrangement do Ableton Live em um setlist e uma tela
-      de performance. Leia <a href="INSTALL.html">INSTALL.md</a> primeiro.
+      O RC Setlist transforma locators do Arrangement do Ableton Live em um setlist e uma tela de
+      performance. Leia <a href="INSTALL.html">INSTALL.md</a> primeiro.
     </p>
     <h2 id="idioma-da-interface">Idioma da interface</h2>
     <p>
@@ -117,11 +117,11 @@
       A escolha fica salva localmente. Nomes de músicas, seções e conteúdo de letras ou cifras são
       dados do show e nunca são traduzidos.
     </p>
-    <h2 id="gram-tica-dos-localizadores">Gramática dos localizadores</h2>
+    <h2 id="sintaxe-dos-locators">Sintaxe dos locators</h2>
     <p>
-      Um localizador de música tem um título. Uma seção usa <code>Música &gt; Seção</code> ou a
-      sintaxe relativa <code>&gt; Seção</code> (que se vincula à música anterior). Tags de ação
-      isoladas como <code>[stop]</code> e localizadores de automação relativa como
+      Um locator de música tem um título. Uma seção usa <code>Música &gt; Seção</code> ou a sintaxe
+      relativa <code>&gt; Seção</code> (que se vincula à música anterior). Tags de ação isoladas
+      como <code>[stop]</code> e locators de automação relativa como
       <code>&gt; [stop]</code> pertencem à música cronologicamente anterior.
     </p>
     <pre><code class="lang-text">Música A [bpm 122] [click]
@@ -135,7 +135,7 @@ Marcador Técnico [ignore]</code></pre>
       -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
       | | <code>[loop]</code> | Repete a seção atual em loop contínuo até ser desativado. | |
       <code>[loop Nx]</code> | Repete a seção exatamente N vezes. | | <code>[stop]</code> |
-      Interrompe a reprodução quando o localizador é alcançado. | | <code>[next]</code> | Salta a
+      Interrompe a reprodução quando o locator é alcançado. | | <code>[next]</code> | Salta a
       reprodução para a próxima música no instante em que este marcador é alcançado. Usada em uma
       seção, encerra a música atual a partir dali, sem avançar para as seções seguintes. | |
       <code>[bpm N]</code> | Define o andamento (BPM) esperado. | | <code>[click]</code> /
@@ -146,13 +146,13 @@ Marcador Técnico [ignore]</code></pre>
       instante em que este marcador é alcançado — uma seção desta música, uma música, ou
       <code>Música &gt; Seção</code>. Nomes são comparados sem as tags e sem diferenciar
       maiúsculas/minúsculas. | | <code>[hidden]</code> | Oculta uma âncora de automação do setlist
-      visível. | | <code>[ignore]</code> | Marcador técnico que oculta o localizador e tem
-      precedência sobre qualquer tag de ação. |
+      visível. | | <code>[ignore]</code> | Marcador técnico que oculta o locator e tem precedência
+      sobre qualquer tag de ação. |
     </p>
     <p>
       As tags não diferenciam maiúsculas de minúsculas e não aparecem no nome exibido. A tag
       <code>[ignore]</code> tem precedência sobre tags de automação, ocultando o marcador e
-      ignorando quaisquer tags de ação no localizador sem criar músicas, seções ou automações.
+      ignorando quaisquer tags de ação no locator sem criar músicas, seções ou automações.
     </p>
     <h3 id="emendar-m-sicas-com-next">Emendar músicas com <code>[next]</code></h3>
     <p>
@@ -165,14 +165,14 @@ Marcador Técnico [ignore]</code></pre>
 &gt; Fim [next]
 Música B [bpm 96]</code></pre>
     <p>
-      Quando o cursor alcança <code>&gt; Fim</code>, o RC Setlist move a reprodução para o
-      localizador de <code>Música B</code> imediatamente — sem esperar o próximo compasso. Os saltos
-      de localizador do próprio Live são quantizados pela quantização global, o que, em um marcador
-      seguido de compassos vazios, atrasaria a transição; por isso essa mudança não usa o salto de
-      cue nativo do Live. A transição ocorre cerca de um décimo de segundo depois de o marcador ser
-      cruzado (a posição é lida a cada 100 ms e o AbletonOSC processa comandos a cada 100 ms), nunca
-      antes, e a próxima música sempre começa do seu primeiro tempo (downbeat).
-      <code>[skip]</code> passa a reprodução do mesmo jeito.
+      Quando o cursor alcança <code>&gt; Fim</code>, o RC Setlist move a reprodução para o locator
+      de <code>Música B</code> imediatamente — sem esperar o próximo compasso. Os saltos de locator
+      do próprio Live são quantizados pela quantização global, o que, em um marcador seguido de
+      compassos vazios, atrasaria a transição; por isso essa mudança não usa o salto de cue nativo
+      do Live. A transição ocorre cerca de um décimo de segundo depois de o marcador ser cruzado (a
+      posição é lida a cada 100 ms e o AbletonOSC processa comandos a cada 100 ms), nunca antes, e a
+      próxima música sempre começa do seu primeiro tempo (downbeat). <code>[skip]</code> passa a
+      reprodução do mesmo jeito.
     </p>
     <p>
       <code>[jump NOME]</code> é a mesma passagem apontada para qualquer lugar:
@@ -228,7 +228,7 @@ Música B [bpm 96]</code></pre>
     </ul>
     <p>significado, então reordená-las não é uma mudança.</p>
     <p>
-      A edição não é permitida com o transporte em reprodução. Renomear um localizador significa
+      A edição não é permitida com o transporte em reprodução. Renomear um locator significa
       apagá-lo e criá-lo de novo, e o Live só cria um cue point onde o playhead está — com a
       reprodução rodando, o marcador novo cairia na posição em que o playhead tivesse chegado no
       momento. Pare o transporte antes de editar.
@@ -266,11 +266,11 @@ Música B [bpm 96]</code></pre>
     <h2 id="dura-o-do-setlist">Duração do setlist</h2>
     <p>
       O Controle de Palco mostra a duração de cada música no cartão correspondente. O cabeçalho
-      mostra a duração total do setlist. Cada música vai do seu localizador até o localizador da
-      próxima música, incluindo qualquer intervalo de transição. A última música termina no fim do
-      Arrangement informado pelo Live; o total vai do primeiro localizador até esse mesmo fim e
-      também inclui as transições. Um travessão indica que o Live ainda não forneceu um limite final
-      válido do Arrangement.
+      mostra a duração total do setlist. Cada música vai do seu locator até o locator da próxima
+      música, incluindo qualquer intervalo de transição. A última música termina no fim do
+      Arrangement informado pelo Live; o total vai do primeiro locator até esse mesmo fim e também
+      inclui as transições. Um travessão indica que o Live ainda não forneceu um limite final válido
+      do Arrangement.
     </p>
     <h3 id="metodologia-de-dura-o-e-estabilidade-em-palco">
       Metodologia de duração e estabilidade em palco
@@ -302,7 +302,7 @@ Música B [bpm 96]</code></pre>
     <h3 id="como-obter-dura-es-exatas-bpm-n">Como obter durações exatas (<code>[bpm N]</code>)</h3>
     <p>
       Para calcular durações exatas trecho a trecho para cada música e seção, declare o andamento
-      explicitamente no nome do localizador usando <code>[bpm N]</code> (ex.:
+      explicitamente no nome do locator usando <code>[bpm N]</code> (ex.:
       <code>Música A [bpm 122]</code> ou <code>&gt; Refrão [bpm 135]</code>).
     </p>
     <ul>
@@ -317,7 +317,7 @@ Música B [bpm 96]</code></pre>
     </p>
     <ul>
       <li>
-        <strong>Confiança estimada (<code>EST.</code>)</strong>: Se nenhum localizador contiver tag
+        <strong>Confiança estimada (<code>EST.</code>)</strong>: Se nenhum locator contiver tag
         <code>[bpm]</code>, o RC Setlist
       </li>
     </ul>
@@ -341,8 +341,8 @@ Música B [bpm 96]</code></pre>
       </li>
     </ul>
     <p>
-      A declaração de tags <code>[bpm N]</code> nos localizadores de música elimina a discrepância
-      de 16:59, restaura o total exato de 78:41 e limpa o indicador de aviso <code>EST.</code>.
+      A declaração de tags <code>[bpm N]</code> nos locators de música elimina a discrepância de
+      16:59, restaura o total exato de 78:41 e limpa o indicador de aviso <code>EST.</code>.
     </p>
     <h2 id="controle-de-palco">Controle de Palco</h2>
     <p>Abra <code>/setlist</code> pela URL de controle com token mostrada no painel do Live.</p>
@@ -436,8 +436,8 @@ Música B [bpm 96]</code></pre>
     </p>
     <h2 id="ordem-e-csv">Ordem e CSV</h2>
     <p>
-      A ordem personalizada é um estado de apresentação; ela não move localizadores dentro do Live
-      Set. O CSV inclui uma linha por música visível com o <code>setlist</code> ativo,
+      A ordem personalizada é um estado de apresentação; ela não move locators dentro do Live Set. O
+      CSV inclui uma linha por música visível com o <code>setlist</code> ativo,
       <code>start_beat</code>, BPM declarado, duração numérica e legível,
       <code>sections_count</code>, nomes em <code>sections</code>, ações em
       <code>automations</code> e <code>lyric_lines</code>. Ele não inventa tom, fórmula de compasso
@@ -459,8 +459,8 @@ Música B [bpm 96]</code></pre>
       <li>Confira perfil ativo e trava de transporte antes de liberar o controle.</li>
     </ul>
     <p>
-      Esta versão lê localizadores do Arrangement. O suporte ao Session View foi adiado. Os links
-      locais do Controle de Palco e da Performance continuam usando HTTPS.
+      Esta versão lê locators do Arrangement. O suporte ao Session View foi adiado. Os links locais
+      do Controle de Palco e da Performance continuam usando HTTPS.
     </p>
     <h2 id="automa-o-de-tempo-desenhada-no-live">Automação de tempo desenhada no Live</h2>
     <p>
@@ -496,8 +496,8 @@ Música B [bpm 96]</code></pre>
     </h2>
     <p>
       <strong
-        >O localizador do Ableton é a fonte da verdade. O RC Setlist nunca grava dados ocultos no
-        seu projeto.</strong
+        >O locator do Ableton é a referência de tudo. O RC Setlist nunca grava dados ocultos no seu
+        projeto.</strong
       >
       Ele identifica uma música por nome e posição, nessa ordem:
     </p>
@@ -508,8 +508,8 @@ Música B [bpm 96]</code></pre>
     </ul>
     <p>
       Tudo o que o RC Setlist armazena externamente (cores, notas e letras) respeita essa
-      identidade. Caso você exclua um localizador por engano e o recrie na mesma posição ou com o
-      mesmo nome, os dados associados são restaurados automaticamente.
+      identidade. Caso você exclua um locator por engano e o recrie na mesma posição ou com o mesmo
+      nome, os dados associados são restaurados automaticamente.
     </p>
     <p>
       O raciocínio completo está em

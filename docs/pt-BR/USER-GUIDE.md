@@ -1,6 +1,6 @@
 # Guia do RC Setlist
 
-O RC Setlist transforma localizadores do Arrangement do Ableton Live em
+O RC Setlist transforma locators do Arrangement do Ableton Live em
 um setlist e uma tela de performance. Leia [INSTALL.md](INSTALL.md) primeiro.
 
 ## Idioma da interface
@@ -10,9 +10,9 @@ de Palco ou na Performance para escolher **English** ou **Português (Brasil)**.
 A escolha fica salva localmente. Nomes de músicas, seções e conteúdo de letras ou
 cifras são dados do show e nunca são traduzidos.
 
-## Gramática dos localizadores
+## Sintaxe dos locators
 
-Um localizador de música tem um título. Uma seção usa `Música > Seção` ou a sintaxe relativa `> Seção` (que se vincula à música anterior). Tags de ação isoladas como `[stop]` e localizadores de automação relativa como `> [stop]` pertencem à música cronologicamente anterior.
+Um locator de música tem um título. Uma seção usa `Música > Seção` ou a sintaxe relativa `> Seção` (que se vincula à música anterior). Tags de ação isoladas como `[stop]` e locators de automação relativa como `> [stop]` pertencem à música cronologicamente anterior.
 
 ```text
 Música A [bpm 122] [click]
@@ -27,16 +27,16 @@ Marcador Técnico [ignore]
 | ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `[loop]`                  | Repete a seção atual em loop contínuo até ser desativado.                                                                                                                                                                             |
 | `[loop Nx]`               | Repete a seção exatamente N vezes.                                                                                                                                                                                                    |
-| `[stop]`                  | Interrompe a reprodução quando o localizador é alcançado.                                                                                                                                                                             |
+| `[stop]`                  | Interrompe a reprodução quando o locator é alcançado.                                                                                                                                                                                 |
 | `[next]`                  | Salta a reprodução para a próxima música no instante em que este marcador é alcançado. Usada em uma seção, encerra a música atual a partir dali, sem avançar para as seções seguintes.                                                |
 | `[bpm N]`                 | Define o andamento (BPM) esperado.                                                                                                                                                                                                    |
 | `[click]` / `[click off]` | Ativa ou desativa o metrônomo nativo do Live.                                                                                                                                                                                         |
 | `[skip]`                  | Avança para a próxima seção (ou para a próxima música, caso seja a última seção) no instante em que este marcador é alcançado. O trecho posterior ao marcador não toca.                                                               |
 | `[jump NOME]`             | Salta a reprodução para o marcador indicado em NOME no instante em que este marcador é alcançado — uma seção desta música, uma música, ou `Música > Seção`. Nomes são comparados sem as tags e sem diferenciar maiúsculas/minúsculas. |
 | `[hidden]`                | Oculta uma âncora de automação do setlist visível.                                                                                                                                                                                    |
-| `[ignore]`                | Marcador técnico que oculta o localizador e tem precedência sobre qualquer tag de ação.                                                                                                                                               |
+| `[ignore]`                | Marcador técnico que oculta o locator e tem precedência sobre qualquer tag de ação.                                                                                                                                                   |
 
-As tags não diferenciam maiúsculas de minúsculas e não aparecem no nome exibido. A tag `[ignore]` tem precedência sobre tags de automação, ocultando o marcador e ignorando quaisquer tags de ação no localizador sem criar músicas, seções ou automações.
+As tags não diferenciam maiúsculas de minúsculas e não aparecem no nome exibido. A tag `[ignore]` tem precedência sobre tags de automação, ocultando o marcador e ignorando quaisquer tags de ação no locator sem criar músicas, seções ou automações.
 
 ### Emendar músicas com `[next]`
 
@@ -52,8 +52,8 @@ Música A [bpm 122]
 Música B [bpm 96]
 ```
 
-Quando o cursor alcança `> Fim`, o RC Setlist move a reprodução para o localizador de
-`Música B` imediatamente — sem esperar o próximo compasso. Os saltos de localizador do
+Quando o cursor alcança `> Fim`, o RC Setlist move a reprodução para o locator de
+`Música B` imediatamente — sem esperar o próximo compasso. Os saltos de locator do
 próprio Live são quantizados pela quantização global, o que, em um marcador
 seguido de compassos vazios, atrasaria a transição; por isso essa mudança não usa o
 salto de cue nativo do Live. A transição ocorre cerca de um décimo de segundo depois de
@@ -99,7 +99,7 @@ Três garantias do editor:
 - **Salvar sem mudar nada não escreve nada.** As tags são comparadas por
   significado, então reordená-las não é uma mudança.
 
-A edição não é permitida com o transporte em reprodução. Renomear um localizador significa
+A edição não é permitida com o transporte em reprodução. Renomear um locator significa
 apagá-lo e criá-lo de novo, e o Live só cria um cue point onde o playhead está —
 com a reprodução rodando, o marcador novo cairia na posição em que o playhead
 tivesse chegado no momento. Pare o transporte antes de editar.
@@ -135,10 +135,10 @@ que corresponda exatamente ao Live Set salvo é migrada, sem apagar a origem.
 ## Duração do setlist
 
 O Controle de Palco mostra a duração de cada música no cartão correspondente. O
-cabeçalho mostra a duração total do setlist. Cada música vai do seu localizador
-até o localizador da próxima música, incluindo qualquer intervalo de transição.
+cabeçalho mostra a duração total do setlist. Cada música vai do seu locator
+até o locator da próxima música, incluindo qualquer intervalo de transição.
 A última música termina no fim do Arrangement informado pelo Live; o total vai do
-primeiro localizador até esse mesmo fim e também inclui as transições. Um travessão
+primeiro locator até esse mesmo fim e também inclui as transições. Um travessão
 indica que o Live ainda não forneceu um limite final válido do Arrangement.
 
 ### Metodologia de duração e estabilidade em palco
@@ -161,13 +161,13 @@ conclusão, e o que o RC Setlist faz no lugar, está em
 ### Como obter durações exatas (`[bpm N]`)
 
 Para calcular durações exatas trecho a trecho para cada música e seção, declare o
-andamento explicitamente no nome do localizador usando `[bpm N]` (ex.: `Música A [bpm 122]`
+andamento explicitamente no nome do locator usando `[bpm N]` (ex.: `Música A [bpm 122]`
 ou `> Refrão [bpm 135]`).
 
 - **Confiança declarada**: Havendo pelo menos uma tag `[bpm]`, o RC Setlist calcula
   durações exatas trecho a trecho para músicas e seções com tag, propagando o andamento
   através de limites sem tag.
-- **Confiança estimada (`EST.`)**: Se nenhum localizador contiver tag `[bpm]`, o RC Setlist
+- **Confiança estimada (`EST.`)**: Se nenhum locator contiver tag `[bpm]`, o RC Setlist
   utiliza o andamento inicial da sessão do Live, classifica a confiança da duração como
   estimada e exibe o indicador `EST.` ao lado do tempo total e nos cartões do HUD.
 
@@ -179,7 +179,7 @@ Em um setlist de produção medido com 21 músicas e andamentos entre 93 e 166 B
 - **Estimativa de andamento único a 99 BPM**: 95:40 — **erro de 16:59 (+21,6%)**.
 - **Estimativa de andamento único a 136 BPM**: 69:38 — **erro de 9:03 (-11,5%)**.
 
-A declaração de tags `[bpm N]` nos localizadores de música elimina a discrepância de
+A declaração de tags `[bpm N]` nos locators de música elimina a discrepância de
 16:59, restaura o total exato de 78:41 e limpa o indicador de aviso `EST.`.
 
 ## Controle de Palco
@@ -265,7 +265,7 @@ editar timestamps e salvar. O texto fica no perfil ativo. Texto simples também
 
 ## Ordem e CSV
 
-A ordem personalizada é um estado de apresentação; ela não move localizadores
+A ordem personalizada é um estado de apresentação; ela não move locators
 dentro do Live Set. O CSV inclui uma linha por música visível com o `setlist`
 ativo, `start_beat`, BPM declarado, duração numérica e legível,
 `sections_count`, nomes em `sections`, ações em `automations` e `lyric_lines`.
@@ -287,7 +287,7 @@ opção desligada quando o serviço de rede só deva rodar em ensaios ou shows.
 - Não troque perfil, rede ou instalação do AbletonOSC durante o show.
 - Confira perfil ativo e trava de transporte antes de liberar o controle.
 
-Esta versão lê localizadores do Arrangement. O suporte ao Session View foi adiado.
+Esta versão lê locators do Arrangement. O suporte ao Session View foi adiado.
 Os links locais do Controle de Palco e da Performance continuam usando HTTPS.
 
 ## Automação de tempo desenhada no Live
@@ -304,12 +304,12 @@ Ligue essa opção apenas quando as tags forem a fonte primária de andamento do
 
 ## Como o RC Setlist reconhece as suas músicas
 
-**O localizador do Ableton é a fonte da verdade. O RC Setlist nunca grava dados ocultos no seu projeto.** Ele identifica uma música por nome e posição, nessa ordem:
+**O locator do Ableton é a referência de tudo. O RC Setlist nunca grava dados ocultos no seu projeto.** Ele identifica uma música por nome e posição, nessa ordem:
 
 - Renomeie uma música e ela continua a mesma — a posição não mudou.
 - Mova o marcador para outro compasso e ela continua a mesma — o nome não mudou.
 - Altere ambos simultaneamente e ela será tratada como uma nova música.
 
-Tudo o que o RC Setlist armazena externamente (cores, notas e letras) respeita essa identidade. Caso você exclua um localizador por engano e o recrie na mesma posição ou com o mesmo nome, os dados associados são restaurados automaticamente.
+Tudo o que o RC Setlist armazena externamente (cores, notas e letras) respeita essa identidade. Caso você exclua um locator por engano e o recrie na mesma posição ou com o mesmo nome, os dados associados são restaurados automaticamente.
 
 O raciocínio completo está em [docs/architecture/song-identity.md](../architecture/song-identity.md).

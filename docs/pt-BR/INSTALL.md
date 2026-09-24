@@ -103,7 +103,7 @@ publique capturas mostrando o endereço completo.
 
 ## 5. Verificar a primeira sessão
 
-1. Abra um Live Set com localizadores fictícios do [exemplo](../../examples/README.md).
+1. Abra um Live Set com locators fictícios do [exemplo](../../examples/README.md).
 2. No painel do RC Setlist, escolha **Verificar OSC** e confirme tráfego recebido.
 3. Confirme que músicas e seções aparecem em `/setlist`.
 4. Abra `/performance` e confirme que a música ativa acompanha o playhead do Live.

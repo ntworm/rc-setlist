@@ -57,11 +57,11 @@ orientação jurídica própria para um caso específico.
 
 ## Por que a duração total do meu setlist está diferente do esperado?
 
-Se o seu projeto no Ableton Live possui automações de andamento desenhadas na faixa master do Arrangement e os localizadores não contêm a tag `[bpm N]`, a extensão não consegue ler a curva de automação. Nem o Live Object Model nem o Extensions SDK expõem os pontos de automação da linha do tempo remotamente.
+Se o seu projeto no Ableton Live possui automações de andamento desenhadas na faixa master do Arrangement e os locators não contêm a tag `[bpm N]`, a extensão não consegue ler a curva de automação. Nem o Live Object Model nem o Extensions SDK expõem os pontos de automação da linha do tempo remotamente.
 
 Sem tags declaradas, o RC Setlist calcula a duração usando o andamento corrente do Live como estimativa uniforme e exibe a etiqueta `EST.`. Em um setlist real de 21 faixas com andamentos entre 93 e 166 BPM, essa estimativa gerou uma distorção de 16:59 (95:40 contra os 78:41 reais).
 
-Para obter durações exatas, adicione `[bpm N]` no nome do localizador de cada música (ex.: `Nome da Música [bpm 120]`). O RC Setlist passará a usar o modo de confiança declarada com cálculo trecho a trecho e removerá o aviso `EST.`.
+Para obter durações exatas, adicione `[bpm N]` no nome do locator de cada música (ex.: `Nome da Música [bpm 120]`). O RC Setlist passará a usar o modo de confiança declarada com cálculo trecho a trecho e removerá o aviso `EST.`.
 
 ## Por que não ouço a contagem?
 

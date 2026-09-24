@@ -196,9 +196,9 @@
     'performance.timecode': { en: 'Timecode', 'pt-BR': 'Timecode' },
     'performance.songTime': { en: 'Song: {time}', 'pt-BR': 'Música: {time}' },
     'performance.barBeat': { en: 'Bar / beat', 'pt-BR': 'Compasso / tempo' },
-    'performance.bpmClick': { en: 'BPM & click', 'pt-BR': 'BPM e clique' },
-    'performance.clickOn': { en: 'Click ON', 'pt-BR': 'Clique LIGADO' },
-    'performance.clickOff': { en: 'Click OFF', 'pt-BR': 'Clique DESLIGADO' },
+    'performance.bpmClick': { en: 'BPM & click', 'pt-BR': 'BPM e click' },
+    'performance.clickOn': { en: 'Click ON', 'pt-BR': 'Click LIGADO' },
+    'performance.clickOff': { en: 'Click OFF', 'pt-BR': 'Click DESLIGADO' },
     'performance.lyricsAria': { en: 'Synchronized lyrics', 'pt-BR': 'Letra sincronizada' },
     'performance.lyricsTitle': { en: 'Lyrics / chords', 'pt-BR': 'Letra / cifras' },
     'performance.noLyrics': {
@@ -287,7 +287,7 @@
     },
     'setlist.noSongs': {
       en: 'No songs with locators were found in the project.',
-      'pt-BR': 'Nenhuma música com localizadores foi encontrada no projeto.',
+      'pt-BR': 'Nenhuma música com locators foi encontrada no projeto.',
     },
     'setlist.activeSetlist': { en: 'Active setlist', 'pt-BR': 'Setlist ativo' },
     'setlist.active': { en: 'Active', 'pt-BR': 'Ativo' },
@@ -341,7 +341,7 @@
     'setlist.songTimeEmpty': { en: 'Song — / —', 'pt-BR': 'Música — / —' },
     'setlist.driftTitle': {
       en: 'Expected {expected} BPM (set by the locator). Live {live}.',
-      'pt-BR': 'Esperado: {expected} BPM (definido pelo localizador). Live: {live}.',
+      'pt-BR': 'Esperado: {expected} BPM (definido pelo locator). Live: {live}.',
     },
     'next.repeat': { en: '{name} (Repeat)', 'pt-BR': '{name} (Repetir)' },
 
@@ -380,7 +380,7 @@
     'midi.previousSong': { en: 'Previous Song', 'pt-BR': 'Música anterior' },
     'midi.nextSection': { en: 'Next Section', 'pt-BR': 'Próxima seção' },
     'midi.previousSection': { en: 'Previous Section', 'pt-BR': 'Seção anterior' },
-    'midi.toggleClick': { en: 'Toggle Click', 'pt-BR': 'Alternar clique' },
+    'midi.toggleClick': { en: 'Toggle Click', 'pt-BR': 'Ligar/desligar click' },
     'midi.toggleLock': { en: 'Toggle Panel Lock', 'pt-BR': 'Alternar bloqueio do painel' },
     'midi.toggleCountIn': {
       en: 'Toggle Count-In Bar',
@@ -405,7 +405,7 @@
     'keyboard.previousSong': { en: 'Previous Song', 'pt-BR': 'Música anterior' },
     'keyboard.nextSection': { en: 'Next Section', 'pt-BR': 'Próxima seção' },
     'keyboard.previousSection': { en: 'Previous Section', 'pt-BR': 'Seção anterior' },
-    'keyboard.toggleClick': { en: 'Toggle Click', 'pt-BR': 'Alternar clique' },
+    'keyboard.toggleClick': { en: 'Toggle Click', 'pt-BR': 'Ligar/desligar click' },
     'keyboard.toggleLock': { en: 'Toggle Panel Lock', 'pt-BR': 'Alternar bloqueio do painel' },
     'keyboard.toggleCountIn': {
       en: 'Toggle Count-In Bar',
@@ -559,7 +559,7 @@
     'help.intro': {
       en: 'Add bracketed tags to Ableton Live locators to program automations:',
       'pt-BR':
-        'Adicione tags entre colchetes aos localizadores do Ableton Live para programar automações:',
+        'Adicione tags entre colchetes aos locators do Ableton Live para programar automações:',
     },
     'help.flow': { en: 'Transition & Flow Tags:', 'pt-BR': 'Tags de transição e fluxo:' },
     'help.tag': { en: 'Tag', 'pt-BR': 'Tag' },
@@ -574,7 +574,7 @@
     },
     'help.stop': {
       en: 'Stops Ableton Live playback when the locator is reached.',
-      'pt-BR': 'Interrompe a reprodução do Ableton Live assim que o localizador é atingido.',
+      'pt-BR': 'Interrompe a reprodução do Ableton Live assim que o locator é atingido.',
     },
     'help.next': {
       en: "When the playhead reaches this marker, playback moves to the start of the next song and keeps going. Put it on the marker where a song's audio ends to chain straight into the next song.",
@@ -633,7 +633,7 @@
     'help.extra': { en: 'Extra Features & Filters:', 'pt-BR': 'Recursos adicionais e filtros:' },
     'help.hidden': {
       en: '[hidden] or the _ prefix: hides the locator from the visual setlist.',
-      'pt-BR': '[hidden] ou o prefixo _: oculta o localizador da visualização do setlist.',
+      'pt-BR': '[hidden] ou o prefixo _: oculta o locator da visualização do setlist.',
     },
     'help.ignore': {
       en: 'Hides the marker and overrides any other tag on it: no song, section or automation is created.',
@@ -642,7 +642,7 @@
     },
     'help.relativeSyntax': {
       en: '> Section: relative locator attached to the preceding song (e.g. > Intro).',
-      'pt-BR': '> Seção: localizador relativo vinculado à música anterior (ex.: > Intro).',
+      'pt-BR': '> Seção: locator relativo vinculado à música anterior (ex.: > Intro).',
     },
     'help.lock': {
       en: '🔒 Lock Mode: blocks taps and drags on phones or tablets to prevent accidental stage input.',
@@ -652,7 +652,7 @@
     'help.metronome': {
       en: '⚡ Visual Metronome: the BPM and bar card flashes with the click using +90 ms network compensation.',
       'pt-BR':
-        '⚡ Metrônomo visual: o card de BPM e compasso pisca em sincronia com o clique (com compensação de rede de +90 ms).',
+        '⚡ Metrônomo visual: o card de BPM e compasso pisca em sincronia com o click (com compensação de rede de +90 ms).',
     },
     'help.loops': {
       en: '↻ Dynamic Loops: the next-section cue shows Next: [Name] (Repeat) while loop iterations remain.',
@@ -694,7 +694,7 @@
     },
     'help.hierarchy': {
       en: 'Locator Hierarchy in Ableton Live:',
-      'pt-BR': 'Hierarquia de localizadores no Ableton Live:',
+      'pt-BR': 'Hierarquia de locators no Ableton Live:',
     },
   });
 

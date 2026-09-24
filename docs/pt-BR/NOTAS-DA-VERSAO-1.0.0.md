@@ -23,7 +23,7 @@ abaixo para quem vem da linha pública 0.5.1.
   `ci:public`.
 - **Documento de contratos** em `docs/CONTRACTS.md` (e
   `docs/pt-BR/CONTRATOS.md`) descreve a versão 3 do protocolo WS, os
-  formatos em disco, a gramática de localizadores, os endereços OSC,
+  formatos em disco, a sintaxe dos locators, os endereços OSC,
   os endpoints HTTP e a política SemVer. Cada asserção é exercida por
   `tests/release-contracts.test.mjs`.
 - **Limpeza de ciclos e camadas** — 5 ciclos de dependência removidos,
