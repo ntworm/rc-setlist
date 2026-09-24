@@ -52,6 +52,7 @@ docs/favicon.svg
 docs/fonts/MartianMono-latin-ext.woff2
 docs/fonts/MartianMono-latin.woff2
 docs/fonts/OFL.txt
+docs/googlea8031c5d5ee880ce.html
 docs/index.html
 docs/llms-full.txt
 docs/llms.txt

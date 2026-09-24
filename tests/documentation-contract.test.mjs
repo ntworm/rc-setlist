@@ -422,6 +422,13 @@ test('the sitemap lists both landings and every Portuguese guide', () => {
   }
 });
 
+test('the Google Search Console verification file stays published', () => {
+  // Search Console re-checks this file; deleting or reformatting it un-verifies the site.
+  const file = 'docs/googlea8031c5d5ee880ce.html';
+  assert.equal(readRequired(file), 'google-site-verification: googlea8031c5d5ee880ce.html');
+  assert.match(read('public-files.txt'), /^docs\/googlea8031c5d5ee880ce\.html$/m);
+});
+
 test('the IndexNow key the workflow sends is the one the site serves', () => {
   const workflow = readRequired('.github/workflows/indexnow.yml');
   const key = workflow.match(/INDEXNOW_KEY: ([0-9a-f]{32})\b/)?.[1];
