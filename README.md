@@ -7,8 +7,6 @@
 **English** · [Português (Brasil)](README.pt-BR.md)
 
 > **[Landing page and screenshots](https://ntworm.github.io/rc-setlist/)**
->
-> ![RC Setlist Stage Control](docs/media/en/stage-control.png)
 
 **RC Setlist** is a setlist, synchronized-lyrics and stage-display extension for
 **Ableton Live 12**. It turns Arrangement locators into a setlist the operator

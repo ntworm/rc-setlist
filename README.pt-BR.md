@@ -7,8 +7,6 @@
 [English](README.md) · **Português (Brasil)**
 
 > **[Página do RC Setlist e capturas de tela](https://ntworm.github.io/rc-setlist/pt-BR/)**
->
-> ![RC Setlist Controle de Palco](docs/media/pt-BR/stage-control.png)
 
 O **RC Setlist** é uma extensão de setlist, letra sincronizada e tela de palco para o **Ableton Live 12**. Os locators do Arrangement viram o setlist de quem opera, num notebook ou tablet (Controle de palco), e uma tela só de leitura para a banda, em qualquer celular (Performance), com letra sincronizada, BPM e click, e controles de transporte protegidos para ensaios e shows. É grátis para uso não comercial e tem código disponível (source-available).
 

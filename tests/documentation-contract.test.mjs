@@ -339,7 +339,6 @@ test('0.4.1 release notes remain preserved, bilingual and describe the tested re
     readme,
     /\[Landing page and screenshots\]\(https:\/\/ntworm\.github\.io\/rc-setlist\/\)/,
   );
-  assert.match(readme, /!\[RC Setlist Stage Control\]\(docs\/media\/en\/stage-control\.png\)/);
 });
 
 test('Portuguese HTML docs match their Markdown sources', () => {
