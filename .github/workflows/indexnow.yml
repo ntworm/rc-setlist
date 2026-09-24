@@ -1,0 +1,74 @@
+name: IndexNow
+
+# Tells the IndexNow search engines (Bing, Yandex, Seznam, Naver and others)
+# that the public site changed, so they recrawl it instead of waiting for
+# their own schedule. Bing's index also serves DuckDuckGo, Yahoo and Copilot.
+# Google does not take IndexNow; the sitemap in Search Console covers it.
+#
+# The key is public by design: IndexNow checks that the site serves it at
+# docs/<key>.txt, which proves the ping comes from whoever publishes the site.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'docs/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: read
+
+concurrency:
+  group: indexnow
+  cancel-in-progress: true
+
+env:
+  INDEXNOW_KEY: 72299ed2a8455f83ed49011642aeb172
+  SITE: https://ntworm.github.io/rc-setlist/
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Wait until GitHub Pages serves this commit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          for attempt in $(seq 1 40); do
+            build=$(gh api "repos/${GITHUB_REPOSITORY}/pages/builds/latest" --jq '.status + " " + .commit' || true)
+            if [ "$build" = "built ${GITHUB_SHA}" ]; then
+              echo "Pages built ${GITHUB_SHA}"
+              exit 0
+            fi
+            echo "waiting for Pages (${build:-no build yet})"
+            sleep 15
+          done
+          echo "::warning::Pages did not report ${GITHUB_SHA} as built; pinging anyway, the engines recrawl later"
+
+      - name: Ping IndexNow with every page in the sitemap
+        run: |
+          set -euo pipefail
+          key_location="${SITE}${INDEXNOW_KEY}.txt"
+          served=$(curl -fsS "$key_location")
+          if [ "$served" != "$INDEXNOW_KEY" ]; then
+            echo "::error::${key_location} does not serve the IndexNow key"
+            exit 1
+          fi
+          urls=$(grep -o '<loc>[^<]*</loc>' docs/sitemap.xml | sed -e 's/<loc>//' -e 's/<\/loc>//' | jq -R . | jq -s .)
+          payload=$(jq -n \
+            --arg host "ntworm.github.io" \
+            --arg key "$INDEXNOW_KEY" \
+            --arg keyLocation "$key_location" \
+            --argjson urlList "$urls" \
+            '{host: $host, key: $key, keyLocation: $keyLocation, urlList: $urlList}')
+          status=$(curl -sS -o response.txt -w '%{http_code}' -X POST https://api.indexnow.org/indexnow \
+            -H 'Content-Type: application/json; charset=utf-8' --data "$payload")
+          cat response.txt || true
+          case "$status" in
+            200|202) echo "IndexNow accepted $(echo "$urls" | jq length) URLs (HTTP ${status})" ;;
+            *) echo "::error::IndexNow answered HTTP ${status}"; exit 1 ;;
+          esac

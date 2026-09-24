@@ -357,6 +357,80 @@ test('Portuguese HTML docs match their Markdown sources', () => {
   assert.equal(result.status, 0, result.stderr);
 });
 
+test('site files for search engines match the landing, site-i18n.js and the guides', () => {
+  // docs/pt-BR/index.html, docs/sitemap.xml, docs/llms-full.txt and the
+  // landing's structured data are rendered, not written by hand.
+  const result = spawnSync(
+    process.execPath,
+    [fileURLToPath(new URL('../scripts/render-landing.mjs', import.meta.url)), '--check'],
+    { encoding: 'utf8' },
+  );
+  assert.equal(result.status, 0, result.stderr);
+});
+
+test('Portuguese guides are pages search engines can read as Portuguese', () => {
+  for (const page of ['USER-GUIDE', 'INSTALL', 'FAQ', 'PRIMEIROS-PASSOS']) {
+    const html = readRequired(`docs/pt-BR/${page}.html`);
+    assert.match(html, /<html lang="pt-BR">/);
+    assert.match(html, /<meta\s+name="description"\s+content="[^"]{40,}"/);
+    assert.match(
+      html,
+      new RegExp(
+        `<link rel="canonical" href="https://ntworm\\.github\\.io/rc-setlist/pt-BR/${page}\\.html"`,
+      ),
+    );
+    assert.match(
+      html,
+      new RegExp(`<link rel="alternate" type="text/markdown" href="\\./${page}\\.md"`),
+    );
+  }
+});
+
+test('llms.txt follows the llms.txt format and every link it gives resolves', () => {
+  const llms = readRequired('docs/llms.txt');
+  const version = JSON.parse(read('package.json')).version;
+  assert.match(llms, /^# RC Setlist\n\n> \S/);
+  assert.match(llms, /^## Docs$/m);
+  assert.match(llms, /^## Optional$/m);
+  assert.match(llms, /PolyForm Noncommercial/);
+  assert.match(llms, /not affiliated with or endorsed by Ableton AG/);
+  assert.ok(
+    llms.includes(`RELEASE-NOTES-${version}.md`),
+    `llms.txt must point at the ${version} release notes`,
+  );
+  const site = 'https://ntworm.github.io/rc-setlist/';
+  const links = [...llms.matchAll(/\]\((https:\/\/ntworm\.github\.io\/rc-setlist\/[^)]*)\)/g)];
+  assert.ok(links.length > 10);
+  for (const [, url] of links) {
+    const path = url.slice(site.length);
+    const file = path === '' || path.endsWith('/') ? `${path}index.html` : path;
+    assert.ok(
+      existsSync(new URL(`../docs/${file}`, import.meta.url)),
+      `${url} has no docs/${file}`,
+    );
+  }
+  for (const page of ['docs/index.html', 'docs/pt-BR/index.html']) {
+    assert.match(read(page), /<link rel="describedby" href="\.{1,2}\/llms\.txt" \/>/);
+  }
+});
+
+test('the sitemap lists both landings and every Portuguese guide', () => {
+  const sitemap = readRequired('docs/sitemap.xml');
+  assert.match(sitemap, /<loc>https:\/\/ntworm\.github\.io\/rc-setlist\/<\/loc>/);
+  assert.match(sitemap, /<loc>https:\/\/ntworm\.github\.io\/rc-setlist\/pt-BR\/<\/loc>/);
+  for (const guide of ['README', 'INSTALL', 'USER-GUIDE', 'FAQ', 'TROUBLESHOOTING']) {
+    assert.ok(sitemap.includes(`/rc-setlist/pt-BR/${guide}.html</loc>`), `${guide} is missing`);
+  }
+});
+
+test('the IndexNow key the workflow sends is the one the site serves', () => {
+  const workflow = readRequired('.github/workflows/indexnow.yml');
+  const key = workflow.match(/INDEXNOW_KEY: ([0-9a-f]{32})\b/)?.[1];
+  assert.ok(key, 'indexnow.yml must name a 32-digit hexadecimal key');
+  assert.equal(readRequired(`docs/${key}.txt`), key);
+  assert.match(read('public-files.txt'), new RegExp(`^docs/${key}\\.txt$`, 'm'));
+});
+
 test('public landing contains truthful site media and keeps the owner media kit private', () => {
   const required = [
     'docs/media/en/product-truth-discord.png',

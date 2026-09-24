@@ -168,8 +168,14 @@ test('renderer output uses the documented page shell (lang, title, source footer
   assert.ok(generated, 'at least one generated HTML page should exist');
   const html = readFileSync(generated, 'utf8');
   assert.match(html, /<!doctype html>/i);
-  assert.match(html, /<html lang="en">/i);
+  const lang = generated.split(/[\\/]/).includes('pt-BR') ? 'pt-BR' : 'en';
+  assert.match(html, new RegExp(`<html lang="${lang}">`, 'i'));
   assert.match(html, /<title>[^<]+<\/title>/);
+  assert.match(html, /<meta\s+name="description"\s+content="[^"]{20,}"/);
+  assert.match(
+    html,
+    /<link rel="canonical" href="https:\/\/ntworm\.github\.io\/rc-setlist\/[^"]+\.html"/,
+  );
   assert.match(html, /Rendered from <code>[^<]+<\/code>/);
 });
 

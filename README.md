@@ -10,9 +10,12 @@
 >
 > ![RC Setlist Stage Control](docs/media/en/stage-control.png)
 
-RC Setlist is a source-available setlist extension for Ableton Live. It turns
-Arrangement locators into an operator setlist, synchronized lyrics, tempo and
-click feedback, and guarded transport controls for rehearsals and live shows.
+**RC Setlist** is a setlist, synchronized-lyrics and stage-display extension for
+**Ableton Live 12**. It turns Arrangement locators into a setlist the operator
+runs from a laptop or tablet (Stage Control) and a read-only stage display for
+the band on any phone (Performance), with synchronized lyrics, tempo and click
+feedback, and guarded transport controls for rehearsals and live shows. It is
+free for noncommercial use and source-available.
 
 [Landing page](https://ntworm.github.io/rc-setlist/) ·
 [Installation](docs/INSTALL.md) ·

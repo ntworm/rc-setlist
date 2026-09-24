@@ -15,7 +15,7 @@
 //       # write nothing; exit 1 if a committed HTML no longer matches its .md
 
 import { existsSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
-import { basename, join, relative, resolve, dirname } from 'node:path';
+import { basename, join, relative, resolve, dirname, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import prettier from 'prettier';
 
@@ -157,13 +157,78 @@ function mdToHtml(md) {
   }
 }
 
-function pageShell(title, body, source) {
+const SITE = 'https://ntworm.github.io/rc-setlist/';
+const docsRoot = resolve(repoRoot, 'docs');
+
+// What a search result or a shared link shows for a page: its language, the
+// document's own heading, and its opening paragraph when it has one.
+function pageMeta(file, md) {
+  const portuguese = file.split(sep).includes('pt-BR');
+  const lang = portuguese ? 'pt-BR' : 'en';
+  const text = md.replace(/^\uFEFF/, '');
+  const heading = text.match(/^#\s+(.+?)\s*#*\s*$/m)?.[1] ?? basename(file).replace(/\.mdx?$/i, '');
+  const plain = (line) =>
+    line
+      .replace(/!?\[([^\]]*)\]\([^)]*\)/g, '$1')
+      .replace(/[`*_]/g, '')
+      .replace(/\s+/g, ' ')
+      .trim();
+  const headingText = plain(heading);
+  const title = headingText.includes('RC Setlist')
+    ? `${headingText} — Ableton Live`
+    : `${headingText} — RC Setlist`;
+  // The first paragraph under the heading, if it reads as prose rather than
+  // a language link, a metadata line or a list.
+  const intro = text.split(/^#\s+.+$/m)[1]?.split(/^##\s/m)[0] ?? '';
+  const paragraph = intro
+    .split(/\n\s*\n/)
+    .map((block) => block.trim())
+    .find((block) => block && !/^([-*|>[]|\*\*|```|\d+\.)/.test(block));
+  let description = paragraph ? plain(paragraph) : '';
+  if (description.length < 60) {
+    description = portuguese
+      ? `${headingText}: documentação do RC Setlist, a extensão de setlist, letra e tela de palco para o Ableton Live.`
+      : `${headingText}: documentation for RC Setlist, the setlist, lyrics and stage display extension for Ableton Live.`;
+  } else if (description.length > 160) {
+    description = `${description.slice(0, 157).replace(/\s+\S*$/, '')}…`;
+  }
+  const page = relative(docsRoot, file)
+    .split(sep)
+    .join('/')
+    .replace(/\.mdx?$/i, '.html');
+  const up = (to) => relative(dirname(file), to).split(sep).join('/') || '.';
+  const languageRoot = portuguese ? join(docsRoot, 'pt-BR') : docsRoot;
+  return {
+    lang,
+    title,
+    description,
+    canonical: `${SITE}${page}`,
+    markdown: `./${basename(file)}`,
+    llms: `${up(docsRoot)}/llms.txt`,
+    landing: `${up(languageRoot)}/`,
+    docs: `${up(languageRoot)}/README.html`,
+    docsLabel: portuguese ? 'Documentação' : 'Docs',
+  };
+}
+
+function pageShell(meta, body, source) {
   return `<!doctype html>
-<html lang="en">
+<html lang="${meta.lang}">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>${escapeHtml(title)} — RC Setlist</title>
+<title>${escapeHtml(meta.title)}</title>
+<meta name="description" content="${escapeHtml(meta.description)}">
+<link rel="canonical" href="${meta.canonical}">
+<link rel="alternate" type="text/markdown" href="${meta.markdown}">
+<link rel="describedby" href="${meta.llms}">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="RC Setlist">
+<meta property="og:locale" content="${meta.lang.replace('-', '_')}">
+<meta property="og:title" content="${escapeHtml(meta.title)}">
+<meta property="og:description" content="${escapeHtml(meta.description)}">
+<meta property="og:url" content="${meta.canonical}">
+<meta property="og:image" content="${SITE}og-image.png">
 <style>
   body { font: 16px/1.55 system-ui, sans-serif; max-width: 920px; margin: 2rem auto; padding: 0 1rem; color: #f2f2f2; background: #0e0e0e; }
   h1,h2,h3,h4 { line-height: 1.25; }
@@ -183,7 +248,7 @@ function pageShell(title, body, source) {
 </style>
 </head>
 <body>
-<div class="crumbs"><a href="https://ntworm.github.io/rc-setlist/">RC Setlist</a> · <a href="./">Docs</a></div>
+<div class="crumbs"><a href="${meta.landing}">RC Setlist</a> · <a href="${meta.docs}">${meta.docsLabel}</a></div>
 ${body}
 <div class="source">Rendered from <code>${escapeHtml(source)}</code> on ${new Date().toISOString().slice(0, 10)}.</div>
 </body>
@@ -212,9 +277,8 @@ const stale = [];
     }
     for (const file of files) {
       const md = readFileSync(file, 'utf8');
-      const title = basename(file).replace(/\.mdx?$/i, '');
       const body = mdToHtml(md);
-      const html = pageShell(title, body, relative(repoRoot, file));
+      const html = pageShell(pageMeta(file, md), body, relative(repoRoot, file));
       // Round-trip through prettier with the project's HTML options so the
       // emitted file is identical to what `prettier --check` expects. Without
       // this, `format:check` reports the rendered HTML as out of style even

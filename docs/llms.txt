@@ -1,0 +1,42 @@
+# RC Setlist
+
+> RC Setlist is a setlist extension for Ableton Live 12 (Suite, 12.4.5 or later). It turns Arrangement locators into a setlist that one person runs from a laptop or tablet (Stage Control) and a read-only stage display for the band (Performance), with synchronized .lrc lyrics, served to any browser on the local network. It is free for noncommercial use under the PolyForm Noncommercial License 1.0.0, and its source is on GitHub. Made by Gabriel Worm (ntworm).
+
+- Name: RC Setlist. Releases before 1.0 were published as "Ableton RC Setlist"; the name changed to follow Ableton's brand guidelines. RC Setlist is an independent project, not affiliated with or endorsed by Ableton AG.
+- What ships: one `.ablx` Live Extension plus RC Bridge, a bundled Remote Script (a fork of AbletonOSC) that is selected in Live as a Control Surface.
+- Requirements: Ableton Live 12.4.5 or later, Suite edition, with Extensions support. Windows is validated; macOS is experimental.
+- Price and licence: no cost. Noncommercial use, modification and redistribution are allowed; commercial use is not. Source-available, not OSI open source.
+- Privacy: local network only. No account, cloud sync, analytics or telemetry.
+- Languages: English and Brazilian Portuguese in the same package.
+- Scope: reads Arrangement View locators (Session View is not supported yet). Live keeps playing the backing tracks; RC Setlist runs the setlist, moves through the Arrangement and shows the lyrics.
+- Locator format: a song is a locator named after it, a section is `Song > Section`. Tags: `[bpm N]`, `[click]`, `[click off]`, `[loop]`, `[loop Nx]`, `[next]`, `[stop]`, `[skip]`, `[jump Name]`, `[hidden]`, `[ignore]`.
+- Stage safety: transport controls other than Play must be held for 500 ms; jumps are quantized by Live; there is an optional one-bar visual count-in.
+- Download: https://github.com/ntworm/rc-setlist/releases/latest
+
+## Docs
+
+- [Getting started](https://ntworm.github.io/rc-setlist/GETTING-STARTED.md): from a fresh Live install to a running setlist in about 15 minutes
+- [Installation](https://ntworm.github.io/rc-setlist/INSTALL.md): installing the extension and RC Bridge, first start, upgrading from 0.x
+- [User guide](https://ntworm.github.io/rc-setlist/USER-GUIDE.md): locators and tags, Stage Control, Performance, lyrics, setlists and profiles
+- [FAQ](https://ntworm.github.io/rc-setlist/FAQ.md): licensing, RC Bridge, the certificate warning, lyrics, macOS, count-in and upgrading
+- [Troubleshooting](https://ntworm.github.io/rc-setlist/TROUBLESHOOTING.md): the extension, RC Bridge, the playhead or the browser pages not working
+- [Release notes 1.0.0](https://ntworm.github.io/rc-setlist/RELEASE-NOTES-1.0.0.md): what changed in the current release
+- [Full documentation](https://ntworm.github.io/rc-setlist/llms-full.txt): the guides above in one Markdown file
+
+## Português (Brasil)
+
+- [Página do RC Setlist em português](https://ntworm.github.io/rc-setlist/pt-BR/): a landing page traduzida
+- [Documentação em português](https://ntworm.github.io/rc-setlist/pt-BR/README.md): índice dos guias em português
+- [Primeiros passos](https://ntworm.github.io/rc-setlist/pt-BR/PRIMEIROS-PASSOS.md): da instalação ao primeiro setlist
+- [Instalação](https://ntworm.github.io/rc-setlist/pt-BR/INSTALL.md): extensão, RC Bridge e migração da 0.x
+- [Guia do usuário](https://ntworm.github.io/rc-setlist/pt-BR/USER-GUIDE.md): locators, tags, telas, letras e setlists
+- [Perguntas frequentes](https://ntworm.github.io/rc-setlist/pt-BR/FAQ.md): dúvidas comuns
+- [Solução de problemas](https://ntworm.github.io/rc-setlist/pt-BR/TROUBLESHOOTING.md): quando algo não funciona
+
+## Optional
+
+- [Source code](https://github.com/ntworm/rc-setlist): the GitHub repository, issues and releases
+- [Changelog](https://github.com/ntworm/rc-setlist/blob/main/CHANGELOG.md): every public change by version
+- [Contracts](https://ntworm.github.io/rc-setlist/CONTRACTS.md): WebSocket protocol, on-disk formats, OSC addresses and HTTP endpoints, for developers
+- [Security](https://github.com/ntworm/rc-setlist/blob/main/SECURITY.md): network model and how to report a vulnerability
+- [Privacy](https://github.com/ntworm/rc-setlist/blob/main/PRIVACY.md): what stays on your machine

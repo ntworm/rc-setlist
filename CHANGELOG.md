@@ -4,6 +4,22 @@ All notable public changes to Ableton RC Setlist are recorded here.
 
 ## [Unreleased]
 
+### Added
+
+- **Portuguese landing at its own address** (`/rc-setlist/pt-BR/`), rendered from `docs/index.html` and the table in `docs/site-i18n.js` by `scripts/render-landing.mjs`, with `hreflang` links between the two languages so search engines index each one. Choosing English there opens the English page.
+- **Structured data** (schema.org JSON-LD) on both landings: the software, its author, its source code and the FAQ, built from the visible page so the two cannot drift.
+- **`sitemap.xml`, `llms.txt` and `llms-full.txt`** for search engines and AI assistants. The landings point at them with `rel="sitemap"` and `rel="describedby"`; each Portuguese guide links its Markdown source with `rel="alternate" type="text/markdown"`.
+- **IndexNow workflow** (`.github/workflows/indexnow.yml`): after a site change reaches GitHub Pages, it tells Bing and the other IndexNow engines about every page in the sitemap.
+- Three landing FAQ entries (price, lyrics on stage, backing tracks) and a one-line description under the title.
+- `npm run site:render` and `npm run site:check`; `tests/documentation-contract.test.mjs` fails when a rendered site file is stale.
+
+### Changed
+
+- The landing title and description say what the extension does ("setlist & lyrics extension for Ableton Live") instead of "Operator Sheet".
+- Portuguese guides are rendered with `lang="pt-BR"`, their own heading as the title, a description, a canonical address and navigation back to the Portuguese landing.
+- **Brazilian Portuguese wording** on the landing and in the README: the terms Brazilian musicians use — "locators" as Live shows them, "click" for the metronome, "cards" and "tags" — instead of literal translations such as "localizadores" and "clique".
+- The README introductions describe the extension in the words people search for.
+
 ## [1.0.0] - 2026-09-14
 
 ### Added

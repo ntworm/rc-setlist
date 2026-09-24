@@ -44,6 +44,8 @@
     "verify:ableton": "node scripts/verify-ableton-deps.mjs",
     "audit:release": "npm audit --audit-level=high",
     "docs:check": "node scripts/check-doc-links.mjs",
+    "site:render": "node scripts/render-docs.mjs docs/pt-BR && node scripts/render-landing.mjs",
+    "site:check": "node scripts/render-landing.mjs --check",
     "notices": "node scripts/generate-third-party-notices.mjs",
     "notices:check": "node scripts/generate-third-party-notices.mjs --check",
     "media:render": "node scripts/render-media-kit.mjs",

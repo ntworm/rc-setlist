@@ -7,25 +7,28 @@
   const STORAGE_KEY = 'rc-setlist.locale';
 
   const ptBR = {
-    'meta.title': 'RC Setlist 1.0.0 — Folha de operação',
+    'meta.title': 'RC Setlist — extensão de setlist e letra para Ableton Live',
     'meta.description':
-      'Extensão de setlist para Ableton Live: os localizadores do Arrangement viram um setlist para quem opera e uma tela de palco para a banda, na rede local.',
+      'Extensão de setlist para Ableton Live 12, grátis para uso não comercial: os locators do Arrangement viram o setlist de quem opera e a tela de palco da banda, com letra sincronizada, no celular ou tablet.',
 
     skip: 'Pular para o conteúdo',
     'top.req': 'Live 12.4.5+ Suite',
     'top.language': 'Idioma',
     'top.navAria': 'Seções',
     'nav.about': 'Sobre',
-    'nav.chain': 'Cadeia',
-    'nav.locators': 'Localizadores',
+    'nav.chain': 'Como funciona',
+    'nav.locators': 'Locators',
     'nav.views': 'Duas telas',
     'nav.safety': 'Segurança',
     'nav.install': 'Instalação',
-    'nav.trouble': 'Quando falha',
+    'nav.trouble': 'Problemas',
     'nav.docs': 'Docs',
 
     'about.lede':
-      'Os localizadores do seu Arrangement viram o show: um setlist para quem conduz, uma tela de palco para quem toca. O Live marca o tempo; o navegador só lê.',
+      'Os locators do seu Arrangement viram o show: o setlist de quem opera, a tela de palco de quem toca. O Live manda no tempo; o navegador só acompanha.',
+
+    'about.tagline':
+      'Setlist, letra sincronizada e tela de palco para o Ableton Live 12 — grátis para uso não comercial.',
     'about.spec1': 'Live 12.4.5+ Suite (Beta)',
     'about.spec2': 'RC Bridge incluído',
     'about.spec3': 'Qualquer navegador da sua rede',
@@ -36,177 +39,177 @@
     'about.source': 'Código-fonte',
     'about.release':
       'Versão 1.0.0&nbsp;· source-available sob a PolyForm Noncommercial 1.0.0&nbsp;· inglês e português (Brasil) no mesmo pacote',
-    'about.figCap': 'As duas telas, como são entregues',
-    'about.figMeta': 'Capturas reais · dados neutros de demonstração',
+    'about.figCap': 'As duas telas, exatamente como vêm',
+    'about.figMeta': 'Prints reais · dados fictícios de demonstração',
     'about.figAlt':
-      'Controle de palco: setlist de cinco músicas com seções e selos de tags, a música três destacada como ativa, estado do show, quantização, clique e transporte.',
+      'Controle de palco: setlist de cinco músicas com seções e tags, a música 3 destacada como ativa, estado do show, quantização, click e transporte.',
 
     'chain.title': 'Cadeia de sinal <span class="tail">— quem manda no tempo é o Live</span>',
     'chain.why':
-      'O Live toca; o RC Setlist lê a posição e pede para ele se mover; os navegadores só mostram o que o Live confirmou.',
-    'chain.node0': 'Arrangement · localizadores · transporte · andamento',
-    'chain.node1': 'Leitor · agendador de saltos · perfis · letras',
-    'chain.node2': 'Controle de palco · operação',
+      'O Live toca; o RC Setlist lê a posição e pede os saltos; os navegadores só mostram o que o Live confirmou.',
+    'chain.node0': 'Arrangement · locators · transporte · andamento',
+    'chain.node1': 'Parser · agendador de saltos · perfis · letras',
+    'chain.node2': 'Controle de palco · operador',
     'chain.node3': 'Performance · banda · somente leitura',
     'chain.down': '<i>▼</i> Comandos (saída)',
     'chain.up': '<i>▲</i> Estado (entrada)',
-    'chain.needTitle': 'O que você precisa',
-    'chain.thPiece': 'Peça',
+    'chain.needTitle': 'Do que você precisa',
+    'chain.thPiece': 'Componente',
     'chain.thWhere': 'Onde',
-    'chain.thRole': 'Papel',
+    'chain.thRole': 'Função',
     'chain.liveWhere': 'O computador',
-    'chain.liveRole': 'Hospeda a extensão. O Arrangement é a fonte da verdade.',
+    'chain.liveRole': 'Roda a extensão. O Arrangement é a referência de tudo.',
     'chain.bridgeWhere': 'No Live, como Control Surface',
     'chain.bridgeRole':
       'Transporte, saltos e posição da música. Vem no kit; um AbletonOSC comum também funciona.',
     'chain.browser': 'Um navegador',
     'chain.browserWhere': 'Notebook, tablet ou celular',
-    'chain.browserRole': 'Abre as duas telas por link ou QR code. Nada para instalar.',
-    'chain.lanTag': 'SÓ NA LAN',
+    'chain.browserRole': 'Abre as duas telas por link ou QR code. Não precisa instalar nada.',
+    'chain.lanTag': 'SÓ REDE LOCAL',
     'chain.lan': 'Mantenha o link do controlador privado e nunca exponha a porta 4444 na internet.',
 
-    'loc.title': 'Localizadores <span class="tail">— do Arrangement ao palco</span>',
+    'loc.title': 'Locators <span class="tail">— do Arrangement ao palco</span>',
     'loc.why':
-      'Nomeie os localizadores uma vez. Músicas, seções e tags saem direto do Arrangement, e nada escondido é gravado no seu projeto.',
+      'Dê nome aos locators uma vez só. Músicas, seções e tags saem direto do Arrangement, e nada escondido é gravado no seu projeto.',
     'loc.figCap': 'O que você digita no Live, o que o operador vê',
-    'loc.figMeta': 'Desenhado para esta folha',
-    'loc.inLive': 'No Live — localizadores do Arrangement',
+    'loc.figMeta': 'Ilustração desta página',
+    'loc.inLive': 'Locators do Arrangement',
     'loc.end': 'Fim do Arrangement · compasso 81',
     'loc.reads': 'O RC Setlist lê',
-    'loc.inStage': 'No Controle de palco — os cartões que ele desenha',
+    'loc.inStage': 'No Controle de palco — os cards que ele mostra',
     'loc.songs': 'Músicas no projeto',
     'loc.total': 'Duração total',
     'loc.figFoot':
-      'Uma música vai até o próximo localizador de música, com o intervalo: 40 compassos a 120 BPM dão 1:20. O [next] pula os compassos vazios.',
-    'loc.tagsTitle': 'Gramática das tags',
-    'loc.thTag': 'No localizador',
+      'Uma música vai até o locator da próxima, contando o intervalo: 40 compassos a 120 BPM dão 1:20. O [next] pula os compassos vazios.',
+    'loc.tagsTitle': 'Tags disponíveis',
+    'loc.thTag': 'No locator',
     'loc.thDoes': 'O que acontece',
-    'loc.thCard': 'No cartão',
-    'loc.tBpm': 'Declara o andamento. As durações ficam exatas.',
-    'loc.tClick': 'Liga ou desliga o metrônomo do Live no marcador.',
+    'loc.thCard': 'No card',
+    'loc.tBpm': 'Informa o BPM. As durações ficam exatas.',
+    'loc.tClick': 'Liga ou desliga o click (metrônomo) do Live nesse locator.',
     'loc.tLoop': 'Repete a seção até você desligar o loop, ou N vezes.',
-    'loc.tNext': 'Passa para a próxima música no instante em que o marcador é cruzado.',
-    'loc.tStop': 'Para o transporte no marcador.',
+    'loc.tNext': 'Pula para a próxima música assim que o Live passa por esse locator.',
+    'loc.tStop': 'Para o Live nesse locator.',
     'loc.tSkip': 'Pula esta música ou seção.',
-    'loc.tJump': 'Leva a reprodução a uma música ou seção pelo nome.',
-    'loc.tHidden': 'Mantém uma âncora de automação fora do setlist.',
-    'loc.tIgnore': 'Marcador técnico: fica oculto e as tags dele não fazem nada.',
+    'loc.tJump': 'Pula para uma música ou seção pelo nome.',
+    'loc.tHidden': 'Esconde do setlist um locator usado só para automação.',
+    'loc.tIgnore': 'Locator técnico: fica oculto e as tags dele não fazem nada.',
     'loc.tagsNote':
-      'As tags não diferenciam maiúsculas de minúsculas e somem do nome exibido. Fora [hidden] e [ignore], você não precisa digitá-las: dê dois cliques numa música ou seção no Controle de palco e cada tag vira um controle.',
+      'Tanto faz maiúscula ou minúscula, e as tags não aparecem no nome exibido. Fora [hidden] e [ignore], você nem precisa digitá-las: dê dois cliques numa música ou seção no Controle de palco e cada tag vira um controle.',
     'loc.durTitle': 'Duração do set',
     'loc.durCap': 'Um set medido, três formas de contar',
     'loc.durMeta': '21 músicas · de 93 a 166 BPM',
     'loc.durA': '[bpm] em todas as músicas',
-    'loc.durAsub': 'Exata, trecho a trecho',
-    'loc.durB': 'Sem tags · Live a 99 BPM',
+    'loc.durAsub': 'Exata, música a música',
+    'loc.durB': 'Sem tags · Live em 99 BPM',
     'loc.durBsub': '16:59 a mais',
-    'loc.durC': 'Sem tags · Live a 136 BPM',
+    'loc.durC': 'Sem tags · Live em 136 BPM',
     'loc.durCsub': '9:03 a menos',
     'loc.durFoot':
-      'Nenhuma extensão consegue ler a automação de andamento sem tocá-la. Declare [bpm] e o selo EST. desaparece.',
+      'Nenhuma extensão consegue ler a automação de andamento sem tocar a música. Use [bpm] e o aviso EST. some.',
 
     'views.title': 'Duas telas <span class="tail">— figs. 4 a 6</span>',
     'views.why':
-      'O Controle de palco é de quem conduz o show. A Performance é de quem toca: somente leitura, alto contraste, legível do pedestal do microfone.',
+      'O Controle de palco é de quem opera o show. A Performance é de quem toca: só leitura, alto contraste, dá para ler preso no pedestal do microfone.',
     'views.pick': 'Escolha uma tela',
     'views.tabStage': 'Controle de palco',
     'views.tabPerf': 'Performance',
     'views.tabPhone': 'Performance · celular',
-    'views.stageCap': 'Controle de palco — /setlist, para a operação',
+    'views.stageCap': 'Controle de palco — /setlist, para quem opera',
     'views.stageAlt': 'Controle de palco com regiões numeradas.',
-    'views.thRegion': 'Região',
+    'views.thRegion': 'Área',
     'views.thWhat': 'O que faz',
     'views.s1': 'Setlist ativo',
     'views.s1d': 'Vários setlists salvos por Live Set: ordem do show, ensaio, um set mais curto.',
     'views.s2': 'Músicas',
     'views.s2d':
-      'Um cartão por música, selos vindos das tags, duração à direita. Arraste para reordenar.',
+      'Um card por música, com as tags e a duração à direita. Arraste para mudar a ordem.',
     'views.s3': 'Tocando agora',
     'views.s3d':
-      'Borda âmbar na música, seção âmbar dentro dela. Segure uma seção e solte para acioná-la.',
+      'Borda laranja na música e na seção que estão tocando. Segure uma seção e solte para pular para ela.',
     'views.s4': 'Duração total',
-    'views.s4d': 'O set inteiro, do primeiro localizador de música até o fim do Arrangement.',
+    'views.s4d': 'O set inteiro, do locator da primeira música até o fim do Arrangement.',
     'views.s5': 'Estado do show',
-    'views.s5d': 'Música e seção ativas e seguintes, BPM, compasso, tempo do show e da música.',
+    'views.s5d': 'Música e seção atuais e as próximas, BPM, compasso, tempo do show e da música.',
     'views.s6': 'Linha da letra',
     'views.s6d': 'A linha que está sendo cantada agora.',
-    'views.s7': 'Quantização · clique',
-    'views.s7d':
-      'Grade dos saltos, metrônomo do Live, contagem de um compasso e atualização manual.',
+    'views.s7': 'Quantização · click',
+    'views.s7d': 'Grade dos saltos, click do Live, contagem de um compasso e botão de atualizar.',
     'views.s8': 'Transporte',
     'views.s8d':
-      'Música ou seção anterior e seguinte, Play, Stop. Tudo menos o Play precisa ser segurado — veja 5.0.',
-    'views.s9': 'Cabeçalho',
+      'Música ou seção anterior e próxima, Play e Stop. Tudo, menos o Play, pede para segurar o botão — veja 5.0.',
+    'views.s9': 'Topo',
     'views.s9d':
       'Idioma, bloqueio do painel, ferramentas de letra e exportação, tela cheia, conexão.',
     'views.perfCap': 'Performance — /performance, para a banda',
     'views.perfAlt': 'Tela Performance com regiões numeradas.',
     'views.p1': 'Música atual',
-    'views.p1d': 'Título, selos e a próxima música.',
+    'views.p1d': 'Título, tags e a próxima música.',
     'views.p2': 'Seção ativa',
     'views.p2d': 'Onde a banda está, quantas repetições faltam, qual seção vem depois.',
     'views.p3': 'Letra · cifras',
-    'views.p3d': 'As linhas com tempo acompanham a música; a atual fica acesa.',
+    'views.p3d': 'A letra sincronizada acompanha a música; a linha atual fica destacada.',
     'views.p4': 'Timecode',
-    'views.p4d': 'Tempo do show sobre o total, e o tempo dentro da música.',
+    'views.p4d': 'Tempo do show em relação ao total, e o tempo dentro da música.',
     'views.p5': 'Compasso · tempo',
-    'views.p5d': 'Onde está o cursor do Live, em tempo musical.',
-    'views.p6': 'BPM · clique',
-    'views.p6d': 'O andamento, e se o metrônomo está ligado — por escrito, não só pela cor.',
+    'views.p5d': 'Onde o Live está, em compassos e tempos.',
+    'views.p6': 'BPM · click',
+    'views.p6d': 'O andamento e se o click está ligado — escrito na tela, não só pela cor.',
     'views.p7': 'Conexão · tela cheia',
-    'views.p7d': 'Estado da conexão; a tela cheia mantém a tela acesa onde o navegador permite.',
+    'views.p7d': 'Estado da conexão; em tela cheia, a tela não apaga (quando o navegador permite).',
     'views.phoneCap': 'Performance no celular, na vertical',
     'views.phoneAlt':
-      'Tela Performance num celular na vertical: cartões de música e seção, letra, timecode, compasso e BPM.',
+      'Tela Performance num celular na vertical: cards de música e seção, letra, timecode, compasso e BPM.',
     'views.f1': 'Música',
     'views.f1d': 'Atual e seguinte.',
     'views.f2': 'Seção',
-    'views.f2d': 'Repetições e andamento como selos.',
+    'views.f2d': 'Repetições do loop e andamento em destaque.',
     'views.f3': 'Letra',
     'views.f3d': 'A linha cantada, numa fonte condensada para o verso caber na largura.',
-    'views.f4': 'Leituras',
-    'views.f4d': 'Timecode, compasso e tempo, BPM e clique.',
-    'views.lrcTitle': 'A letra é LRC simples',
+    'views.f4': 'Indicadores',
+    'views.f4d': 'Timecode, compasso e tempo, BPM e click.',
+    'views.lrcTitle': 'A letra é um arquivo LRC comum',
     'views.lrcAria': 'Exemplo de LRC',
     'views.lrcNote':
-      'Cole, marque o tempo enquanto a música toca, edite e salve. Ficam no perfil ativo, fora do Live Set. Texto simples também funciona.',
+      'Cole a letra, marque o tempo de cada linha com a música tocando, edite e salve. Ela fica no perfil ativo, fora do Live Set. Texto sem tempo também funciona.',
 
     'safety.title': 'Segurança no palco <span class="tail">— nada dispara sem querer</span>',
     'safety.why':
-      'Todo controle que pode parar o show pede pressionar e segurar. Nenhuma caixa de confirmação no meio da música.',
-    'safety.figCap': 'Pressione e segure — próxima música, seção anterior, parar',
+      'Todo botão que pode parar o show precisa ser segurado, não só tocado. Nada de janela de confirmação no meio da música.',
+    'safety.figCap': 'Segurar para enviar — próxima música, seção anterior, Stop',
     'safety.figMeta': 'De 0 a 800 ms',
     'safety.holdAria':
-      'Toque: nada é enviado. Segurar por 500 milissegundos: o comando é enviado. Deslizar para fora antes de 500 milissegundos: cancelado.',
+      'Toque rápido: nada é enviado. Segurar por 500 milissegundos: o comando é enviado. Arrastar o dedo para fora antes dos 500 milissegundos: cancela.',
     'safety.tap': 'Toque',
     'safety.tapOut': 'Nada enviado',
     'safety.hold': 'Segurar',
     'safety.holdOut': 'Enviado aos 500 ms',
-    'safety.slide': 'Deslizar para fora',
+    'safety.slide': 'Arrastar para fora',
     'safety.slideOut': 'Cancelado',
     'safety.figFoot':
       'O Play é o único controle que responde a um toque. O bloqueio do painel desativa todos os controles, inclusive o Play, no aparelho que o ativou.',
     'safety.qTitle': 'Saltos quantizados',
-    'safety.qBody': 'O salto vai para o Live na hora e o Live o encaixa na próxima linha da grade.',
+    'safety.qBody':
+      'O pedido de salto vai na hora para o Live, que executa no próximo tempo da grade.',
     'safety.ask': 'Salto pedido, compasso 2 tempo 3',
-    'safety.land': 'Chega, compasso 3 tempo 1',
+    'safety.land': 'Executado, compasso 3 tempo 1',
     'safety.cTitle': 'Contagem de um compasso',
     'safety.cBody':
-      'Com a CONTAGEM ligada e o Live parado, o Play conta um compasso no próprio botão, no andamento que o setlist declara, e inicia o Live no tempo forte. Por padrão é só visual: o celular nunca apita no palco.',
-    'safety.lTitle': 'Recusado enquanto toca',
+      'Com a CONTAGEM ligada e o Live parado, o Play conta um compasso no próprio botão, no andamento definido no setlist, e dispara o Live no primeiro tempo. Por padrão é só visual: o celular nunca apita no palco.',
+    'safety.lTitle': 'Travado enquanto toca',
     'safety.lBody':
-      'Editar marcadores, trocar de setlist e mudar o idioma ficam bloqueados enquanto o Live toca.',
-    'safety.rTitle': 'Quedas rápidas',
+      'Editar locators, trocar de setlist e mudar o idioma ficam bloqueados enquanto o Live toca.',
+    'safety.rTitle': 'Quedas de conexão',
     'safety.rBody':
       'Uma reconexão mantém na tela o último estado válido e avisa, em vez de apagar tudo.',
 
-    'install.title': 'Instalação <span class="tail">— cinco passos até o primeiro cue</span>',
+    'install.title': 'Instalação <span class="tail">— cinco passos até o primeiro Play</span>',
     'install.s1': 'Baixe',
     'install.s1d':
       '<code>RC-Setlist-1.0.0.ablx</code> e o kit de instalação, na <a href="https://github.com/ntworm/rc-setlist/releases/latest">versão mais recente</a>.',
     'install.s2': 'Instale o RC Bridge',
     'install.s2d':
-      'Rode <code>Install-RC-Bridge.cmd</code> (Windows) ou <code>Install RC Bridge.command</code> (macOS) a partir do kit. No Live, abra <b>Settings › Link, Tempo &amp; MIDI</b> e escolha <b>RCBridge</b> como Control Surface.',
+      'Rode <code>Install-RC-Bridge.cmd</code> (Windows) ou <code>Install RC Bridge.command</code> (macOS), que vêm no kit. No Live, abra <b>Settings › Link, Tempo &amp; MIDI</b> e escolha <b>RCBridge</b> como Control Surface.',
     'install.s3': 'Instale a extensão',
     'install.s3d': 'Abra o .ablx e aprove a instalação no Live.',
     'install.s4': 'Inicie o servidor',
@@ -214,15 +217,15 @@
       'Abra <b>Extensions › RC Setlist</b> e clique em <b>Iniciar</b>. O painel mostra um link e um QR code para cada tela.',
     'install.s5': 'Abra as telas',
     'install.s5d':
-      'Leia o QR code ou abra o link. Aceite o certificado local só quando o endereço for igual ao que o painel mostra.',
+      'Aponte a câmera para o QR code ou abra o link. Aceite o certificado local só se o endereço for o mesmo que o painel mostra.',
     'install.figCap': 'O painel dentro do Live',
     'install.panelAria':
       'O painel do RC Setlist no Live: servidor em execução na porta 4444, RC Bridge conectado, dois QR codes para Controle de palco e Performance, e os botões Iniciar, Parar e Reiniciar.',
     'install.pRun': 'Servidor em execução',
     'install.pOsc': 'Live conectado',
-    'install.figFoot': 'Esquema · os QR codes não são legíveis',
+    'install.figFoot': 'Ilustração · os QR codes não funcionam',
     'install.note':
-      'Vindo da 0.x? Rode uma vez o script de migração do kit antes de abrir o Live com a 1.0 — veja o <a href="./pt-BR/INSTALL.html">guia de instalação</a>. O Windows está validado; o macOS é experimental nesta versão.',
+      'Vem da 0.x? Rode uma vez o script de migração do kit antes de abrir o Live com a 1.0 — veja o <a href="./pt-BR/INSTALL.html">guia de instalação</a>. O Windows está validado; o macOS é experimental nesta versão.',
 
     'trouble.title': 'Quando não funciona',
     'trouble.tsTitle': 'Solução de problemas',
@@ -237,11 +240,11 @@
       'Aperte Verificar OSC no painel; a linha de OSC diz qual script responde. Depois de instalar o RC Bridge, aperte Reiniciar.',
     'trouble.d': 'Nenhuma música aparece',
     'trouble.dd':
-      'O Set precisa de localizadores no Arrangement. Primeiro as músicas; seções como <code>Música &gt; Seção</code> ou <code>&gt; Seção</code>.',
+      'O Set precisa de locators no Arrangement. Primeiro as músicas; seções como <code>Música &gt; Seção</code> ou <code>&gt; Seção</code>.',
     'trouble.e': 'A página não abre',
     'trouble.ed':
-      'Mesma rede, e não uma rede de convidados. Libere TCP 4444 só no perfil de rede privada.',
-    'trouble.f': 'Os controles estão em somente leitura',
+      'Use a mesma rede, e não a de convidados. Libere a porta TCP 4444 no firewall só para redes privadas.',
+    'trouble.f': 'Os controles estão bloqueados',
     'trouble.fd':
       'Abra o link ou o QR code do controlador no painel: o token dele libera o transporte.',
     'trouble.faqTitle': 'Perguntas frequentes',
@@ -253,16 +256,24 @@
     'faq.cd': 'Para lugar nenhum. Setlists, letras e exportações ficam em perfis locais.',
     'faq.d': 'Por que a contagem não tem som?',
     'faq.dd':
-      'Ela é visual por padrão. Um notebook que alimenta o retorno de ouvido pode ativar o som, um aparelho por vez.',
+      'Por padrão ela é só visual. Um notebook ligado no in-ear pode ativar o som, um aparelho por vez.',
     'faq.e': 'Session View?',
-    'faq.ed': 'Ainda não. Esta versão lê os localizadores do Arrangement.',
+    'faq.ed': 'Ainda não. Esta versão lê os locators do Arrangement.',
     'faq.f': 'Posso usar comercialmente?',
     'faq.fd':
       'Não. Use, altere e compartilhe para fins não comerciais, sob a PolyForm Noncommercial 1.0.0.',
+    'faq.g': 'É grátis?',
+    'faq.gd': 'Sim, para uso não comercial: sem preço, sem conta e sem assinatura.',
+    'faq.h': 'Mostra a letra no palco?',
+    'faq.hd':
+      'Sim. A letra sincronizada (.lrc) acompanha a música em qualquer celular, tablet ou notebook, e você marca o tempo das linhas no próprio navegador.',
+    'faq.i': 'Funciona com playback e multitracks?',
+    'faq.id':
+      'Sim. O Live continua tocando as suas faixas; o RC Setlist organiza o setlist, navega pelo Arrangement e mostra a letra.',
 
     'docs.title': 'Documentos de referência',
     'docs.install': 'Instalação',
-    'docs.guide': 'Guia de uso',
+    'docs.guide': 'Guia do usuário',
     'docs.trouble': 'Solução de problemas',
     'docs.faq': 'Perguntas frequentes',
     'docs.notes': 'O que há de novo na 1.0.0',
@@ -282,15 +293,40 @@
     'install.pStart': 'Iniciar',
     'install.pStop': 'Parar',
     'install.pRestart': 'Reiniciar',
-    'docs.lInstall': 'Ler INSTALL',
-    'docs.lGuide': 'Ler USER-GUIDE',
-    'docs.lTrouble': 'Ler TROUBLESHOOTING',
-    'docs.lFaq': 'Ler FAQ',
+    'docs.lInstall': 'Ler o guia de instalação',
+    'docs.lGuide': 'Ler o guia do usuário',
+    'docs.lTrouble': 'Ler a solução de problemas',
+    'docs.lFaq': 'Ler as perguntas frequentes',
     'docs.lNotes': 'Ler as notas da 1.0.0',
   };
 
   const documentRef = globalScope.document;
+  // scripts/render-landing.mjs runs this file without a document to read the
+  // table above: docs/pt-BR/index.html is rendered from it.
+  if (!documentRef) {
+    globalScope.rcSetlistSiteStrings = { 'pt-BR': ptBR };
+    return;
+  }
   const html = documentRef.documentElement;
+
+  // A page rendered ahead of time in one language (docs/pt-BR/index.html) says
+  // so on <html>. Its text is already final, so the selector remembers the
+  // choice and opens the page in the other language instead of rewriting this
+  // one; each option names that page in data-href.
+  if (html.dataset.siteLocale) {
+    const fixed = documentRef.getElementById('languageSelect');
+    if (fixed) {
+      fixed.value = html.dataset.siteLocale;
+      fixed.addEventListener('change', () => {
+        remember(normalizeLocale(fixed.value));
+        const target = fixed.selectedOptions[0]?.dataset.href;
+        if (target) globalScope.location.assign(new URL(target, globalScope.location.href));
+      });
+    }
+    html.classList.remove('i18n-wait');
+    return;
+  }
+
   const description = documentRef.querySelector('meta[name="description"]');
 
   const bindings = [
@@ -380,13 +416,17 @@
     html.classList.remove('i18n-wait');
   }
 
-  function setLocale(value) {
-    const locale = normalizeLocale(value);
+  function remember(locale) {
     try {
       globalScope.localStorage?.setItem(STORAGE_KEY, locale);
     } catch {
       // The page stays bilingual even when the choice cannot be remembered.
     }
+  }
+
+  function setLocale(value) {
+    const locale = normalizeLocale(value);
+    remember(locale);
     // A ?lang link would otherwise bring the old language back on reload.
     try {
       const url = new URL(globalScope.location.href);

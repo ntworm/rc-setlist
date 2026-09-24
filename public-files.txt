@@ -23,6 +23,7 @@ SUPPORT.md
 THIRD_PARTY_NOTICES.md
 bridge/
 docs/.nojekyll
+docs/72299ed2a8455f83ed49011642aeb172.txt
 docs/DEVELOPMENT.md
 docs/FAQ.md
 docs/INSTALL.md
@@ -52,6 +53,8 @@ docs/fonts/MartianMono-latin-ext.woff2
 docs/fonts/MartianMono-latin.woff2
 docs/fonts/OFL.txt
 docs/index.html
+docs/llms-full.txt
+docs/llms.txt
 docs/media/en/performance.png
 docs/media/en/performance-phone.png
 docs/media/en/product-truth-discord.png
@@ -68,6 +71,7 @@ docs/og-image.png
 docs/og-image.svg
 docs/pt-BR/
 docs/site-i18n.js
+docs/sitemap.xml
 examples/
 manifest.json
 package-lock.json
@@ -84,6 +88,7 @@ scripts/install-ableton-deps.mjs
 scripts/installer-cleanup-legacy.mjs
 scripts/package-release-candidate.ps1
 scripts/render-docs.mjs
+scripts/render-landing.mjs
 scripts/render-site-assets.mjs
 scripts/media-kit-template.html
 scripts/render-media-kit.mjs

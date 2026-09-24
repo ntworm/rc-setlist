@@ -6,13 +6,13 @@
 
 [English](README.md) · **Português (Brasil)**
 
-> **[Landing page e capturas de tela](https://ntworm.github.io/rc-setlist/)**
+> **[Página do RC Setlist e capturas de tela](https://ntworm.github.io/rc-setlist/pt-BR/)**
 >
 > ![RC Setlist Controle de Palco](docs/media/pt-BR/stage-control.png)
 
-RC Setlist é uma extensão de setlist com código disponível (source-available) para Ableton Live. Ela transforma localizadores do Arrangement em um setlist para o operador, letras sincronizadas, feedback de tempo e metrônomo, e controles de transporte protegidos para ensaios e apresentações ao vivo.
+O **RC Setlist** é uma extensão de setlist, letra sincronizada e tela de palco para o **Ableton Live 12**. Os locators do Arrangement viram o setlist de quem opera, num notebook ou tablet (Controle de palco), e uma tela só de leitura para a banda, em qualquer celular (Performance), com letra sincronizada, BPM e click, e controles de transporte protegidos para ensaios e shows. É grátis para uso não comercial e tem código disponível (source-available).
 
-[Landing page](https://ntworm.github.io/rc-setlist/) ·
+[Página do RC Setlist](https://ntworm.github.io/rc-setlist/pt-BR/) ·
 [Instalação](docs/pt-BR/INSTALL.md) ·
 [Guia do usuário](docs/pt-BR/USER-GUIDE.md) ·
 [English](README.md) ·
@@ -23,7 +23,7 @@ RC Setlist é uma extensão de setlist com código disponível (source-available
 
 ## Destaques
 
-- Músicas e seções orientadas a localizadores com suporte a tags `[loop]`, `[loop Nx]`, `[stop]`, `[next]`, `[bpm N]`, `[click]`, `[click off]`, `[skip]` e `[hidden]`.
+- Músicas e seções definidas pelos locators com suporte a tags `[loop]`, `[loop Nx]`, `[stop]`, `[next]`, `[bpm N]`, `[click]`, `[click off]`, `[skip]` e `[hidden]`.
 - Modos de visualização Setlist (Controle de Palco) e Performance para computadores, notebooks, tablets e celulares.
 - Letras sincronizadas `.lrc` com fluxo de edição e sincronização diretamente no navegador.
 - Transporte protegido (retenção de 500 ms nos botões), feedback de quantização e repetições contadas.
@@ -54,7 +54,7 @@ O Windows é a plataforma de lançamento validada. O suporte a macOS permanece e
 
 Usuários atualizando de versões antigas 0.x (`Ableton-RC-Setlist-0.4.x` a `0.7.0`) devem executar o script de migração `Migrate-RC-Setlist-Data.cmd` (Windows) ou `Migrate RC Setlist Data.command` (macOS) uma única vez antes de abrir o Live com a versão 1.0. O script copia perfis, setlists do projeto e preferências para a nova estrutura sem alterar a pasta anterior. Instruções completas em [docs/pt-BR/INSTALL.md](docs/pt-BR/INSTALL.md).
 
-## Formato de localizadores
+## Formato dos locators
 
 ```text
 Neon Signal [bpm 122] [click]

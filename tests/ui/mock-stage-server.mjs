@@ -18,6 +18,9 @@ const contentTypes = {
   '.png': 'image/png',
   '.svg': 'image/svg+xml',
   '.woff2': 'font/woff2',
+  '.txt': 'text/plain; charset=utf-8',
+  '.xml': 'application/xml; charset=utf-8',
+  '.md': 'text/markdown; charset=utf-8',
 };
 
 const songNames = [
@@ -279,7 +282,9 @@ function resolveStaticPath(rawUrl) {
     return path.resolve(docsRoot, 'index.html');
   }
   if (pathname.startsWith('/landing/')) {
-    const resolvedDocsPath = path.resolve(docsRoot, `.${pathname.slice('/landing'.length)}`);
+    // A folder is its index.html, as GitHub Pages serves /rc-setlist/pt-BR/.
+    const docsPath = pathname.endsWith('/') ? `${pathname}index.html` : pathname;
+    const resolvedDocsPath = path.resolve(docsRoot, `.${docsPath.slice('/landing'.length)}`);
     return resolvedDocsPath.startsWith(docsRoot) ? resolvedDocsPath : null;
   }
   if (pathname === '/' || pathname === '/setlist' || pathname === '/setlist/') {

@@ -87,12 +87,14 @@ for (const viewport of [
 ]) {
   test(`landing has no horizontal overflow at ${viewport.name}`, async ({ page }) => {
     await page.setViewportSize(viewport);
-    await page.goto('/landing/');
-    const geometry = await page.evaluate(() => ({
-      clientWidth: document.documentElement.clientWidth,
-      scrollWidth: document.documentElement.scrollWidth,
-    }));
-    expect(geometry.scrollWidth).toBeLessThanOrEqual(geometry.clientWidth);
+    for (const url of ['/landing/', '/landing/pt-BR/']) {
+      await page.goto(url);
+      const geometry = await page.evaluate(() => ({
+        clientWidth: document.documentElement.clientWidth,
+        scrollWidth: document.documentElement.scrollWidth,
+      }));
+      expect(geometry.scrollWidth, url).toBeLessThanOrEqual(geometry.clientWidth);
+    }
   });
 }
 
@@ -200,9 +202,7 @@ test('landing switches between English and Portuguese at the canonical URL', asy
 
   await page.locator('#languageSelect').selectOption('pt-BR');
   await expect(page.locator('html')).toHaveAttribute('lang', 'pt-BR');
-  await expect(page.locator('#locators-title')).toHaveText(
-    /Localizadores\s+— do Arrangement ao palco/,
-  );
+  await expect(page.locator('#locators-title')).toHaveText(/Locators\s+— do Arrangement ao palco/);
   await expect(page.locator('#download')).toHaveText('Baixar .ablx');
   await expect(page.locator('.hero-visual .hero-stage')).toHaveAttribute('src', /media\/pt-BR\//);
   await expect(page.locator('a[href="undefined"]')).toHaveCount(0);
@@ -274,4 +274,112 @@ test('landing axe check covers both EN and pt-BR', async ({ page }) => {
     );
     expect(blocking, `blocking axe violations at locale ${locale}`).toEqual([]);
   }
+});
+
+const SITE = 'https://ntworm.github.io/rc-setlist/';
+
+test('both landings name each other for search engines and point at the site index', async ({
+  page,
+  request,
+}) => {
+  for (const url of ['/landing/', '/landing/pt-BR/']) {
+    await page.goto(url);
+    for (const [lang, href] of [
+      ['en', SITE],
+      ['pt-BR', `${SITE}pt-BR/`],
+      ['x-default', SITE],
+    ]) {
+      await expect(page.locator(`link[rel="alternate"][hreflang="${lang}"]`)).toHaveAttribute(
+        'href',
+        href,
+      );
+    }
+    for (const rel of ['describedby', 'sitemap']) {
+      const href = await page.locator(`link[rel="${rel}"]`).getAttribute('href');
+      const response = await request.get(new URL(href, page.url()).pathname);
+      expect(response.status(), `${url} ${rel}`).toBe(200);
+    }
+  }
+});
+
+test('Portuguese landing is its own page, already translated', async ({ page, request }) => {
+  const requests = [];
+  page.on('request', (item) => requests.push(item.url()));
+  await page.goto('/landing/pt-BR/');
+
+  await expect(page.locator('html')).toHaveAttribute('lang', 'pt-BR');
+  await expect(page).toHaveTitle(/^RC Setlist — extensão de setlist/);
+  await expect(page.locator('link[rel="canonical"]')).toHaveAttribute('href', `${SITE}pt-BR/`);
+  await expect(page.locator('meta[name="description"]')).toHaveAttribute(
+    'content',
+    /Extensão de setlist para Ableton Live/,
+  );
+  await expect(page.locator('#languageSelect')).toHaveValue('pt-BR');
+  await expect(page.locator('#locators-title')).toHaveText(/Locators\s+— do Arrangement ao palco/);
+  await expect(page.locator('#download')).toHaveText('Baixar .ablx');
+  await expect(page.locator('#documentation')).toHaveAttribute('href', './README.html');
+  await expect(page.locator('a[href="undefined"]')).toHaveCount(0);
+
+  const hero = page.locator('.hero-visual .hero-stage');
+  await expect(hero).toHaveAttribute('src', '../media/pt-BR/stage-control.png');
+  await hero.evaluate((image) => image.decode());
+  expect(await hero.evaluate((image) => image.naturalWidth)).toBeGreaterThan(0);
+
+  const relative = await page
+    .locator('a[href^="./"], a[href^="../"], link[href^="./"], link[href^="../"]')
+    .evaluateAll((items) => [...new Set(items.map((item) => item.href))]);
+  expect(relative.length).toBeGreaterThan(8);
+  for (const href of relative) {
+    const response = await request.get(new URL(href).pathname);
+    expect(response.status(), href).toBe(200);
+  }
+  const external = requests.filter((url) => !url.startsWith('http://127.0.0.1:4173/'));
+  expect(external).toEqual([]);
+
+  // Choosing English opens the English page rather than rewriting this one.
+  await page.locator('#languageSelect').selectOption('en');
+  await expect(page).toHaveURL(/\/landing\/\?lang=en$/);
+  await expect(page.locator('html')).toHaveAttribute('lang', 'en');
+  await expect(page.locator('#download')).toHaveText('Download .ablx');
+});
+
+test('structured data describes the product and repeats the FAQ shown on the page', async ({
+  page,
+}) => {
+  for (const [url, locale] of [
+    ['/landing/', 'en'],
+    ['/landing/pt-BR/', 'pt-BR'],
+  ]) {
+    await page.goto(url);
+    const data = JSON.parse(await page.locator('script#structured-data').textContent());
+    const nodes = Object.fromEntries(data['@graph'].map((node) => [node['@type'], node]));
+    expect(nodes.SoftwareApplication.name).toBe('RC Setlist');
+    expect(nodes.SoftwareApplication.offers.price).toBe('0');
+    expect(nodes.SoftwareApplication.downloadUrl).toBe(
+      'https://github.com/ntworm/rc-setlist/releases/latest',
+    );
+    expect(nodes.WebPage.inLanguage).toBe(locale);
+    expect(nodes.WebPage.name).toBe(await page.title());
+
+    const cards = page.locator('#faq + .cards .card');
+    const visible = await cards.evaluateAll((items) =>
+      items.map((card) =>
+        ['h4', 'p'].map((tag) => card.querySelector(tag).textContent.replace(/\s+/g, ' ').trim()),
+      ),
+    );
+    expect(
+      nodes.FAQPage.mainEntity.map((question) => [question.name, question.acceptedAnswer.text]),
+    ).toEqual(visible);
+  }
+});
+
+test('Portuguese landing has no serious or critical axe-core accessibility violations', async ({
+  page,
+}) => {
+  await page.goto('/landing/pt-BR/');
+  const results = await new AxeBuilder({ page }).disableRules(['button-name']).analyze();
+  const blocking = results.violations.filter(
+    (violation) => violation.impact === 'serious' || violation.impact === 'critical',
+  );
+  expect(blocking).toEqual([]);
 });
