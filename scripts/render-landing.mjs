@@ -200,14 +200,17 @@ function structuredData({ locale, url, title, description, faq }) {
         ),
         author: { '@id': `${SITE}#author` },
         sameAs: [REPO],
+        // Plain CreativeWork on purpose: Google validates Article and
+        // DiscussionForumPosting as rich results of the page that carries them,
+        // and this page is neither an article nor a forum thread.
         subjectOf: [
           {
-            '@type': 'Article',
+            '@type': 'CreativeWork',
             name: 'Building a stage setlist & lyric prompter for Ableton Live 12',
             url: 'https://dev.to/gabriel_worm/building-a-stage-setlist-lyric-prompter-for-ableton-live-12-4idh',
           },
           {
-            '@type': 'DiscussionForumPosting',
+            '@type': 'CreativeWork',
             name: 'RC Setlist on the KVR Audio forum',
             url: 'https://www.kvraudio.com/forum/viewtopic.php?t=632094',
           },
