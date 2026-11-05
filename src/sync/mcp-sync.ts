@@ -1,6 +1,7 @@
 import type { SessionInfo } from '../integration/mcp-client.js';
 import { bridgeState, broadcastState, checkAndBroadcastLyrics } from '../runtime/bridge-state.js';
 import { executeAutomationActions } from '../automation/executor.js';
+import { noteTransportClockSource } from './clock-source.js';
 import { log } from '../util/log.js';
 
 /**
@@ -16,6 +17,7 @@ export function syncFromMcpInfo(info: SessionInfo): void {
   }
 
   if (typeof info.current_song_time === 'number' && typeof info.is_playing === 'boolean') {
+    noteTransportClockSource('mcp');
     const prevActiveSongIdx = bridgeState.manager.getState().activeSongIndex;
     const prevActiveSectionIdx = bridgeState.manager.getState().activeSectionIndex;
 

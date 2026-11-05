@@ -43,7 +43,15 @@ export async function executeCommandAction(
   const msg = { ...(command.payload as object), type: command.type } as ClientMessage;
   const writeFile = dependencies.writeFile ?? atomicWriteFile;
 
-  const requiresOsc = new Set(['play', 'stop', 'metronome', 'refresh', 'jump', 'set_quantization', 'trigger_count_in']);
+  const requiresOsc = new Set([
+    'play',
+    'stop',
+    'metronome',
+    'refresh',
+    'jump',
+    'set_quantization',
+    'trigger_count_in',
+  ]);
   if (requiresOsc.has(msg.type) && !bridgeState.oscClient) {
     throw new OperatorError('OSC client is not initialized.');
   }
@@ -68,7 +76,10 @@ export async function executeCommandAction(
   switch (msg.type) {
     case 'trigger_count_in':
       if (countInTimeoutId) clearTimeout(countInTimeoutId);
-      bridgeState.wsServer?.broadcast({ type: 'count_in_started', sendPlayOffsetMs: msg.sendPlayOffsetMs });
+      bridgeState.wsServer?.broadcast({
+        type: 'count_in_started',
+        sendPlayOffsetMs: msg.sendPlayOffsetMs,
+      });
       countInTimeoutId = setTimeout(() => {
         countInTimeoutId = null;
         if (bridgeState.manager!.shouldContinuePlayback()) osc.continuePlaying();
@@ -76,7 +87,10 @@ export async function executeCommandAction(
       }, msg.sendPlayOffsetMs);
       break;
     case 'play':
-      if (countInTimeoutId) { clearTimeout(countInTimeoutId); countInTimeoutId = null; }
+      if (countInTimeoutId) {
+        clearTimeout(countInTimeoutId);
+        countInTimeoutId = null;
+      }
       // The count is produced in the browser (static/setlist/count-in.js);
       // Live is told to resume when the transport last came to rest, or to
       // start from the start marker after a jump or a click.
@@ -84,7 +98,10 @@ export async function executeCommandAction(
       else osc.startPlaying();
       break;
     case 'stop':
-      if (countInTimeoutId) { clearTimeout(countInTimeoutId); countInTimeoutId = null; }
+      if (countInTimeoutId) {
+        clearTimeout(countInTimeoutId);
+        countInTimeoutId = null;
+      }
       // Stop disarms a jump waiting for its quantization boundary; Live
       // cancels an armed cue jump on Stop too, so the page's `jump_cancelled`
       // stays truthful.
@@ -110,7 +127,8 @@ export async function executeCommandAction(
       break;
     case 'jump': {
       const { executeJumpCommand } = await import('./transport.js');
-      executeJumpCommand(msg);
+      // The confirmation window starts once Live is due to land the jump.
+      command.timeoutMs += executeJumpCommand(msg);
       break;
     }
     case 'reorder':
@@ -131,6 +149,12 @@ export async function executeCommandAction(
       broadcastState();
       break;
     case 'set_panic':
+      if (msg.active && countInTimeoutId) {
+        // A count-in that is running must not start the transport after the
+        // panic: Live is stopped right below, and it has to stay stopped.
+        clearTimeout(countInTimeoutId);
+        countInTimeoutId = null;
+      }
       bridgeState.manager!.setPanic(msg.active);
       if (msg.active) {
         osc.stopPlaying();

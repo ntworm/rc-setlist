@@ -1,0 +1,10 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "rootDir": "./src",
+    "paths": {
+      "@ableton-extensions/sdk": ["./src/ableton-sdk-public.d.ts"]
+    }
+  },
+  "include": ["src/**/*"]
+}

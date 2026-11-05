@@ -1,6 +1,6 @@
 {
   "name": "rc-setlist",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "private": true,
   "description": "RC Setlist: source-available setlist extension for Ableton Live.",
   "author": "ntworm",
@@ -36,8 +36,8 @@
     "ci:release": "npm run verify:ableton && npm run ci:public && npm run build:prod",
     "watch": "npm run verify:ableton && tsx scripts/build.ts --watch",
     "test:ui": "playwright test",
-    "test:static": "node --test --test-force-exit static/ui.test.mjs static/setlist/marker-editor.test.mjs static/setlist/count-in.test.mjs static/shared/i18n.test.mjs static/shared/stage-runtime.test.mjs static/setlist/controller-runtime.test.mjs static/setlist/transport-runtime.test.mjs tests/documentation-contract.test.mjs tests/i18n-parity.test.mjs tests/installer-legacy-cleanup.test.mjs",
-    "test:src": "node --import tsx --test --test-force-exit tests/atomic-write.test.mjs tests/binpack-build.test.mjs tests/cert.test.mjs tests/core.test.mjs tests/song-identity.test.mjs tests/song-book.test.mjs tests/song-book-handlers.test.mjs tests/event-log-redaction.test.mjs tests/logger-rotation.test.mjs tests/osc.test.mjs tests/osc-diagnostics.test.mjs tests/next-downbeat-jump.test.mjs tests/sdk-sync.test.mjs tests/pre-roll-integration.test.mjs tests/automation-transition.test.mjs tests/osc-transition.test.mjs tests/osc-bridge.test.mjs tests/setlist-metrics.test.mjs tests/csv.test.mjs tests/click-preview.test.mjs tests/client-message.test.mjs tests/command-bus.test.mjs tests/command-bus-bounds.test.mjs tests/ws-auth.test.mjs tests/ws-liveness.test.mjs tests/ws-sync-race.test.mjs tests/server-lifecycle.test.mjs tests/preferences.test.mjs tests/http-security.test.mjs tests/profile-manager.test.mjs tests/profile-migration.test.mjs tests/project-profile-scope.test.mjs tests/no-project-probe.test.mjs tests/profile-ws.test.mjs tests/jump-authority.test.mjs tests/mcp-client.test.mjs tests/mcp-fallback-sync.test.mjs tests/panel-embed.test.mjs",
+    "test:static": "node --test --test-force-exit static/ui.test.mjs static/setlist/marker-editor.test.mjs static/setlist/count-in.test.mjs static/setlist/peer-status.test.mjs static/shared/i18n.test.mjs static/shared/stage-runtime.test.mjs static/setlist/controller-runtime.test.mjs static/setlist/transport-runtime.test.mjs tests/documentation-contract.test.mjs tests/i18n-parity.test.mjs tests/installer-legacy-cleanup.test.mjs static/setlist/app-bar-fit.test.mjs static/setlist/song-fold.test.mjs",
+    "test:src": "node --import tsx --test --test-force-exit tests/atomic-write.test.mjs tests/binpack-build.test.mjs tests/cert.test.mjs tests/core.test.mjs tests/song-identity.test.mjs tests/song-book.test.mjs tests/song-book-handlers.test.mjs tests/event-log-redaction.test.mjs tests/logger-rotation.test.mjs tests/osc.test.mjs tests/osc-diagnostics.test.mjs tests/next-downbeat-jump.test.mjs tests/sdk-sync.test.mjs tests/pre-roll-integration.test.mjs tests/automation-transition.test.mjs tests/osc-transition.test.mjs tests/osc-bridge.test.mjs tests/setlist-metrics.test.mjs tests/csv.test.mjs tests/click-preview.test.mjs tests/client-message.test.mjs tests/command-bus.test.mjs tests/command-bus-bounds.test.mjs tests/ws-auth.test.mjs tests/ws-liveness.test.mjs tests/ws-sync-race.test.mjs tests/server-lifecycle.test.mjs tests/preferences.test.mjs tests/http-security.test.mjs tests/profile-manager.test.mjs tests/profile-migration.test.mjs tests/project-profile-scope.test.mjs tests/no-project-probe.test.mjs tests/profile-ws.test.mjs tests/jump-authority.test.mjs tests/mcp-client.test.mjs tests/mcp-fallback-sync.test.mjs tests/panel-embed.test.mjs tests/peer-pairing.test.mjs tests/peer-link.test.mjs tests/peer-panel.test.mjs tests/peer-e2e.test.mjs tests/peer-gaps.test.mjs tests/diagnostics-logging.test.mjs tests/lan-candidates.test.mjs tests/lan-probe.test.mjs tests/lan-address.test.mjs tests/adversarial-fixes-a.test.mjs tests/peer-key-pin.test.mjs tests/local-ca.test.mjs tests/ca-download.test.mjs",
     "test:release-surface": "node --import tsx --test --test-force-exit tests/ableton-deps.test.mjs tests/content-sanitization.test.mjs tests/documentation-contract.test.mjs tests/installers.test.mjs tests/license-compliance.test.mjs tests/public-export.test.mjs tests/release-contracts.test.mjs tests/release-package.test.mjs tests/release-surface.test.mjs",
     "test": "npm run test:src",
     "setup:ableton": "node scripts/install-ableton-deps.mjs",
@@ -55,7 +55,7 @@
     "package:release": "npm run build:prod && npx --no-install extensions-cli package -i dist/static -i dist/bridge",
     "test:bridge": "node scripts/run-bridge-tests.mjs",
     "package:kit": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/package-release-candidate.ps1",
-    "lint": "eslint .",
+    "lint": "eslint . --max-warnings 0",
     "lint:fix": "eslint . --fix",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
@@ -67,6 +67,7 @@
     "gates:quality": "npm run lint && npm run format:check && npm run deadcode && npm run deps:check && npm run lint:py"
   },
   "dependencies": {
+    "@peculiar/x509": "1.14.3",
     "osc-min": "^2.1.2",
     "selfsigned": "^5.5.0",
     "ws": "^8.21.1"

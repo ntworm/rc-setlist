@@ -254,6 +254,17 @@
       perfil ≤ 80; títulos ≤ 255; corpo de letra ≤ 96 KiB; reorder ≤ 4096 músicas; campos de texto
       estruturado (notas, título, cabeçalho de letra) rejeitam controles C0/C1.
     </p>
+    <p>
+      Uma conexão de par (ver §5.1) envia um frame que a tabela acima não lista:
+      <code>jump_time</code>, com <code>commandId</code>, <code>time</code> (o beat em que ele
+      pousa) e <code>section</code> (se aquele beat é uma seção). Um salto não pode viajar como
+      índice de uma lista, porque os dois computadores podem ter as músicas em outra ordem. Só uma
+      conexão de par pode enviá-lo; qualquer outro cliente é recusado com <code>unauthorized</code>.
+      O lado que recebe procura um marcador a menos de um centésimo de beat desse beat — o mais
+      próximo e, num empate, o primeiro na ordem exibida — e responde
+      <code>{&quot;type&quot;:&quot;error&quot;,&quot;code&quot;:&quot;peer_no_marker&quot;}</code>
+      quando não tem nenhum.
+    </p>
     <h3 id="2-3-reliability-core">2.3 Reliability Core</h3>
     <p>
       Cada comando é reconhecido duas vezes: <code>command_ack</code> (servidor aceitou o comando no
@@ -282,6 +293,14 @@
       adiciona <code>stateVersion</code>, <code>connection</code>, <code>transport</code>,
       <code>currentSongId</code>, <code>currentSectionId</code>, <code>pendingCommands</code>,
       <code>mode</code> (<code>rehearsal</code> | <code>show</code>), <code>safety</code>.
+    </p>
+    <p>
+      O contrato 1.1 adiciona <code>peerStatus</code>, o estado do link com o computador pareado
+      (§5.1): <code>paired</code> diz se há um computador pareado, <code>connected</code> diz se o
+      link está de pé, <code>markersMatch</code> diz se os dois computadores leem os mesmos
+      marcadores, e <code>fingerprintMismatch</code> diz que o computador pareado apresentou outro
+      certificado e que o link recusou. O campo viaja em todo frame <code>state</code>, então um
+      cliente que não sabe nada do segundo computador pode ignorá-lo.
     </p>
     <h3 id="2-5-reda-o-de-logs">2.5 Redação de logs</h3>
     <p>
@@ -457,6 +476,64 @@
       <code>/static/*</code> e as páginas HTML não exigem. Qualquer caminho desconhecido retorna
       <code>404 text/plain</code> sem vazar o header do servidor.
     </p>
+    <p>
+      Existe mais uma rota, descrita em §5.1: <code>GET /peer/pair</code>, que entrega a credencial
+      do par para um computador que apresenta o código de seis dígitos certo.
+    </p>
+    <h3 id="5-1-o-segundo-computador">5.1 O segundo computador</h3>
+    <p>
+      Dois computadores podem rodar o mesmo show. O que tem o Live encaminha os comandos de
+      transporte para o outro por um WebSocket TLS que o par abre com a credencial abaixo.
+    </p>
+    <p>
+      <strong>A credencial.</strong> <code>GET /peer/pair?code=&lt;code&gt;</code> responde
+      <code>200</code> com
+      <code>{&quot;peerToken&quot;: &quot;&lt;32 caracteres hex&gt;&quot;}</code> e nada mais. O
+      token é uma credencial de certa, guardada em <code>&lt;storage&gt;/peer-token</code> ao lado
+      do token de segurança, e nunca é a mesma string do token de segurança. Um token de par pode
+      enviar <code>handshake</code>, <code>sync_confirm</code>, <code>jump_time</code>,
+      <code>play</code>, <code>stop</code>, <code>metronome</code>, <code>set_quantization</code>,
+      <code>trigger_count_in</code>, <code>refresh</code> e <code>set_panic</code>, e nada mais:
+      qualquer outro frame é recusado com <code>unauthorized</code>, inclusive <code>jump</code> por
+      índice. Um token de controller roda qualquer comando.
+    </p>
+    <p>
+      O código tem seis dígitos, vale por dez minutos e funciona exatamente uma vez. Cinco palpites
+      errados matam o código, e as tentativas que chegam até ele são limitadas por endereço (5 por
+      minuto) e no total (20 por minuto). A rota responde:
+    </p>
+    <ul>
+      <li>
+        <code>404</code> quando não há código ativo, ou quando a requisição não chegou por TLS.
+      </li>
+      <li><code>403</code> quando o código está errado. O corpo não diz por quê.</li>
+      <li><code>429</code> quando o limite de tentativas foi atingido.</li>
+      <li><code>200</code> com o token do par quando o código estava certo.</li>
+    </ul>
+    <p>O código é mascarado nos logs e na URL, como todo outro segredo deste documento.</p>
+    <p>
+      <strong>A conexão.</strong> Um par faz upgrade na mesma origem com
+      <code>?token=&lt;peerToken&gt;</code> e envia
+      <code>{&quot;type&quot;:&quot;handshake&quot;,&quot;clientId&quot;:&quot;rc-peer&quot;}</code
+      >. O servidor responde com o <code>handshake_ack</code> de sempre, e o par confirma com
+      <code>sync_confirm</code> como qualquer cliente. O link tem um salto só: um comando que veio
+      de um par nunca é encaminhado de novo.
+    </p>
+    <p>
+      <strong>A porta.</strong> O pareamento e o link sempre alcançam o segundo computador na porta
+      <code>4444</code>, a porta em que o servidor escuta; o painel não tem campo para outra. O
+      segundo computador precisa aceitar conexões nessa porta, como já aceita para um celular.
+    </p>
+    <p>
+      <strong>O certificado.</strong> O link prende o certificado. A impressão digital que o
+      pareamento devolveu é comparada com a que o socket apresenta antes de qualquer byte sair; um
+      computador que apresenta outro certificado nunca é falado, e o estado reporta
+      <code>fingerprintMismatch</code>.
+    </p>
+    <p>
+      <strong>O estado.</strong> O frame <code>state</code> carrega <code>peerStatus</code> (§2.4)
+      para a página dizer o que o link está fazendo sem precisar perguntar.
+    </p>
     <p>---</p>
     <h2 id="6-auxiliares-de-compatibilidade">6. Auxiliares de compatibilidade</h2>
     <h3 id="6-1-vers-o-com-fonte-nica">6.1 Versão com fonte única</h3>
@@ -569,6 +646,6 @@
       <code>npm run ci:public</code> e <code>npm run version:check</code>. Ambos rodam em CI antes
       de qualquer release tagged.
     </p>
-    <div class="source">Rendered from <code>docs/pt-BR/CONTRATOS.md</code> on 2026-09-24.</div>
+    <div class="source">Rendered from <code>docs\pt-BR\CONTRATOS.md</code> on 2026-11-05.</div>
   </body>
 </html>

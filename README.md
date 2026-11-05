@@ -1,7 +1,7 @@
 # RC Setlist
 
 [![PolyForm Noncommercial](https://img.shields.io/badge/license-PolyForm%20Noncommercial-orange)](LICENSE)
-[![Version](https://img.shields.io/badge/version-1.0.0-f97316)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-1.1.0-f97316)](CHANGELOG.md)
 [![CI](https://github.com/ntworm/rc-setlist/actions/workflows/ci.yml/badge.svg)](https://github.com/ntworm/rc-setlist/actions/workflows/ci.yml)
 
 **English** · [Português (Brasil)](README.pt-BR.md)
@@ -40,6 +40,8 @@ free for noncommercial use and source-available.
 - English and Brazilian Portuguese interfaces in the same `.ablx`.
 - No account, cloud sync, analytics or telemetry.
 - Keyboard Mapping for assigning transport and view actions to Numpad or alpha keys.
+- A second computer that follows the show: pair it from the Live panel and
+  the transport commands travel to it over a pinned link.
 
 ## Requirements
 
@@ -56,7 +58,7 @@ until this release is exercised on real macOS hardware.
 ## Quick start
 
 1. Install RC Bridge: run the kit's `Install-RC-Bridge.cmd` / `Install RC Bridge.command`, then choose RCBridge as a Control Surface in Live.
-2. Download `RC-Setlist-1.0.0.ablx` from the latest release.
+2. Download `RC-Setlist-1.1.0.ablx` from the latest release.
 3. Open the `.ablx` and approve installation in Live.
 4. In Live, open **Extensions > RC Setlist** and start the server.
 5. Use the panel URL or QR code to open `/setlist` or `/performance`.
@@ -66,10 +68,11 @@ Users upgrading from 0.x (`Ableton-RC-Setlist-0.4.x`–`0.7.0`) run the kit's
 `Migrate-RC-Setlist-Data.cmd` (Windows) or `Migrate RC Setlist Data.command`
 (macOS) once before opening Live with 1.0. The script copies profiles,
 project-setlists and preferences into the new layout without touching the old
-one. The browser may show a warning for the per-install self-signed
-certificate. Accept it only when the address matches the host shown by RC
-Setlist on your trusted local network. Full instructions are in
-[docs/INSTALL.md](docs/INSTALL.md).
+one. Users coming from 1.0 (`RC-Setlist-1.0.0.ablx`) install the new package
+over the old one; there is nothing to migrate. The browser may show a
+warning for the per-install self-signed certificate. Accept it only when the
+address matches the host shown by RC Setlist on your trusted local network.
+Full instructions are in [docs/INSTALL.md](docs/INSTALL.md).
 
 ## Locator format
 
@@ -114,6 +117,8 @@ Authorized developers can configure a complete build using
 ## Documentation
 
 - [Documentation index](docs/README.md)
+- [What is new in 1.1.0](docs/RELEASE-NOTES-1.1.0.md)
+- [Notas da versão 1.1.0 (pt-BR)](docs/pt-BR/NOTAS-DA-VERSAO-1.1.0.md)
 - [What is new in 1.0.0](docs/RELEASE-NOTES-1.0.0.md)
 - [Notas da versão 1.0.0 (pt-BR)](docs/pt-BR/NOTAS-DA-VERSAO-1.0.0.md)
 - [Installation](docs/INSTALL.md)

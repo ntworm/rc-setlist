@@ -1,0 +1,25 @@
+target-version = "py311"
+line-length = 100
+
+# Excludes the upstream AbletonOSC/Ableton Python files the RC Bridge fork
+# inherits untouched. Only the fork's own files run under ruff and the `D`
+# (docstring) rules.
+extend-exclude = [
+  "bridge/RCBridge/pythonosc",
+  "bridge/RCBridge/abletonosc/__init__.py",
+  "bridge/RCBridge/abletonosc/application.py",
+  "bridge/RCBridge/abletonosc/clip.py",
+  "bridge/RCBridge/abletonosc/clip_slot.py",
+  "bridge/RCBridge/abletonosc/device.py",
+  "bridge/RCBridge/abletonosc/introspection.py",
+  "bridge/RCBridge/abletonosc/midimap.py",
+  "bridge/RCBridge/abletonosc/scene.py",
+  "bridge/RCBridge/abletonosc/track.py",
+  "bridge/RCBridge/abletonosc/view.py",
+]
+
+[lint]
+select = ["E", "F", "W", "I", "B", "UP", "D"]
+
+[pydocstyle]
+convention = "google"

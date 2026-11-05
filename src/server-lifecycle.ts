@@ -22,13 +22,15 @@ import { EventLogger } from './core/event-log.js';
 import { CommandBus } from './core/command-bus.js';
 import { OSCClient } from './integration/osc-client.js';
 import { SetlistWSServer } from './server/ws.js';
-import { loadCerts, useHttps, httpsOptions } from './server/cert.js';
+import { loadCerts, useHttps, httpsOptions, hasLocalCa, getLocalCaDer } from './server/cert.js';
+import { createCaDownloadListener } from './server/ca-download.js';
 import {
   createHttpRequestListener,
   setCsvExportResolver,
   setAudioResolver,
   setDebugSnapshotProvider,
   setHttpAuthToken,
+  setPeerToken,
 } from './server/http.js';
 import { McpTcpClient } from './integration/mcp-client.js';
 import { McpFallbackSync, McpUnavailableError } from './integration/mcp-fallback-sync.js';
@@ -36,6 +38,11 @@ import { syncFromSdkContext } from './sync/sdk-sync.js';
 import { syncFromMcpInfo } from './sync/mcp-sync.js';
 import { registerOscListeners } from './osc/registration.js';
 import { executeCommandAction } from './commands/handlers/index.js';
+import { peerCommandRejection, resolvePeerJump } from './commands/handlers/peer.js';
+import { relayToPeer, startPeerLink, stopPeerLink } from './runtime/peer-link.js';
+import { getOrGeneratePeerToken } from './runtime/pairing.js';
+import { startEventLoopWatch, warnIfSlow } from './runtime/event-loop-watch.js';
+import { readPeerConfig } from './preferences.js';
 import { applyJumpTargetTempo } from './commands/jump-tempo.js';
 import type { ClientMessage } from './types.js';
 import {
@@ -44,9 +51,14 @@ import {
   projectSessionIdForSong,
   type ProjectIdentity,
 } from './core/project-identity.js';
+import { log } from './util/log.js';
 
 const PORT = 4444;
+/** The port the certificate authority is served on. */
+const CA_PORT = PORT + 1;
 let projectRefreshPending = false;
+/** The server that hands the certificate authority to the phone. */
+let caDownloadServer: http.Server | null = null;
 
 /**
  * Closes the http server.
@@ -65,6 +77,31 @@ export async function closeHttpServer(server: http.Server | https.Server): Promi
 
 function newProjectSessionId(): string {
   return randomBytes(16).toString('hex');
+}
+
+/**
+ * Starts the place where the phone gets the certificate authority, over
+ * plain HTTP on a port of its own: a phone that has to trust a certificate
+ * cannot be asked to trust the page that carries it. A port that is taken
+ * is no reason to stop the server.
+ */
+function startCaDownloadServer(): void {
+  if (!hasLocalCa()) return;
+  const server = http.createServer(createCaDownloadListener(getLocalCaDer, PORT));
+  server.on('error', (err: Error) => {
+    log.warn('lifecycle', 'the certificate download server could not start', {
+      error: err.message,
+    });
+  });
+  caDownloadServer = server;
+  server.listen(CA_PORT);
+}
+
+/** Closes the place where the phone gets the certificate authority. */
+async function stopCaDownloadServer(): Promise<void> {
+  const server = caDownloadServer;
+  caDownloadServer = null;
+  if (server) await closeHttpServer(server);
 }
 
 function currentSongHandleId(context: ReturnType<typeof getExtensionContext>): string {
@@ -254,6 +291,8 @@ export async function startServer(options: StartServerOptions = {}): Promise<voi
     }
     bridgeState.authToken = getOrGenerateToken();
     setHttpAuthToken(bridgeState.authToken);
+    bridgeState.peerToken = getOrGeneratePeerToken();
+    setPeerToken(bridgeState.peerToken);
 
     const fallbackSessionId = bridgeState.projectSessionId || newProjectSessionId();
     bridgeState.projectSessionId = projectSessionIdForSong(
@@ -396,17 +435,20 @@ export async function startServer(options: StartServerOptions = {}): Promise<voi
       }, 100);
     }
 
-    bridgeState.wsServer = new SetlistWSServer(bridgeState.authToken);
+    bridgeState.wsServer = new SetlistWSServer(bridgeState.authToken, {
+      peerToken: bridgeState.peerToken,
+    });
     bridgeState.wsServer.init();
 
     if (!options.skipCerts) {
       await loadCerts();
     }
 
-    const srv =
-      useHttps && httpsOptions && !options.skipCerts
-        ? https.createServer(httpsOptions, createHttpRequestListener())
-        : http.createServer(createHttpRequestListener());
+    const tlsOptions = useHttps && httpsOptions && !options.skipCerts ? httpsOptions : null;
+    bridgeState.serverUsesTls = tlsOptions !== null;
+    const srv = tlsOptions
+      ? https.createServer(tlsOptions, createHttpRequestListener())
+      : http.createServer(createHttpRequestListener());
     bridgeState.server = srv;
 
     srv.on('upgrade', (req, socket, head) => {
@@ -422,7 +464,7 @@ export async function startServer(options: StartServerOptions = {}): Promise<voi
       const onListening = (): void => {
         srv.off('error', onError);
         console.log(
-          `[HTTP] Server running over ${useHttps && httpsOptions && !options.skipCerts ? 'HTTPS' : 'HTTP'} on port ${listenPort}`,
+          `[HTTP] Server running over ${tlsOptions ? 'HTTPS' : 'HTTP'} on port ${listenPort}`,
         );
         resolve();
       };
@@ -433,10 +475,19 @@ export async function startServer(options: StartServerOptions = {}): Promise<voi
       srv.listen(listenPort);
     });
 
+    // The phone that opens the setlist needs the authority of this
+    // computer before it trusts the certificate: it is served on a port of
+    // its own, next to the server that answers.
+    if (tlsOptions !== null) startCaDownloadServer();
+
+    // The paired computer, if there is one, follows from here on.
+    startPeerLink(readPeerConfig());
+
     bridgeState.wsServer.on('client_message', (msg: ClientMessage, ws: AugmentedWebSocket) => {
       if (!bridgeState.manager) return;
 
       const isController = ws.isController === true;
+      const isPeerConnection = ws.isPeer === true;
       const isSynchronized =
         ws.synchronized === true || ws.skipHandshakeCheck || process.env.NODE_ENV === 'test';
       const allowedBeforeSync = new Set(['handshake', 'sync_confirm', 'auth', 'get_lyrics']);
@@ -461,7 +512,7 @@ export async function startServer(options: StartServerOptions = {}): Promise<voi
           JSON.stringify({
             type: 'handshake_ack',
             stateVersion: state.stateVersion,
-            state,
+            state: { ...state, peerStatus: bridgeState.peerStatus },
           }),
         );
         if (isController) {
@@ -483,8 +534,24 @@ export async function startServer(options: StartServerOptions = {}): Promise<voi
         return;
       }
 
+      // A peer connection runs the transport commands and nothing else, and a
+      // jump by beat belongs to a peer connection alone: the beat is what
+      // travels between two computers, because the songs may sit in another
+      // order on the other side.
+      const peerRejection = peerCommandRejection(msg, isPeerConnection);
+      if (peerRejection) {
+        ws.send(
+          JSON.stringify({
+            type: 'error',
+            code: peerRejection.code,
+            message: peerRejection.message,
+          }),
+        );
+        return;
+      }
+
       const readOnlyTypes = new Set(['get_lyrics', 'profiles_get', 'preflight_check']);
-      if (!readOnlyTypes.has(msg.type) && !isController) {
+      if (!readOnlyTypes.has(msg.type) && !isController && !isPeerConnection) {
         console.warn(
           `[Security] WS client tried to execute command '${msg.type}' without controller permissions.`,
         );
@@ -520,8 +587,23 @@ export async function startServer(options: StartServerOptions = {}): Promise<voi
         return;
       }
 
+      // A jump that arrived by beat becomes a jump of this computer before it
+      // is registered: the marker it names is the one under the playhead here.
+      const peerJump = resolvePeerJump(msg, bridgeState.manager.getState());
+      if (peerJump.kind === 'error') {
+        ws.send(
+          JSON.stringify({
+            type: 'error',
+            code: peerJump.code,
+            message: peerJump.message,
+          }),
+        );
+        return;
+      }
+      const effectiveMsg = peerJump.kind === 'jump' ? peerJump.message : msg;
+
       const commandId =
-        msg.commandId || `legacy-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+        effectiveMsg.commandId || `legacy-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
       if (bridgeState.commandBus?.isDuplicate(commandId)) {
         console.warn(`[CommandBus] Discarding duplicate command ID: ${commandId}`);
         return;
@@ -529,8 +611,8 @@ export async function startServer(options: StartServerOptions = {}): Promise<voi
 
       const command = bridgeState.commandBus?.registerCommand(
         commandId,
-        msg.type,
-        msg,
+        effectiveMsg.type,
+        effectiveMsg,
         ws.clientId || ws.remoteAddress || 'unknown',
       );
 
@@ -554,6 +636,9 @@ export async function startServer(options: StartServerOptions = {}): Promise<voi
 
           await executeCommandAction(command, ws);
         });
+        // The paired computer follows the show. A command that came from a
+        // peer is not forwarded again: the link is one hop, not a loop.
+        if (!isPeerConnection) relayToPeer(command);
       }
     });
 
@@ -572,7 +657,9 @@ export async function startServer(options: StartServerOptions = {}): Promise<voi
           } else if (nextSongHandleId && !bridgeState.lastSongHandleId) {
             bridgeState.lastSongHandleId = nextSongHandleId;
           }
+          const syncStartedAt = performance.now();
           syncFromSdkContext(context);
+          warnIfSlow('sdk', 'SDK sync', syncStartedAt);
         } catch (err) {
           console.error('[SDK-Sync] Error during polling sync:', err);
         }
@@ -632,6 +719,7 @@ export async function startServer(options: StartServerOptions = {}): Promise<voi
       }, 100);
     }
 
+    bridgeState.eventLoopWatchInterval = startEventLoopWatch();
     bridgeState.serverRunning = true;
   } catch (err) {
     console.error('[rc-setlist] server startup failed; cleaning up.');
@@ -660,6 +748,12 @@ export async function stopServer(): Promise<void> {
   }
   bridgeState.mcpFallbackSync = null;
 
+  if (bridgeState.eventLoopWatchInterval) {
+    clearInterval(bridgeState.eventLoopWatchInterval);
+    bridgeState.eventLoopWatchInterval = null;
+  }
+  bridgeState.transportClockSource = null;
+
   if (bridgeState.mcpClient) {
     try {
       bridgeState.mcpClient.stop();
@@ -673,6 +767,8 @@ export async function stopServer(): Promise<void> {
     bridgeState.wsServer.stop();
     bridgeState.wsServer = null;
   }
+
+  stopPeerLink();
 
   if (bridgeState.oscClient) {
     try {
@@ -689,6 +785,8 @@ export async function stopServer(): Promise<void> {
     bridgeState.server = null;
     await closeHttpServer(server);
   }
+
+  await stopCaDownloadServer();
 
   if (bridgeState.commandBus) {
     bridgeState.commandBus.stop();

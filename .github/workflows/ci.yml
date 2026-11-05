@@ -36,10 +36,9 @@ jobs:
         run: npx playwright install --with-deps chromium
       - if: runner.os != 'Linux'
         run: npx playwright install chromium
-      - name: "Quality gates (P01: continue-on-error until P04 zeroes them)"
+      - name: "Quality gates"
         id: quality-gates
         run: npm run gates:quality
-        continue-on-error: true
       - run: npm run ci:public
       - name: Upload test-results on failure
         if: failure()

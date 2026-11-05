@@ -14,7 +14,7 @@ legadas e alinha o nome do produto às diretrizes da Ableton.
   alterar os arquivos originais (scripts/migrate-data.mjs).
 - **Placa do painel com alto contraste**: Moldura âmbar de 2px
   (
-gba(255, 168, 38, 0.45)) com brilho sutil garante que o painel se destaque
+  gba(255, 168, 38, 0.45)) com brilho sutil garante que o painel se destaque
   com clareza sobre temas claros e escuros do Live.
 - **Limpeza de extensões legadas**: O kit de instalação e o script
   (scripts/uninstall-pre-1.0-extensions.ps1) removem pacotes antigos da pasta
@@ -32,6 +32,6 @@ gba(255, 168, 38, 0.45)) com brilho sutil garante que o painel se destaque
 - **Autocomplete do editor de marcadores**: O menu seletor exibe marcadores de
   forma limpa, sem duplicar tags [jump] ou [loop].
 
-*Para detalhes completos sobre a instalação, consulte o [Guia de Instalação](INSTALL.md).*
+_Para detalhes completos sobre a instalação, consulte o [Guia de Instalação](INSTALL.md)._
 
-*Read these notes in English: [RELEASE-NOTES-0.7.1.md](../RELEASE-NOTES-0.7.1.md).*
+_Read these notes in English: [RELEASE-NOTES-0.7.1.md](../RELEASE-NOTES-0.7.1.md)._

@@ -273,6 +273,18 @@ export class CommandBus extends EventEmitter {
     return undefined;
   }
 
+  /**
+   * Reports whether a command of this type would be refused right now.
+   *
+   * The safety lane is the reason: a command that this computer would refuse
+   * for a panic or a locked critical lane must not be forwarded to the
+   * paired computer either. `stop` and `set_panic` travel in the safety lane
+   * and are therefore never refused here.
+   */
+  public wouldRejectForSafety(type: string): boolean {
+    return this.safetyFailureReason(policyFor(type)) !== undefined;
+  }
+
   private async processQueue(): Promise<void> {
     if (this.isProcessingQueue) return;
     this.isProcessingQueue = true;

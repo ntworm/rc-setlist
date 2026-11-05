@@ -20,7 +20,7 @@
 - [User guide](https://ntworm.github.io/rc-setlist/USER-GUIDE.md): locators and tags, Stage Control, Performance, lyrics, setlists and profiles
 - [FAQ](https://ntworm.github.io/rc-setlist/FAQ.md): licensing, RC Bridge, the certificate warning, lyrics, macOS, count-in and upgrading
 - [Troubleshooting](https://ntworm.github.io/rc-setlist/TROUBLESHOOTING.md): the extension, RC Bridge, the playhead or the browser pages not working
-- [Release notes 1.0.0](https://ntworm.github.io/rc-setlist/RELEASE-NOTES-1.0.0.md): what changed in the current release
+- [Release notes 1.1.0](https://ntworm.github.io/rc-setlist/RELEASE-NOTES-1.1.0.md): what changed in the current release
 - [Full documentation](https://ntworm.github.io/rc-setlist/llms-full.txt): the guides above in one Markdown file
 
 ## Português (Brasil)

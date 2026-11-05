@@ -70,6 +70,6 @@ de coisas que só aparecem num celular em sala escura.
 - **As listas de seleção nativas ficaram legíveis.** O seletor de setlist abria
   como uma lista branca com texto quase branco.
 
-*Para detalhes completos sobre a instalação, consulte o [Guia de Instalação](INSTALL.md).*
+_Para detalhes completos sobre a instalação, consulte o [Guia de Instalação](INSTALL.md)._
 
-*Read these notes in English: [RELEASE-NOTES-0.6.1.md](../RELEASE-NOTES-0.6.1.md).*
+_Read these notes in English: [RELEASE-NOTES-0.6.1.md](../RELEASE-NOTES-0.6.1.md)._

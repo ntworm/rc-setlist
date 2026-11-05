@@ -30,8 +30,10 @@ import {
 } from '../core/project-profile-scope.js';
 import type { ProjectIdentity } from '../core/project-identity.js';
 import type { ProfileManagerOptions } from '../core/profile-manager.js';
+import type { PeerStatus } from '../types.js';
 import { log } from '../util/log.js';
 import { isPlainObject, isStringArray, parseJson } from '../util/json.js';
+import { warnIfSlow } from './event-loop-watch.js';
 
 export interface BridgeState {
   manager: SetlistManager | null;
@@ -48,6 +50,14 @@ export interface BridgeState {
   pollInterval: NodeJS.Timeout | null;
   sdkSyncInterval: NodeJS.Timeout | null;
   mcpSyncInterval: NodeJS.Timeout | null;
+  eventLoopWatchInterval: NodeJS.Timeout | null;
+
+  /**
+   * Which source drives the playhead: the AbletonMCPServer Remote Script over
+   * TCP, or RC Bridge over OSC when that script does not answer. `null` until
+   * the first sample after the server starts, so each start logs its source.
+   */
+  transportClockSource: 'mcp' | 'osc' | null;
 
   /**
    * Whether an explicit jump may write the destination tempo into Live.
@@ -59,10 +69,22 @@ export interface BridgeState {
   /** Cached song book for the active profile. */
   songBook: SongBook | null;
   serverRunning: boolean;
+  /**
+   * Whether the server that is running came up over TLS.
+   *
+   * The pairing route only answers over HTTPS, and the certificate is what
+   * pins the second computer, so the panel has to know whether the server it
+   * is talking to is the encrypted one before it offers to hand out a code.
+   */
+  serverUsesTls: boolean;
   lastActiveSongTitle: string;
   lastCuesFingerprint: string;
   isCreatingTestSession: boolean;
   authToken: string;
+  /** The credential a paired computer presents to be let in. */
+  peerToken: string;
+  /** What the paired computer looks like from here. */
+  peerStatus: PeerStatus;
   globalPersistenceDir: string;
   projectIdentity: ProjectIdentity | null;
   profileScopeSwitching: boolean;
@@ -89,14 +111,24 @@ export const bridgeState: BridgeState = {
   pollInterval: null,
   sdkSyncInterval: null,
   mcpSyncInterval: null,
+  eventLoopWatchInterval: null,
+  transportClockSource: null,
 
   writeTempoOnJump: false,
   songBook: null,
   serverRunning: false,
+  serverUsesTls: false,
   lastActiveSongTitle: '',
   lastCuesFingerprint: '__init__',
   isCreatingTestSession: false,
   authToken: '',
+  peerToken: '',
+  peerStatus: {
+    paired: false,
+    connected: false,
+    markersMatch: true,
+    fingerprintMismatch: false,
+  },
   globalPersistenceDir: '',
   projectIdentity: null,
   profileScopeSwitching: false,
@@ -130,6 +162,7 @@ export function getActiveProfilePaths() {
  */
 export function broadcastState(): void {
   if (bridgeState.manager && bridgeState.wsServer) {
+    const startedAt = performance.now();
     bridgeState.commandBus?.resolveObservableConfirmations();
     // Colours are keyed by beat position on the wire: the client knows a song
     // by where it sits, not by the id the song book keeps on the server.
@@ -139,7 +172,9 @@ export function broadcastState(): void {
       ...bridgeState.manager.getState(),
       songColors,
       songNotes,
+      peerStatus: bridgeState.peerStatus,
     });
+    warnIfSlow('ws', 'state broadcast', startedAt);
   }
 }
 

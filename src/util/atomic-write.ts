@@ -7,7 +7,9 @@ import { atomicWriteFileWithDependencies } from './atomic-write-internal.js';
  * where the platform supports it, the containing directory are flushed before
  * the promise resolves. Some Windows filesystems reject directory fsync; there
  * the guarantee is atomic visibility plus a flushed file, not crash-durable
- * persistence of the renamed directory entry.
+ * persistence of the renamed directory entry. Under Node's Permission Model,
+ * as in Live's ExtensionHost, fsync is disabled: the replacement stays atomic
+ * but nothing is flushed before the promise resolves.
  */
 export async function atomicWriteFile(
   targetPath: string,

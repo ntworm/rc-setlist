@@ -368,6 +368,9 @@
   function mountDirectTargetHold(options) {
     const container = options.container;
     const resolveTarget = options.resolveTarget;
+    // A reorder-only target is a control that drags a card without ever
+    // jumping anywhere: the grip on the right edge of a song card.
+    const resolveReorderTarget = options.resolveReorderTarget || (() => null);
     const canActivate = options.canActivate;
     const onActivate = options.onActivate;
     const canReorder = options.canReorder || (() => false);
@@ -443,7 +446,7 @@
     }
 
     function startHolding(target, input, contact) {
-      if (!canActivate(target)) return;
+      if (!canActivate(target) && !canReorder(target)) return;
       holding = {
         element: target.element,
         pointerId: input === 'pointer' ? (contact.pointerId ?? null) : null,
@@ -457,7 +460,7 @@
       };
       holding.element.classList.add('is-touch-holding');
       holding.timer = setTimeoutFn(() => {
-        if (!holding || !canActivate(holding.target)) {
+        if (!holding || (!canActivate(holding.target) && !canReorder(holding.target))) {
           cancelHold();
           return;
         }
@@ -472,7 +475,7 @@
       const isDirectPointer = event.pointerType === 'touch' || event.pointerType === 'pen';
       if (!isDirectPointer) return;
       if (event.isPrimary === false || (event.button !== undefined && event.button !== 0)) return;
-      const target = resolveTarget(event.target);
+      const target = resolveTarget(event.target) || resolveReorderTarget(event.target);
       if (!target?.element) return;
 
       suppressedElement = target.element;
@@ -502,7 +505,7 @@
     function handleTouchStart(event) {
       const touch = event.changedTouches?.[0] || event.touches?.[0];
       if (!touch) return;
-      const target = resolveTarget(event.target);
+      const target = resolveTarget(event.target) || resolveReorderTarget(event.target);
       if (!target?.element) return;
       if (directTarget?.element === target.element && directInput === 'pointer') {
         directInput = 'touch';
@@ -635,10 +638,8 @@
 
     function update() {
       if (!holding) return;
-      if (
-        !canActivate(holding.target) ||
-        (holding.phase === 'reordering' && !canReorder(holding.target))
-      ) {
+      const allowed = canActivate(holding.target) || canReorder(holding.target);
+      if (!allowed || (holding.phase === 'reordering' && !canReorder(holding.target))) {
         cancelHold(true);
       }
     }

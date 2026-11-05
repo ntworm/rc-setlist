@@ -238,6 +238,79 @@ quantization.
 The UI keeps the last valid state visible during brief reconnects. A reconnect
 notice does not mean the old state is newly confirmed.
 
+## Two computers
+
+Two machines can run the same show: the **main computer**, where Ableton Live
+lives and where the operator stands, and a **second computer** that follows
+it. The second computer runs the same extension, works on the same session,
+and receives the transport commands the operator gives on the main one.
+
+### Pairing the second computer
+
+1. On the **second computer**, start the RC Setlist server and open the Live
+   panel. The **Second computer** row shows the address other machines reach
+   it at and a **Generate code** button. The button stays disabled while the
+   server is stopped or running without HTTPS, and the row says why: the
+   pairing route only answers over TLS, because the certificate the computer
+   presents is what pins it afterwards.
+2. Press **Generate code**. The panel prints a six-digit code. It lives for
+   ten minutes and works exactly once.
+3. On the **main computer**, open the Live panel, expand the **Second
+   computer** row, type the second computer's address and the code, and press
+   **Pair**.
+4. The main computer stores the credential and the fingerprint of the
+   certificate the second computer answered with, and opens the link to it.
+   The row then says whether the second computer is answering.
+
+The pairing and the link use port `4444` on the second computer, the same
+port a phone opens, so its firewall has to let that port in.
+
+**Unpair** forgets the credential and closes the link. When the stored pairing
+cannot be removed, the panel says so and the second computer stays paired,
+because a pairing left on disk would come back on the next start. A
+certificate that changed is reported as such: the link refuses to talk to a
+computer that presents another certificate, and the row asks for a new
+pairing.
+
+### Both computers on the same session
+
+- Ableton **Link** must be **on** on both computers, so they work on the same
+  Arrangement and read the same markers.
+- Live's **Start Stop Sync** must be **off**. RC Setlist relays the transport
+  itself; leaving the native sync on would drive the transport twice.
+- The markers must match. A jump travels as the beat it lands on, so the
+  second computer lands on the same place only when both read the same
+  markers. When they do not, the dot says so.
+
+### The dot in the Stage Control header
+
+The Stage Control page shows a second dot beside the connection dot:
+
+- **green** — the second computer is connected and both read the same markers.
+- **amber** — it is connected, but the markers are different.
+- **red** — it is not answering, or its certificate changed and it has to be
+  paired again.
+- **no dot** — there is no second computer paired, and nothing is sent
+  anywhere.
+
+### What reaches the second computer
+
+These travel to the paired computer: **Play**, **Stop**, **jump** (as the beat
+it lands on), **metronome**, **quantization**, **count-in**, **refresh** and
+**panic**.
+
+These stay on the main computer: setlist editing, marker editing, colours,
+notes, lyrics, profiles, ordering and the CSV export. The second computer
+keeps its own setlist and its own profiles.
+
+### A phone is not a second computer
+
+A phone or a tablet that opens the Stage Control page is a **controller** of
+the main computer: it joins the main computer's session and sees the main
+computer's setlist. Pairing is for a second machine running Live, not for a
+phone. macOS is supported as the second computer on an experimental basis;
+Windows is the validated platform.
+
 ## Performance view
 
 Open `/performance` for a high-contrast, mostly read-only display. It shows the

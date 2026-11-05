@@ -34,6 +34,33 @@ function waitForMessage(ws, predicate) {
   });
 }
 
+/**
+ * Waits for a published setlist state, with a deadline. The listener and the
+ * timer are always removed, whether the state arrives or the wait times out.
+ * A timeout resolves with null, so the caller reports the missing state.
+ */
+function waitForStateMessage(ws, predicate, timeoutMs = 3000) {
+  let cleanup = () => {};
+  return new Promise((resolve) => {
+    const handler = (data) => {
+      const message = JSON.parse(data.toString());
+      if (message.type === 'state' && predicate(message)) {
+        cleanup();
+        resolve(message);
+      }
+    };
+    const timer = setTimeout(() => {
+      cleanup();
+      resolve(null);
+    }, timeoutMs);
+    cleanup = () => {
+      ws.off('message', handler);
+      clearTimeout(timer);
+    };
+    ws.on('message', handler);
+  });
+}
+
 test('WebSocket profile and reliability core protocol', async () => {
   const testStorageDir = path.join(
     tmpdir(),
@@ -176,6 +203,58 @@ test('WebSocket profile and reliability core protocol', async () => {
     );
     assert.equal(stateMessages.length, 0);
     fs.rmSync(orderPath, { recursive: true, force: true });
+
+    // A valid reorder with the transport stopped must persist the order and
+    // publish the new setlist state, so the client sees the new order without
+    // waiting for the next poll or a refresh.
+    const stateBeforeReorder = bridgeState.manager.getState();
+    const stateVersionBefore = stateBeforeReorder.stateVersion;
+    const setlistVersionBefore = stateBeforeReorder.setlistVersion;
+    const activeBefore = stateBeforeReorder.songs[stateBeforeReorder.activeSongIndex];
+    assert.ok(activeBefore, 'the setlist must have an active song before the reorder');
+
+    const publishedAfterReorder = (msg) =>
+      msg.state?.stateVersion > stateVersionBefore &&
+      msg.state?.setlistVersion > setlistVersionBefore;
+    const publishedStatePromise = waitForStateMessage(ws, publishedAfterReorder);
+    const validReorderStatus = waitForMessage(
+      ws,
+      (msg) => msg.type === 'command_status' && msg.commandId === 'valid-reorder',
+    );
+    ws.send(
+      JSON.stringify({
+        type: 'reorder',
+        songTitles: ['Song B', 'Song A'],
+        commandId: 'valid-reorder',
+      }),
+    );
+    const validStatus = await validReorderStatus;
+    assert.strictEqual(validStatus.status, 'confirmed');
+
+    const publishedState = await publishedStatePromise;
+    assert.ok(publishedState, 'the reorder must publish the new setlist state');
+    assert.deepEqual(
+      publishedState.state.songs.map(({ title }) => title),
+      ['Song B', 'Song A'],
+    );
+    assert.ok(publishedState.state.stateVersion > stateVersionBefore);
+    assert.ok(publishedState.state.setlistVersion > setlistVersionBefore);
+
+    // The active song keeps its identity; only its index may move.
+    const activeAfter = publishedState.state.songs[publishedState.state.activeSongIndex];
+    assert.strictEqual(activeAfter.title, activeBefore.title);
+    assert.strictEqual(activeAfter.time, activeBefore.time);
+
+    // The order reached the disk and the manager.
+    const persistedOrder = JSON.parse(
+      fs.readFileSync(bridgeState.profileManager.getActivePaths().customOrder, 'utf8'),
+    );
+    assert.deepEqual(persistedOrder, ['Song B', 'Song A']);
+    assert.deepEqual(
+      bridgeState.manager.getState().songs.map(({ title }) => title),
+      ['Song B', 'Song A'],
+    );
+    assert.deepEqual(bridgeState.manager.getCustomOrder(), ['Song B', 'Song A']);
 
     // A lyrics command remains pending until persistence settles, then fails safely.
     const lyricsPath = path.join(bridgeState.profileManager.getActivePaths().lyrics, 'Song A.lrc');

@@ -1,0 +1,488 @@
+{
+  "scripts/installer-cleanup-legacy.mjs": {
+    "complexity": {
+      "count": 1
+    },
+    "max-lines-per-function": {
+      "count": 1
+    }
+  },
+  "scripts/migrate-data.mjs": {
+    "complexity": {
+      "count": 2
+    },
+    "max-lines-per-function": {
+      "count": 2
+    }
+  },
+  "scripts/render-docs.mjs": {
+    "complexity": {
+      "count": 3
+    },
+    "max-lines-per-function": {
+      "count": 1
+    }
+  },
+  "scripts/render-landing.mjs": {
+    "complexity": {
+      "count": 1
+    },
+    "max-lines-per-function": {
+      "count": 2
+    }
+  },
+  "scripts/render-media-kit.mjs": {
+    "max-lines-per-function": {
+      "count": 1
+    }
+  },
+  "scripts/verify-public-snapshot.mjs": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "src/automation/executor.ts": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "src/commands/handlers/csv.ts": {
+    "max-lines-per-function": {
+      "count": 1
+    }
+  },
+  "src/commands/handlers/editor.ts": {
+    "complexity": {
+      "count": 1
+    },
+    "max-lines-per-function": {
+      "count": 1
+    }
+  },
+  "src/commands/handlers/index.ts": {
+    "complexity": {
+      "count": 1
+    },
+    "max-lines-per-function": {
+      "count": 1
+    }
+  },
+  "src/commands/handlers/shared.ts": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "src/commands/handlers/transport.ts": {
+    "complexity": {
+      "count": 2
+    },
+    "max-lines-per-function": {
+      "count": 1
+    }
+  },
+  "src/core/command-bus.ts": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "src/core/csv-export.ts": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "src/core/event-log.ts": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "src/core/locator-parser.ts": {
+    "complexity": {
+      "count": 3
+    },
+    "max-lines-per-function": {
+      "count": 3
+    }
+  },
+  "src/core/next-downbeat-jump.ts": {
+    "complexity": {
+      "count": 1
+    },
+    "max-lines-per-function": {
+      "count": 1
+    }
+  },
+  "src/core/profile-manager.ts": {
+    "complexity": {
+      "count": 5
+    },
+    "max-lines": {
+      "count": 1
+    },
+    "max-lines-per-function": {
+      "count": 5
+    }
+  },
+  "src/core/profile-migration.ts": {
+    "complexity": {
+      "count": 2
+    },
+    "max-lines-per-function": {
+      "count": 1
+    }
+  },
+  "src/core/project-identity.ts": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "src/core/project-profile-scope.ts": {
+    "complexity": {
+      "count": 2
+    },
+    "max-lines": {
+      "count": 1
+    },
+    "max-lines-per-function": {
+      "count": 2
+    }
+  },
+  "src/core/setlist-manager.ts": {
+    "complexity": {
+      "count": 7
+    },
+    "max-lines": {
+      "count": 1
+    },
+    "max-lines-per-function": {
+      "count": 2
+    }
+  },
+  "src/core/setlist-metrics.ts": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "src/core/song-book.ts": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "src/core/song-identity.ts": {
+    "max-lines-per-function": {
+      "count": 1
+    }
+  },
+  "src/integration/mcp-client.ts": {
+    "max-lines-per-function": {
+      "count": 2
+    }
+  },
+  "src/integration/mcp-fallback-sync.ts": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "src/integration/osc-client.ts": {
+    "complexity": {
+      "count": 2
+    },
+    "max-lines": {
+      "count": 1
+    },
+    "max-lines-per-function": {
+      "count": 4
+    }
+  },
+  "src/osc/registration.ts": {
+    "complexity": {
+      "count": 1
+    },
+    "max-lines-per-function": {
+      "count": 1
+    }
+  },
+  "src/preferences.ts": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "src/runtime/bridge-state.ts": {
+    "complexity": {
+      "count": 2
+    },
+    "max-lines": {
+      "count": 1
+    },
+    "max-lines-per-function": {
+      "count": 2
+    }
+  },
+  "src/server-lifecycle.ts": {
+    "complexity": {
+      "count": 6
+    },
+    "max-lines": {
+      "count": 1
+    },
+    "max-lines-per-function": {
+      "count": 3
+    }
+  },
+  "src/server/cert.ts": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "src/server/client-message.ts": {
+    "complexity": {
+      "count": 1
+    },
+    "max-lines-per-function": {
+      "count": 1
+    }
+  },
+  "src/server/http.ts": {
+    "complexity": {
+      "count": 2
+    },
+    "max-lines-per-function": {
+      "count": 2
+    }
+  },
+  "src/server/ws.ts": {
+    "complexity": {
+      "count": 2
+    },
+    "max-lines-per-function": {
+      "count": 3
+    }
+  },
+  "src/sync/mcp-sync.ts": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "src/sync/sdk-sync.ts": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "src/ui/osc-diagnostics.ts": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "src/ui/panel.ts": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "static/performance/performance.js": {
+    "complexity": {
+      "count": 2
+    },
+    "max-lines-per-function": {
+      "count": 3
+    }
+  },
+  "static/setlist/controller-runtime.js": {
+    "complexity": {
+      "count": 4
+    }
+  },
+  "static/setlist/count-in.js": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "static/setlist/marker-editor.js": {
+    "complexity": {
+      "count": 3
+    }
+  },
+  "static/setlist/setlist.js": {
+    "complexity": {
+      "count": 11
+    },
+    "max-lines": {
+      "count": 1
+    },
+    "max-lines-per-function": {
+      "count": 11
+    }
+  },
+  "static/setlist/transport-runtime.js": {
+    "complexity": {
+      "count": 5
+    },
+    "max-lines": {
+      "count": 1
+    },
+    "max-lines-per-function": {
+      "count": 6
+    }
+  },
+  "static/setlist/transport-runtime.test.mjs": {
+    "max-lines": {
+      "count": 1
+    },
+    "max-lines-per-function": {
+      "count": 1
+    }
+  },
+  "static/shared/i18n.js": {
+    "max-lines": {
+      "count": 1
+    }
+  },
+  "static/shared/stage-runtime.js": {
+    "complexity": {
+      "count": 1
+    },
+    "max-lines-per-function": {
+      "count": 1
+    }
+  },
+  "static/ui.test.mjs": {
+    "max-lines": {
+      "count": 1
+    },
+    "max-lines-per-function": {
+      "count": 2
+    }
+  },
+  "tests/core.test.mjs": {
+    "max-lines": {
+      "count": 1
+    }
+  },
+  "tests/documentation-contract.test.mjs": {
+    "max-lines": {
+      "count": 1
+    }
+  },
+  "tests/installer-legacy-cleanup.test.mjs": {
+    "max-lines-per-function": {
+      "count": 1
+    }
+  },
+  "tests/installers.test.mjs": {
+    "max-lines-per-function": {
+      "count": 1
+    }
+  },
+  "tests/jump-authority.test.mjs": {
+    "max-lines-per-function": {
+      "count": 1
+    }
+  },
+  "tests/osc-transition.test.mjs": {
+    "max-lines-per-function": {
+      "count": 2
+    }
+  },
+  "tests/osc.test.mjs": {
+    "max-lines-per-function": {
+      "count": 1
+    }
+  },
+  "tests/profile-manager.test.mjs": {
+    "max-lines": {
+      "count": 1
+    },
+    "max-lines-per-function": {
+      "count": 1
+    }
+  },
+  "tests/profile-migration.test.mjs": {
+    "max-lines-per-function": {
+      "count": 1
+    }
+  },
+  "tests/profile-ws.test.mjs": {
+    "max-lines": {
+      "count": 1
+    },
+    "max-lines-per-function": {
+      "count": 3
+    }
+  },
+  "tests/project-profile-scope.test.mjs": {
+    "max-lines": {
+      "count": 1
+    },
+    "max-lines-per-function": {
+      "count": 7
+    }
+  },
+  "tests/public-export.test.mjs": {
+    "complexity": {
+      "count": 1
+    },
+    "max-lines-per-function": {
+      "count": 1
+    }
+  },
+  "tests/release-contracts.test.mjs": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "tests/release-package.test.mjs": {
+    "max-lines-per-function": {
+      "count": 1
+    }
+  },
+  "tests/server-lifecycle.test.mjs": {
+    "max-lines-per-function": {
+      "count": 1
+    }
+  },
+  "tests/shutdown.test.mjs": {
+    "max-lines-per-function": {
+      "count": 1
+    }
+  },
+  "tests/song-book-handlers.test.mjs": {
+    "max-lines-per-function": {
+      "count": 1
+    }
+  },
+  "tests/ui/interaction.spec.mjs": {
+    "max-lines": {
+      "count": 1
+    },
+    "max-lines-per-function": {
+      "count": 4
+    }
+  },
+  "tests/ui/layout.spec.mjs": {
+    "max-lines": {
+      "count": 1
+    },
+    "max-lines-per-function": {
+      "count": 2
+    }
+  },
+  "tests/ui/mobile-target-hold.spec.mjs": {
+    "max-lines": {
+      "count": 1
+    }
+  },
+  "tests/ui/mock-stage-server.mjs": {
+    "complexity": {
+      "count": 3
+    },
+    "max-lines-per-function": {
+      "count": 1
+    }
+  },
+  "tests/ws-auth.test.mjs": {
+    "max-lines": {
+      "count": 1
+    },
+    "max-lines-per-function": {
+      "count": 1
+    }
+  }
+}

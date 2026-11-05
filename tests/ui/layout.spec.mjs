@@ -57,6 +57,74 @@ function expectContained(rect, viewport, selector) {
   expect(rect.bottom, `${selector} bottom edge`).toBeLessThanOrEqual(viewport.clientHeight + 1);
 }
 
+// The Live panel as the extension hands it over: the server is up, the RC
+// Bridge answered and the setlist duration is an estimate.
+const livePanelInit = () => {
+  window.INITIAL_IS_RUNNING = true;
+  window.INITIAL_PORT = 4444;
+  window.INITIAL_PRIMARY_IP = '192.168.100.2';
+  window.INITIAL_TOKEN = 'fixture-token';
+  window.INITIAL_LOCALE = 'en';
+  window.INITIAL_STORAGE_INITIALIZED = true;
+  window.INITIAL_DURATION_CONFIDENCE = 'estimated';
+  window.INITIAL_OSC_DIAGNOSTICS = {
+    state: 'responding',
+    listenPort: 11101,
+    rxCount: 12,
+    txCount: 55,
+    lastReplyAgeMs: 40,
+    bridge: 'rcbridge',
+    bridgeVersion: 'RC Bridge 1.2.0',
+    targetPort: 11101,
+  };
+};
+
+async function qrFrameBox(page, frame) {
+  return page.locator(frame).evaluate((element) => {
+    const rect = element.getBoundingClientRect();
+    return { height: rect.height, width: rect.width };
+  });
+}
+
+// The QR code itself: the image the library draws, or the canvas it falls
+// back to. The frame around it only holds it.
+async function qrCodeBox(page, frame) {
+  return page.locator(frame).evaluate(async (element) => {
+    const visible = (node) => Boolean(node) && node.getClientRects().length > 0;
+    const img = element.querySelector('img');
+    const canvas = element.querySelector('canvas');
+    const target = [img, canvas].filter(visible)[0] ?? null;
+    if (!target) return null;
+    if (target.tagName === 'IMG' && !target.complete) {
+      await new Promise((resolve) => {
+        target.addEventListener('load', resolve, { once: true });
+        target.addEventListener('error', resolve, { once: true });
+        setTimeout(resolve, 1000);
+      });
+    }
+    const rect = target.getBoundingClientRect();
+    return {
+      height: rect.height,
+      isImage: target.tagName === 'IMG',
+      naturalWidth: target instanceof HTMLImageElement ? target.naturalWidth : 0,
+      width: rect.width,
+    };
+  });
+}
+
+// The code inside the frame: square, big enough and really drawn.
+async function expectSquareQrCode(page, frame) {
+  const code = await qrCodeBox(page, frame);
+  expect(code, `${frame} must hold a QR code`).not.toBeNull();
+  const difference = Math.abs(code.width - code.height);
+  expect(difference, `${frame} code must stay square`).toBeLessThanOrEqual(1);
+  expect(code.width, `${frame} code must keep its width`).toBeGreaterThanOrEqual(96);
+  expect(code.height, `${frame} code must keep its height`).toBeGreaterThanOrEqual(96);
+  if (code.isImage) {
+    expect(code.naturalWidth, `${frame} code must be loaded`).toBeGreaterThan(0);
+  }
+}
+
 for (const viewport of performanceViewports) {
   test(`Performance contains the full stage UI at ${viewport.name}`, async ({ page }) => {
     await page.setViewportSize(viewport);
@@ -214,53 +282,101 @@ test('Setlist HUD keeps long active titles vertically legible in a short desktop
 
 test('Live panel keeps access links and actions usable at the SDK modal size', async ({ page }) => {
   await page.setViewportSize({ width: 760, height: 600 });
-  await page.addInitScript(() => {
-    window.INITIAL_IS_RUNNING = true;
-    window.INITIAL_PORT = 4444;
-    window.INITIAL_PRIMARY_IP = '192.168.100.2';
-    window.INITIAL_TOKEN = 'fixture-token';
-    window.INITIAL_LOCALE = 'en';
-    window.INITIAL_OSC_DIAGNOSTICS = {
-      state: 'port-conflict',
-      listenPort: 11101,
-      rxCount: 0,
-      txCount: 55,
-      lastReplyAgeMs: null,
-    };
-  });
+  await page.addInitScript(livePanelInit);
   await page.goto('/panel/index.html');
 
   await expect(page.locator('#statusText')).toHaveText('Server running');
-  await expect(page.locator('#oscStatusText')).toHaveText('Live active · OSC return port busy');
+  await expect(page.locator('#oscStatusText')).toHaveText('Live connected');
+  await expect(page.locator('#oscBridgeText')).toContainText('RC Bridge');
+  // The bridge line above already names the RC Bridge: the hint would repeat it.
+  await expect(page.locator('#bridgeHint')).toBeHidden();
+  await expect(page.locator('#durationConfidenceRow')).toBeVisible();
 
-  const selectors = ['#openSetlist', '#openStage', '.footer', '.auto-start-row'];
+  // The second computer card open is the state that used to flatten the QR.
+  await page.locator('#btnPeerToggle').click();
+  await expect(page.locator('#peerDetails')).toBeVisible();
+
+  const accessTabs = [
+    ['#tabStageControl', '#qrSetlist', '#openSetlist'],
+    ['#tabPerformanceDisplay', '#qrStage', '#openStage'],
+  ];
+  for (const [tab, frame, link] of accessTabs) {
+    await page.locator(tab).click();
+    await expect(page.locator(link)).toBeVisible();
+    const box = await qrFrameBox(page, frame);
+    expect(Math.abs(box.width - box.height), `${frame} must stay square`).toBeLessThanOrEqual(1);
+    expect(box.width, `${frame} must keep its size`).toBeGreaterThanOrEqual(96);
+    await expectSquareQrCode(page, frame);
+  }
+
+  await page.locator('#tabStageControl').click();
+  const selectors = ['#openSetlist', '.panel-heading .btn', '.auto-start-row', '.peer-row'];
   const geometry = await pageGeometry(page, selectors);
   expect(geometry.scrollHeight).toBeLessThanOrEqual(geometry.clientHeight);
   expect(geometry.scrollWidth).toBeLessThanOrEqual(geometry.clientWidth);
   for (const [selector, rect] of Object.entries(geometry.regions)) {
     expectContained(rect, geometry, selector);
   }
-  expect(geometry.regions['#openSetlist'].bottom).toBeLessThanOrEqual(
-    geometry.regions['.footer'].top,
+  expect(geometry.regions['.panel-heading .btn'].bottom).toBeLessThanOrEqual(
+    geometry.regions['#openSetlist'].top,
   );
-  expect(geometry.regions['#openStage'].bottom).toBeLessThanOrEqual(
-    geometry.regions['.footer'].top,
-  );
-  expect(geometry.regions['.footer'].bottom).toBeLessThanOrEqual(
-    geometry.regions['.auto-start-row'].top,
+  expect(geometry.regions['.auto-start-row'].bottom).toBeLessThanOrEqual(
+    geometry.regions['.peer-row'].top,
   );
 
-  for (const selector of ['#openSetlist', '#openStage']) {
-    const hit = await page.locator(selector).evaluate((link) => {
-      const rect = link.getBoundingClientRect();
-      const target = document.elementFromPoint(
-        rect.left + rect.width / 2,
-        rect.top + rect.height / 2,
-      );
-      return target?.closest('a')?.id || null;
-    });
-    expect(hit).toBe(selector.slice(1));
-  }
+  const hit = await page.locator('#openSetlist').evaluate((link) => {
+    const rect = link.getBoundingClientRect();
+    const target = document.elementFromPoint(
+      rect.left + rect.width / 2,
+      rect.top + rect.height / 2,
+    );
+    return target?.closest('a')?.id || null;
+  });
+  expect(hit).toBe('openSetlist');
+});
+
+test('Live panel scrolls instead of flattening the QR when the height runs out', async ({
+  page,
+}) => {
+  // The compacted panel fits the 760x600 modal, so the scroll path is
+  // exercised at a shorter height: the content no longer fits and the QR
+  // code has to keep its square shape anyway.
+  await page.setViewportSize({ width: 760, height: 400 });
+  await page.addInitScript(livePanelInit);
+  await page.goto('/panel/index.html');
+
+  // The second computer card open is what makes the panel taller.
+  await page.locator('#btnPeerToggle').click();
+  await expect(page.locator('#peerDetails')).toBeVisible();
+
+  const box = await qrFrameBox(page, '#qrSetlist');
+  expect(Math.abs(box.width - box.height), '#qrSetlist must stay square').toBeLessThanOrEqual(1);
+  expect(box.width, '#qrSetlist must keep its size').toBeGreaterThanOrEqual(96);
+
+  const scroll = await page.evaluate(() => {
+    const scroller = document.body;
+    return { clientHeight: scroller.clientHeight, scrollHeight: scroller.scrollHeight };
+  });
+  expect(scroll.scrollHeight, 'the panel must scroll').toBeGreaterThan(scroll.clientHeight);
+
+  await page.locator('#btnPeerCode').scrollIntoViewIfNeeded();
+  await expect(page.locator('#btnPeerCode')).toBeInViewport();
+});
+
+test('Live panel shows the bridge hint only without the RC Bridge', async ({ page }) => {
+  await page.setViewportSize({ width: 760, height: 600 });
+  await page.addInitScript(livePanelInit);
+  // The second init script runs after the fixture: the server talks plain
+  // AbletonOSC, so the RC Bridge is missing.
+  await page.addInitScript(() => {
+    window.INITIAL_OSC_DIAGNOSTICS = {
+      ...window.INITIAL_OSC_DIAGNOSTICS,
+      bridge: 'abletonosc',
+    };
+  });
+  await page.goto('/panel/index.html');
+
+  await expect(page.locator('#bridgeHint')).toBeVisible();
 });
 
 for (const viewport of [

@@ -1,0 +1,22 @@
+{
+  "$schema": "https://unpkg.com/knip@6/schema.json",
+  "entry": [
+    "src/extension.ts",
+    "src/index.ts",
+    "scripts/*.mjs",
+    "static/**/*.js",
+    "tests/**/*.mjs",
+    "tests/mocks/*.ts",
+    "static/**/*.test.mjs"
+  ],
+  "project": ["src/**/*.ts", "static/**/*.js", "scripts/**/*.{ts,mjs}", "tests/**/*.{mjs,ts}"],
+  "ignore": ["static/panel/qrcode.js", "test-results/**"],
+  "ignoreDependencies": [
+    "@ableton-extensions/sdk",
+    "@ableton-extensions/cli",
+    "@axe-core/playwright",
+    "html-validate"
+  ],
+  "ignoreBinaries": ["ruff", "extensions-cli"],
+  "ignoreExportsUsedInFile": true
+}

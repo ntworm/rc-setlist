@@ -29,7 +29,7 @@ song.
   (`via RC Bridge 1.0.0 on port 11020`). The fork also answers
   `last_event_time`, which upstream never did, so the show's total duration no
   longer needs the MCP bridge.
-- **`[jump NAME]` — a marker that hands playback to a *named* target.** A
+- **`[jump NAME]` — a marker that hands playback to a _named_ target.** A
   section of the same song, a song, or the form `Song > Section`. Names match
   with tags stripped and case ignored; a bare name resolves in this song's
   sections first, then song titles, then every section in arrangement order.
@@ -55,6 +55,6 @@ song.
 - **The locator parser stopped splitting `Song > Section` on a `>` that sits
   inside a tag.**
 
-*For full details on installing, please refer to the [Installation Guide](INSTALL.md).*
+_For full details on installing, please refer to the [Installation Guide](INSTALL.md)._
 
-*Leia estas notas em português: [NOTAS-DA-VERSAO-0.7.0.md](pt-BR/NOTAS-DA-VERSAO-0.7.0.md).*
+_Leia estas notas em português: [NOTAS-DA-VERSAO-0.7.0.md](pt-BR/NOTAS-DA-VERSAO-0.7.0.md)._

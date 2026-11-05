@@ -217,6 +217,31 @@ body {
   font-variant-numeric: tabular-nums;
 }
 
+/* The button that folds every song at once, next to the length of the show.
+   It says what the next click will do: fold the sections away, or bring them
+   back. */
+.fold-all-button {
+  min-height: 2.25rem;
+  flex: 0 0 auto;
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius-sm);
+  background: transparent;
+  color: var(--ui-muted);
+  padding: 0.3rem 0.55rem;
+  font-family: inherit;
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0;
+  text-transform: uppercase;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.fold-all-button:hover {
+  border-color: var(--ui-border-strong);
+  color: var(--ui-text);
+}
+
 .app-bar .ui-button,
 .tools-menu > summary {
   min-height: 44px;
@@ -226,6 +251,47 @@ body {
   font-size: 0.75rem;
   font-weight: 750;
   white-space: nowrap;
+}
+
+/*
+ * Above the stacked layout the bar keeps one row, in every language: the
+ * longer words shrink the bar's text instead of pushing the buttons to a
+ * second row. It comes after the rule above on purpose: the last one wins.
+ */
+@media (min-width: 1181px) {
+  .app-bar {
+    flex-wrap: nowrap;
+  }
+  .app-bar-actions {
+    flex: 0 1 auto;
+  }
+  .app-bar-actions > * {
+    flex-shrink: 0;
+  }
+  .profile-header-group {
+    flex: 1 1 0;
+  }
+  .profile-select-control {
+    min-width: 13rem;
+  }
+  .app-bar .ui-button,
+  .app-bar .tools-menu > summary,
+  .app-bar .status-badge,
+  .app-bar .language-select,
+  .app-brand-copy small {
+    font-size: calc(0.75rem * var(--app-bar-scale, 1));
+  }
+  .app-bar .ui-button,
+  .app-bar .tools-menu > summary,
+  .app-bar .status-badge {
+    padding-inline: calc(0.65rem * var(--app-bar-scale, 1));
+  }
+  .profile-select-control > span {
+    font-size: calc(var(--t-stage-micro) * var(--app-bar-scale, 1));
+  }
+  .profile-select-control select {
+    font-size: calc(0.78rem * var(--app-bar-scale, 1));
+  }
 }
 
 .language-control {
@@ -378,6 +444,14 @@ body {
   box-shadow: none;
 }
 
+/* The peer is connected but reads different markers: the link is up and the
+   show would drift. Amber is the same channel the Live panel uses for a
+   warning, and the dot carries the sentence as well as the colour. */
+.status-dot.warning {
+  background: var(--ui-accent);
+  box-shadow: none;
+}
+
 .status-dot.error {
   background: var(--ui-danger);
   box-shadow: none;
@@ -459,9 +533,9 @@ body {
   background-color: rgba(23, 24, 29, 0.82);
   /* The leading edge is reserved for the 8px identity band and the 4px state
      bar. The clearance is unconditional so assigning a colour never shifts the
-     card's content sideways. */
-  padding: 0.65rem 0.65rem 0.65rem 1rem;
-  cursor: grab;
+     card's content sideways. The trailing edge belongs to the grip, which
+     drags the song to another place in the setlist. */
+  padding: 0.65rem 2.75rem 0.65rem 1rem;
   user-select: none;
   transition:
     border-color 140ms ease,
@@ -598,6 +672,9 @@ body {
   cursor: pointer;
 }
 
+/* The three dots fold the sections of this song and unfold them again. They
+   are the one thing on the card that hides and shows, and nothing else on the
+   card does that. */
 .song-reorder-handle {
   display: grid;
   width: 1.65rem;
@@ -608,14 +685,48 @@ body {
   color: var(--ui-muted);
   font-size: 1.05rem;
   line-height: var(--ui-line-accent-safe);
-  cursor: grab;
+  cursor: pointer;
   touch-action: none;
   user-select: none;
   -webkit-touch-callout: none;
 }
 
 .song-reorder-handle:active {
+  cursor: pointer;
+}
+
+/* The grip on the right edge of the card is the only thing that drags a song
+   to another place in the setlist. It runs the full height of the card so a
+   thumb can find it without aiming, and the glyph sits at the top where the
+   eye already is. */
+.song-drag-grip {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  display: grid;
+  width: 2.75rem;
+  min-height: 44px;
+  place-items: start center;
+  padding-top: 0.45rem;
+  border-radius: 0;
+  color: var(--ui-muted);
+  font-size: 1.05rem;
+  line-height: var(--ui-line-accent-safe);
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+
+.song-drag-grip:active {
   cursor: grabbing;
+}
+
+/* A folded song keeps its name, its number, its time and its grip. Only the
+   sections go away. */
+.song-item.sections-folded .song-sections {
+  display: none;
 }
 
 .song-info {
@@ -1750,6 +1861,7 @@ body {
   .secondary-controls .btn,
   .song-item,
   .song-reorder-handle,
+  .fold-all-button,
   .status-badge {
     min-height: 56px;
   }

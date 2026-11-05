@@ -4,7 +4,58 @@ All notable public changes to Ableton RC Setlist are recorded here.
 
 ## [Unreleased]
 
+## [1.1.0] - 2026-11-05
+
 ### Added
+
+- **Fold the song list**: the three dots beside a song name fold its
+  sections; **Fold all / Unfold all** in the "Songs in project" bar acts on
+  every song; kept on the device per setlist. The song name is the only
+  place that jumps, and a grip on the right edge of the card reorders with a
+  mouse or a finger.
+- **Phone certificate**: a local certificate authority, limited to
+  localhost and private addresses, signs the server certificate; the Live
+  panel shows a QR to an install page on port 4445.
+- **Network address**: the QR and the pairing row announce the address the
+  system routes through instead of the first private address.
+- **Two computers, one show**: the Live panel gained a **Second computer**
+  row. The second computer prints a six-digit pairing code, the main computer
+  types its address and the code, and the transport commands the operator
+  gives are relayed to it over a link whose certificate is pinned.
+- **A second dot in the Stage Control header**: green when the second
+  computer is connected and both read the same markers, amber when it is
+  connected and the markers differ, red when it is not answering or its
+  certificate changed, and no dot at all when nothing is paired.
+- **The peer contract**: `GET /peer/pair` hands out a credential of its own
+  over TLS, and a jump between two computers travels as the beat it lands on
+  (`jump_time`) instead of an index into a list, because the two machines may
+  hold the songs in another order.
+- **A pairing code that can be read again**: the panel redraws itself with
+  the code that is already alive instead of asking for a new one, so the
+  number the operator reads is the number that opens the door.
+
+### Changed
+
+- **The panel delegates the second computer to `src/ui/peer-panel.ts`**: the
+  pairing actions, the model the panel draws and the sentences it shows live
+  in one module now, in English and Brazilian Portuguese.
+- **`docs/CONTRACTS.md` and `docs/pt-BR/CONTRATOS.md`** describe the pairing
+  route, the peer credential, the `jump_time` frame and the new `peerStatus`
+  field of the state frame.
+- **The user guides** (English and Portuguese) gained a *Two computers*
+  section: pairing from the panel, Link on, Start Stop Sync off, what each
+  colour of the dot means, and which commands reach the second computer.
+
+- **The quality gates block the CI and ESLint has no warnings left**: `npm run lint` now runs `eslint . --max-warnings 0`, every rule registered in `eslint.config.mjs` is an `error`, and the `Quality gates` step of the CI workflow lost `continue-on-error`, so `npm run gates:quality` fails the job instead of being reported as an artifact.
+- **The Ableton Extensions SDK surface is typed instead of `any`**: `src/ableton-sdk-public.d.ts` is a hand-written interface with the members the code actually uses, and ESLint resolves `@ableton-extensions/sdk` through it (`tsconfig.eslint.json`), so the `no-unsafe-*` family no longer sees an untyped SDK.
+
+### WebSocket
+
+- `[ws]` Additive, so `protocolVersion` stays 3: the state gains optional `cuesFingerprint` and `peerStatus`, which older clients ignore, and `jump_time` is a new message accepted only from a paired computer.
+
+### Site and discoverability
+
+#### Added
 
 - **Portuguese landing at its own address** (`/rc-setlist/pt-BR/`), rendered from `docs/index.html` and the table in `docs/site-i18n.js` by `scripts/render-landing.mjs`, with `hreflang` links between the two languages so search engines index each one. Choosing English there opens the English page.
 - **Structured data** (schema.org JSON-LD) on both landings: the software, its author, its source code and the FAQ, built from the visible page so the two cannot drift.
@@ -15,14 +66,14 @@ All notable public changes to Ableton RC Setlist are recorded here.
 - **Google Search Console verification** file (`docs/googlea8031c5d5ee880ce.html`), kept byte for byte by a documentation test.
 - **`docs/architecture/site-discoverability.md`** records why the site is built this way, what must stay true, and what is left to do.
 
-### Changed
+#### Changed
 
 - The landing title and description say what the extension does ("setlist & lyrics extension for Ableton Live") instead of "Operator Sheet".
 - Portuguese guides are rendered with `lang="pt-BR"`, their own heading as the title, a description, a canonical address and navigation back to the Portuguese landing.
 - **Brazilian Portuguese wording**: the landing, the current guides, the README, the test checklist and the interface use the terms Brazilian musicians use — "locators" as Live shows them, "click" for the metronome, "cards" and "tags" — instead of literal translations such as "localizadores" and "clique". Release notes before 1.0 keep their original wording.
 - The README introductions describe the extension in the words people search for.
 
-### Fixed
+#### Fixed
 
 - The landing's structured data lists the dev.to article and the KVR thread as plain references (`CreativeWork`), which clears Search Console's "Discussion forum: 1 invalid item".
 

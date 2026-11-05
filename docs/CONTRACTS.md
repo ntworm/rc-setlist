@@ -116,6 +116,16 @@ Bounded sizes enforced by the decoder: commandId ≤ 128 chars; clientId ≤
 reorder ≤ 4096 songs; structured-text fields (notes, song title, lyrics
 header) reject C0/C1 controls.
 
+A peer connection (see §5.1) sends one frame the table above does not list:
+`jump_time`, with `commandId`, `time` (the beat it lands on) and `section`
+(whether that beat is a section). A jump cannot travel as an index into a
+list, because the two computers may hold the songs in another order. Only a
+peer connection may send it; any other client is refused with
+`unauthorized`. The receiving side looks for a marker less than a hundredth
+of a beat away from that beat — the closest one, and on a tie the first in
+its displayed order — and answers `{"type":"error","code":"peer_no_marker"}`
+when it has none.
+
 ### 2.3 Reliability Core
 
 Every command is acknowledged twice: `command_ack` (server accepted the
@@ -141,6 +151,13 @@ not of on-disk profiles), `preRollEnabled`, `durationBpm`,
 `clipTriggerQuantization`. Reliability Core adds `stateVersion`,
 `connection`, `transport`, `currentSongId`, `currentSectionId`,
 `pendingCommands`, `mode` (`rehearsal` | `show`), `safety`.
+
+The 1.1 contract adds `peerStatus`, the state of the link to the paired
+computer (§5.1): `paired` says a computer is paired at all, `connected` says
+the link is up, `markersMatch` says both computers read the same markers, and
+`fingerprintMismatch` says the paired computer presented another certificate
+and the link refused it. The field travels with every `state` frame, so a
+client that knows nothing about the second computer can ignore it.
 
 ### 2.5 Log redaction
 
@@ -289,6 +306,57 @@ CSP that disallows inline scripts in stage pages.
 `/api/*` paths require a controller token; `/health`, `/static/*` and
 the HTML pages do not. Any unknown path returns `404 text/plain` without
 leaking the server header.
+
+One more route exists and is described in §5.1: `GET /peer/pair`, which
+hands the peer credential to a computer that presents the right six-digit
+code.
+
+### 5.1 The second computer
+
+Two computers can run the same show. The one that holds Live relays the
+transport commands to the other over a TLS WebSocket the peer opens with the
+credential below.
+
+**The credential.** `GET /peer/pair?code=<code>` answers `200` with
+`{"peerToken": "<32 hex characters>"}` and nothing else. The token is a
+credential of its own, stored in `<storage>/peer-token` next to the security
+token, and it is never the same string as the security token. A peer token
+may send `handshake`, `sync_confirm`, `jump_time`, `play`, `stop`,
+`metronome`, `set_quantization`, `trigger_count_in`, `refresh` and
+`set_panic`, and nothing else: any other frame is refused with
+`unauthorized`, including `jump` by index. A controller token may run every
+command.
+
+The code is six digits, lives for ten minutes and works exactly once. Five
+wrong guesses kill it, and the attempts that reach it are rate limited per
+address (5 per minute) and in total (20 per minute). The route answers:
+
+- `404` when no code is active, or when the request did not arrive over TLS.
+- `403` when the code is wrong. The body does not say why.
+- `429` when the rate limit was reached.
+- `200` with the peer token when the code was right.
+
+The code is masked in the logs and in the URL, like every other secret in
+this document.
+
+**The connection.** A peer upgrades at the same origin with
+`?token=<peerToken>` and sends `{"type":"handshake","clientId":"rc-peer"}`.
+The server answers with the usual `handshake_ack`, and the peer confirms with
+`sync_confirm` as any client does. The link is one hop: a command that
+arrived from a peer is never forwarded again.
+
+**The port.** The pairing and the link always reach the second computer on
+port `4444`, the port the server binds; the panel has no field for another
+one. The second computer has to accept connections on that port, as it
+already does for a phone.
+
+**The certificate.** The link pins the certificate. The fingerprint the
+pairing answered with is compared against the one the socket presents
+before a single byte goes out; a computer that presents another certificate
+is never talked to, and the state reports `fingerprintMismatch`.
+
+**The state.** The `state` frame carries `peerStatus` (§2.4) so the page can
+say what the link is doing without asking.
 
 ---
 

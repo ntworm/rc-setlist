@@ -7,12 +7,14 @@ import {
   startServer,
   stopServer,
   isServerRunning,
+  isServerTls,
   getAuthToken,
   getOscDiagnostics,
   requestOscDiagnosticProbe,
 } from '../index.js';
 import { bridgeState } from '../runtime/bridge-state.js';
-import { getLanAddresses, pickLanIps } from '../util/helpers.js';
+import { resolveLanAddress } from '../server/lan-address.js';
+import { hasLocalCa } from '../server/cert.js';
 import {
   getAutoStart,
   getUiLocale,
@@ -23,6 +25,7 @@ import {
   setWriteTempoOnJump,
 } from '../preferences.js';
 import { buildOscDiagnosticModel } from './osc-diagnostics.js';
+import { peerPanelModel, runPeerAction, sanitizePanelAction } from './peer-panel.js';
 import { log } from '../util/log.js';
 // __dirname is a global in CommonJS, which is our target format
 
@@ -87,7 +90,9 @@ export async function showPanelDialog(context: ModalContext): Promise<void> {
     let action: string;
     try {
       action = await renderPanelDialog(context);
-      log.info('panel', 'renderPanelDialog returned action', { action });
+      log.info('panel', 'renderPanelDialog returned action', {
+        action: sanitizePanelAction(action),
+      });
     } catch (err) {
       log.error('panel', 'panel dialog error', {
         error: err instanceof Error ? err.message : String(err),
@@ -123,24 +128,48 @@ export async function showPanelDialog(context: ModalContext): Promise<void> {
       } else if (action === 'diagnose-osc' && running) {
         requestOscDiagnosticProbe();
         await new Promise<void>((resolve) => setTimeout(resolve, 350));
+      } else if (action.startsWith('peer-')) {
+        const outcome = await runPeerAction(action, getUiLocale());
+        if (!outcome.ok && outcome.message) {
+          await showInfoDialog(context, outcome.message);
+        }
       }
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
-      log.error('panel', 'panel action failed', { action, error: msg });
-      await showInfoDialog(context, panelText('actionFailed', { action, detail: msg }));
+      const displayAction = sanitizePanelAction(action);
+      log.error('panel', 'panel action failed', { action: displayAction, error: msg });
+      await showInfoDialog(
+        context,
+        panelText('actionFailed', { action: displayAction, detail: msg }),
+      );
     }
   }
+}
+
+/**
+ * The address where the phone installs the authority of this computer.
+ *
+ * The extension serves it over plain HTTP on the port next to the server:
+ * a phone that has to trust a certificate cannot be asked to trust the page
+ * that carries it. The address is empty when the server is not running,
+ * when it does not speak TLS or when there is no authority of its own:
+ * there is nothing to install then.
+ */
+function localCaUrl(running: boolean, primaryIp: string, port: number): string {
+  if (!running || !isServerTls() || !hasLocalCa()) return '';
+  return `http://${primaryIp}:${port + 1}/ca`;
 }
 
 async function renderPanelDialog(context: ModalContext): Promise<string> {
   const isRunning = isServerRunning();
   const port = 4444;
-  const lanIps = getLanAddresses();
-  const { primary: primaryIp } = pickLanIps(lanIps);
+  const { primary: primaryIp } = await resolveLanAddress();
   const oscDiagnostics = buildOscDiagnosticModel({
     serverRunning: isRunning,
     snapshot: getOscDiagnostics(),
   });
+  const peerModel = peerPanelModel({ locale: getUiLocale(), localIp: primaryIp });
+  const certUrl = localCaUrl(isRunning, primaryIp, port);
 
   const panelDir = path.join(__dirname, 'static/panel');
   // eslint-disable-next-line no-useless-assignment -- initial value used by the catch branch when fs.readFile fails.
@@ -165,6 +194,7 @@ async function renderPanelDialog(context: ModalContext): Promise<string> {
       <script>
         window.INITIAL_PORT = ${port};
         window.INITIAL_IS_RUNNING = ${isRunning};
+        window.INITIAL_TLS = ${isServerTls()};
         window.INITIAL_PRIMARY_IP = "${primaryIp}";
         window.INITIAL_AUTO_START = ${getAutoStart()};
         window.INITIAL_WRITE_TEMPO_ON_JUMP = ${getWriteTempoOnJump()};
@@ -173,6 +203,8 @@ async function renderPanelDialog(context: ModalContext): Promise<string> {
         window.INITIAL_OSC_DIAGNOSTICS = ${JSON.stringify(oscDiagnostics)};
         window.INITIAL_DURATION_CONFIDENCE = "${durationConfidence}";
         window.INITIAL_STORAGE_INITIALIZED = ${storageInitialized ? 'true' : 'false'};
+        window.INITIAL_PEER = ${JSON.stringify(peerModel).replace(/</g, '\\u003c')};
+        window.INITIAL_CERT_URL = ${JSON.stringify(certUrl)};
       </script>
     `;
     html = html.replace('<body>', `<body>${injection}`);

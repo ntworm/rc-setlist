@@ -113,6 +113,15 @@
           data-i18n-title="setlist.authenticateTitle"
         >
           <span id="statusDot" class="status-dot"></span>
+          <span
+            id="peerStatusDot"
+            class="status-dot"
+            hidden
+            title="Second computer"
+            aria-label="Second computer"
+            data-i18n-title="peer.dotLabel"
+            data-i18n-aria-label="peer.dotLabel"
+          ></span>
           <span id="statusText">Offline</span>
         </button>
       </div>
@@ -1079,6 +1088,14 @@ A quiet pulse becomes our guide..."
                 >EST.</span
               >
             </div>
+            <button
+              id="btnFoldAllSongs"
+              class="fold-all-button"
+              type="button"
+              data-i18n="setlist.foldAll"
+            >
+              Fold all
+            </button>
           </div>
           <div id="songList" class="song-list">
             <!-- Dynamic list -->
@@ -1495,8 +1512,11 @@ A quiet pulse becomes our guide..."
     <script src="./transport-runtime.js"></script>
 
     <script src="./count-in.js"></script>
+    <script src="./peer-status.js"></script>
     <script src="./marker-editor.js"></script>
     <script src="./controller-runtime.js"></script>
+    <script src="./app-bar-fit.js"></script>
+    <script src="./song-fold.js"></script>
     <script src="./setlist.js"></script>
   </body>
 </html>

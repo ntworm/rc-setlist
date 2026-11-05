@@ -72,6 +72,7 @@
     },
 
     'panel.title': { en: 'Web Panel Access', 'pt-BR': 'Acesso ao painel web' },
+    'panel.accessTitle': { en: 'Access', 'pt-BR': 'Acesso' },
     'panel.serverStopped': { en: 'Server stopped', 'pt-BR': 'Servidor parado' },
     'panel.serverRunning': { en: 'Server running', 'pt-BR': 'Servidor em execução' },
     'panel.port': { en: 'Port: {port}', 'pt-BR': 'Porta: {port}' },
@@ -185,6 +186,52 @@
     },
     'panel.on': { en: 'On', 'pt-BR': 'Ligado' },
     'panel.off': { en: 'Off', 'pt-BR': 'Desligado' },
+    'panel.peerSecondComputer': { en: 'Second computer', 'pt-BR': 'Segundo computador' },
+    'panel.peerUnpair': { en: 'Unpair', 'pt-BR': 'Desfazer' },
+    'panel.peerPair': { en: 'Pair', 'pt-BR': 'Parear' },
+    'panel.peerShow': { en: 'Show', 'pt-BR': 'Mostrar' },
+    'panel.peerHide': { en: 'Hide', 'pt-BR': 'Esconder' },
+    'panel.peerHostLabel': { en: 'Second computer IP', 'pt-BR': 'IP do segundo computador' },
+    'panel.peerCodeLabel': { en: 'Code', 'pt-BR': 'Código' },
+    'panel.peerThisComputer': { en: 'This computer', 'pt-BR': 'Este computador' },
+    'panel.peerGenerateCode': { en: 'Generate code', 'pt-BR': 'Gerar código' },
+    'panel.peerGenerateCodeTitle': {
+      en: 'The code lives for ten minutes and works once.',
+      'pt-BR': 'O código vale por dez minutos e funciona uma vez.',
+    },
+    'panel.certTitle': { en: 'Phone certificate', 'pt-BR': 'Certificado do celular' },
+    'panel.certStatus': {
+      en: 'Install once on each phone to stop the browser warning',
+      'pt-BR': 'Instale uma vez em cada celular e o aviso do navegador some',
+    },
+    'panel.certStep1': {
+      en: '1. Read the QR with the phone and download the certificate',
+      'pt-BR': '1. Leia o QR com o celular e baixe o certificado',
+    },
+    'panel.certStep2': {
+      en: '2. Install it as a CA certificate (the page shows where)',
+      'pt-BR': '2. Instale como certificado de CA (a página mostra onde)',
+    },
+    'panel.certStep3': {
+      en: '3. Open the Stage Control again: no warning',
+      'pt-BR': '3. Abra o Stage Control de novo: sem aviso',
+    },
+
+    'peer.dotLabel': { en: 'Second computer', 'pt-BR': 'Segundo computador' },
+    'peer.notPaired': { en: 'No second computer', 'pt-BR': 'Sem segundo computador' },
+    'peer.connected': { en: 'Second computer connected', 'pt-BR': 'Segundo computador conectado' },
+    'peer.markersDiffer': {
+      en: 'Second computer connected, but the markers are different',
+      'pt-BR': 'Segundo computador conectado, mas os marcadores são diferentes',
+    },
+    'peer.offline': {
+      en: 'The second computer is not answering',
+      'pt-BR': 'O segundo computador não responde',
+    },
+    'peer.certificateChanged': {
+      en: 'The second computer changed its certificate — pair again',
+      'pt-BR': 'O segundo computador trocou o certificado — pareie de novo',
+    },
 
     'performance.name': { en: 'Performance', 'pt-BR': 'Performance' },
     'performance.brandAria': { en: 'RC Setlist Performance', 'pt-BR': 'Performance do RC Setlist' },
@@ -295,6 +342,13 @@
     'setlist.waitingProfiles': { en: 'Waiting for setlists...', 'pt-BR': 'Aguardando setlists...' },
     'setlist.totalDuration': { en: 'Total duration', 'pt-BR': 'Duração total' },
     'setlist.unknownDuration': { en: 'Unknown duration', 'pt-BR': 'Duração desconhecida' },
+    'setlist.sectionsToggle': {
+      en: "Show or hide this song's sections",
+      'pt-BR': 'Mostrar ou ocultar as seções desta música',
+    },
+    'setlist.dragToReorder': { en: 'Drag to reorder', 'pt-BR': 'Arraste para reordenar' },
+    'setlist.foldAll': { en: 'Fold all', 'pt-BR': 'Recolher todas' },
+    'setlist.unfoldAll': { en: 'Unfold all', 'pt-BR': 'Abrir todas' },
     'setlist.durationEstimatedTitle': {
       en: 'Duration is estimated (no [bpm] tags in Live markers)',
       'pt-BR': 'Duração estimada (sem tags [bpm] nos marcadores do Live)',

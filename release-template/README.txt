@@ -1,4 +1,4 @@
-RC SETLIST 1.0.0 — INSTALLATION KIT / KIT DE INSTALAÇÃO
+RC SETLIST 1.1.0 — INSTALLATION KIT / KIT DE INSTALAÇÃO
 ========================================================
 
 START HERE / COMECE AQUI
@@ -10,7 +10,7 @@ As notas da versão estão em en/RELEASE-NOTES.md e pt-BR/NOTAS-DA-VERSAO.md.
 
 MAIN FILE / ARQUIVO PRINCIPAL
 -----------------------------
-RC-Setlist-1.0.0.ablx
+RC-Setlist-1.1.0.ablx
 
 UPDATING FROM 0.X / ATUALIZANDO DE 0.X
 --------------------------------------

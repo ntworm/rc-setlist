@@ -1,4 +1,4 @@
-# Release checklist — RC Setlist 1.0.0
+# Release checklist — RC Setlist 1.1.0
 
 Use a copy of a Live Set and a **trusted local network / LAN**. Do not perform
 the first test during a real show.
@@ -14,9 +14,9 @@ the first test during a real show.
       `via RC Bridge 1.0.0 on port 11020`.
 - [ ] With a stock AbletonOSC selected instead, the OSC line reads
       `via AbletonOSC on port 11000` and the transport still works.
-- [ ] `RC-Setlist-1.0.0.ablx` installs without errors.
+- [ ] `RC-Setlist-1.1.0.ablx` installs without errors.
 - [ ] With clean data, the first **Start** creates the default profile and starts the server without a persistence error.
-- [ ] **Extensions > RC Setlist** opens the correct panel and shows version 1.0.0.
+- [ ] **Extensions > RC Setlist** opens the correct panel and shows version 1.1.0.
 
 ## Language
 

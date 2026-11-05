@@ -42,6 +42,17 @@ export function nextQuantizationBoundary(anchor: number, quantizationBeats: numb
 }
 
 /**
+ * Length in milliseconds of one quantization period of `quantizationBeats`
+ * at `tempo` BPM: the longest Live can hold a quantized jump. 0 when either
+ * is unknown.
+ */
+export function quantizationPeriodMs(quantizationBeats: number, tempo: number): number {
+  if (!Number.isFinite(tempo) || tempo <= 0) return 0;
+  if (!Number.isFinite(quantizationBeats) || quantizationBeats <= 0) return 0;
+  return (quantizationBeats * 60_000) / tempo;
+}
+
+/**
  * Maps Ableton's clip trigger quantization enum (number or string) to beats.
  */
 export function getQuantizationBeats(

@@ -38,6 +38,20 @@ export interface Setlist {
   hidden: { name: string; time: number }[];
 }
 
+/**
+ * What the paired computer looks like from this one.
+ *
+ * `markersMatch` compares the cue fingerprints of the two setlists: the
+ * second computer may hold the same songs in a different order, but a
+ * different marker set means a relayed jump would land somewhere else.
+ */
+export interface PeerStatus {
+  paired: boolean;
+  connected: boolean;
+  markersMatch: boolean;
+  fingerprintMismatch: boolean;
+}
+
 export interface SetlistState {
   protocolVersion?: 3;
   setlistVersion?: number;
@@ -78,6 +92,10 @@ export interface SetlistState {
    */
   durationConfidence?: 'declared' | 'estimated';
   arrangementEndTime?: number | null;
+  /** Fingerprint of the cue list this set was parsed from. */
+  cuesFingerprint?: string;
+  /** State of the link to the paired computer, when there is one. */
+  peerStatus?: PeerStatus;
 
   // Reliability Core state fields
   stateVersion: number;
@@ -125,6 +143,12 @@ export type ClientMessage =
   | (ClientMessageBase & { type: 'set_pre_roll'; value: boolean })
   | (ClientMessageBase & { type: 'set_quantization'; value: number })
   | (ClientMessageBase & { type: 'jump'; songIndex: number; sectionIndex?: number | null })
+  | (ClientMessageBase & {
+      type: 'jump_time';
+      time: number;
+      /** Whether the jump landed on a section rather than on a song. */
+      section?: boolean;
+    })
   | (ClientMessageBase & { type: 'reorder'; songTitles: string[] })
   | (ClientMessageBase & { type: 'save_lyrics'; song: string; text: string })
   | (ClientMessageBase & { type: 'click_preview'; bpm?: number; beats?: number })
@@ -176,6 +200,8 @@ export interface StartServerOptions {
 
 export interface AugmentedWebSocket extends WebSocket {
   isController?: boolean;
+  /** True for a connection that presented the peer credential. */
+  isPeer?: boolean;
   isAlive?: boolean;
   clientId?: string;
   synchronized?: boolean;

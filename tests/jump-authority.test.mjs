@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { bridgeState } from '../src/runtime/bridge-state.ts';
 import { clearExtensionContext, getExtensionContext, setExtensionContext } from '../src/context.ts';
-import { JumpScheduler } from '../src/core/next-downbeat-jump.ts';
+import { JumpScheduler, quantizationPeriodMs } from '../src/core/next-downbeat-jump.ts';
 import { SetlistManager } from '../src/core/setlist-manager.ts';
 import { CommandBus } from '../src/core/command-bus.ts';
 import { executeCommandAction } from '../src/commands/handlers/index.ts';
@@ -441,6 +441,51 @@ test('a jump writes no tempo once tempo automation is suspected, even when opted
       'the jump itself must still happen',
     );
   } finally {
+    harness.restore();
+  }
+});
+
+test('a quantization period is its beats at the current tempo', () => {
+  assert.equal(Math.round(quantizationPeriodMs(16, 130)), 7385, '4 bars of 4/4 at 130 BPM');
+  assert.equal(quantizationPeriodMs(4, 120), 2_000);
+  assert.equal(quantizationPeriodMs(0, 120), 0, 'no grid adds nothing');
+  assert.equal(quantizationPeriodMs(16, 0), 0, 'an unknown tempo adds nothing');
+});
+
+test('a quantized jump keeps its confirmation window open for a whole grid period', async () => {
+  // Owner's rehearsal on the Mac, 2026-11-04: a jump with a 4-bar grid at
+  // 130 BPM landed on time but was reported as expired after 5 s.
+  const harness = installHarness(2);
+  const bus = new CommandBus(harness.manager, { log() {} });
+  const fourBarsMs = quantizationPeriodMs(16, 130);
+  try {
+    // Beat 32 sits on a 4-bar line: the estimate says no wait, yet a sample
+    // taken just before the line makes Live land the jump a period later.
+    for (const [index, beat] of [20, 32].entries()) {
+      harness.manager.updateTransport(beat, true, 130);
+      const quantized = bus.registerCommand(
+        `jump-4-bars-${index}`,
+        'jump',
+        { songIndex: 1, sectionIndex: 1 },
+        'test',
+      );
+      const policyTimeoutMs = quantized.timeoutMs;
+      await executeCommandAction(quantized);
+      assert.equal(quantized.timeoutMs - policyTimeoutMs, fourBarsMs, `from beat ${beat}`);
+    }
+
+    harness.manager.updateTransport(20, false, 130);
+    const immediate = bus.registerCommand(
+      'jump-stopped',
+      'jump',
+      { songIndex: 1, sectionIndex: 1 },
+      'test',
+    );
+    const policyTimeoutMs = immediate.timeoutMs;
+    await executeCommandAction(immediate);
+    assert.equal(immediate.timeoutMs, policyTimeoutMs, 'an immediate jump keeps the policy window');
+  } finally {
+    bus.stop();
     harness.restore();
   }
 });

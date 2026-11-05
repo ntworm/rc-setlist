@@ -33,6 +33,8 @@ export interface SetlistWSServerOptions {
   now?: () => number;
   setIntervalFn?: typeof setInterval;
   clearIntervalFn?: typeof clearInterval;
+  /** The credential a paired computer presents. */
+  peerToken?: string;
 }
 
 /**
@@ -43,11 +45,17 @@ export class SetlistWSServer extends EventEmitter {
   private clients: Set<AugmentedWebSocket> = new Set();
   private lastState: SetlistState | null = null;
 
-  private lastStateJson: string = '';
+  /**
+   * The last state each client was actually given: a frame that backpressure
+   * dropped never reached the phone, so the next identical state has to go
+   * out again, or that phone would keep a screen that is no longer true.
+   */
+  private lastStateJsonByClient = new WeakMap<AugmentedWebSocket, string>();
   private lastLogTimeByKey = new Map<string, number>();
   private heartbeatInterval: NodeJS.Timeout | null = null;
 
   private authToken: string;
+  private peerToken: string;
   private authFailures = new Map<string, { count: number; windowStart: number }>();
 
   private readonly heartbeatIntervalMs: number;
@@ -59,6 +67,7 @@ export class SetlistWSServer extends EventEmitter {
   constructor(authToken: string = '', options: SetlistWSServerOptions = {}) {
     super();
     this.authToken = authToken;
+    this.peerToken = options.peerToken ?? '';
     this.heartbeatIntervalMs = options.heartbeatIntervalMs ?? 30_000;
     this.logDedupeWindowMs = options.logDedupeWindowMs ?? 1_000;
     this.now = options.now ?? Date.now;
@@ -145,6 +154,7 @@ export class SetlistWSServer extends EventEmitter {
       ws.remoteAddress = remote;
       // Parse token from connection URL query parameter
       let isController = false;
+      let isPeer = false;
       let tokenParsed: string | null = null;
       try {
         const host = req.headers.host ?? 'localhost';
@@ -152,15 +162,18 @@ export class SetlistWSServer extends EventEmitter {
         const url = new NodeURL(req.url ?? '', `http://${host}`);
         tokenParsed = url.searchParams.get('token');
         isController = tokenParsed === this.authToken && this.authToken !== '';
+        isPeer = tokenParsed === this.peerToken && this.peerToken !== '';
       } catch {
         log.warn('ws', 'Could not parse the connection URL.');
       }
 
       ws.isController = isController;
+      ws.isPeer = isPeer;
       log.info('ws', 'Client connected', {
         remote,
         hasToken: !!tokenParsed,
         controller: isController,
+        peer: isPeer,
       });
 
       // Send immediate authentication status to client
@@ -177,7 +190,9 @@ export class SetlistWSServer extends EventEmitter {
       );
 
       if (this.lastState) {
-        ws.send(JSON.stringify({ type: 'state', state: this.lastState }));
+        const stateJson = JSON.stringify({ type: 'state', state: this.lastState });
+        ws.send(stateJson);
+        this.lastStateJsonByClient.set(ws, stateJson);
       }
 
       ws.on('message', (data) => {
@@ -193,6 +208,13 @@ export class SetlistWSServer extends EventEmitter {
           const raw: unknown = JSON.parse(text);
           const msg = isPlainObject(raw) ? raw : null;
           if (msg && msg.type === 'auth') {
+            if (ws.isPeer) {
+              ws.send(JSON.stringify({ type: 'auth_result', success: false }));
+              log.info('ws', 'Manual authentication requested on peer connection: DENIED', {
+                remote,
+              });
+              return;
+            }
             const hasToken = typeof msg.token === 'string' && msg.token !== '';
             if (hasToken) {
               const success = msg.token === this.authToken && this.authToken !== '';
@@ -311,10 +333,14 @@ export class SetlistWSServer extends EventEmitter {
       }
 
       if (tokenParsed !== null && tokenParsed !== '') {
+        // A paired computer presents its own credential. It is not an
+        // authentication attempt, so it never counts against the limit: a
+        // link that reconnects must not lock itself out of its own server.
+        const isPeer = this.peerToken !== '' && tokenParsed === this.peerToken;
         const isValid = tokenParsed === this.authToken && this.authToken !== '';
         if (isValid) {
           this.authFailures.delete(remote);
-        } else {
+        } else if (!isPeer) {
           if (this.isAuthRateLimited(remote)) {
             log.warn('ws', 'Rejecting upgrade: authentication-attempt limit exceeded', { remote });
             socket.write('HTTP/1.1 429 Too Many Requests\r\n\r\n');
@@ -365,14 +391,17 @@ export class SetlistWSServer extends EventEmitter {
   public broadcastState(state: SetlistState): void {
     this.lastState = state;
     const json = JSON.stringify({ type: 'state', state });
-    if (json === this.lastStateJson) {
+    const open = [...this.clients].filter((ws) => ws.readyState === WebSocket.OPEN);
+    // The state is only settled when every open client already holds it: a
+    // client whose frame was dropped still needs it.
+    if (open.length > 0 && open.every((ws) => this.lastStateJsonByClient.get(ws) === json)) {
       return;
     }
-    this.lastStateJson = json;
 
-    for (const ws of [...this.clients]) {
-      if (ws.readyState === WebSocket.OPEN) {
-        this.sendWithBackpressure(ws, json);
+    for (const ws of open) {
+      if (this.lastStateJsonByClient.get(ws) === json) continue;
+      if (this.sendWithBackpressure(ws, json)) {
+        this.lastStateJsonByClient.set(ws, json);
       }
     }
   }
@@ -427,7 +456,7 @@ export class SetlistWSServer extends EventEmitter {
     this.lastLogTimeByKey.clear();
     this.authFailures.clear();
     this.lastState = null;
-    this.lastStateJson = '';
+    this.lastStateJsonByClient = new WeakMap<AugmentedWebSocket, string>();
     if (this.wss) {
       try {
         this.wss.removeAllListeners();

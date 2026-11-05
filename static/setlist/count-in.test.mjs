@@ -139,4 +139,3 @@ test('browserCountInAudioEnabled reads from storage safely', () => {
   // Null storage → default ON
   assert.equal(countIn.browserCountInAudioEnabled(null), true, 'null → on');
 });
-

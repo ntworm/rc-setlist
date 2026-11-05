@@ -23,6 +23,8 @@ import { test } from 'node:test';
 
 import { ProfileManager } from '../src/core/profile-manager.ts';
 import { parseLocator, parseSetlist } from '../src/core/locator-parser.ts';
+import { isPeerCommandType } from '../src/commands/handlers/peer.ts';
+import { PEER_RELAY_TYPES } from '../src/runtime/peer-link.ts';
 
 const repoRoot = resolve(import.meta.dirname, '..');
 const fixturesRoot = join(repoRoot, 'tests/fixtures/storage');
@@ -310,6 +312,57 @@ test('CONTRACTS §3: RC Bridge /live/rcbridge/version pin is 1.0.0', () => {
 //     tests would not affect this contract, but a silent change to the
 //     contract here would. Pinning the file paths keeps both honest.
 // ---------------------------------------------------------------------------
+
+test('CONTRACTS: the paired-computer contract stays documented and gated', () => {
+  const contracts = readFileSync(join(repoRoot, 'docs/CONTRACTS.md'), 'utf8');
+  for (const needle of ['/peer/pair', 'jump_time', 'peer-token', 'peerStatus']) {
+    assert.ok(contracts.includes(needle), `docs/CONTRACTS.md must describe ${needle}`);
+  }
+  for (const rel of ['tests/peer-link.test.mjs', 'tests/peer-pairing.test.mjs']) {
+    const path = join(repoRoot, rel);
+    assert.ok(existsSync(path), `${rel} must exist`);
+    assert.ok(statSync(path).isFile(), `${rel} must be a regular file`);
+  }
+});
+
+function peerSection(rel) {
+  const text = readFileSync(join(repoRoot, rel), 'utf8');
+  const start = text.indexOf('### 5.1');
+  assert.ok(start >= 0, `${rel} must have §5.1`);
+  return text.slice(start, text.indexOf('\n## 6.', start));
+}
+
+const PEER_CONTRACTS = ['docs/CONTRACTS.md', 'docs/pt-BR/CONTRATOS.md'];
+
+test('CONTRACTS §5.1: the pairing and the link use port 4444 on the second computer', () => {
+  for (const rel of PEER_CONTRACTS) {
+    assert.match(peerSection(rel), /`4444`/, `${rel} §5.1 must name the port`);
+  }
+});
+
+test('CONTRACTS §5.1: the peer credential is the closed list the code enforces', () => {
+  const candidates = ['handshake', 'sync_confirm', 'jump_time', ...PEER_RELAY_TYPES];
+  const allowed = candidates.filter((type) => isPeerCommandType(type));
+  assert.ok(allowed.length >= 10, 'the closed list must not be empty');
+  for (const rel of PEER_CONTRACTS) {
+    const section = peerSection(rel);
+    // The table of §2.2 lists frames the decoder does not accept and edits a
+    // peer may not run, so the scope of the credential is written in place.
+    assert.doesNotMatch(section, /§2\.2/, `${rel} §5.1 must not delegate the scope to §2.2`);
+    for (const type of allowed) {
+      assert.ok(section.includes(`\`${type}\``), `${rel} §5.1 must name ${type}`);
+    }
+  }
+});
+
+test('CONTRACTS §2.2: a jump by beat lands on a marker less than a hundredth away', () => {
+  const english = readFileSync(join(repoRoot, 'docs/CONTRACTS.md'), 'utf8');
+  assert.match(english, /less\s+than\s+a\s+hundredth\s+of\s+a\s+beat\s+away/);
+  assert.doesNotMatch(english, /same rounding the cue fingerprint uses/);
+  const portuguese = readFileSync(join(repoRoot, 'docs/pt-BR/CONTRATOS.md'), 'utf8');
+  assert.match(portuguese, /a\s+menos\s+de\s+um\s+centésimo\s+de\s+beat/);
+  assert.doesNotMatch(portuguese, /mesmo arredondamento da fingerprint/);
+});
 
 test('CONTRACTS §5 + §2: HTTP/WS security tests still gate the contract', () => {
   const security = [

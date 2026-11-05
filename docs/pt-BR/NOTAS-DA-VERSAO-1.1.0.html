@@ -1,0 +1,262 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Notas da versão — RC Setlist 1.1.0 — Ableton Live</title>
+    <meta
+      name="description"
+      content="Um show, dois computadores. O computador principal continua com o Live e com o operador; o segundo computador segue o principal, e os comandos de transporte…"
+    />
+    <link
+      rel="canonical"
+      href="https://ntworm.github.io/rc-setlist/pt-BR/NOTAS-DA-VERSAO-1.1.0.html"
+    />
+    <link rel="alternate" type="text/markdown" href="./NOTAS-DA-VERSAO-1.1.0.md" />
+    <link rel="describedby" href="../llms.txt" />
+    <meta property="og:type" content="article" />
+    <meta property="og:site_name" content="RC Setlist" />
+    <meta property="og:locale" content="pt_BR" />
+    <meta property="og:title" content="Notas da versão — RC Setlist 1.1.0 — Ableton Live" />
+    <meta
+      property="og:description"
+      content="Um show, dois computadores. O computador principal continua com o Live e com o operador; o segundo computador segue o principal, e os comandos de transporte…"
+    />
+    <meta
+      property="og:url"
+      content="https://ntworm.github.io/rc-setlist/pt-BR/NOTAS-DA-VERSAO-1.1.0.html"
+    />
+    <meta property="og:image" content="https://ntworm.github.io/rc-setlist/og-image.png" />
+    <style>
+      body {
+        font:
+          16px/1.55 system-ui,
+          sans-serif;
+        max-width: 920px;
+        margin: 2rem auto;
+        padding: 0 1rem;
+        color: #f2f2f2;
+        background: #0e0e0e;
+      }
+      h1,
+      h2,
+      h3,
+      h4 {
+        line-height: 1.25;
+      }
+      h1 {
+        font-size: 2.2rem;
+        margin-top: 0;
+      }
+      h2 {
+        margin-top: 2rem;
+        padding-top: 1rem;
+        border-top: 1px solid #333;
+      }
+      h3 {
+        margin-top: 1.5rem;
+      }
+      code {
+        font:
+          0.92em ui-monospace,
+          Consolas,
+          monospace;
+        background: #1a1a1a;
+        padding: 0.1em 0.35em;
+        border-radius: 0;
+      }
+      pre {
+        background: #1a1a1a;
+        padding: 0.8rem 1rem;
+        overflow-x: auto;
+        border: 1px solid #333;
+      }
+      pre code {
+        background: transparent;
+        padding: 0;
+      }
+      a {
+        color: #ffa133;
+      }
+      ul,
+      ol {
+        padding-left: 1.2em;
+      }
+      blockquote {
+        border-left: 4px solid #ffa133;
+        margin: 1em 0;
+        padding: 0.5em 1em;
+        color: #a0a0a0;
+      }
+      .crumbs {
+        font-size: 0.85em;
+        color: #a0a0a0;
+        margin-bottom: 1rem;
+      }
+      .crumbs a {
+        color: #a0a0a0;
+        text-decoration: none;
+      }
+      .crumbs a:hover {
+        color: #f2f2f2;
+      }
+      .source {
+        font-size: 0.78em;
+        color: #a0a0a0;
+        margin-top: 2rem;
+        border-top: 1px solid #333;
+        padding-top: 0.5rem;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="crumbs"><a href="./">RC Setlist</a> · <a href="./README.html">Documentação</a></div>
+    <h1 id="notas-da-vers-o-rc-setlist-1-1-0">Notas da versão — RC Setlist 1.1.0</h1>
+    <p>
+      <strong>Data de lançamento:</strong> 2026-11-05 <strong>Linha de versões suportada:</strong>
+      <code>1.1.x</code> <strong>Also available in English:</strong>
+      <a href="../RELEASE-NOTES-1.1.0.md"><code>../RELEASE-NOTES-1.1.0.md</code></a>
+    </p>
+    <p>
+      Um show, dois computadores. O computador principal continua com o Live e com o operador; o
+      segundo computador segue o principal, e os comandos de transporte que o operador dá são
+      encaminhados para ele por um link com o certificado preso.
+    </p>
+    <h2 id="destaques">Destaques</h2>
+    <ul>
+      <li>
+        <strong>Uma linha &quot;Segundo computador&quot; no painel do Live.</strong> O segundo
+        computador
+      </li>
+    </ul>
+    <p>
+      mostra um código de seis dígitos, o computador principal digita o endereço dele e o código, e
+      os dois ficam pareados. A linha diz o que o link está fazendo: sem pareamento, conectado, sem
+      resposta, marcadores diferentes, ou certificado mudando e precisando de um pareamento novo.
+    </p>
+    <ul>
+      <li><strong>Um segundo ponto no cabeçalho do Controle de Palco.</strong> Verde quando o</li>
+    </ul>
+    <p>
+      segundo computador está conectado e os dois leem os mesmos marcadores, amarelo quando está
+      conectado e os marcadores são diferentes, vermelho quando não está respondendo ou o
+      certificado mudou, e nenhum ponto quando não há nada pareado.
+    </p>
+    <ul>
+      <li><strong>A rota de pareamento só responde sobre TLS.</strong> O código vale por dez</li>
+    </ul>
+    <p>
+      minutos, funciona exatamente uma vez, morre depois de cinco palpites errados, e as tentativas
+      que chegam até ele são limitadas por endereço e no total.
+    </p>
+    <ul>
+      <li><strong>O salto viaja por beat.</strong> Os dois computadores podem ter as músicas em</li>
+    </ul>
+    <p>
+      outra ordem, então um salto cruza a rede como o beat em que ele pousa
+      (<code>jump_time</code>), e o lado que recebe procura o marcador que está ali.
+    </p>
+    <ul>
+      <li><strong>O código de pareamento pode ser lido de novo.</strong> O painel se redesenha</li>
+    </ul>
+    <p>com o código que ainda está vivo, então o número na tela é o número que abre a porta.</p>
+    <h2 id="como-usar">Como usar</h2>
+    <p>
+      1. No <strong>segundo computador</strong>, inicie o servidor do RC Setlist e abra o painel
+      dentro do Live. Aperte <strong>Gerar código</strong> e leia os seis dígitos. 2. No
+      <strong>computador principal</strong>, abra o painel dentro do Live, expanda a linha
+      &quot;Segundo computador&quot;, digite o endereço do segundo computador e o código, e aperte
+      <strong>Parear</strong>. 3. Ponha os dois computadores na mesma sessão:
+      <strong>Link</strong> do Ableton ligado, <strong>Start Stop Sync</strong> do Live desligado. O
+      relay cuida do transporte; a sincronização nativa cuidaria dele duas vezes.
+    </p>
+    <p>
+      Um celular que abre a página do Controle de Palco continua sendo um controlador do computador
+      principal — ele entra na sessão do principal e vê o setlist do principal. O pareamento serve
+      para uma segunda máquina rodando Live. O macOS é suportado aqui de forma experimental; o
+      Windows é a plataforma validada.
+    </p>
+    <h2 id="o-que-chega-ao-segundo-computador">O que chega ao segundo computador</h2>
+    <p>
+      <strong>Play</strong>, <strong>Stop</strong>, <strong>salto</strong>,
+      <strong>metrônomo</strong>, <strong>quantização</strong>, <strong>contagem</strong>,
+      <strong>refresh</strong> e <strong>pânico</strong> viajam para o computador pareado. Edição do
+      setlist, edição de marcadores, cores, notas, letras, perfis, ordenação e a exportação CSV
+      ficam no computador principal.
+    </p>
+    <h2 id="tamb-m-nesta-vers-o">Também nesta versão</h2>
+    <ul>
+      <li><strong>Recolher a lista de músicas.</strong> Os três pontinhos ao lado do nome da</li>
+    </ul>
+    <p>
+      música recolhem e reabrem as seções dela; <strong>Recolher todas / Abrir todas</strong>, na
+      barra &quot;Músicas no projeto&quot;, age em todas. A escolha fica salva no aparelho, por
+      setlist.
+    </p>
+    <ul>
+      <li>
+        <strong>Um lugar para cada função no card da música.</strong> Segure o
+        <strong>nome</strong> para
+      </li>
+    </ul>
+    <p>
+      pular; o número, o tempo e o espaço vazio não fazem nada. Reordene arrastando a
+      <strong>alça</strong> na borda direita do card, com mouse ou com o dedo. Segurar os três
+      pontinhos não pula mais.
+    </p>
+    <ul>
+      <li><strong>O certificado do celular.</strong> A extensão cria uma autoridade de</li>
+    </ul>
+    <p>
+      certificado para este computador, limitada a localhost e endereços privados, e assina com ela
+      o certificado do próprio servidor. Uma nova linha <strong>Certificado do celular</strong> no
+      painel do Live mostra um QR para uma página simples na porta 4445, onde o celular baixa e
+      instala o certificado uma vez; depois disso o navegador para de avisar.
+    </p>
+    <ul>
+      <li><strong>O QR aponta para a rede certa.</strong> O endereço do QR e da linha de</li>
+    </ul>
+    <p>
+      pareamento é o que o sistema usa de verdade, então um computador com cabo de luz ou de áudio e
+      Wi-Fi ao mesmo tempo anuncia o Wi-Fi.
+    </p>
+    <ul>
+      <li>
+        <strong>A barra do topo fica numa linha só</strong> em inglês e em português; palavras
+      </li>
+    </ul>
+    <p>maiores diminuem o texto em vez de empurrar botões para uma segunda linha.</p>
+    <ul>
+      <li><strong>Reordenar voltou a funcionar no Windows</strong>, e salvar não falha mais</li>
+    </ul>
+    <p>dentro do Live quando o sistema de arquivos recusa o <code>fsync</code>.</p>
+    <ul>
+      <li><strong>Correções do pareamento.</strong> O segundo computador é fixado pela chave,</li>
+    </ul>
+    <p>
+      então um endereço novo em qualquer lado não quebra mais o link; parear um computador com ele
+      mesmo é recusado; o painel avisa quando o código tem que ser gerado no segundo computador; o
+      PANIC cancela uma contagem em andamento.
+    </p>
+    <h2 id="contratos">Contratos</h2>
+    <p>
+      <code>docs/CONTRACTS.md</code> (e <code>docs/pt-BR/CONTRATOS.md</code>) agora descrevem a rota
+      de pareamento, a credencial do par, o frame <code>jump_time</code> e o campo
+      <code>peerStatus</code> do frame de estado.
+    </p>
+    <h2 id="atualizando-da-1-0">Atualizando da 1.0</h2>
+    <p>
+      Nada a migrar. O pareamento é por instalação e nada é gravado a não ser que o operador pareie
+      um segundo computador: até lá, sem segundo ponto e sem conexão de saída. Duas coisas são novas
+      no primeiro início: a extensão cria a autoridade de certificado na pasta de dados e assina com
+      ela um novo certificado do servidor, então um celular que tinha aceitado o certificado antigo
+      pergunta mais uma vez (ou para de perguntar depois de instalar o certificado do celular), e a
+      página de instalação responde na porta 4445 enquanto o servidor roda. O Live recusa instalar
+      por cima de uma pasta de extensão existente: remova o RC Setlist nas configurações de
+      extensões do Live antes; a pasta de dados fica.
+    </p>
+    <div class="source">
+      Rendered from <code>docs\pt-BR\NOTAS-DA-VERSAO-1.1.0.md</code> on 2026-11-05.
+    </div>
+  </body>
+</html>

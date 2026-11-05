@@ -823,6 +823,9 @@ export class SetlistManager {
       durationConfidence: this.computeDurationConfidence(),
       declaredTempo: this.declaredTempoAtPlayhead(),
       arrangementEndTime: this.arrangementEndTime,
+      // The fingerprint of the cue list this set was parsed from. Two
+      // computers compare theirs to know whether they hold the same markers.
+      cuesFingerprint: this.appliedCuesFingerprint ?? '',
 
       stateVersion: this.stateVersion,
       connection: {

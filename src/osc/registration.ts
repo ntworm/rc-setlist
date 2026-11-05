@@ -6,6 +6,7 @@ import {
 } from '../runtime/bridge-state.js';
 import { executeAutomationActions } from '../automation/executor.js';
 import { computeCuesFingerprint } from '../core/locator-parser.js';
+import { noteTransportClockSource } from '../sync/clock-source.js';
 import { log } from '../util/log.js';
 
 const MCP_TRANSPORT_FRESHNESS_MS = 500;
@@ -42,6 +43,10 @@ export function registerOscListeners() {
     // Keep one clock authority at a time; OSC resumes automatically if MCP is
     // stale for more than the fallback window.
     if (hasFreshMcpTransportObservation()) return;
+    noteTransportClockSource(
+      'osc',
+      bridgeState.mcpFallbackSync?.getSnapshot().timeSinceLastSessionInfoMs ?? null,
+    );
     bridgeState.scheduler?.tick(time);
     if (bridgeState.isCreatingTestSession) {
       broadcastState();

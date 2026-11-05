@@ -35,10 +35,10 @@
     'about.spec4': 'Sem conta · sem telemetria',
     'about.download': 'Baixar .ablx',
     'about.docs': 'Ler a documentação',
-    'about.new': 'O que há de novo na 1.0.0',
+    'about.new': 'O que há de novo na 1.1.0',
     'about.source': 'Código-fonte',
     'about.release':
-      'Versão 1.0.0&nbsp;· source-available sob a PolyForm Noncommercial 1.0.0&nbsp;· inglês e português (Brasil) no mesmo pacote',
+      'Versão 1.1.0&nbsp;· source-available sob a PolyForm Noncommercial 1.0.0&nbsp;· inglês e português (Brasil) no mesmo pacote',
     'about.figCap': 'As duas telas, exatamente como vêm',
     'about.figMeta': 'Prints reais · dados fictícios de demonstração',
     'about.figAlt':
@@ -206,7 +206,7 @@
     'install.title': 'Instalação <span class="tail">— cinco passos até o primeiro Play</span>',
     'install.s1': 'Baixe',
     'install.s1d':
-      '<code>RC-Setlist-1.0.0.ablx</code> e o kit de instalação, na <a href="https://github.com/ntworm/rc-setlist/releases/latest">versão mais recente</a>.',
+      '<code>RC-Setlist-1.1.0.ablx</code> e o kit de instalação, na <a href="https://github.com/ntworm/rc-setlist/releases/latest">versão mais recente</a>.',
     'install.s2': 'Instale o RC Bridge',
     'install.s2d':
       'Rode <code>Install-RC-Bridge.cmd</code> (Windows) ou <code>Install RC Bridge.command</code> (macOS), que vêm no kit. No Live, abra <b>Settings › Link, Tempo &amp; MIDI</b> e escolha <b>RCBridge</b> como Control Surface.',
@@ -276,7 +276,8 @@
     'docs.guide': 'Guia do usuário',
     'docs.trouble': 'Solução de problemas',
     'docs.faq': 'Perguntas frequentes',
-    'docs.notes': 'O que há de novo na 1.0.0',
+    'docs.notes': 'O que há de novo na 1.1.0',
+    'docs.notesPrevious': 'O que havia de novo na 1.0.0',
     'docs.security': 'Segurança · privacidade',
 
     'foot.made': 'Feito por <b>Gabriel Worm</b>',
@@ -297,7 +298,8 @@
     'docs.lGuide': 'Ler o guia do usuário',
     'docs.lTrouble': 'Ler a solução de problemas',
     'docs.lFaq': 'Ler as perguntas frequentes',
-    'docs.lNotes': 'Ler as notas da 1.0.0',
+    'docs.lNotes': 'Ler as notas da 1.1.0',
+    'docs.lNotesPrevious': 'Ler as notas da 1.0.0',
   };
 
   const documentRef = globalScope.document;

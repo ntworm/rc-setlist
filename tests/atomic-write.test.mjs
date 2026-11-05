@@ -23,7 +23,12 @@ test('atomicWriteFile creates parents and atomically replaces an existing file',
   assert.deepEqual(await fs.readdir(path.dirname(target)), ['lyrics.lrc']);
 });
 
-function fakeAtomicDependencies({ tokens = [], platform = 'linux', directorySyncError } = {}) {
+function fakeAtomicDependencies({
+  tokens = [],
+  platform = 'linux',
+  directorySyncError,
+  fileSyncError,
+} = {}) {
   const calls = [];
   return {
     calls,
@@ -44,6 +49,7 @@ function fakeAtomicDependencies({ tokens = [], platform = 'linux', directorySync
             sync: async () => {
               calls.push(['sync', file]);
               if (isDirectory && directorySyncError) throw directorySyncError;
+              if (!isDirectory && fileSyncError) throw fileSyncError;
             },
             close: async () => {
               calls.push(['close', file]);
@@ -130,6 +136,45 @@ test('Windows permits only documented unsupported directory-sync failures', asyn
       error,
     );
   }
+});
+
+test('fsync disabled by the Permission Model still replaces the file on every platform', async () => {
+  for (const platform of ['win32', 'darwin', 'linux']) {
+    const denied = () =>
+      Object.assign(new Error('fsync API is disabled when Permission Model is enabled.'), {
+        code: 'ERR_ACCESS_DENIED',
+      });
+    const { calls, dependencies } = fakeAtomicDependencies({
+      tokens: [platform],
+      platform,
+      fileSyncError: denied(),
+      directorySyncError: denied(),
+    });
+    const target = path.resolve('show', `${platform}-custom-order.json`);
+
+    await atomicWriteFileWithDependencies(target, 'order', dependencies);
+
+    const renames = calls.filter(([operation]) => operation === 'rename');
+    assert.equal(renames.length, 1);
+    assert.equal(renames[0][2], target);
+    assert.ok(!calls.some(([operation]) => operation === 'rm'));
+  }
+});
+
+test('other file-sync failures still fail the write and remove the temporary file', async () => {
+  const error = Object.assign(new Error('file sync EIO'), { code: 'EIO' });
+  const { calls, dependencies } = fakeAtomicDependencies({
+    tokens: ['eio'],
+    platform: 'win32',
+    fileSyncError: error,
+  });
+
+  await assert.rejects(
+    atomicWriteFileWithDependencies(path.resolve('show', 'eio.lrc'), 'lyrics', dependencies),
+    error,
+  );
+  assert.ok(!calls.some(([operation]) => operation === 'rename'));
+  assert.ok(calls.some(([operation]) => operation === 'rm'));
 });
 
 test('a write failure removes only its exact temporary file', async (t) => {

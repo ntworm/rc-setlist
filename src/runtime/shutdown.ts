@@ -38,6 +38,10 @@ export function clearTimers(): void {
     clearInterval(bridgeState.sdkSyncInterval);
     bridgeState.sdkSyncInterval = null;
   }
+  if (bridgeState.eventLoopWatchInterval) {
+    clearInterval(bridgeState.eventLoopWatchInterval);
+    bridgeState.eventLoopWatchInterval = null;
+  }
   if (bridgeState.mcpSyncInterval) {
     clearInterval(bridgeState.mcpSyncInterval);
     bridgeState.mcpSyncInterval = null;

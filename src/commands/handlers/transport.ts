@@ -2,7 +2,8 @@
 // and the OSC-side rename helper the marker editor uses.
 import { WebSocket } from 'ws';
 import { bridgeState, broadcastState } from '../../runtime/bridge-state.js';
-import { getQuantizationBeats } from '../../core/next-downbeat-jump.js';
+import { getQuantizationBeats, quantizationPeriodMs } from '../../core/next-downbeat-jump.js';
+import { log } from '../../util/log.js';
 import { applyJumpTargetTempo } from '../jump-tempo.js';
 import { buildClickPreviewWav, clickPreviewFilename } from '../../core/click-preview.js';
 import { OperatorError } from '../../core/operator-error.js';
@@ -11,9 +12,11 @@ import type { AugmentedWebSocket } from '../../types.js';
 import type { atomicWriteFile } from '../../util/atomic-write.js';
 
 /**
- * ExecuteJumpCommand — implementation detail.
+ * ExecuteJumpCommand — implementation detail. Returns how long, in
+ * milliseconds, Live is expected to wait for the quantization grid before the
+ * jump lands; 0 for an immediate jump.
  */
-export function executeJumpCommand(msg: ClientMessageOf<'jump'>): void {
+export function executeJumpCommand(msg: ClientMessageOf<'jump'>): number {
   if (!bridgeState.manager || !bridgeState.scheduler || !bridgeState.oscClient) {
     throw new OperatorError('The transport is not ready.');
   }
@@ -91,6 +94,7 @@ export function executeJumpCommand(msg: ClientMessageOf<'jump'>): void {
       songIndex: msg.songIndex,
       sectionIndex: msg.sectionIndex ?? null,
     });
+    return 0;
   } else {
     /*
      * Live quantizes a cue jump requested while playing to its next global
@@ -100,7 +104,7 @@ export function executeJumpCommand(msg: ClientMessageOf<'jump'>): void {
      * jump a full quantization period after the beat the page announced.
      */
     bridgeState.oscClient.jumpToCuePoint(cueIndex);
-    bridgeState.scheduler.schedule(
+    const { landingTime } = bridgeState.scheduler.schedule(
       msg.songIndex,
       msg.sectionIndex ?? null,
       cueName,
@@ -114,6 +118,18 @@ export function executeJumpCommand(msg: ClientMessageOf<'jump'>): void {
       },
       cueIndex,
     );
+    // A coarse grid can hold the landing longer than the confirmation window
+    // (4 bars at 130 BPM is 7.4 s); the caller extends the window so a jump
+    // that lands on time is not reported as expired. It extends by a whole
+    // period, not by the wait to `landingTime`: the playhead sample is up to
+    // 100 ms old, and a grid line passing in between makes Live land the jump
+    // one period later than that estimate.
+    const periodMs = quantizationPeriodMs(quantBeats, mgrState.tempo);
+    log.info('commands', 'Quantized jump waits for the grid', {
+      landingBeat: landingTime,
+      windowExtendedMs: Math.round(periodMs),
+    });
+    return periodMs;
   }
 }
 

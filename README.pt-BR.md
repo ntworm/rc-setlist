@@ -1,7 +1,7 @@
 # RC Setlist
 
 [![PolyForm Noncommercial](https://img.shields.io/badge/licença-PolyForm%20Noncommercial-orange)](LICENSE)
-[![Versão](https://img.shields.io/badge/versão-1.0.0-f97316)](CHANGELOG.md)
+[![Versão](https://img.shields.io/badge/versão-1.1.0-f97316)](CHANGELOG.md)
 [![CI](https://github.com/ntworm/rc-setlist/actions/workflows/ci.yml/badge.svg)](https://github.com/ntworm/rc-setlist/actions/workflows/ci.yml)
 
 [English](README.md) · **Português (Brasil)**
@@ -32,6 +32,7 @@ O **RC Setlist** é uma extensão de setlist, letra sincronizada e tela de palco
 - Interfaces completas em inglês e português do Brasil empacotadas no mesmo `.ablx`.
 - Sem necessidade de contas, sincronização em nuvem, analytics ou telemetria.
 - Mapeamento de teclado (Keyboard Mapping) para disparar transporte e navegação pelo teclado numérico ou alfanumérico.
+- Um segundo computador que segue o show: pareie-o pelo painel do Live e os comandos de transporte viajam para ele por um link com o certificado preso.
 
 ## Requisitos
 
@@ -44,13 +45,13 @@ O Windows é a plataforma de lançamento validada. O suporte a macOS permanece e
 ## Início rápido
 
 1. Instale o RC Bridge: execute o `Install-RC-Bridge.cmd` (Windows) ou `Install RC Bridge.command` (macOS) do kit de instalação, e selecione RCBridge como Control Surface nas preferências do Live.
-2. Baixe o pacote `RC-Setlist-1.0.0.ablx` na versão mais recente do GitHub.
+2. Baixe o pacote `RC-Setlist-1.1.0.ablx` na versão mais recente do GitHub.
 3. Dê dois cliques no `.ablx` e aprove a instalação no Ableton Live.
 4. No Live, acesse **Extensions > RC Setlist** e inicie o servidor.
 5. Acesse a URL do painel ou escaneie o código QR com o tablet ou celular para abrir `/setlist` ou `/performance`.
 6. Escolha **Português (Brasil)** no menu de idioma.
 
-Usuários atualizando de versões antigas 0.x (`Ableton-RC-Setlist-0.4.x` a `0.7.0`) devem executar o script de migração `Migrate-RC-Setlist-Data.cmd` (Windows) ou `Migrate RC Setlist Data.command` (macOS) uma única vez antes de abrir o Live com a versão 1.0. O script copia perfis, setlists do projeto e preferências para a nova estrutura sem alterar a pasta anterior. Instruções completas em [docs/pt-BR/INSTALL.md](docs/pt-BR/INSTALL.md).
+Usuários atualizando de versões antigas 0.x (`Ableton-RC-Setlist-0.4.x` a `0.7.0`) devem executar o script de migração `Migrate-RC-Setlist-Data.cmd` (Windows) ou `Migrate RC Setlist Data.command` (macOS) uma única vez antes de abrir o Live com a versão 1.0. O script copia perfis, setlists do projeto e preferências para a nova estrutura sem alterar a pasta anterior. Quem vem da 1.0 (`RC-Setlist-1.0.0.ablx`) instala o novo pacote por cima do antigo; não há nada a migrar. Instruções completas em [docs/pt-BR/INSTALL.md](docs/pt-BR/INSTALL.md).
 
 ## Formato dos locators
 
@@ -87,6 +88,7 @@ npm run package:kit
 ```
 
 O comando produz a pasta e o arquivo zip em `release-candidates/RC-Setlist-1.0.0-Installation-Kit.zip` contendo:
+
 - `RC-Setlist-1.0.0.ablx` (extensão para o Live)
 - `START-HERE.html` (página de introdução bilíngue amigável)
 - `README.txt` (instruções rápidas de instalação e migração)
@@ -109,6 +111,7 @@ O SDK e CLI do Ableton não são redistribuídos neste repositório público. De
 - [Primeiros passos](docs/pt-BR/PRIMEIROS-PASSOS.md)
 - [Guia de instalação](docs/pt-BR/INSTALL.md)
 - [Guia do usuário](docs/pt-BR/USER-GUIDE.md)
+- [O que há de novo na versão 1.1.0](docs/pt-BR/NOTAS-DA-VERSAO-1.1.0.md)
 - [O que há de novo na versão 1.0.0](docs/pt-BR/NOTAS-DA-VERSAO-1.0.0.md)
 - [Solução de problemas](docs/pt-BR/TROUBLESHOOTING.md)
 - [Perguntas frequentes (FAQ)](docs/pt-BR/FAQ.md)

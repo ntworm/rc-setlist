@@ -12,7 +12,7 @@ aligns the product name with brand guidelines.
   project setlists, preferences and tokens to the new layout without altering the
   original files (scripts/migrate-data.mjs).
 - **High-Contrast Panel Plate**: A 2px amber border (
-gba(255, 168, 38, 0.45))
+  gba(255, 168, 38, 0.45))
   with subtle glow ensures the Live panel stands out clearly against both dark and
   light Live themes.
 - **Legacy Extension Cleanup**: The installer kit and script
@@ -27,11 +27,11 @@ gba(255, 168, 38, 0.45))
   preventing clipping on phones.
 - **Mobile Count-In Muting**: Browser count-in audio is now silenced by default on
   mobile devices to prevent unexpected audio bleed into monitors or PA; it remains an
-  opt-in setting via 
-c-setlist.count-in-audio.
+  opt-in setting via
+  c-setlist.count-in-audio.
 - **Marker Editor Autocomplete**: Target selection dropdown cleanly displays markers
   without duplicating [jump] or [loop] tags.
 
-*For full details on installing, please refer to the [Installation Guide](INSTALL.md).*
+_For full details on installing, please refer to the [Installation Guide](INSTALL.md)._
 
-*Leia estas notas em português: [NOTAS-DA-VERSAO-0.7.1.md](pt-BR/NOTAS-DA-VERSAO-0.7.1.md).*
+_Leia estas notas em português: [NOTAS-DA-VERSAO-0.7.1.md](pt-BR/NOTAS-DA-VERSAO-0.7.1.md)._

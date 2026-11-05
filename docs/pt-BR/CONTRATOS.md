@@ -119,6 +119,16 @@ clientId ≤ 128; campos de perfil ≤ 80; títulos ≤ 255; corpo de letra
 ≤ 96 KiB; reorder ≤ 4096 músicas; campos de texto estruturado (notas,
 título, cabeçalho de letra) rejeitam controles C0/C1.
 
+Uma conexão de par (ver §5.1) envia um frame que a tabela acima não lista:
+`jump_time`, com `commandId`, `time` (o beat em que ele pousa) e `section`
+(se aquele beat é uma seção). Um salto não pode viajar como índice de uma
+lista, porque os dois computadores podem ter as músicas em outra ordem. Só
+uma conexão de par pode enviá-lo; qualquer outro cliente é recusado com
+`unauthorized`. O lado que recebe procura um marcador a menos de um centésimo
+de beat desse beat — o mais próximo e, num empate, o primeiro na ordem
+exibida — e responde `{"type":"error","code":"peer_no_marker"}` quando não
+tem nenhum.
+
 ### 2.3 Reliability Core
 
 Cada comando é reconhecido duas vezes: `command_ack` (servidor aceitou o
@@ -144,6 +154,13 @@ frame, não dos perfis em disco), `preRollEnabled`, `durationBpm`,
 `clipTriggerQuantization`. O Reliability Core adiciona `stateVersion`,
 `connection`, `transport`, `currentSongId`, `currentSectionId`,
 `pendingCommands`, `mode` (`rehearsal` | `show`), `safety`.
+
+O contrato 1.1 adiciona `peerStatus`, o estado do link com o computador
+pareado (§5.1): `paired` diz se há um computador pareado, `connected` diz se
+o link está de pé, `markersMatch` diz se os dois computadores leem os mesmos
+marcadores, e `fingerprintMismatch` diz que o computador pareado apresentou
+outro certificado e que o link recusou. O campo viaja em todo frame `state`,
+então um cliente que não sabe nada do segundo computador pode ignorá-lo.
 
 ### 2.5 Redação de logs
 
@@ -277,6 +294,57 @@ CSP que proíbe scripts inline nas páginas de palco.
 Caminhos `/api/*` exigem token de controller; `/health`, `/static/*` e
 as páginas HTML não exigem. Qualquer caminho desconhecido retorna
 `404 text/plain` sem vazar o header do servidor.
+
+Existe mais uma rota, descrita em §5.1: `GET /peer/pair`, que entrega a
+credencial do par para um computador que apresenta o código de seis dígitos
+certo.
+
+### 5.1 O segundo computador
+
+Dois computadores podem rodar o mesmo show. O que tem o Live encaminha os
+comandos de transporte para o outro por um WebSocket TLS que o par abre com
+a credencial abaixo.
+
+**A credencial.** `GET /peer/pair?code=<code>` responde `200` com
+`{"peerToken": "<32 caracteres hex>"}` e nada mais. O token é uma credencial
+de certa, guardada em `<storage>/peer-token` ao lado do token de segurança, e
+nunca é a mesma string do token de segurança. Um token de par pode enviar
+`handshake`, `sync_confirm`, `jump_time`, `play`, `stop`, `metronome`,
+`set_quantization`, `trigger_count_in`, `refresh` e `set_panic`, e nada
+mais: qualquer outro frame é recusado com `unauthorized`, inclusive `jump`
+por índice. Um token de controller roda qualquer comando.
+
+O código tem seis dígitos, vale por dez minutos e funciona exatamente uma
+vez. Cinco palpites errados matam o código, e as tentativas que chegam até
+ele são limitadas por endereço (5 por minuto) e no total (20 por minuto). A
+rota responde:
+
+- `404` quando não há código ativo, ou quando a requisição não chegou por TLS.
+- `403` quando o código está errado. O corpo não diz por quê.
+- `429` quando o limite de tentativas foi atingido.
+- `200` com o token do par quando o código estava certo.
+
+O código é mascarado nos logs e na URL, como todo outro segredo deste
+documento.
+
+**A conexão.** Um par faz upgrade na mesma origem com
+`?token=<peerToken>` e envia `{"type":"handshake","clientId":"rc-peer"}`. O
+servidor responde com o `handshake_ack` de sempre, e o par confirma com
+`sync_confirm` como qualquer cliente. O link tem um salto só: um comando que
+veio de um par nunca é encaminhado de novo.
+
+**A porta.** O pareamento e o link sempre alcançam o segundo computador na
+porta `4444`, a porta em que o servidor escuta; o painel não tem campo para
+outra. O segundo computador precisa aceitar conexões nessa porta, como já
+aceita para um celular.
+
+**O certificado.** O link prende o certificado. A impressão digital que o
+pareamento devolveu é comparada com a que o socket apresenta antes de
+qualquer byte sair; um computador que apresenta outro certificado nunca é
+falado, e o estado reporta `fingerprintMismatch`.
+
+**O estado.** O frame `state` carrega `peerStatus` (§2.4) para a página
+dizer o que o link está fazendo sem precisar perguntar.
 
 ---
 

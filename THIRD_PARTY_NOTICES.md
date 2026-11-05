@@ -1,6 +1,6 @@
 # Third-party notices
 
-This file covers third-party components bundled in RC Setlist 1.0.0. It is generated from the installed production dependency tree; run `npm run notices` after dependency changes.
+This file covers third-party components bundled in RC Setlist 1.1.0. It is generated from the installed production dependency tree; run `npm run notices` after dependency changes.
 
 ## Ableton Extensions SDK
 
@@ -767,7 +767,7 @@ freely, subject to the following restrictions:
 
 License: BSD-3-Clause
 
-Source: git://github.com/PeculiarVentures/PKI.js.git
+Source: https://github.com/PeculiarVentures/PKI.js
 
 ```text
 Copyright (c) 2014, GlobalSign

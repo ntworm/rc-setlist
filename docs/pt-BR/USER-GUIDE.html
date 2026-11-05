@@ -414,6 +414,103 @@ Música B [bpm 96]</code></pre>
       A interface mantém o último estado válido durante reconexões breves. O aviso de reconexão não
       significa que o estado antigo acabou de ser confirmado.
     </p>
+    <h2 id="dois-computadores">Dois computadores</h2>
+    <p>
+      Duas máquinas podem rodar o mesmo show: o <strong>computador principal</strong>, onde o
+      Ableton Live mora e onde o operador fica, e um <strong>segundo computador</strong> que o
+      segue. O segundo computador roda a mesma extensão, trabalha na mesma sessão e recebe os
+      comandos de transporte que o operador dá no principal.
+    </p>
+    <h3 id="parear-o-segundo-computador">Parear o segundo computador</h3>
+    <p>
+      1. No <strong>segundo computador</strong>, inicie o servidor do RC Setlist e abra o painel
+      dentro do Live. A linha <strong>Segundo computador</strong> mostra o endereço que as outras
+      máquinas alcançam e o botão <strong>Gerar código</strong>. O botão fica desabilitado enquanto
+      o servidor está parado ou rodando sem HTTPS, e a linha diz o motivo: a rota de pareamento só
+      responde sobre TLS, porque é o certificado que o computador apresenta que o prende depois. 2.
+      Aperte <strong>Gerar código</strong>. O painel mostra um código de seis dígitos. Ele vale por
+      dez minutos e funciona exatamente uma vez. 3. No <strong>computador principal</strong>, abra o
+      painel dentro do Live, expanda a linha <strong>Segundo computador</strong>, digite o endereço
+      do segundo computador e o código e aperte <strong>Parear</strong>. 4. O computador principal
+      guarda a credencial e a impressão digital do certificado com que o segundo computador
+      respondeu, e abre o link para ele. A linha passa a dizer se o segundo computador está
+      respondendo.
+    </p>
+    <p>
+      O pareamento e o link usam a porta <code>4444</code> do segundo computador, a mesma que um
+      celular abre, então o firewall dele precisa deixar essa porta entrar.
+    </p>
+    <p>
+      <strong>Desfazer</strong> apaga a credencial e fecha o link. Quando o pareamento salvo não
+      pode ser apagado, o painel avisa e o segundo computador continua pareado, porque um pareamento
+      que ficou no disco voltaria no próximo início. Um certificado que mudou é avisado como tal: o
+      link não fala com um computador que apresenta outro certificado, e a linha pede um pareamento
+      novo.
+    </p>
+    <h3 id="os-dois-computadores-na-mesma-sess-o">Os dois computadores na mesma sessão</h3>
+    <ul>
+      <li>
+        O <strong>Link</strong> do Ableton precisa estar <strong>ligado</strong> nos dois
+        computadores, para
+      </li>
+    </ul>
+    <p>que eles trabalhem no mesmo Arrangement e leiam os mesmos marcadores.</p>
+    <ul>
+      <li>
+        O <strong>Start Stop Sync</strong> do Live precisa estar <strong>desligado</strong>. O RC
+        Setlist
+      </li>
+    </ul>
+    <p>
+      encaminha o transporte por conta própria; deixar a sincronização nativa ligada comandaria o
+      transporte duas vezes.
+    </p>
+    <ul>
+      <li>Os marcadores precisam bater. Um salto viaja como o beat em que ele pousa,</li>
+    </ul>
+    <p>
+      então o segundo computador só pousa no mesmo lugar quando os dois leem os mesmos marcadores.
+      Quando não batem, o ponto avisa.
+    </p>
+    <h3 id="o-ponto-no-cabe-alho-do-controle-de-palco">
+      O ponto no cabeçalho do Controle de Palco
+    </h3>
+    <p>A página do Controle de Palco mostra um segundo ponto ao lado do ponto de conexão:</p>
+    <ul>
+      <li><strong>verde</strong> — o segundo computador está conectado e os dois leem os mesmos</li>
+    </ul>
+    <p>marcadores.</p>
+    <ul>
+      <li><strong>amarelo</strong> — está conectado, mas os marcadores são diferentes.</li>
+      <li>
+        <strong>vermelho</strong> — não está respondendo, ou o certificado mudou e ele precisa
+      </li>
+    </ul>
+    <p>ser pareado de novo.</p>
+    <ul>
+      <li><strong>sem ponto</strong> — não há segundo computador pareado, e nada é enviado para</li>
+    </ul>
+    <p>lugar nenhum.</p>
+    <h3 id="o-que-chega-ao-segundo-computador">O que chega ao segundo computador</h3>
+    <p>
+      Viajam para o computador pareado: <strong>Play</strong>, <strong>Stop</strong>,
+      <strong>salto</strong> (como o beat em que ele pousa), <strong>metrônomo</strong>,
+      <strong>quantização</strong>, <strong>contagem</strong>, <strong>refresh</strong> e
+      <strong>pânico</strong>.
+    </p>
+    <p>
+      Ficam no computador principal: edição do setlist, edição de marcadores, cores, notas, letras,
+      perfis, ordenação e a exportação CSV. O segundo computador mantém o próprio setlist e os
+      próprios perfis.
+    </p>
+    <h3 id="um-celular-n-o-um-segundo-computador">Um celular não é um segundo computador</h3>
+    <p>
+      Um celular ou tablet que abre a página do Controle de Palco é um
+      <strong>controlador</strong> do computador principal: ele entra na sessão do principal e vê o
+      setlist do principal. O pareamento serve para uma segunda máquina rodando Live, não para um
+      celular. O macOS é suportado como segundo computador de forma experimental; o Windows é a
+      plataforma validada.
+    </p>
     <h2 id="performance">Performance</h2>
     <p>
       Abra <code>/performance</code> para uma tela de alto contraste, principalmente de leitura. Ela
@@ -515,6 +612,6 @@ Música B [bpm 96]</code></pre>
       O raciocínio completo está em
       <a href="../architecture/song-identity.md">docs/architecture/song-identity.md</a>.
     </p>
-    <div class="source">Rendered from <code>docs/pt-BR/USER-GUIDE.md</code> on 2026-09-24.</div>
+    <div class="source">Rendered from <code>docs\pt-BR\USER-GUIDE.md</code> on 2026-11-05.</div>
   </body>
 </html>

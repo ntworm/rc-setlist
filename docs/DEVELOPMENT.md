@@ -21,8 +21,9 @@ npm audit --audit-level=high
 This gate does not need or download Ableton developer archives. The
 quality gates (`gates:quality`) group `lint`, `format:check`,
 `deadcode` (knip), `deps:check` (dependency-cruiser) and `lint:py`
-(ruff). P04 promotes them from `continue-on-error` to blocking the
-public gate; until then they are reported as artifacts.
+(ruff). They are a blocking step: the workflow runs
+`npm run gates:quality` on every push and pull request to `main`, and
+a failing gate fails the job.
 
 ## Authorized release gate
 
@@ -53,25 +54,24 @@ npm run notices:check
 ## Quality gates
 
 ```bash
-npm run lint           # ESLint (typescript-eslint + jsdoc + Prettier-friendly)
+npm run lint           # ESLint (typescript-eslint + jsdoc), --max-warnings 0
 npm run format:check   # Prettier, reports files not yet formatted
-npm run deadcode       # knip — exports/types/files unused (21 from AUDIT)
-npm run deps:check     # dependency-cruiser — cycles + layer rules (11 from AUDIT)
+npm run deadcode       # knip — exports/types/files unused
+npm run deps:check     # dependency-cruiser — cycles + layer rules
 npm run lint:py        # ruff — bridge Python files
 npm run version:check  # sync-version.mjs — package.json == manifest.json
 npm run gates:quality  # all five above in one
 ```
 
-P01 ships these gates and expects them to **fail by the audit count**
-(deadcode=21, deps:check=11, format:check=full report). P04 zeroes
-them and promotes the `no-unsafe-*` / `no-explicit-any` / `no-empty` /
-`no-unused-vars` ESLint rules to `error`.
+`npm run lint` runs `eslint . --max-warnings 0`: every rule this
+repository registers is an `error`, so a warning fails the gate the
+same way an error does. The `no-unsafe-*` / `no-explicit-any` /
+`no-empty` / `no-unused-vars` families are among them, and the SDK
+boundary (`src/ableton-sdk-public.d.ts`) keeps the Ableton Extensions
+SDK surface typed instead of `any`.
 
-`prettier --write .` runs **once and in its own commit** after P04
-review (recorded in `.git-blame-ignore-revs`). Until then, the
-`format:check` script never blocks the gate — it lists the still
-non-formatted files inside `internal/CODE-HYGIENE-1.0.md` so reviewers
-can focus on semantics.
+`format:check` is part of the same blocking gate, so the tree has to
+stay formatted; the script itself lists the files that drifted.
 
 ## Architecture boundaries
 
@@ -85,7 +85,11 @@ can focus on semantics.
   unittest suite.
 
 The public TypeScript configuration excludes SDK-facing files but checks the
-portable core. The release gate checks the complete application.
+portable core. The release gate checks the complete application. The
+type-aware ESLint rules use `tsconfig.eslint.json`, which extends the
+same configuration and resolves `@ableton-extensions/sdk` through
+`src/ableton-sdk-public.d.ts`, so the linter and the public typecheck
+see the same SDK surface.
 
 ## Public site
 

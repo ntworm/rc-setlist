@@ -43,11 +43,7 @@ function hasExec(bin) {
   }
 }
 
-const powershellBin = hasExec('powershell')
-  ? 'powershell'
-  : hasExec('pwsh')
-    ? 'pwsh'
-    : null;
+const powershellBin = hasExec('powershell') ? 'powershell' : hasExec('pwsh') ? 'pwsh' : null;
 
 const hasBash = hasExec(bashPath);
 

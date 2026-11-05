@@ -20,6 +20,17 @@ export function isServerRunning(): boolean {
 }
 
 /**
+ * Reports whether the running server came up over TLS.
+ *
+ * The pairing route answers over HTTPS only, and the certificate it presents
+ * is what pins the second computer, so the panel asks this before it offers
+ * to hand out a pairing code.
+ */
+export function isServerTls(): boolean {
+  return bridgeState.serverRunning && bridgeState.serverUsesTls;
+}
+
+/**
  * Returns the server.
  */
 export function getServer() {

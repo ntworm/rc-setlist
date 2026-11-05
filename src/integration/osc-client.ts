@@ -226,7 +226,10 @@ export class OSCClient extends EventEmitter {
     } else if (address === '/live/song/get/tempo') {
       const bpm = args[0]?.value;
       if (typeof bpm === 'number') {
-        log.info('osc', 'tempo reply', { bpm });
+        // The polled replies (tempo, metronome, cue points) stay at DEBUG. At
+        // INFO they were 99.9 % of this extension's log, and Live's host
+        // writes and flushes every console line on the JavaScript thread.
+        log.debug('osc', 'tempo reply', { bpm });
         if (this.shouldEmit(address, bpm)) {
           this.emit('tempo', bpm);
         }
@@ -256,7 +259,7 @@ export class OSCClient extends EventEmitter {
         }
       }
       this.emit('cue_points', cues);
-      log.info('osc', 'cue_points reply', {
+      log.debug('osc', 'cue_points reply', {
         count: cues.length,
         names: cues.map((c) => c.name).join(', '),
       });
@@ -268,7 +271,7 @@ export class OSCClient extends EventEmitter {
     } else if (address === '/live/song/get/metronome') {
       const val = args[0]?.value;
       const metronome = val === 1 || val === true || val === 'true';
-      log.info('osc', 'metronome reply', { metronome });
+      log.debug('osc', 'metronome reply', { metronome });
       if (this.shouldEmit(address, metronome, this.consumeRequestedConfirmation(address))) {
         this.emit('metronome', metronome);
       }

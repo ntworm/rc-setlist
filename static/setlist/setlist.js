@@ -43,6 +43,12 @@ const t = (key, params) => i18n.t(key, params);
 const controllerRuntime = RcSetlistControllerRuntime;
 const languageSelect = document.getElementById('languageSelect');
 i18n.bindSelector(languageSelect);
+globalThis.RcAppBarFit?.install(
+  document.querySelector('header.app-bar'),
+  document.getElementById('profileSelect'),
+  i18n,
+  window,
+);
 
 let ws;
 
@@ -60,6 +66,7 @@ const deletedProfileList = document.getElementById('deletedProfileList');
 const deletedProfileSection = document.getElementById('deletedProfileSection');
 const profileMutationNotice = document.getElementById('profileMutationNotice');
 const totalSetlistDuration = document.getElementById('totalSetlistDuration');
+const foldAllSongsButton = document.getElementById('btnFoldAllSongs');
 const operationToast = document.getElementById('operationToast');
 let operationToastTimer = null;
 
@@ -110,7 +117,7 @@ let lastJumpTime = 0;
 let lastJumpTarget = { song: -1, section: -1 };
 let draggedSongIdx = null;
 let draggedDropSlot = null;
-let directDragSongItem = null;
+let directDragGrip = null;
 let isLocked = localStorage.getItem('bridge_locked') === 'true';
 let lastFlashBeat = -1;
 let lastRenderedMetronome = null;
@@ -131,6 +138,17 @@ let profileState = {
   projectName: '',
 };
 const pendingProfileCommands = new Map();
+// The folding of the sections of every song, and the bar button that folds
+// them all. The module keeps it per setlist and paints the cards; this file
+// only says which song was folded and which setlist is on screen.
+const songFold = window.RcSongFold.createFoldState({
+  container: songListDiv,
+  storage: localStorage,
+  getProfileId: () => profileState.activeProfileId,
+  getSongs: () => lastState?.songs || [],
+  translate: (key) => t(key),
+  onChange: () => updateFoldAllButton(),
+});
 const markerEditTracker = new Map(); // commandId -> { songIndex, sectionIndex, originalName, time }
 /**
  * Locator renames the client has sent and Live has not confirmed back yet, by
@@ -1262,6 +1280,8 @@ function connect() {
     barDisplayStabilizer.reset();
     statusDot.className = 'status-dot';
     statusText.textContent = t(lastState ? 'status.reconnecting' : 'status.disconnected');
+    // Without the main computer this page knows nothing about the second one.
+    window.RcPeerStatus?.applyPeerStatus(null);
     isController = false;
     isSynchronized = false;
     transportHoldControllers.forEach((controller) => controller.reset());
@@ -1295,6 +1315,7 @@ function connect() {
         if (payload.state) {
           barDisplayStabilizer.observeState(lastState, payload.state);
           lastState = payload.state;
+          window.RcPeerStatus?.applyPeerStatus(lastState.peerStatus);
           renderPreRoll();
           quantizationConfirmation.observe(lastState.clipTriggerQuantization);
           jumpConfirmation.observeState(lastState);
@@ -1308,6 +1329,7 @@ function connect() {
         const prevActiveIdx = lastState ? lastState.activeSongIndex : -1;
         barDisplayStabilizer.observeState(lastState, payload.state);
         lastState = payload.state;
+        window.RcPeerStatus?.applyPeerStatus(lastState.peerStatus);
         renderPreRoll();
         if (profileState.profiles.length > 0) {
           profileState = { ...profileState, canMutate: !lastState.isPlaying };
@@ -1389,7 +1411,13 @@ function connect() {
         };
         const registryChanged =
           profileRegistryFingerprint(nextProfileState) !== profileRegistryFingerprint(profileState);
+        const previousProfileId = profileState.activeProfileId;
         profileState = nextProfileState;
+        if (previousProfileId !== profileState.activeProfileId) {
+          // Another setlist is on screen, and every setlist remembers which of
+          // its songs are folded on its own.
+          songFold.load();
+        }
         if (registryChanged) renderProfileState();
         else updateProfileMutationAvailability();
       } else if (payload.type === 'command_status') {
@@ -1781,17 +1809,25 @@ function cancelReorder() {
   draggedSongIdx = null;
 }
 
+/**
+ * A finger on a card must never turn into a native drag of that card.
+ *
+ * Only the grip starts a drag now, so the grip is what has to be handed back:
+ * the finger that is on the name would otherwise drag the grip of the same
+ * card the moment the browser decides a touch is a drag.
+ */
 function suppressNativeDirectDrag(target) {
   const item = target?.element?.closest?.('.song-item');
-  if (!item) return;
-  directDragSongItem = item;
-  directDragSongItem.draggable = false;
+  const grip = item?.querySelector?.('.song-drag-grip');
+  if (!grip) return;
+  directDragGrip = grip;
+  directDragGrip.draggable = false;
 }
 
 function restoreNativeDirectDrag() {
-  if (!directDragSongItem) return;
-  directDragSongItem.draggable = true;
-  directDragSongItem = null;
+  if (!directDragGrip) return;
+  directDragGrip.draggable = true;
+  directDragGrip = null;
 }
 
 function canReorderSetlist() {
@@ -1807,7 +1843,7 @@ function handleDragStart(e, idx) {
   draggedSongIdx = idx;
   draggedDropSlot = null;
   e.dataTransfer.effectAllowed = 'move';
-  e.currentTarget.classList.add('is-reordering');
+  e.currentTarget?.closest?.('.song-item')?.classList.add('is-reordering');
 }
 
 function handleDragEnd(e) {
@@ -1843,27 +1879,72 @@ function sendReorder(songTitles) {
   }
 }
 
+/**
+ * The jump target under a pointer, if there is one.
+ *
+ * The name of a song jumps to that song. The number beside it, the badges,
+ * the notes, the time, the dots and the grip do not: they are read, not
+ * pressed. A section chip still jumps to its own section.
+ */
 function resolveSetlistJumpTarget(node) {
-  const element = node?.closest?.('.song-header, .section-btn');
-  if (!element || !songListDiv.contains(element)) return null;
-  const songIndex = Number(element.dataset.song);
+  const title = node?.closest?.('.song-title');
+  if (title) return resolveSongJumpTarget(title);
+  const section = node?.closest?.('.section-btn');
+  if (!section || !songListDiv.contains(section)) return null;
+  const songIndex = Number(section.dataset.song);
   if (!Number.isInteger(songIndex)) return null;
-  if (element.classList.contains('song-header')) {
-    return { element, songIndex, sectionIndex: null };
-  }
-  const sectionIndex = Number(element.dataset.section);
+  const sectionIndex = Number(section.dataset.section);
   if (!Number.isInteger(sectionIndex)) return null;
-  return { element, songIndex, sectionIndex };
+  return { element: section, songIndex, sectionIndex };
+}
+
+/**
+ * The song a name belongs to.
+ *
+ * The name is the target, but the header is what carries the song it belongs
+ * to, and what the panel paints while the jump is on its way.
+ */
+function resolveSongJumpTarget(title) {
+  const header = title.closest('.song-header');
+  if (!header || !songListDiv.contains(header)) return null;
+  const songIndex = Number(header.dataset.song);
+  if (!Number.isInteger(songIndex)) return null;
+  return { element: header, songIndex, sectionIndex: null };
+}
+
+/**
+ * The reorder target under a pointer, if there is one.
+ *
+ * The grip on the right edge of a card is the only thing that drags a song.
+ * It never jumps anywhere, so the target it resolves carries no section.
+ */
+function resolveSetlistReorderTarget(node) {
+  const grip = node?.closest?.('.song-drag-grip');
+  if (!grip || !songListDiv.contains(grip)) return null;
+  const item = grip.closest('.song-item');
+  const songIndex = Number(item?.dataset.song);
+  if (!Number.isInteger(songIndex)) return null;
+  return { element: grip, songIndex, sectionIndex: null, reorderOnly: true };
 }
 
 function setlistTargetKey(target) {
   if (!target || !Number.isInteger(target.songIndex)) return null;
+  if (target.reorderOnly) return `grip:${target.songIndex}`;
   return `${target.songIndex}:${target.sectionIndex === null ? 'song' : target.sectionIndex}`;
 }
 
+/**
+ * Whether a held target is still worth jumping to.
+ *
+ * The name of the song that is playing is the way back to the top of that
+ * song: the playhead is somewhere inside it, so the jump is a real move. A
+ * stopped transport already sits at the song it is on, and stays quiet.
+ */
 function canHoldSetlistTarget(target) {
   if (!target?.element?.isConnected || !canUseTransport() || !lastState) return false;
-  if (target.sectionIndex === null) return lastState.activeSongIndex !== target.songIndex;
+  if (target.sectionIndex === null) {
+    return Boolean(lastState.isPlaying) || lastState.activeSongIndex !== target.songIndex;
+  }
   return (
     lastState.activeSongIndex !== target.songIndex ||
     lastState.activeSectionIndex !== target.sectionIndex
@@ -1874,11 +1955,11 @@ function mountSetlistTargetControls() {
   setlistTargetHoldController = SetlistTransportRuntime.mountDirectTargetHold({
     container: songListDiv,
     resolveTarget: resolveSetlistJumpTarget,
-    canActivate: canHoldSetlistTarget,
+    resolveReorderTarget: resolveSetlistReorderTarget,
+    canActivate: (target) => !target?.reorderOnly && canHoldSetlistTarget(target),
     targetKey: setlistTargetKey,
     onActivate: (target) => jumpTo(target.songIndex, target.sectionIndex),
-    canReorder: (target) =>
-      target?.sectionIndex === null && canHoldSetlistTarget(target) && canReorderSetlist(),
+    canReorder: (target) => target?.reorderOnly === true && canReorderSetlist(),
     onReorderStart: (target) => {
       draggedSongIdx = target.songIndex;
       draggedDropSlot = null;
@@ -1892,6 +1973,55 @@ function mountSetlistTargetControls() {
     onDirectGestureStart: suppressNativeDirectDrag,
     onDirectGestureEnd: restoreNativeDirectDrag,
   });
+}
+
+/**
+ * The double click on a song header opens the marker editor.
+ *
+ * The dots live inside the header and have a job of their own, so a double
+ * click that lands on them folds the sections of that song instead.
+ */
+function handleSongHeaderDblClick(event, songIndex) {
+  if (event?.target?.closest?.('.song-reorder-handle')) return;
+  openMarkerEditor('song', songIndex, null, event);
+}
+
+/**
+ * The label of the bar button: it says what the next click will do.
+ */
+function updateFoldAllButton() {
+  if (!foldAllSongsButton) return;
+  foldAllSongsButton.textContent = songFold.label();
+}
+
+/**
+ * The dots of every song card, and the button that folds them all.
+ *
+ * The dots are a span with a button role, so the keyboard has to be told what
+ * Enter and Space mean on them.
+ */
+function mountSongFoldControls() {
+  const songIndexOf = (element) => Number(element.closest('.song-item')?.dataset.song);
+  const dotsOf = (event) => {
+    const dots = event.target?.closest?.('.song-reorder-handle');
+    return dots && songListDiv.contains(dots) ? dots : null;
+  };
+
+  songListDiv.addEventListener('click', (event) => {
+    const dots = dotsOf(event);
+    if (!dots) return;
+    songFold.toggleSong(songIndexOf(dots));
+  });
+
+  songListDiv.addEventListener('keydown', (event) => {
+    if (event.key !== 'Enter' && event.key !== ' ') return;
+    const dots = dotsOf(event);
+    if (!dots) return;
+    event.preventDefault();
+    songFold.toggleSong(songIndexOf(dots));
+  });
+
+  foldAllSongsButton?.addEventListener('click', () => songFold.toggleAll());
 }
 
 function renderSongList(state) {
@@ -1914,6 +2044,7 @@ function renderSongList(state) {
     lastRenderedColorSignature = '';
     lastRenderedHtml = '';
     activeClassController.reset();
+    updateFoldAllButton();
     return;
   }
 
@@ -1937,18 +2068,20 @@ function renderSongList(state) {
   lastRenderedColorSignature = colorSignature;
 
   let html = '';
+  const sectionsToggleLabel = t('setlist.sectionsToggle');
+  const dragToReorderLabel = t('setlist.dragToReorder');
   state.songs.forEach((song, songIdx) => {
     const isActiveSong = songIdx === state.activeSongIndex;
     html += `
-      <div class="song-item ${isActiveSong ? 'active' : ''}"${songColorAttr(song)} data-song="${songIdx}" draggable="true" ondragstart="handleDragStart(event, ${songIdx})" ondragover="handleDragOver(event)" ondrop="handleDrop(event)" ondragend="handleDragEnd(event)">
-        <div class="song-header" data-song="${songIdx}" ondblclick="openMarkerEditor('song', ${songIdx}, null, event)">
+      <div class="song-item ${isActiveSong ? 'active' : ''}"${songColorAttr(song)} data-song="${songIdx}" ondragover="handleDragOver(event)" ondrop="handleDrop(event)" ondragend="handleDragEnd(event)">
+        <div class="song-header" data-song="${songIdx}" ondblclick="handleSongHeaderDblClick(event, ${songIdx})">
           <div class="song-info">
             <span class="song-index">${songIdx + 1}</span>
             <span class="song-title">${escapeLyricsEditorText(song.title)}</span>
             ${markerBadges(song)}
             ${songNotes(song) ? `<span class="song-notes">${escapeLyricsEditorText(songNotes(song))}</span>` : ''}
           </div>
-          <span class="song-reorder-handle" role="img" aria-label="Reorder song" title="Reorder song">&#8942;</span>
+          <span class="song-reorder-handle" role="button" tabindex="0" aria-expanded="true" aria-label="${sectionsToggleLabel}" title="${sectionsToggleLabel}">&#8942;</span>
           <span class="song-time">${formatDuration(song.durationSeconds)}</span>
         </div>
 
@@ -1971,6 +2104,7 @@ function renderSongList(state) {
         `
             : ''
         }
+        <span class="song-drag-grip" draggable="true" role="img" aria-label="${dragToReorderLabel}" title="${dragToReorderLabel}" ondragstart="handleDragStart(event, ${songIdx})">&#10303;</span>
       </div>
     `;
   });
@@ -1986,6 +2120,8 @@ function renderSongList(state) {
   setlistTargetHoldController?.cancelForRender();
   songListDiv.innerHTML = html;
   songListDiv.scrollTop = previousScrollTop;
+  songFold.apply();
+  updateFoldAllButton();
   activeClassController.reset();
   activeClassController.update(state.activeSongIndex, state.activeSectionIndex);
 }
@@ -2788,6 +2924,7 @@ i18n.subscribe(() => {
     lastRenderedHtml = '';
     renderSongList(lastState);
   }
+  updateFoldAllButton();
   renderActiveLyric();
   if (isLyricsSyncing) updateLyricsSyncUI();
   if (document.getElementById('networkErrorOverlay').classList.contains('visible')) {
@@ -2800,6 +2937,9 @@ i18n.subscribe(() => {
 globalThis.setlistStageRuntime = StageRuntime.mount({ i18n });
 mountTransportControls();
 mountSetlistTargetControls();
+mountSongFoldControls();
+songFold.load();
+updateFoldAllButton();
 connect();
 
 /* ===== Marker editor =====

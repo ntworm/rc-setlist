@@ -2,7 +2,12 @@
 // reorder, all of which are blocked while the transport is playing in any
 // mode. The capture/assert helpers live in `./index.ts` because both
 // `lyrics.ts` and `csv.ts` rely on them too.
-import { bridgeState, broadcastProfileState, selectProfile } from '../../runtime/bridge-state.js';
+import {
+  bridgeState,
+  broadcastProfileState,
+  broadcastState,
+  selectProfile,
+} from '../../runtime/bridge-state.js';
 import { OperatorError } from '../../core/operator-error.js';
 import {
   capturePersistenceScope,
@@ -113,4 +118,10 @@ export async function executeReorderCommand(
     bridgeState.wsServer?.broadcastLog('Could not save the custom song order.', 'error');
     throw err;
   }
+
+  // The order changed on disk and in the manager: publish the new setlist so
+  // the client sees it without waiting for the next poll or a refresh. This
+  // sits outside the persistence try/catch on purpose — a publication failure
+  // must not be reported as a failed write.
+  broadcastState();
 }

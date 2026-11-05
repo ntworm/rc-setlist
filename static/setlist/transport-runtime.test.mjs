@@ -178,17 +178,20 @@ test('calculateSetlistProgress preserves a known total without an active display
   );
 });
 
-test('touch reorder grip is discoverable without becoming a second button', () => {
+test('the song card gives each job its own place: the dots fold, the grip drags', () => {
   const setlistSource = fs.readFileSync(path.join(here, 'setlist.js'), 'utf8');
   const setlistCss = fs.readFileSync(path.join(here, 'setlist.css'), 'utf8');
 
   assert.match(
     setlistSource,
-    /class="song-reorder-handle"[^>]*role="img"[^>]*aria-label="Reorder song"[^>]*title="Reorder song"/,
+    /class="song-reorder-handle"[^>]*role="button"[^>]*tabindex="0"[^>]*aria-expanded="true"/,
   );
   assert.doesNotMatch(setlistSource, /song-reorder-handle"[^>]*aria-hidden/);
+  assert.match(setlistSource, /class="song-drag-grip"[^>]*draggable="true"/);
+  assert.doesNotMatch(setlistSource, /class="song-item[^"]*"[^>]*draggable="true"/);
   assert.match(setlistCss, /\.song-reorder-handle\s*\{[\s\S]*?touch-action:\s*none/);
-  assert.match(setlistCss, /\.song-reorder-handle\s*\{[\s\S]*?min-height:\s*56px/);
+  assert.match(setlistCss, /\.song-drag-grip\s*\{[\s\S]*?cursor:\s*grab/);
+  assert.match(setlistCss, /\.song-item\.sections-folded \.song-sections\s*\{\s*display:\s*none/);
 });
 
 test('resolveNavigationTarget advances, restarts, and crosses song boundaries', () => {
@@ -521,6 +524,44 @@ function targetHoldHarness() {
   };
 }
 
+/**
+ * A control that only drags: the grip on the right edge of a song card.
+ *
+ * It resolves as a reorder target and never as a jump target, so the hold
+ * machinery has to arm it without ever arming a jump.
+ */
+function reorderOnlyHarness() {
+  const clock = new FakeClock();
+  const container = new FakeTarget();
+  const documentRef = new FakeTarget();
+  documentRef.visibilityState = 'visible';
+  const windowRef = new FakeTarget();
+  const grip = new FakeTarget();
+  const gripTarget = { element: grip, songIndex: 3, sectionIndex: null, reorderOnly: true };
+  const activations = [];
+  const reorderEvents = [];
+  const runtime = loadRuntime({ setTimeout: clock.setTimeout, clearTimeout: clock.clearTimeout });
+  const controller = runtime.mountDirectTargetHold({
+    container,
+    resolveTarget: () => null,
+    resolveReorderTarget: (node) => (node === grip ? gripTarget : null),
+    canActivate: () => false,
+    canReorder: () => true,
+    onActivate: (target) => activations.push(target),
+    onReorderStart: (target) => reorderEvents.push({ type: 'start', songIndex: target.songIndex }),
+    onReorderMove: (target) => reorderEvents.push({ type: 'move', songIndex: target.songIndex }),
+    onReorderCommit: (target) =>
+      reorderEvents.push({ type: 'commit', songIndex: target.songIndex }),
+    onReorderCancel: (target) =>
+      reorderEvents.push({ type: 'cancel', songIndex: target.songIndex }),
+    documentRef,
+    windowRef,
+    setTimeoutFn: clock.setTimeout,
+    clearTimeoutFn: clock.clearTimeout,
+  });
+  return { activations, clock, container, controller, grip, reorderEvents, windowRef };
+}
+
 test('direct target hold arms at 500 ms, activates once on release, and suppresses its synthetic click', () => {
   const harness = targetHoldHarness();
   harness.container.dispatch('pointerdown', {
@@ -603,6 +644,47 @@ test('armed song movement starts and commits one reorder without activation', ()
     { type: 'move', songIndex: 1, clientY: 45 },
     { type: 'commit', songIndex: 1 },
   ]);
+});
+
+test('a reorder-only target reorders on a drag and never activates a jump', () => {
+  const harness = reorderOnlyHarness();
+  harness.container.dispatch('pointerdown', {
+    target: harness.grip,
+    pointerType: 'touch',
+    pointerId: 51,
+    isPrimary: true,
+    button: 0,
+    clientX: 10,
+    clientY: 10,
+  });
+  harness.clock.tick(500);
+  harness.windowRef.dispatch('pointermove', { pointerId: 51, clientX: 10, clientY: 30 });
+  harness.windowRef.dispatch('pointerup', { pointerId: 51 });
+
+  assert.deepEqual(harness.activations, []);
+  assert.deepEqual(harness.reorderEvents, [
+    { type: 'start', songIndex: 3 },
+    { type: 'move', songIndex: 3 },
+    { type: 'commit', songIndex: 3 },
+  ]);
+});
+
+test('a reorder-only target released without a drag does nothing at all', () => {
+  const harness = reorderOnlyHarness();
+  harness.container.dispatch('pointerdown', {
+    target: harness.grip,
+    pointerType: 'touch',
+    pointerId: 52,
+    isPrimary: true,
+    button: 0,
+    clientX: 10,
+    clientY: 10,
+  });
+  harness.clock.tick(500);
+  harness.windowRef.dispatch('pointerup', { pointerId: 52 });
+
+  assert.deepEqual(harness.activations, []);
+  assert.deepEqual(harness.reorderEvents, []);
 });
 
 test('armed section movement cancels safely without activation or reorder', () => {

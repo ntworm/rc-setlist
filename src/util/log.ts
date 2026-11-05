@@ -32,11 +32,15 @@ const LEVEL_ORDER: Record<LogLevel, number> = {
 };
 
 /**
- * Matches `token=…`, `secret=…`, `password=…`, `key=…` inside free-form strings.
- * Stops at whitespace, `&`, `"`, `'` so URLs and HTML attributes don't get
- * truncated past their actual value.
+ * Matches `token=…`, `secret=…`, `password=…`, `key=…`, `code=…` inside
+ * free-form strings. Stops at whitespace, `&`, `"`, `'` so URLs and HTML
+ * attributes don't get truncated past their actual value.
+ *
+ * `code` is here for the pairing code: it is a one-shot credential, and a log
+ * line that carries it is a log line that hands the pairing to whoever reads
+ * the log next.
  */
-const REDACT_PAIR_RE = /\b(token|secret|password|key)=([^\s&"'<>]+)/gi;
+const REDACT_PAIR_RE = /\b(token|secret|password|key|code)=([^\s&"'<>]+)/gi;
 
 /**
  * Matches Windows (`C:\…`), UNC (`\\…`), macOS (`/Users/…`) and Linux

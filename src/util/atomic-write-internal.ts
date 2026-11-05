@@ -33,6 +33,25 @@ function isUnsupportedWindowsDirectorySync(error: unknown, platform: NodeJS.Plat
   return typeof code === 'string' && WINDOWS_UNSUPPORTED_DIRECTORY_SYNC_CODES.has(code);
 }
 
+function isFsyncDisabledByPermissionModel(error: unknown): boolean {
+  if (typeof error !== 'object' || error === null) return false;
+  return 'code' in error && (error as { code?: unknown }).code === 'ERR_ACCESS_DENIED';
+}
+
+// Live's ExtensionHost runs Node with the Permission Model enabled, and there
+// Node disables the fsync API: every FileHandle.sync() rejects with
+// ERR_ACCESS_DENIED even though writing and renaming are allowed. The file is
+// still replaced atomically; it is only not flushed before the promise
+// resolves. Only sync() calls tolerate this code, so a denied open, write or
+// rename still fails the write.
+async function syncUnlessDisabled(handle: AtomicFileHandle): Promise<void> {
+  try {
+    await handle.sync();
+  } catch (error) {
+    if (!isFsyncDisabledByPermissionModel(error)) throw error;
+  }
+}
+
 async function syncContainingDirectory(
   directory: string,
   dependencies: AtomicWriteDependencies,
@@ -40,7 +59,7 @@ async function syncContainingDirectory(
   let directoryHandle: AtomicFileHandle | undefined;
   try {
     directoryHandle = await dependencies.fileSystem.open(directory, 'r');
-    await directoryHandle.sync();
+    await syncUnlessDisabled(directoryHandle);
   } catch (error) {
     // Windows can atomically publish the rename and flush the file while its
     // Node/filesystem combination still rejects opening or fsyncing a directory.
@@ -70,7 +89,7 @@ export async function atomicWriteFileWithDependencies(
     await dependencies.fileSystem.mkdir(directory, { recursive: true });
     handle = await dependencies.fileSystem.open(temporaryPath, 'wx');
     await handle.writeFile(data);
-    await handle.sync();
+    await syncUnlessDisabled(handle);
     await handle.close();
     handle = undefined;
     await dependencies.fileSystem.rename(temporaryPath, targetPath);

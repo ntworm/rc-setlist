@@ -41,7 +41,9 @@ test('Setlist count-in toggle waits for authoritative server state', async ({ pa
   await expect(button).toHaveClass(/btn-preroll-active/);
 });
 
-test('the count-in delegates playback to the server and cleans up its UI when the bar is over', async ({ page }) => {
+test('the count-in delegates playback to the server and cleans up its UI when the bar is over', async ({
+  page,
+}) => {
   await page.goto('/setlist/');
   const fixture = await page.evaluate(async () =>
     fetch('/__test__/state').then((response) => response.json()),
@@ -67,9 +69,11 @@ test('the count-in delegates playback to the server and cleans up its UI when th
 
   await page.locator('#btnPlay').click();
   await expect(page.locator('#btnPlay')).toHaveClass(/is-counting/);
-  
+
   // The client must send trigger_count_in, NOT play
-  const triggerSent = (await receivedControlMessages(page)).some((m) => m.type === 'trigger_count_in');
+  const triggerSent = (await receivedControlMessages(page)).some(
+    (m) => m.type === 'trigger_count_in',
+  );
   expect(triggerSent, 'Client must trigger count-in via server').toBe(true);
 
   const playSentDuringCount = (await receivedControlMessages(page)).some((m) => m.type === 'play');

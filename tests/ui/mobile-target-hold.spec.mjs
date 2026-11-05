@@ -91,7 +91,7 @@ test('mobile hold works while stopped, active targets stay inert, and drag cance
   );
   await emitServerMessage(page, { ...fixture, state: { ...fixture.state, isPlaying: false } });
 
-  await touchHold(page, page.locator('.song-header[data-song="2"]'), 21);
+  await touchHold(page, page.locator('.song-header[data-song="2"] .song-title'), 21);
   expect(await jumpMessages(page)).toEqual([]);
 
   const target = page.locator('.section-btn[data-song="0"][data-section="0"]');
@@ -123,7 +123,7 @@ test('mobile hold works while stopped, active targets stay inert, and drag cance
 test('armed mobile song movement previews one insertion slot and commits the adjusted order', async ({
   page,
 }) => {
-  const source = page.locator('.song-header[data-song="0"] .song-reorder-handle');
+  const source = page.locator('.song-item[data-song="0"] .song-drag-grip');
   const target = page.locator('.song-item[data-song="2"]');
   const titles = await page.locator('.song-title').allTextContents();
   const sourceBox = await source.boundingBox();
@@ -176,7 +176,7 @@ test('native Chrome touch hold then vertical drag previews and commits a song re
   await page.setViewportSize({ width: 390, height: 1_600 });
   const session = await page.context().newCDPSession(page);
   await session.send('Emulation.setTouchEmulationEnabled', { enabled: true, maxTouchPoints: 5 });
-  const source = page.locator('.song-header[data-song="0"] .song-reorder-handle');
+  const source = page.locator('.song-item[data-song="0"] .song-drag-grip');
   const target = page.locator('.song-item[data-song="2"]');
   const titles = await page.locator('.song-title').allTextContents();
   const sourceBox = await source.boundingBox();
@@ -208,8 +208,10 @@ test('native Chrome touch hold then vertical drag previews and commits a song re
 test('direct-touch drag suppression restores draggable cards for cancellation, blur, and render reset', async ({
   page,
 }) => {
-  const source = page.locator('.song-header[data-song="0"]');
-  const item = page.locator('.song-item[data-song="0"]');
+  // Native drag starts only from the grip, so the grip is what a direct
+  // touch on the song name hands back and forth.
+  const source = page.locator('.song-header[data-song="0"] .song-title');
+  const item = page.locator('.song-item[data-song="0"] .song-drag-grip');
   const begin = async (pointerId) => {
     await source.dispatchEvent('pointerdown', {
       pointerType: 'touch',
@@ -320,7 +322,7 @@ test('desktop native drag shares the insertion preview and reorder calculation',
   await page.setViewportSize({ width: 1440, height: 900 });
   const titles = await page.locator('.song-title').allTextContents();
   const previewSong = await page.evaluate(() => {
-    const source = document.querySelector('.song-item[data-song="0"]');
+    const source = document.querySelector('.song-item[data-song="0"] .song-drag-grip');
     const target = document.querySelector('.song-item[data-song="2"]');
     const transfer = new DataTransfer();
     const targetBox = target.getBoundingClientRect();

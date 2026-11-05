@@ -66,6 +66,6 @@ things that only show on a phone in a dark room.
 - **Native select lists are readable.** The setlist picker opened as a white
   list with near-white text.
 
-*For full details on installing, please refer to the [Installation Guide](INSTALL.md).*
+_For full details on installing, please refer to the [Installation Guide](INSTALL.md)._
 
-*Leia estas notas em português: [NOTAS-DA-VERSAO-0.6.1.md](pt-BR/NOTAS-DA-VERSAO-0.6.1.md).*
+_Leia estas notas em português: [NOTAS-DA-VERSAO-0.6.1.md](pt-BR/NOTAS-DA-VERSAO-0.6.1.md)._

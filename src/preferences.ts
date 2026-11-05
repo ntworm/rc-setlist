@@ -6,6 +6,27 @@ const SETLIST_DIR = '.setlist';
 const AUTO_START_FILE = 'auto-start';
 const UI_LOCALE_FILE = 'ui-locale';
 const WRITE_TEMPO_ON_JUMP_FILE = 'write-tempo-on-jump';
+const PEER_CONFIG_FILE = 'peer.json';
+
+/**
+ * The paired computer this one relays to.
+ *
+ * The fingerprint pins the certificate that was presented when the pairing
+ * happened: the link refuses to talk to a computer whose certificate changed
+ * since then.
+ *
+ * The key pin is the newer of the two. It pins the key the certificate
+ * carries, so a certificate that was issued again for a new address — which
+ * keeps the key — does not break the link. A pairing from before it holds
+ * the fingerprint alone.
+ */
+export interface PeerConfig {
+  host: string;
+  port: number;
+  peerToken: string;
+  fingerprint: string;
+  keyPin?: string;
+}
 
 function preferencePath(fileName: string): string | null {
   // 1. Try SDK storageDirectory first if context is available
@@ -141,4 +162,63 @@ export function getUiLocale(): UiLocale {
 export function setUiLocale(locale: string): boolean {
   if (locale !== 'en' && locale !== 'pt-BR') return false;
   return writePreference(UI_LOCALE_FILE, locale);
+}
+
+function isNonEmptyString(value: unknown): value is string {
+  return typeof value === 'string' && value.length > 0;
+}
+
+function isValidPort(value: unknown): boolean {
+  return typeof value === 'number' && Number.isInteger(value) && value > 0 && value <= 65535;
+}
+
+function isPeerConfig(value: unknown): value is PeerConfig {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
+  const record = value as Record<string, unknown>;
+  if (!isNonEmptyString(record.host)) return false;
+  if (!isNonEmptyString(record.peerToken)) return false;
+  if (!isNonEmptyString(record.fingerprint)) return false;
+  // The key pin is optional: a pairing from before it was written holds the
+  // fingerprint alone, and that pairing still has to load.
+  if (record.keyPin !== undefined && !isNonEmptyString(record.keyPin)) return false;
+  return isValidPort(record.port);
+}
+
+/**
+ * Reads the paired computer, or null when there is none.
+ */
+export function readPeerConfig(): PeerConfig | null {
+  const raw = readPreference(PEER_CONFIG_FILE);
+  if (!raw) return null;
+  try {
+    const parsed: unknown = JSON.parse(raw);
+    return isPeerConfig(parsed) ? parsed : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Stores the paired computer.
+ */
+export function writePeerConfig(config: PeerConfig): boolean {
+  return writePreference(PEER_CONFIG_FILE, JSON.stringify(config));
+}
+
+/**
+ * Forgets the paired computer.
+ *
+ * Reports whether no pairing is left on disk: with no place to store one
+ * there is nothing to forget, and a file that could not be removed is a
+ * pairing the next start of the server would bring back.
+ */
+export function clearPeerConfig(): boolean {
+  const preferenceFile = preferencePath(PEER_CONFIG_FILE);
+  if (!preferenceFile) return true;
+  try {
+    fs.rmSync(preferenceFile, { force: true });
+    return true;
+  } catch {
+    return false;
+  }
 }

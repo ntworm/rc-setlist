@@ -239,6 +239,81 @@ atual.
 A interface mantém o último estado válido durante reconexões breves. O aviso de
 reconexão não significa que o estado antigo acabou de ser confirmado.
 
+## Dois computadores
+
+Duas máquinas podem rodar o mesmo show: o **computador principal**, onde o
+Ableton Live mora e onde o operador fica, e um **segundo computador** que o
+segue. O segundo computador roda a mesma extensão, trabalha na mesma sessão e
+recebe os comandos de transporte que o operador dá no principal.
+
+### Parear o segundo computador
+
+1. No **segundo computador**, inicie o servidor do RC Setlist e abra o painel
+   dentro do Live. A linha **Segundo computador** mostra o endereço que as
+   outras máquinas alcançam e o botão **Gerar código**. O botão fica
+   desabilitado enquanto o servidor está parado ou rodando sem HTTPS, e a
+   linha diz o motivo: a rota de pareamento só responde sobre TLS, porque é o
+   certificado que o computador apresenta que o prende depois.
+2. Aperte **Gerar código**. O painel mostra um código de seis dígitos. Ele vale
+   por dez minutos e funciona exatamente uma vez.
+3. No **computador principal**, abra o painel dentro do Live, expanda a linha
+   **Segundo computador**, digite o endereço do segundo computador e o código
+   e aperte **Parear**.
+4. O computador principal guarda a credencial e a impressão digital do
+   certificado com que o segundo computador respondeu, e abre o link para ele.
+   A linha passa a dizer se o segundo computador está respondendo.
+
+O pareamento e o link usam a porta `4444` do segundo computador, a mesma que
+um celular abre, então o firewall dele precisa deixar essa porta entrar.
+
+**Desfazer** apaga a credencial e fecha o link. Quando o pareamento salvo não
+pode ser apagado, o painel avisa e o segundo computador continua pareado,
+porque um pareamento que ficou no disco voltaria no próximo início. Um
+certificado que mudou é avisado como tal: o link não fala com um computador
+que apresenta outro certificado, e a linha pede um pareamento novo.
+
+### Os dois computadores na mesma sessão
+
+- O **Link** do Ableton precisa estar **ligado** nos dois computadores, para
+  que eles trabalhem no mesmo Arrangement e leiam os mesmos marcadores.
+- O **Start Stop Sync** do Live precisa estar **desligado**. O RC Setlist
+  encaminha o transporte por conta própria; deixar a sincronização nativa
+  ligada comandaria o transporte duas vezes.
+- Os marcadores precisam bater. Um salto viaja como o beat em que ele pousa,
+  então o segundo computador só pousa no mesmo lugar quando os dois leem os
+  mesmos marcadores. Quando não batem, o ponto avisa.
+
+### O ponto no cabeçalho do Controle de Palco
+
+A página do Controle de Palco mostra um segundo ponto ao lado do ponto de
+conexão:
+
+- **verde** — o segundo computador está conectado e os dois leem os mesmos
+  marcadores.
+- **amarelo** — está conectado, mas os marcadores são diferentes.
+- **vermelho** — não está respondendo, ou o certificado mudou e ele precisa
+  ser pareado de novo.
+- **sem ponto** — não há segundo computador pareado, e nada é enviado para
+  lugar nenhum.
+
+### O que chega ao segundo computador
+
+Viajam para o computador pareado: **Play**, **Stop**, **salto** (como o beat
+em que ele pousa), **metrônomo**, **quantização**, **contagem**, **refresh** e
+**pânico**.
+
+Ficam no computador principal: edição do setlist, edição de marcadores, cores,
+notas, letras, perfis, ordenação e a exportação CSV. O segundo computador
+mantém o próprio setlist e os próprios perfis.
+
+### Um celular não é um segundo computador
+
+Um celular ou tablet que abre a página do Controle de Palco é um
+**controlador** do computador principal: ele entra na sessão do principal e
+vê o setlist do principal. O pareamento serve para uma segunda máquina
+rodando Live, não para um celular. O macOS é suportado como segundo
+computador de forma experimental; o Windows é a plataforma validada.
+
 ## Performance
 
 Abra `/performance` para uma tela de alto contraste, principalmente de leitura.

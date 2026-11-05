@@ -30,7 +30,7 @@ notas em cada música.
   também responde `last_event_time`, que o upstream nunca respondeu, então a
   duração total do show não precisa mais da ponte MCP.
 - **`[jump NAME]` — um marcador que entrega a reprodução a um alvo
-  *nomeado*.** Uma seção da mesma música, uma música, ou a forma
+  _nomeado_.** Uma seção da mesma música, uma música, ou a forma
   `Song > Section`. Os nomes casam com as tags removidas e ignorando
   maiúsculas; um nome sozinho resolve primeiro nas seções desta música,
   depois nos títulos das músicas, depois em todas as seções na ordem do
@@ -56,6 +56,6 @@ notas em cada música.
 - **O parser de localizadores parou de dividir `Song > Section` num `>` que
   está dentro de uma tag.**
 
-*Para detalhes completos sobre a instalação, consulte o [Guia de Instalação](INSTALL.md).*
+_Para detalhes completos sobre a instalação, consulte o [Guia de Instalação](INSTALL.md)._
 
-*Read these notes in English: [RELEASE-NOTES-0.7.0.md](../RELEASE-NOTES-0.7.0.md).*
+_Read these notes in English: [RELEASE-NOTES-0.7.0.md](../RELEASE-NOTES-0.7.0.md)._

@@ -61,6 +61,6 @@ escura, e não para mesa iluminada.
 - **O play não vira mais um símbolo de pause**, que dava a impressão de que
   clicar de novo pausaria.
 
-*Para detalhes completos sobre a migração a partir da 0.5.x, consulte o [Guia de Instalação](INSTALL.md).*
+_Para detalhes completos sobre a migração a partir da 0.5.x, consulte o [Guia de Instalação](INSTALL.md)._
 
-*Read these notes in English: [RELEASE-NOTES-0.6.0.md](../RELEASE-NOTES-0.6.0.md).*
+_Read these notes in English: [RELEASE-NOTES-0.6.0.md](../RELEASE-NOTES-0.6.0.md)._

@@ -160,6 +160,16 @@ export function decodeClientMessage(input: unknown): DecodeResult {
           ? { type: 'jump', songIndex: input.songIndex }
           : { type: 'jump', songIndex: input.songIndex, sectionIndex: input.sectionIndex },
       );
+    case 'jump_time':
+      if (!isBoundedNumber(input.time, 0, 1_000_000)) return fail('Invalid time for jump_time.');
+      if (input.section !== undefined && typeof input.section !== 'boolean') {
+        return fail('Invalid section flag for jump_time.');
+      }
+      return success({
+        type: 'jump_time',
+        time: input.time,
+        ...(input.section === undefined ? {} : { section: input.section }),
+      });
     case 'reorder':
       if (
         !Array.isArray(input.songTitles) ||

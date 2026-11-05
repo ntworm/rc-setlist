@@ -17,9 +17,9 @@ test('machine-readable metadata identifies the RC Setlist 0.7.0 release', () => 
   const manifest = JSON.parse(read('manifest.json'));
 
   assert.equal(packageJson.name, 'rc-setlist');
-  assert.equal(packageJson.version, '1.0.0');
-  assert.equal(packageLock.version, '1.0.0');
-  assert.equal(packageLock.packages?.['']?.version, '1.0.0');
+  assert.equal(packageJson.version, '1.1.0');
+  assert.equal(packageLock.version, '1.1.0');
+  assert.equal(packageLock.packages?.['']?.version, '1.1.0');
   assert.equal(packageJson.author, 'ntworm');
   assert.equal(packageJson.private, true);
   assert.equal(packageJson.license, 'PolyForm-Noncommercial-1.0.0');
@@ -30,7 +30,7 @@ test('machine-readable metadata identifies the RC Setlist 0.7.0 release', () => 
 
   assert.equal(manifest.name, 'RC Setlist');
   assert.equal(manifest.author, 'ntworm');
-  assert.equal(manifest.version, '1.0.0');
+  assert.equal(manifest.version, '1.1.0');
 });
 
 test('project license is PolyForm Noncommercial with the required notice', () => {

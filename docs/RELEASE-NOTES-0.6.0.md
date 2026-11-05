@@ -51,12 +51,12 @@ desk.
   at whatever beat playback had reached.
 - **Marker edits refresh immediately.** Cue points are polled every two seconds,
   and inside that window the editor reopened on stale values and wrote them back
-   — which made tags look like they landed at random.
+  — which made tags look like they landed at random.
 - **Every tag the panel writes now has a badge.** `[skip]` and `[click]` changed
   what happens on stage while leaving no mark on the card.
 - **Play no longer swaps to a pause glyph**, which had implied that pressing it
   again would pause.
 
-*For full details on migrating from 0.5.x, please refer to the [Installation Guide](INSTALL.md).*
+_For full details on migrating from 0.5.x, please refer to the [Installation Guide](INSTALL.md)._
 
-*Leia estas notas em português: [NOTAS-DA-VERSAO-0.6.0.md](pt-BR/NOTAS-DA-VERSAO-0.6.0.md).*
+_Leia estas notas em português: [NOTAS-DA-VERSAO-0.6.0.md](pt-BR/NOTAS-DA-VERSAO-0.6.0.md)._
