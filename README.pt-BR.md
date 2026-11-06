@@ -64,6 +64,8 @@ O **RC Setlist** é uma extensão de setlist, letra sincronizada e tela de palco
 - Sem necessidade de contas, sincronização em nuvem, analytics ou telemetria.
 - Mapeamento de teclado (Keyboard Mapping) para disparar transporte e navegação pelo teclado numérico ou alfanumérico.
 - Um segundo computador que segue o show: pareie-o pelo painel do Live e os comandos de transporte viajam para ele por um link com o certificado preso.
+- Um painel do Live com três abas, Principal, Repertórios e Rede, onde o QR, os repertórios e o segundo computador ficam juntos.
+- Pacotes de repertórios: todos os repertórios de um Live Set em um arquivo, prontos para importar de novo.
 
 ## Requisitos
 

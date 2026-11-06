@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { resolveLanAddress } from '../src/server/lan-address.js';
+import { resolveLanAddress, resolveLanSnapshot } from '../src/server/lan-address.js';
 
 // The studio machine: the lighting cable has a fixed address and no gateway,
 // and Windows lists it before the Wi-Fi that the phone is actually on.
@@ -96,4 +96,30 @@ test('a machine with only a loopback answers 127.0.0.1', async () => {
   });
   assert.equal(result.primary, '127.0.0.1');
   assert.deepEqual(result.others, []);
+});
+
+test('the snapshot names the address the panel announces and the rest', async () => {
+  const snapshot = await resolveLanSnapshot({
+    interfaces: STUDIO,
+    probe: async () => '192.168.1.50',
+    routes: async () => ({ gateways: ['192.168.1.1'], routeChecked: true }),
+  });
+  assert.equal(snapshot.primaryIp, '192.168.1.50');
+  assert.ok(snapshot.selected);
+  assert.equal(snapshot.selected.ip, '192.168.1.50');
+  assert.equal(snapshot.mode, 'auto');
+  assert.equal(snapshot.pinMissing, false);
+  assert.ok(snapshot.candidates.length >= 3);
+  assert.ok(snapshot.otherIps.includes('192.168.0.10'));
+  assert.ok(!snapshot.otherIps.includes('192.168.1.50'));
+});
+
+test('the snapshot of a machine without a network still answers one address', async () => {
+  const snapshot = await resolveLanSnapshot({
+    interfaces: { lo: STUDIO['Loopback Pseudo-Interface 1'] },
+    probe: async () => null,
+    routes: async () => ({ gateways: [], routeChecked: false }),
+  });
+  assert.equal(snapshot.primaryIp, '127.0.0.1');
+  assert.deepEqual(snapshot.otherIps, []);
 });

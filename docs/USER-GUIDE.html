@@ -112,10 +112,11 @@
     </p>
     <h2 id="interface-language">Interface language</h2>
     <p>
-      The interface starts in English. Use the language menu in the Live panel, Stage Control or
-      Performance view to select <strong>English</strong> or <strong>Português (Brasil)</strong>.
-      The choice is stored locally. Song names, section names and lyric/chord content are show data
-      and are never translated.
+      The interface starts in English. In the Live panel, press <strong>EN</strong> or
+      <strong>PT</strong> at the top right to select <strong>English</strong> or
+      <strong>Português (Brasil)</strong>; in Stage Control and in the Performance view, use the
+      language menu of the page. The choice is stored locally. Song names, section names and
+      lyric/chord content are show data and are never translated.
     </p>
     <p>
       In Stage Control, change the language only while Live is stopped and the panel is unlocked.
@@ -336,6 +337,49 @@ Song B [bpm 96]</code></pre>
       Declaring <code>[bpm N]</code> tags on song locators resolves the 16:59 discrepancy, restores
       the exact 78:41 total, and clears the <code>EST.</code> warning badge.
     </p>
+    <h2 id="the-live-panel">The Live panel</h2>
+    <p>
+      The Live panel is the window the extension opens inside Live. Its tab bar carries three tabs —
+      <strong>Main</strong>, <strong>Setlists</strong> and <strong>Network</strong> — and the
+      <strong>EN</strong> and <strong>PT</strong> buttons at the top right, which change the
+      language of the panel.
+    </p>
+    <h3 id="main">Main</h3>
+    <p>
+      The Main tab shows one QR code in the middle. It is the QR of the Stage Control by default;
+      the button beside it swaps it for the Performance Display, in the same place. Under it, the
+      active setlist, the number of songs, the show time and the number of setlists. Below the
+      numbers, the songs of the active setlist with their colours.
+    </p>
+    <p>
+      In the Stage Control, the number of a song and its whole name jump to the song. On a touch
+      screen a jump is a hold, so a stray tap never moves the show.
+    </p>
+    <h3 id="setlists-and-packages">Setlists and packages</h3>
+    <p>
+      The Setlists tab lists the setlists of the current Live Set. You can activate one, rename it,
+      delete it and create a new one. The delete asks once, in the row, and a deleted setlist stays
+      in the <strong>Deleted</strong> list, ready to be restored. All of this works while the
+      transport is stopped.
+    </p>
+    <p>
+      <strong>Export all</strong> writes one <code>.rcsetlist</code> file with every setlist of the
+      Live Set — order, song colours and notes, lyrics — into the <code>packages</code> folder of
+      the extension data. On Windows that folder is
+      <code>%LOCALAPPDATA%\Ableton\Extensions Data\ntworm.rc-setlist\packages</code>.
+      <strong>Import</strong> picks one package of that folder and adds its setlists beside the ones
+      you already have; a name that is taken gets a <code>(2)</code>, and a failure half way undoes
+      everything. The <strong>Copy path</strong> button copies the path of the folder.
+    </p>
+    <h3 id="network">Network</h3>
+    <p>
+      The Network tab keeps the address of the computer, the addresses detected on the network, the
+      protocol, the port and the certificate port. It also keeps the phone certificate, with the QR
+      that a phone reads to install the certificate once, and the
+      <strong>Second computer</strong> card, with the address, the
+      <strong>Generate code</strong> button and the <strong>Pair</strong> and
+      <strong>Unpair</strong> buttons.
+    </p>
     <h2 id="operator-workspace">Operator workspace</h2>
     <p>Open <code>/setlist</code> from the tokenized controller URL shown in the Live panel.</p>
     <ul>
@@ -416,13 +460,15 @@ Song B [bpm 96]</code></pre>
     <h3 id="pairing-the-second-computer">Pairing the second computer</h3>
     <p>
       1. On the <strong>second computer</strong>, start the RC Setlist server and open the Live
-      panel. The <strong>Second computer</strong> row shows the address other machines reach it at
+      panel. Go to the <strong>Network</strong> tab and press <strong>Show</strong> in the
+      <strong>Second computer</strong> card. The card shows the address other machines reach it at
       and a <strong>Generate code</strong> button. The button stays disabled while the server is
-      stopped or running without HTTPS, and the row says why: the pairing route only answers over
+      stopped or running without HTTPS, and the card says why: the pairing route only answers over
       TLS, because the certificate the computer presents is what pins it afterwards. 2. Press
       <strong>Generate code</strong>. The panel prints a six-digit code. It lives for ten minutes
-      and works exactly once. 3. On the <strong>main computer</strong>, open the Live panel, expand
-      the <strong>Second computer</strong> row, type the second computer&#39;s address and the code,
+      and works exactly once. 3. On the <strong>main computer</strong>, open the Live panel, go to
+      the <strong>Network</strong> tab and press <strong>Show</strong> in the
+      <strong>Second computer</strong> card. Type the second computer&#39;s address and the code,
       and press <strong>Pair</strong>. 4. The main computer stores the credential and the
       fingerprint of the certificate the second computer answered with, and opens the link to it.
       The row then says whether the second computer is answering.

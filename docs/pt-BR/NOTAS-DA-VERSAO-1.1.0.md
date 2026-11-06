@@ -1,6 +1,6 @@
 # Notas da versão — RC Setlist 1.1.0
 
-**Data de lançamento:** 2026-11-05
+**Data de lançamento:** 2026-11-06
 **Linha de versões suportada:** `1.1.x`
 **Also available in English:** [`../RELEASE-NOTES-1.1.0.md`](../RELEASE-NOTES-1.1.0.md)
 
@@ -10,6 +10,24 @@ transporte que o operador dá são encaminhados para ele por um link com o
 certificado preso.
 
 ## Destaques
+
+- **Um painel do Live novo.** Três abas, Principal, Repertórios e Rede, na
+  cara das páginas do RC Setlist (Martian Mono). A Principal mostra um QR no
+  centro, o do Controle de Palco por padrão, com um botão ao lado que troca
+  para o Performance Display no mesmo lugar; embaixo, o repertório ativo em
+  quatro números (músicas, tempo de show, repertórios) e as músicas dele com
+  as cores. A Rede guarda o endereço, o certificado do celular e o segundo
+  computador.
+- **Repertórios gerenciados pelo painel do Live.** Ativar, renomear, apagar
+  (com pergunta na própria linha, e dá para restaurar), criar e restaurar
+  repertórios com o transporte parado; o painel diz o que cada ação fez.
+- **Pacotes de repertórios.** Exportar todos grava todos os repertórios do
+  Live Set (ordem, cores e notas das músicas, letras) num arquivo
+  `.rcsetlist`; Importar traz os repertórios de um pacote para o lado dos
+  seus, numerando um nome repetido, e desfaz tudo se falhar no meio. O Live
+  só deixa a extensão gravar dentro da pasta dela, então os pacotes ficam na
+  pasta `packages` dos dados da extensão; o painel mostra o caminho com um
+  botão Copiar caminho.
 
 - **Uma linha "Segundo computador" no painel do Live.** O segundo computador
   mostra um código de seis dígitos, o computador principal digita o
@@ -57,6 +75,10 @@ edição de marcadores, cores, notas, letras, perfis, ordenação e a exportaç�
 CSV ficam no computador principal.
 
 ## Também nesta versão
+
+- **O número da música também pula para ela**, como o nome, no Controle de
+  Palco. Na tela de toque o pulo continua sendo segurar, para um toque sem
+  querer nunca mover o show.
 
 - **Recolher a lista de músicas.** Os três pontinhos ao lado do nome da
   música recolhem e reabrem as seções dela; **Recolher todas / Abrir todas**,

@@ -1,6 +1,6 @@
 # Release notes — RC Setlist 1.1.0
 
-**Release date:** 2026-11-05
+**Release date:** 2026-11-06
 **Supported version line:** `1.1.x`
 **Also available in Portuguese:** [`pt-BR/NOTAS-DA-VERSAO-1.1.0.md`](pt-BR/NOTAS-DA-VERSAO-1.1.0.md)
 
@@ -9,6 +9,23 @@ second computer follows it, and the transport commands the operator gives are
 relayed to it over a link whose certificate is pinned.
 
 ## Highlights
+
+- **A new Live panel.** Three tabs, Main, Setlists and Network, in the face
+  of the RC Setlist pages (Martian Mono). Main shows one QR in the middle,
+  the Stage Control by default, with a button beside it that swaps it for
+  the Performance Display in the same place; under it, the active setlist in
+  four numbers (songs, show time, setlists) and its songs with their colours.
+  Network keeps the address, the phone certificate and the second computer.
+- **Setlists managed from the Live panel.** Activate, rename, delete (asked
+  once in the row, and restorable), create and restore setlists while the
+  transport is stopped; the panel says what each action did.
+- **Setlist packages.** Export all writes every setlist of the Live Set
+  (order, song colours and notes, lyrics) into one `.rcsetlist` file; Import
+  brings the setlists of a package in beside the ones you have, numbering a
+  name that is taken, and takes everything back if it fails half way. Live
+  lets an extension write only inside its own folder, so packages live in
+  the `packages` folder of the extension data; the panel shows the path with
+  a Copy path button.
 
 - **A "Second computer" row in the Live panel.** The second computer prints
   a six-digit code, the main computer types its address and the code, and
@@ -53,6 +70,10 @@ marker editing, colours, notes, lyrics, profiles, ordering and the CSV
 export stay on the main computer.
 
 ## Also in this release
+
+- **The number of a song jumps to it too**, like its name, in the Stage
+  Control. On a touch screen a jump is still a hold, so a stray tap never
+  moves the show.
 
 - **Fold the song list.** The three dots beside a song name fold that song's
   sections away and bring them back; **Fold all / Unfold all** in the

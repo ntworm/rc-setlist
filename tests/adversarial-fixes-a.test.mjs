@@ -161,22 +161,27 @@ test('the panel says that the second computer has no code', async () => {
 });
 
 test('the QR code points at the scheme the server really serves', () => {
-  const html = fs.readFileSync(path.join(ROOT, 'static/panel/index.html'), 'utf8');
-  const match = html.match(/const scheme = (.+);/);
-  assert.ok(match, 'the panel must pick the scheme from the TLS flag');
-  const schemeFor = (tls) => new Function('window', `return ${match[1]}`)({ INITIAL_TLS: tls });
+  // The network tab builds the links of the phone; the scheme follows the
+  // protocol the extension reports, and the TLS flag when it reports none.
+  const source = fs.readFileSync(path.join(ROOT, 'static/panel/panel-network.js'), 'utf8');
+  const fallback = source.match(/protocol: (window\.INITIAL_TLS === false \? 'http' : 'https'),/);
+  assert.ok(fallback, 'the panel must pick the scheme from the TLS flag');
+  const schemeFor = (tls) => new Function('window', `return ${fallback[1]}`)({ INITIAL_TLS: tls });
   assert.equal(schemeFor(false), 'http');
   assert.equal(schemeFor(true), 'https');
   assert.equal(schemeFor(undefined), 'https');
-  assert.match(html, /const setlistUrl = `\$\{scheme\}:\/\//);
-  assert.match(html, /const stageUrl = `\$\{scheme\}:\/\//);
-  assert.doesNotMatch(html, /const setlistUrl = `https:/);
-  assert.doesNotMatch(html, /const stageUrl = `https:/);
+  assert.match(source, /const scheme = model\.protocol === 'https' \? 'https' : 'http';/);
+  assert.match(source, /stage: `\$\{scheme\}:\/\//);
+  assert.match(source, /performance: `\$\{scheme\}:\/\//);
+  assert.doesNotMatch(source, /stage: `https:/);
+  assert.doesNotMatch(source, /performance: `https:/);
 });
 
 test('the panel tells the page whether the server speaks TLS', () => {
   const source = fs.readFileSync(path.join(ROOT, 'src/ui/panel.ts'), 'utf8');
-  assert.match(source, /window\.INITIAL_TLS = \$\{isServerTls\(\)\};/);
+  assert.match(source, /const tls = isServerTls\(\);/);
+  assert.match(source, /protocol: tls \? 'https' : 'http',/);
+  assert.match(source, /window\.INITIAL_TLS = \$\{model\.tls\};/);
 });
 
 function fakeClient(bufferedAmount = 0) {

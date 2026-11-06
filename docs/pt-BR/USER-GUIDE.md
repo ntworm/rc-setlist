@@ -5,10 +5,11 @@ um setlist e uma tela de performance. Leia [INSTALL.md](INSTALL.md) primeiro.
 
 ## Idioma da interface
 
-A interface começa em inglês. Use o menu de idioma no painel do Live, no Controle
-de Palco ou na Performance para escolher **English** ou **Português (Brasil)**.
-A escolha fica salva localmente. Nomes de músicas, seções e conteúdo de letras ou
-cifras são dados do show e nunca são traduzidos.
+A interface começa em inglês. No painel do Live, aperte **EN** ou **PT** no alto
+à direita para escolher **English** ou **Português (Brasil)**; no Controle de
+Palco e na Performance, use o menu de idioma da página. A escolha fica salva
+localmente. Nomes de músicas, seções e conteúdo de letras ou cifras são dados do
+show e nunca são traduzidos.
 
 ## Sintaxe dos locators
 
@@ -182,6 +183,46 @@ Em um setlist de produção medido com 21 músicas e andamentos entre 93 e 166 B
 A declaração de tags `[bpm N]` nos locators de música elimina a discrepância de
 16:59, restaura o total exato de 78:41 e limpa o indicador de aviso `EST.`.
 
+## O painel do Live
+
+O painel do Live é a janela que a extensão abre dentro do Live. A barra de abas
+traz três abas — **Principal**, **Repertórios** e **Rede** — e os botões **EN** e
+**PT** no alto à direita, que mudam o idioma do painel.
+
+### Principal
+
+A aba Principal mostra um QR no meio. Por padrão, é o QR do Controle de Palco;
+o botão ao lado troca pelo Performance Display, no mesmo lugar. Embaixo, o
+repertório ativo, o número de músicas, o tempo de show e o número de
+repertórios. Abaixo dos números, as músicas do repertório ativo com suas cores.
+
+No Controle de Palco, o número da música e o nome inteiro dela pulam para a
+música. Na tela de toque, o pulo continua sendo segurar, para um toque sem
+querer nunca mover o show.
+
+### Repertórios e pacotes
+
+A aba Repertórios lista os repertórios do Live Set atual. Você pode ativar um,
+renomear, apagar e criar um novo. O apagar pergunta uma vez, na própria linha, e
+o repertório apagado fica na lista **Apagados**, pronto para ser restaurado.
+Tudo isso funciona com o transporte parado.
+
+**Exportar todos** grava um arquivo `.rcsetlist` com todos os repertórios do
+Live Set — ordem, cores e notas das músicas, letras — na pasta `packages` dos
+dados da extensão. No Windows, essa pasta é
+`%LOCALAPPDATA%\Ableton\Extensions Data\ntworm.rc-setlist\packages`.
+**Importar** escolhe um pacote dessa pasta e acrescenta os repertórios dele ao
+lado dos que você já tem; um nome repetido ganha um `(2)`, e uma falha no meio
+desfaz tudo. O botão **Copiar caminho** copia o caminho da pasta.
+
+### Rede
+
+A aba Rede guarda o endereço do computador, os endereços detectados na rede, o
+protocolo, a porta e a porta do certificado. Ela também guarda o certificado do
+celular, com o QR que o celular lê para instalar o certificado uma vez, e o
+cartão **Segundo computador**, com o endereço, o botão **Gerar código** e os
+botões **Parear** e **Desfazer**.
+
 ## Controle de Palco
 
 Abra `/setlist` pela URL de controle com token mostrada no painel do Live.
@@ -249,16 +290,17 @@ recebe os comandos de transporte que o operador dá no principal.
 ### Parear o segundo computador
 
 1. No **segundo computador**, inicie o servidor do RC Setlist e abra o painel
-   dentro do Live. A linha **Segundo computador** mostra o endereço que as
-   outras máquinas alcançam e o botão **Gerar código**. O botão fica
-   desabilitado enquanto o servidor está parado ou rodando sem HTTPS, e a
-   linha diz o motivo: a rota de pareamento só responde sobre TLS, porque é o
-   certificado que o computador apresenta que o prende depois.
+   dentro do Live. Vá na aba **Rede** e aperte **Mostrar** para abrir o cartão
+   **Segundo computador**. O cartão mostra o endereço que as outras máquinas
+   alcançam e o botão **Gerar código**. O botão fica desabilitado enquanto o
+   servidor está parado ou rodando sem HTTPS, e o cartão diz o motivo: a rota
+   de pareamento só responde sobre TLS, porque é o certificado que o computador
+   apresenta que o prende depois.
 2. Aperte **Gerar código**. O painel mostra um código de seis dígitos. Ele vale
    por dez minutos e funciona exatamente uma vez.
-3. No **computador principal**, abra o painel dentro do Live, expanda a linha
-   **Segundo computador**, digite o endereço do segundo computador e o código
-   e aperte **Parear**.
+3. No **computador principal**, abra o painel dentro do Live, vá na aba **Rede**
+   e aperte **Mostrar** para abrir o cartão **Segundo computador**. Digite o
+   endereço do segundo computador e o código e aperte **Parear**.
 4. O computador principal guarda a credencial e a impressão digital do
    certificado com que o segundo computador respondeu, e abre o link para ele.
    A linha passa a dizer se o segundo computador está respondendo.

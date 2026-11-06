@@ -199,22 +199,24 @@
       en: 'The code lives for ten minutes and works once.',
       'pt-BR': 'O código vale por dez minutos e funciona uma vez.',
     },
-    'panel.certTitle': { en: 'Phone certificate', 'pt-BR': 'Certificado do celular' },
+    'panel.certTitle': { en: 'Certificate', 'pt-BR': 'Certificado' },
     'panel.certStatus': {
-      en: 'Install once on each phone to stop the browser warning',
-      'pt-BR': 'Instale uma vez em cada celular e o aviso do navegador some',
+      en: 'Install once on each phone and computer to stop the browser warning',
+      'pt-BR': 'Instale uma vez em cada celular e computador e o aviso do navegador some',
     },
     'panel.certStep1': {
-      en: '1. Read the QR with the phone and download the certificate',
-      'pt-BR': '1. Leia o QR com o celular e baixe o certificado',
+      en: '1. Read the QR with the phone, or open the address on the computer, and download the certificate',
+      'pt-BR':
+        '1. Leia o QR com o celular, ou abra o endereço no computador, e baixe o certificado',
     },
     'panel.certStep2': {
-      en: '2. Install it as a CA certificate (the page shows where)',
-      'pt-BR': '2. Instale como certificado de CA (a página mostra onde)',
+      en: '2. Install it as a trusted CA certificate (the page shows how on Android, iPhone, Windows and Mac)',
+      'pt-BR':
+        '2. Instale como certificado de CA confiável (a página mostra como no Android, iPhone, Windows e Mac)',
     },
     'panel.certStep3': {
-      en: '3. Open the Stage Control again: no warning',
-      'pt-BR': '3. Abra o Stage Control de novo: sem aviso',
+      en: '3. Reopen the browser and the Stage Control: no warning',
+      'pt-BR': '3. Reabra o navegador e o Stage Control: sem aviso',
     },
 
     'peer.dotLabel': { en: 'Second computer', 'pt-BR': 'Segundo computador' },

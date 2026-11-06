@@ -5,10 +5,11 @@ display. Read [INSTALL.md](INSTALL.md) before this guide.
 
 ## Interface language
 
-The interface starts in English. Use the language menu in the Live panel, Stage
-Control or Performance view to select **English** or **Português (Brasil)**. The
-choice is stored locally. Song names, section names and lyric/chord content are
-show data and are never translated.
+The interface starts in English. In the Live panel, press **EN** or **PT** at the
+top right to select **English** or **Português (Brasil)**; in Stage Control and
+in the Performance view, use the language menu of the page. The choice is stored
+locally. Song names, section names and lyric/chord content are show data and are
+never translated.
 
 In Stage Control, change the language only while Live is stopped and the panel
 is unlocked. The selector is disabled during playback or while the safety lock
@@ -181,6 +182,46 @@ In a measured 21-song production set with tempo automations spanning 93 to 166 B
 Declaring `[bpm N]` tags on song locators resolves the 16:59 discrepancy, restores
 the exact 78:41 total, and clears the `EST.` warning badge.
 
+## The Live panel
+
+The Live panel is the window the extension opens inside Live. Its tab bar
+carries three tabs — **Main**, **Setlists** and **Network** — and the **EN** and
+**PT** buttons at the top right, which change the language of the panel.
+
+### Main
+
+The Main tab shows one QR code in the middle. It is the QR of the Stage Control
+by default; the button beside it swaps it for the Performance Display, in the
+same place. Under it, the active setlist, the number of songs, the show time
+and the number of setlists. Below the numbers, the songs of the active setlist
+with their colours.
+
+In the Stage Control, the number of a song and its whole name jump to the song.
+On a touch screen a jump is a hold, so a stray tap never moves the show.
+
+### Setlists and packages
+
+The Setlists tab lists the setlists of the current Live Set. You can activate
+one, rename it, delete it and create a new one. The delete asks once, in the
+row, and a deleted setlist stays in the **Deleted** list, ready to be restored.
+All of this works while the transport is stopped.
+
+**Export all** writes one `.rcsetlist` file with every setlist of the Live
+Set — order, song colours and notes, lyrics — into the `packages` folder of the
+extension data. On Windows that folder is
+`%LOCALAPPDATA%\Ableton\Extensions Data\ntworm.rc-setlist\packages`. **Import**
+picks one package of that folder and adds its setlists beside the ones you
+already have; a name that is taken gets a `(2)`, and a failure half way undoes
+everything. The **Copy path** button copies the path of the folder.
+
+### Network
+
+The Network tab keeps the address of the computer, the addresses detected on
+the network, the protocol, the port and the certificate port. It also keeps the
+phone certificate, with the QR that a phone reads to install the certificate
+once, and the **Second computer** card, with the address, the **Generate code**
+button and the **Pair** and **Unpair** buttons.
+
 ## Operator workspace
 
 Open `/setlist` from the tokenized controller URL shown in the Live panel.
@@ -248,16 +289,17 @@ and receives the transport commands the operator gives on the main one.
 ### Pairing the second computer
 
 1. On the **second computer**, start the RC Setlist server and open the Live
-   panel. The **Second computer** row shows the address other machines reach
-   it at and a **Generate code** button. The button stays disabled while the
-   server is stopped or running without HTTPS, and the row says why: the
-   pairing route only answers over TLS, because the certificate the computer
-   presents is what pins it afterwards.
+   panel. Go to the **Network** tab and press **Show** in the **Second
+   computer** card. The card shows the address other machines reach it at and a
+   **Generate code** button. The button stays disabled while the server is
+   stopped or running without HTTPS, and the card says why: the pairing route
+   only answers over TLS, because the certificate the computer presents is what
+   pins it afterwards.
 2. Press **Generate code**. The panel prints a six-digit code. It lives for
    ten minutes and works exactly once.
-3. On the **main computer**, open the Live panel, expand the **Second
-   computer** row, type the second computer's address and the code, and press
-   **Pair**.
+3. On the **main computer**, open the Live panel, go to the **Network** tab and
+   press **Show** in the **Second computer** card. Type the second computer's
+   address and the code, and press **Pair**.
 4. The main computer stores the credential and the fingerprint of the
    certificate the second computer answered with, and opens the link to it.
    The row then says whether the second computer is answering.

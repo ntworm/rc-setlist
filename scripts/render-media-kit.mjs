@@ -107,10 +107,10 @@ function localizeTemplate(template, locale) {
             'The real interface: songs and sections, guarded controls, show state and synchronized lyrics.',
             'A interface real: músicas e seções, controles protegidos, estado do show e letras sincronizadas.',
           ],
-          ['PRODUCT TRUTH · v0.7.0 · LOCAL FIRST', 'PRODUTO REAL · v0.7.0 · LOCAL PRIMEIRO'],
+          ['PRODUCT TRUTH · v1.1.0 · LOCAL FIRST', 'PRODUTO REAL · v1.1.0 · LOCAL PRIMEIRO'],
           [
-            'ONE .ABLX · NO ACCOUNT · NO TELEMETRY · v0.7.0',
-            'UM .ABLX · SEM CONTA · SEM TELEMETRIA · v0.7.0',
+            'ONE .ABLX · NO ACCOUNT · NO TELEMETRY · v1.1.0',
+            'UM .ABLX · SEM CONTA · SEM TELEMETRIA · v1.1.0',
           ],
           ['From locator<br><span>to stage.</span>', 'Do localizador<br><span>ao palco.</span>'],
           [
@@ -152,7 +152,11 @@ function localizeTemplate(template, locale) {
           ['LOCAL FIRST · BROWSER BASED · NO CLOUD', 'LOCAL PRIMEIRO · NO NAVEGADOR · SEM NUVEM'],
         ])
       : new Map();
-  let localized = template.replace('<html lang="en">', `<html lang="${locale}">`);
+  // Prettier writes the line breaks of the template as <br />; the
+  // translations are keyed on <br>.
+  let localized = template
+    .replaceAll('<br />', '<br>')
+    .replace('<html lang="en">', `<html lang="${locale}">`);
   for (const [source, target] of replacements) localized = localized.replaceAll(source, target);
   return localized;
 }

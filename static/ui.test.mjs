@@ -340,13 +340,27 @@ test('Static UI Panel: separates server status from actionable OSC diagnostics',
   const panelHtml = fs.readFileSync(path.join(__dirname, 'panel', 'index.html'), 'utf8');
   const i18nSource = fs.readFileSync(path.join(__dirname, 'shared', 'i18n.js'), 'utf8');
 
+  // The panel is one page and a handful of scripts: the source of the panel
+  // is all of them together.
+  const panelFiles = [
+    'index.html',
+    'panel-shell.js',
+    'panel-copy.js',
+    'panel-network.js',
+    'panel-project.js',
+    'panel.js',
+  ];
+  const panelSource = panelFiles
+    .map((file) => fs.readFileSync(path.join(__dirname, 'panel', file), 'utf8'))
+    .join('\n');
+
   for (const marker of ['oscStatusDot', 'oscStatusText', 'btnDiagnoseOsc']) {
     assert.match(panelHtml, new RegExp(`id="${marker}"`));
   }
   for (const state of ['stopped', 'port-conflict', 'no-reply', 'responding', 'stale']) {
-    assert.match(panelHtml, new RegExp(`['"]${state}['"]`));
+    assert.match(panelSource, new RegExp(`['"]${state}['"]`));
   }
-  assert.match(panelHtml, /diagnose-osc/);
+  assert.match(panelSource, /diagnose-osc/);
   assert.doesNotMatch(panelHtml, /certificate-notice|oscInstallHint/);
   assert.doesNotMatch(panelHtml, /ERR_CERT_AUTHORITY_INVALID|User Remote Scripts/);
   assert.doesNotMatch(panelHtml, /id="statusText"[^>]*data-i18n=/);
@@ -357,6 +371,22 @@ test('Static UI Panel: separates server status from actionable OSC diagnostics',
   assert.doesNotMatch(i18nSource, /Remote Scripts\/AbletonOSC/);
   assert.match(i18nSource, /Check OSC/);
   assert.match(i18nSource, /Verificar OSC/);
+});
+
+test('Static UI Panel: the three sections of the panel are real tabs', () => {
+  const panelHtml = fs.readFileSync(path.join(__dirname, 'panel', 'index.html'), 'utf8');
+
+  assert.match(panelHtml, /role="tablist"/);
+  for (const tab of ['tabMain', 'tabSetlist', 'tabNetwork']) {
+    assert.match(panelHtml, new RegExp(`id="${tab}"`));
+    assert.match(panelHtml, new RegExp(`id="${tab}"[^>]*role="tab"`));
+  }
+  for (const pane of ['panelMain', 'panelSetlist', 'panelNetwork']) {
+    assert.match(panelHtml, new RegExp(`id="${pane}"[^>]*role="tabpanel"`));
+  }
+  // The panel is a page of its own: no inline script and no inline style.
+  assert.doesNotMatch(panelHtml, /<style(?:\s[^>]*)?>/i);
+  assert.doesNotMatch(panelHtml, /<script(?![^>]*\bsrc=)[^>]*>/i);
 });
 
 test('Static UI Setlist: omits handlers for controls removed from the operator surface', () => {
@@ -385,8 +415,14 @@ test('Static UI: product surfaces expose English and Brazilian Portuguese', () =
   assert.match(i18nSource, /Stage Control/);
   assert.match(i18nSource, /Controle de palco/);
 
-  for (const html of [panelHtml, performanceHtml, setlistHtml]) {
+  for (const html of [performanceHtml, setlistHtml]) {
     assert.match(html, /id="languageSelect"/);
+  }
+  // The panel inside Live chooses the language with two buttons, like the
+  // panel of RC Surface.
+  assert.match(panelHtml, /id="langEn"[^>]*data-locale="en"/);
+  assert.match(panelHtml, /id="langPt"[^>]*data-locale="pt-BR"/);
+  for (const html of [panelHtml, performanceHtml, setlistHtml]) {
     assert.match(html, /src="\.\.\/shared\/i18n\.js"/);
   }
 });

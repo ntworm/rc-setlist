@@ -83,7 +83,7 @@ test('runtime and static surfaces use only the RC Setlist product name', () => {
     return /Ableton Setlist Bridge|ableton-setlist-bridge|worm\.ableton/i.test(content);
   });
   assert.deepEqual(stale, []);
-  assert.match(read('static/panel/index.html'), />RC Setlist</);
+  assert.match(read('static/panel/index.html'), /<title>RC Setlist\b/);
   assert.match(read('static/setlist/index.html'), /<title>RC Setlist\b/);
   assert.match(read('static/performance/index.html'), /<title>RC Setlist\b/);
 });

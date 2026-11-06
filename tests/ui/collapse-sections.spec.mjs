@@ -118,18 +118,28 @@ test('the dots and the grip never jump and never open the marker editor', async 
   await expect(page.locator('#markerEditor')).toBeHidden();
 });
 
-test('only the song name jumps to the song', async ({ page }) => {
+test('the number and the name of a song jump to it, the time does not', async ({ page }) => {
   await openSetlist(page);
   const header = page.locator('.song-header[data-song="2"]');
 
   await touchHold(page, header.locator('.song-time'), 41);
-  await touchHold(page, header.locator('.song-index'), 42);
   expect(await messagesOfType(page, 'jump')).toEqual([]);
 
-  await touchHold(page, header.locator('.song-title'), 43);
+  await touchHold(page, header.locator('.song-index'), 42);
   await expect
     .poll(async () => (await messagesOfType(page, 'jump')).map((message) => message.songIndex))
     .toEqual([2]);
+});
+
+test('a click anywhere along the name of a song jumps to it', async ({ page }) => {
+  await openSetlist(page);
+  const title = page.locator('.song-header[data-song="1"] .song-title');
+  const box = await title.boundingBox();
+  // The last letters, not the first: the whole name is the target.
+  await page.mouse.click(box.x + box.width - 3, box.y + box.height / 2);
+  await expect
+    .poll(async () => (await messagesOfType(page, 'jump')).map((message) => message.songIndex))
+    .toEqual([1]);
 });
 
 test('the grip sits on the right edge of the card and is the only native drag source', async ({

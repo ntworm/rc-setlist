@@ -5,1218 +5,522 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>RC Setlist &mdash; Control Panel</title>
     <link rel="stylesheet" href="../shared/ui-system.css" />
-    <style>
-      :root {
-        --ui-bg: #1c1c1e;
-        --ui-surface: rgba(255, 255, 255, 0.04);
-        --ui-surface-raised: #252529;
-        --ui-rule: rgba(255, 255, 255, 0.08);
-        --ui-rule-strong: rgba(255, 255, 255, 0.16);
-        --ui-text: #f4f4f7;
-        --ui-text-2: #8e8e9f;
-        --ui-accent: #ffa826;
-        --ui-success: #30d158;
-        --ui-danger: #ff453a;
-
-        --bg: var(--ui-bg, #1c1c1e);
-        --card-bg: var(--ui-surface, rgba(255, 255, 255, 0.04));
-        --border: var(--ui-rule, rgba(255, 255, 255, 0.08));
-        --border-strong: var(--ui-rule-strong, rgba(255, 255, 255, 0.16));
-        --text: var(--ui-text, #f4f4f7);
-        --text-muted: var(--ui-text-2, #8e8e9f);
-        --accent: var(--ui-accent, #ffa826);
-        --success: var(--ui-success, #30d158);
-        --warning: var(--ui-accent, #ffa826);
-        --danger: var(--ui-danger, #ff453a);
-      }
-
-      * {
-        box-sizing: border-box;
-        margin: 0;
-        padding: 0;
-      }
-
-      /* The panel lives in a fixed 760x600 modal. With the RC Bridge
-         diagnostics, the estimated-duration notice and the second computer
-         card open at the same time the content no longer fits: the panel
-         scrolls instead of squeezing the QR code into a stripe. */
-      body {
-        background-color: var(--bg, #1c1c1e);
-        color: var(--text, #f4f4f7);
-        font-family:
-          -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-        font-size: 12px;
-        border: 1px solid var(--border, rgba(255, 255, 255, 0.08));
-        padding: 8px 10px;
-        display: flex;
-        flex-direction: column;
-        gap: 6px;
-        height: 100vh;
-        min-height: 0;
-        overflow-y: auto;
-        overflow-x: hidden;
-      }
-
-      /* Nothing inside the panel is allowed to shrink: the QR code keeps its
-         proportions whatever else the operator has open. */
-      body > * {
-        flex-shrink: 0;
-      }
-
-      [hidden] {
-        display: none !important;
-      }
-
-      h2 {
-        font-size: 15px;
-        font-weight: 700;
-        color: #fff;
-      }
-
-      .subtitle {
-        font-size: 10px;
-        color: var(--text-muted);
-        text-transform: uppercase;
-        letter-spacing: 0.08em;
-      }
-
-      .panel-heading {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 12px;
-      }
-
-      /* The language and the way out of the panel sit together. */
-      .panel-heading-actions {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-      }
-
-      .language-control {
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        flex: 0 0 auto;
-      }
-
-      .language-control > span {
-        color: var(--text-muted);
-        font-size: 10px;
-      }
-
-      .language-select {
-        min-height: 26px;
-        border: 1px solid var(--border);
-        border-radius: 6px;
-        background: #252529;
-        color: var(--text);
-        padding: 3px 8px;
-        font-size: 11px;
-      }
-
-      /* Cards: every block of the panel is one surface with one job. */
-      .card {
-        background: var(--card-bg);
-        border: 1px solid var(--border);
-        border-radius: 8px;
-        padding: 8px 10px;
-        display: flex;
-        flex-direction: column;
-        gap: 6px;
-        flex-shrink: 0;
-      }
-
-      .card-title {
-        font-size: 10px;
-        font-weight: 700;
-        color: var(--text-muted);
-        text-transform: uppercase;
-        letter-spacing: 0.08em;
-      }
-
-      /* Server, OSC and the server buttons: one card, one place to look.
-         The two status lines stack on the left, the buttons sit on the
-         right, and the hints below use the full width of the card. */
-      .status-bar {
-        display: grid;
-        grid-template-columns: minmax(0, 1fr) auto;
-        column-gap: 12px;
-        row-gap: 4px;
-        align-items: start;
-      }
-
-      .status-main {
-        display: flex;
-        flex-direction: column;
-        gap: 4px;
-        min-width: 0;
-      }
-
-      .status-indicator {
-        display: flex;
-        flex-direction: row;
-        align-items: center;
-        gap: 6px;
-        min-width: 0;
-      }
-
-      .status-copy {
-        min-width: 0;
-      }
-
-      .status-dot {
-        width: 8px;
-        height: 8px;
-        background-color: var(--danger);
-        border-radius: 50%;
-        flex-shrink: 0;
-      }
-
-      .status-dot.active {
-        background-color: var(--success);
-      }
-
-      .status-dot.warning {
-        background-color: var(--warning);
-      }
-
-      .status-dot.neutral {
-        background-color: var(--text-muted);
-      }
-
-      .status-text {
-        font-weight: 700;
-        font-size: 11px;
-      }
-
-      .status-text.active {
-        color: var(--success);
-      }
-
-      .status-text.inactive {
-        color: var(--danger);
-      }
-
-      .status-text.warning {
-        color: var(--warning);
-      }
-
-      .status-text.neutral {
-        color: var(--text-muted);
-      }
-
-      .status-port {
-        font-size: 11px;
-        color: var(--text-muted);
-        white-space: nowrap;
-      }
-
-      /* The port belongs to the server line: a dot separates it from the
-         state instead of a row of its own. */
-      .status-port::before {
-        content: '\00B7';
-        margin-right: 6px;
-      }
-
-      .server-actions {
-        display: flex;
-        gap: 4px;
-        align-items: center;
-        flex: 0 0 auto;
-        flex-wrap: nowrap;
-      }
-
-      .duration-row {
-        align-items: baseline;
-      }
-
-      .notice-row {
-        display: flex;
-        align-items: flex-start;
-        gap: 8px;
-      }
-
-      /* Rows that use the whole card: the bridge and the migration hint. */
-      .status-wide {
-        grid-column: 1 / -1;
-      }
-
-      .duration-row .duration-est-badge {
-        font-size: 9px;
-        padding: 1px 4px;
-      }
-
-      .setting-hint {
-        font-size: 10px;
-        color: var(--text-muted);
-        margin-top: 1px;
-        line-height: 1.25;
-      }
-
-      .btn {
-        background: rgba(255, 255, 255, 0.06);
-        color: #fff;
-        border: 1px solid var(--border);
-        padding: 0 10px;
-        border-radius: 6px;
-        cursor: pointer;
-        font-size: 11px;
-        font-weight: 600;
-        text-decoration: none;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        flex: 0 0 auto;
-        height: 24px;
-        white-space: nowrap;
-        transition: all 0.2s;
-      }
-
-      .btn:hover:not(:disabled) {
-        background: rgba(255, 255, 255, 0.12);
-        border-color: rgba(255, 255, 255, 0.2);
-      }
-
-      .btn:disabled {
-        opacity: 0.35;
-        cursor: not-allowed;
-      }
-
-      .btn.primary {
-        background: var(--accent, #ffa826);
-        color: #121214;
-        border-color: transparent;
-        font-weight: 700;
-      }
-
-      .btn.primary:hover:not(:disabled) {
-        background: #ffb84d;
-      }
-
-      /* Access: the QR codes. Stage Control is what the operator needs
-         first, so it is what the panel opens with. */
-      .access-head {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 8px;
-      }
-
-      .tab-group {
-        display: inline-flex;
-        align-items: stretch;
-        border: 1px solid var(--border);
-        border-radius: 6px;
-        background: rgba(255, 255, 255, 0.03);
-        overflow: hidden;
-        flex: 0 0 auto;
-      }
-
-      .tab {
-        appearance: none;
-        border: 0;
-        background: transparent;
-        color: var(--text-muted);
-        font-size: 10px;
-        font-weight: 700;
-        letter-spacing: 0.04em;
-        text-transform: uppercase;
-        padding: 0 10px;
-        min-height: 22px;
-        cursor: pointer;
-      }
-
-      .tab + .tab {
-        border-left: 1px solid var(--border);
-      }
-
-      .tab.is-active {
-        background: var(--accent, #ffa826);
-        color: #121214;
-      }
-
-      .qr-grid {
-        display: flex;
-        flex-direction: column;
-        gap: 8px;
-        flex-shrink: 0;
-      }
-
-      .qr-panel {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        flex-shrink: 0;
-      }
-
-      .qr-copy {
-        display: flex;
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 8px;
-        min-width: 0;
-        flex: 1 1 auto;
-      }
-
-      /* The QR code is square, always. Fixed width and height, a locked
-         aspect ratio and no shrinking: the frame is what the operator
-         scans, and a flattened code is a code nobody can scan. */
-      .qr-frame {
-        background: #fff;
-        padding: 4px;
-        border-radius: 6px;
-        width: 104px;
-        height: 104px;
-        min-width: 104px;
-        min-height: 104px;
-        aspect-ratio: 1 / 1;
-        flex: 0 0 auto;
-        flex-shrink: 0;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        overflow: hidden;
-      }
-
-      .qr-frame canvas,
-      .qr-frame img {
-        width: 96px !important;
-        height: 96px !important;
-        min-width: 96px;
-        min-height: 96px;
-        aspect-ratio: 1 / 1;
-        flex-shrink: 0;
-        display: block;
-      }
-
-      .qr-url {
-        font-family: ui-monospace, Consolas, monospace;
-        font-size: 10px;
-        color: var(--text-muted);
-        word-break: break-all;
-        max-width: 100%;
-        user-select: all;
-        line-height: 1.3;
-      }
-
-      .placeholder {
-        padding: 14px 12px;
-        text-align: center;
-        color: var(--text-muted);
-      }
-
-      /* Two settings side by side: half the height of two stacked rows. */
-      .auto-start-row {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        align-items: start;
-        gap: 12px;
-        flex-shrink: 0;
-      }
-
-      .setting {
-        min-width: 0;
-      }
-
-      .setting-head {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 8px;
-      }
-
-      .setting-label {
-        font-weight: 600;
-        font-size: 12px;
-      }
-
-      .setting-toggle {
-        min-width: 52px;
-        height: 22px;
-        padding: 0 10px;
-        font-size: 10px;
-      }
-
-      .setting .setting-hint {
-        display: -webkit-box;
-        -webkit-box-orient: vertical;
-        -webkit-line-clamp: 2;
-        line-clamp: 2;
-        overflow: hidden;
-        text-overflow: ellipsis;
-      }
-
-      /* The second computer: one line that says whether the link is up, with
-         the pairing controls folded away. */
-      .peer-row {
-        display: flex;
-        flex-wrap: wrap;
-        align-items: center;
-        gap: 8px;
-      }
-
-      .peer-head {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        flex: 1 1 100%;
-        min-width: 0;
-      }
-
-      .peer-title {
-        font-weight: 600;
-        font-size: 11px;
-        white-space: nowrap;
-      }
-
-      .peer-status {
-        font-size: 10px;
-        color: var(--text-muted);
-        flex: 1 1 auto;
-        min-width: 0;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-      }
-
-      /* One compact button size for the peer card, the status card and the
-         heading: the panel has to fit the 760x600 modal. */
-      .peer-row .btn,
-      .status-bar .btn,
-      .panel-heading .btn {
-        flex: 0 0 auto;
-        height: 22px;
-        padding: 0 10px;
-        font-size: 10px;
-      }
-
-      .peer-details {
-        display: flex;
-        flex-direction: column;
-        gap: 6px;
-        flex: 1 0 100%;
-        max-height: 128px;
-        overflow-y: auto;
-      }
-
-      /* The phone certificate: the QR of the install page beside the steps
-         the operator follows on the phone. */
-      .cert-details {
-        display: flex;
-        flex-direction: row;
-        align-items: center;
-        gap: 10px;
-      }
-
-      .cert-copy {
-        display: flex;
-        flex-direction: column;
-        gap: 4px;
-        min-width: 0;
-      }
-
-      /* The code is drawn on white, so the phone reads it against a
-         background of its own. */
-      #qrCert {
-        background: #fff;
-        padding: 4px;
-        border-radius: 6px;
-        width: 80px;
-        height: 80px;
-        min-width: 80px;
-        min-height: 80px;
-        aspect-ratio: 1 / 1;
-        flex: 0 0 auto;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        overflow: hidden;
-      }
-
-      #qrCert canvas {
-        width: 100%;
-        height: 100%;
-      }
-
-      .peer-row > .setting-hint {
-        flex: 1 0 100%;
-      }
-
-      /* An empty hint must not leave a blank line under the head. */
-      .peer-row > .setting-hint:empty {
-        display: none;
-      }
-
-      .peer-field-row,
-      .peer-local-row {
-        display: flex;
-        align-items: center;
-        flex-wrap: wrap;
-        gap: 8px;
-      }
-
-      .peer-field {
-        display: flex;
-        align-items: center;
-        gap: 4px;
-        font-size: 10px;
-        color: var(--text-muted);
-      }
-
-      .peer-field input {
-        width: 104px;
-        min-width: 0;
-        background: #1f1f23;
-        border: 1px solid var(--border);
-        border-radius: 4px;
-        color: var(--text);
-        padding: 3px 6px;
-        font-size: 11px;
-      }
-
-      .peer-local-label {
-        font-size: 10px;
-        color: var(--text-muted);
-      }
-
-      .peer-local-address,
-      .peer-active-code {
-        font-family: ui-monospace, Consolas, monospace;
-        font-size: 11px;
-        color: var(--text);
-      }
-    </style>
+    <link rel="stylesheet" href="panel.css" />
   </head>
   <body>
-    <header class="panel-heading">
-      <div>
-        <span class="subtitle">RC Setlist</span>
-        <h2 data-i18n="panel.title">Web Panel Access</h2>
+    <nav class="tab-bar" id="panelTabs" role="tablist" data-rc-text-aria="tabs.label">
+      <button
+        class="tab"
+        id="tabMain"
+        type="button"
+        role="tab"
+        aria-selected="true"
+        aria-controls="panelMain"
+        data-rc-text="tab.main"
+      >
+        Main
+      </button>
+      <button
+        class="tab"
+        id="tabSetlist"
+        type="button"
+        role="tab"
+        aria-selected="false"
+        aria-controls="panelSetlist"
+        tabindex="-1"
+      >
+        <span data-rc-text="tab.setlist">Setlists</span>
+        <span class="tab-count" id="tabSetlistCount">0</span>
+      </button>
+      <button
+        class="tab"
+        id="tabNetwork"
+        type="button"
+        role="tab"
+        aria-selected="false"
+        aria-controls="panelNetwork"
+        tabindex="-1"
+        data-rc-text="tab.network"
+      >
+        Network
+      </button>
+      <span class="tab-bar-gap"></span>
+      <div class="lang-seg" role="group" data-rc-text-aria="common.language">
+        <button class="lang-btn" id="langEn" type="button" data-locale="en">EN</button>
+        <button class="lang-btn" id="langPt" type="button" data-locale="pt-BR">PT</button>
       </div>
-      <div class="panel-heading-actions">
-        <div class="language-control">
-          <span data-i18n="common.language">Language</span>
-          <select
-            id="languageSelect"
-            class="language-select"
-            aria-label="Language"
-            data-i18n-aria-label="common.language"
-          >
-            <option value="en">English</option>
-            <option value="pt-BR">Português (Brasil)</option>
-          </select>
-        </div>
-        <button class="btn" onclick="sendAction('close')" data-i18n="common.close">Close</button>
-      </div>
-    </header>
+    </nav>
 
-    <!-- Server status, OSC status and the server controls: one card. -->
-    <section class="card status-bar" aria-live="polite">
-      <div class="status-main">
-        <div class="status-indicator">
-          <div id="statusDot" class="status-dot"></div>
-          <span id="statusText" class="status-text inactive">Server stopped</span>
-          <span id="infoPort" class="status-port">Port: &mdash;</span>
-        </div>
-        <div class="status-indicator">
-          <div id="oscStatusDot" class="status-dot"></div>
-          <span id="oscStatusText" class="status-text inactive"
-            >Start the server to test AbletonOSC</span
-          >
-          <span id="oscBridgeText" class="setting-hint" hidden></span>
-        </div>
-        <div id="durationConfidenceRow" class="status-indicator duration-row" hidden>
-          <span class="duration-est-badge">EST.</span>
-          <span class="setting-hint" data-i18n="panel.durationEstimated"
-            >Setlist duration is estimated (no [bpm] tags in Live markers)</span
-          >
-        </div>
-      </div>
-      <div class="server-actions">
-        <button
-          class="btn primary"
-          id="btnStart"
-          onclick="sendAction('start')"
-          data-i18n="panel.start"
-        >
-          Start
-        </button>
-        <button class="btn" id="btnStop" onclick="sendAction('stop')" data-i18n="panel.stop">
-          Stop
-        </button>
-        <button
-          class="btn"
-          id="btnRestart"
-          onclick="sendAction('restart')"
-          data-i18n="panel.restart"
-        >
-          Restart
-        </button>
-        <button
-          class="btn"
-          id="btnDiagnoseOsc"
-          onclick="sendAction('diagnose-osc')"
-          data-i18n="panel.checkOsc"
-        >
-          Check OSC
-        </button>
-      </div>
-      <div id="bridgeHint" class="setting-hint status-wide" hidden></div>
-      <!-- One-time migration hint for users upgrading from 0.x. Shown only when
-         the new data folder is empty: the panel cannot see the old folder
-         (ExtensionHost sandbox), so the trigger is the absence of profiles. -->
-      <div id="migrationPrompt" class="status-wide notice-row" hidden>
-        <span class="duration-est-badge" data-i18n="panel.migrationBadge">0.x</span>
-        <div class="status-copy">
-          <span class="status-text" data-i18n="panel.migrationPrompt"
-            >Migrating from a 0.x version? Run the "Migrate RC Setlist Data" script from the kit
-            before opening Live.</span
-          >
-          <div class="setting-hint" data-i18n="panel.migrationHint">
-            The kit ships with a copy-and-skip migration that leaves your 0.x data untouched.
+    <div class="panel-notice" id="panelNotice" role="status" hidden></div>
+
+    <main class="tab-panes">
+      <section
+        class="tab-pane"
+        id="panelMain"
+        role="tabpanel"
+        aria-labelledby="tabMain"
+        tabindex="0"
+      >
+        <section class="hero access-card">
+          <span class="hero-label" id="accessLabel">Stage Control</span>
+          <div class="hero-body">
+            <div class="qr-grid" id="qrGrid">
+              <div class="qr-panel" id="panelStageControl">
+                <div class="qr-frame" id="qrSetlist"></div>
+              </div>
+              <div class="qr-panel" id="panelPerformanceDisplay" hidden>
+                <div class="qr-frame" id="qrStage"></div>
+              </div>
+            </div>
+            <div class="hero-side">
+              <button class="swap-btn" id="btnAccessSwap" type="button">
+                <span class="swap-icon" aria-hidden="true">&#8644;</span>
+                <span id="accessSwapText">Performance Display</span>
+              </button>
+            </div>
           </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- Access: the QR codes. One code at a time, the one the operator
-         needs first on the left and the link on the right. -->
-    <section class="card access-card">
-      <div class="access-head">
-        <span class="card-title" id="accessTitle" data-i18n="panel.accessTitle">Access</span>
-        <div class="tab-group" id="accessTabs" role="group" aria-labelledby="accessTitle">
-          <button
-            class="tab is-active"
-            id="tabStageControl"
-            type="button"
-            aria-pressed="true"
-            aria-controls="panelStageControl"
-            data-i18n="panel.stageControl"
-            onclick="selectAccessTab('stage')"
-          >
-            Stage Control
-          </button>
-          <button
-            class="tab"
-            id="tabPerformanceDisplay"
-            type="button"
-            aria-pressed="false"
-            aria-controls="panelPerformanceDisplay"
-            data-i18n="panel.performanceDisplay"
-            onclick="selectAccessTab('performance')"
-          >
-            Performance Display
-          </button>
-        </div>
-      </div>
-      <div class="qr-grid" id="qrGrid">
-        <div class="qr-panel" id="panelStageControl">
-          <div class="qr-frame" id="qrSetlist"></div>
-          <div class="qr-copy">
+          <div class="hero-url">
             <span class="qr-url" id="urlSetlist">http://localhost:4444/setlist</span>
+            <span class="qr-url" id="urlStage" hidden>http://localhost:4444/performance</span>
+          </div>
+          <div class="button-row hero-actions" id="accessActions">
             <a class="btn" id="openSetlist" href="#" target="_blank" data-i18n="panel.openComputer"
               >Open on this computer</a
             >
-          </div>
-        </div>
-        <div class="qr-panel" id="panelPerformanceDisplay" hidden>
-          <div class="qr-frame" id="qrStage"></div>
-          <div class="qr-copy">
-            <span class="qr-url" id="urlStage">http://localhost:4444/performance</span>
-            <a class="btn" id="openStage" href="#" target="_blank" data-i18n="panel.openComputer"
+            <a
+              class="btn"
+              id="openStage"
+              href="#"
+              target="_blank"
+              data-i18n="panel.openComputer"
+              hidden
               >Open on this computer</a
             >
+            <button class="btn" id="btnCopySetlist" type="button" data-rc-text="network.copyLink">
+              Copy link
+            </button>
+            <button
+              class="btn"
+              id="btnCopyStage"
+              type="button"
+              data-rc-text="network.copyLink"
+              hidden
+            >
+              Copy link
+            </button>
           </div>
+          <div id="placeholderText" class="placeholder" hidden>
+            <span data-i18n="panel.startPrompt"
+              >Start the server to generate access links and QR codes.</span
+            >
+          </div>
+          <div class="copy-fallback" id="copyFallback" hidden>
+            <span class="hint" data-rc-text="network.copyFailed"
+              >The clipboard is not available here: copy the address below.</span
+            >
+            <input class="copy-value" id="copyFallbackValue" type="text" readonly />
+          </div>
+        </section>
+
+        <section class="strip" aria-label="Project">
+          <div class="cell cell-name">
+            <span class="big name" id="mainActiveProfile">&mdash;</span>
+            <span class="cap"
+              ><span data-rc-text="main.activeSetlist">Active setlist</span> &middot;
+              <span id="mainProjectName">&mdash;</span></span
+            >
+          </div>
+          <div class="cell">
+            <span class="big" id="mainSongCount">0</span>
+            <span class="cap" data-rc-text="main.songs">Songs</span>
+          </div>
+          <div class="cell">
+            <span class="big"
+              ><span id="mainDuration">&mdash;</span>
+              <span class="est" id="durationConfidenceRow" hidden>EST</span></span
+            >
+            <span class="cap" data-rc-text="main.duration">Show time</span>
+          </div>
+          <div class="cell">
+            <span class="big" id="mainSetlistCount">0</span>
+            <span class="cap" data-rc-text="main.setlists">Setlists</span>
+          </div>
+        </section>
+
+        <div class="notice-row" id="migrationPrompt" hidden>
+          <span class="est" data-i18n="panel.migrationBadge">0.x</span>
+          <span data-i18n="panel.migrationPrompt"
+            >Migrating from a 0.x version? Run the "Migrate RC Setlist Data" script from the kit
+            before opening Live.</span
+          >
         </div>
-      </div>
-      <div id="placeholderText" class="placeholder" hidden>
-        <span data-i18n="panel.startPrompt"
-          >Start the server to generate access links and QR codes.</span
+        <div class="notice-row" id="bridgeHint" hidden></div>
+
+        <div class="list-head">
+          <span class="cap strong" data-rc-text="main.inSetlist">In this setlist</span>
+          <span class="cap" id="mainTransport">&mdash;</span>
+        </div>
+        <ol class="song-list" id="mainSongs"></ol>
+      </section>
+
+      <section
+        class="tab-pane"
+        id="panelSetlist"
+        role="tabpanel"
+        aria-labelledby="tabSetlist"
+        tabindex="0"
+        hidden
+      >
+        <div class="list-head">
+          <span class="cap strong" id="setlistHeading">Setlists</span>
+          <span class="cap" id="setlistHint"></span>
+        </div>
+        <ul class="setlist-rows" id="setlistProfiles"></ul>
+        <form class="add-row" id="setlistCreate">
+          <input
+            class="text-input"
+            id="setlistCreateName"
+            type="text"
+            maxlength="80"
+            autocomplete="off"
+            spellcheck="false"
+            data-rc-text-placeholder="setlist.newPlaceholder"
+          />
+          <button class="btn" id="btnCreateSetlist" type="submit" data-rc-text="setlist.create">
+            Create
+          </button>
+        </form>
+
+        <div class="list-head">
+          <span class="cap strong" data-rc-text="package.title">Packages</span>
+          <span class="cap" data-rc-text="package.carries"
+            >Order, lyrics, notes and colours travel together</span
+          >
+        </div>
+        <div class="package-grid">
+          <section class="card">
+            <h3 class="card-title" data-rc-text="package.export">Export</h3>
+            <p class="hint" data-rc-text="package.exportHint">
+              Saves every setlist of this Live Set as one package file in the folder.
+            </p>
+            <div class="button-row">
+              <button
+                class="btn"
+                id="btnExportPackage"
+                type="button"
+                data-rc-text="package.exportAll"
+              >
+                Export all
+              </button>
+            </div>
+          </section>
+          <section class="card">
+            <h3 class="card-title" data-rc-text="package.import">Import</h3>
+            <p class="hint" data-rc-text="package.importHint">
+              Pick a package of the folder. Its setlists join the ones you have.
+            </p>
+            <ul class="package-list" id="packageList"></ul>
+            <div class="button-row">
+              <button
+                class="btn"
+                id="btnImportPackage"
+                type="button"
+                data-rc-text="package.importOne"
+              >
+                Import
+              </button>
+            </div>
+          </section>
+        </div>
+        <div class="folder-row">
+          <span class="cap" data-rc-text="package.folder">Folder</span>
+          <span class="folder-path" id="packagesDir">&mdash;</span>
+          <button
+            class="btn btn-small"
+            id="btnCopyPackagesDir"
+            type="button"
+            data-rc-text="package.copyPath"
+          >
+            Copy path
+          </button>
+        </div>
+
+        <div class="list-head" id="deletedHead">
+          <span class="cap strong" data-rc-text="setlist.deleted">Deleted</span>
+        </div>
+        <ul class="setlist-rows" id="deletedProfiles"></ul>
+      </section>
+
+      <section
+        class="tab-pane"
+        id="panelNetwork"
+        role="tabpanel"
+        aria-labelledby="tabNetwork"
+        tabindex="0"
+        hidden
+      >
+        <section class="card">
+          <div class="card-head">
+            <span class="card-title" data-rc-text="network.address">Address</span>
+            <span class="primary-ip" id="networkPrimaryIp">&mdash;</span>
+          </div>
+          <label class="field">
+            <span class="cap" data-rc-text="network.selectAddress">Choose the address</span>
+            <select id="networkAddressSelect" class="select"></select>
+          </label>
+          <div class="meta-grid">
+            <div class="meta-item">
+              <span class="cap" data-rc-text="network.protocol">Protocol</span>
+              <span class="value" id="networkProtocol">&mdash;</span>
+            </div>
+            <div class="meta-item">
+              <span class="cap" data-rc-text="network.port">Port</span>
+              <span class="value" id="networkPort">&mdash;</span>
+            </div>
+            <div class="meta-item">
+              <span class="cap" data-rc-text="network.caPort">Certificate port</span>
+              <span class="value" id="networkCaPort">&mdash;</span>
+            </div>
+            <div class="meta-item">
+              <span class="cap" data-rc-text="network.coverage">Certificate</span>
+              <span class="value" id="networkCoverage">&mdash;</span>
+            </div>
+          </div>
+          <div class="hint" id="networkCoverageHint" hidden></div>
+          <div class="hint" id="networkSubnetHint"></div>
+          <div class="hint" id="networkLanHint"></div>
+        </section>
+
+        <div class="list-head">
+          <span class="cap strong" data-rc-text="network.candidates">Detected addresses</span>
+        </div>
+        <div class="candidate-list" id="networkCandidates"></div>
+
+        <section class="card fold-card" id="phoneCertCard" hidden>
+          <div class="fold-head">
+            <span class="card-title" data-i18n="panel.certTitle">Certificate</span>
+            <span class="hint" data-i18n="panel.certStatus">
+              Install once on each phone and computer to stop the browser warning
+            </span>
+            <button
+              class="btn"
+              id="btnCertToggle"
+              type="button"
+              aria-expanded="false"
+              aria-controls="certDetails"
+              data-i18n="panel.peerShow"
+            >
+              Show
+            </button>
+          </div>
+          <div class="fold-body cert-details" id="certDetails" hidden>
+            <div id="qrCert" class="qr-frame"></div>
+            <div class="cert-copy">
+              <span class="mono-line" id="certUrl"></span>
+              <div class="hint" data-i18n="panel.certStep1">
+                1. Read the QR with the phone, or open the address on the computer, and download the
+                certificate
+              </div>
+              <div class="hint" data-i18n="panel.certStep2">
+                2. Install it as a trusted CA certificate (the page shows how on Android, iPhone,
+                Windows and Mac)
+              </div>
+              <div class="hint" data-i18n="panel.certStep3">
+                3. Reopen the browser and the Stage Control: no warning
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="card fold-card">
+          <div class="fold-head">
+            <span class="card-title" data-i18n="panel.peerSecondComputer">Second computer</span>
+            <span class="hint" id="peerStatusText">Not paired</span>
+            <button
+              class="btn"
+              id="btnPeerToggle"
+              type="button"
+              aria-expanded="false"
+              aria-controls="peerDetails"
+              data-i18n="panel.peerShow"
+            >
+              Show
+            </button>
+          </div>
+          <div class="hint" id="peerCodeHint"></div>
+          <div class="fold-body" id="peerDetails" hidden>
+            <div class="peer-field-row">
+              <label class="peer-field">
+                <span class="cap" data-i18n="panel.peerHostLabel">Second computer IP</span>
+                <input
+                  class="text-input"
+                  id="peerHostInput"
+                  type="text"
+                  autocomplete="off"
+                  spellcheck="false"
+                  inputmode="url"
+                />
+              </label>
+              <label class="peer-field">
+                <span class="cap" data-i18n="panel.peerCodeLabel">Code</span>
+                <input
+                  class="text-input"
+                  id="peerCodeInput"
+                  type="text"
+                  autocomplete="off"
+                  spellcheck="false"
+                  inputmode="numeric"
+                  maxlength="6"
+                />
+              </label>
+              <button
+                class="btn"
+                id="btnPeerPair"
+                type="button"
+                data-rc-action="peer-pair"
+                data-i18n="panel.peerPair"
+              >
+                Pair
+              </button>
+              <button
+                class="btn"
+                id="btnPeerUnpair"
+                type="button"
+                data-rc-action="peer-unpair"
+                data-i18n="panel.peerUnpair"
+              >
+                Unpair
+              </button>
+            </div>
+            <div class="peer-local-row">
+              <span class="cap" data-i18n="panel.peerThisComputer">This computer</span>
+              <span class="mono-line" id="peerLocalAddress">&mdash;</span>
+              <button
+                class="btn"
+                id="btnPeerCode"
+                type="button"
+                data-rc-action="peer-code"
+                data-i18n="panel.peerGenerateCode"
+                data-i18n-title="panel.peerGenerateCodeTitle"
+                title="The code lives for ten minutes and works once."
+              >
+                Generate code
+              </button>
+              <span class="peer-active-code" id="peerActiveCode"></span>
+            </div>
+          </div>
+        </section>
+      </section>
+    </main>
+
+    <section class="options-bar">
+      <div class="option">
+        <div class="option-copy">
+          <span class="option-title" data-i18n="panel.autoStart"
+            >Start automatically with Live</span
+          >
+          <span class="hint" id="autoStartHint" data-i18n="panel.autoStartHint"
+            >Prevents conflicts with other RC extensions. This setting persists between
+            sessions.</span
+          >
+        </div>
+        <button
+          class="toggle"
+          id="btnToggleAutoStart"
+          type="button"
+          data-rc-action="toggle-auto-start"
         >
+          Off
+        </button>
       </div>
-    </section>
-
-    <!-- The two settings, side by side. -->
-    <section class="card options-card">
-      <div class="auto-start-row">
-        <div class="setting">
-          <div class="setting-head">
-            <span class="setting-label" data-i18n="panel.autoStart"
-              >Start automatically with Live</span
-            >
-            <button
-              class="btn setting-toggle"
-              id="btnToggleAutoStart"
-              onclick="sendAction('toggle-auto-start')"
-            >
-              Off
-            </button>
-          </div>
-          <div class="setting-hint" id="autoStartHint" data-i18n="panel.autoStartHint">
-            Prevents conflicts with other RC extensions. This setting persists between sessions.
-          </div>
-        </div>
-        <div class="setting">
-          <div class="setting-head">
-            <span class="setting-label" data-i18n="panel.writeTempoOnJump"
-              >Set Live tempo on jump</span
-            >
-            <button
-              class="btn setting-toggle"
-              id="btnToggleWriteTempo"
-              onclick="sendAction('toggle-write-tempo')"
-            >
-              Off
-            </button>
-          </div>
-          <div class="setting-hint" id="writeTempoHint" data-i18n="panel.writeTempoOnJumpHint">
-            Off by default. Writing the tempo overrides tempo automation drawn in the Arrangement,
-            and Live stops following it until you press Re-Enable Automation.
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- Second computer: the one the show is relayed to -->
-    <section class="card peer-card">
-      <div class="peer-row">
-        <div class="peer-head">
-          <span class="peer-title" data-i18n="panel.peerSecondComputer">Second computer</span>
-          <span class="peer-status" id="peerStatusText">Not paired</span>
-          <button
-            class="btn"
-            id="btnPeerToggle"
-            type="button"
-            onclick="togglePeerDetails()"
-            aria-expanded="false"
-            aria-controls="peerDetails"
-            data-i18n="panel.peerShow"
+      <div class="option">
+        <div class="option-copy">
+          <span class="option-title" data-i18n="panel.writeTempoOnJump"
+            >Set Live tempo on jump</span
           >
-            Show
-          </button>
+          <span class="hint" id="writeTempoHint" data-rc-text="option.writeTempoHint"
+            >Overrides tempo automation drawn in the Arrangement.</span
+          >
         </div>
-        <div class="setting-hint" id="peerCodeHint"></div>
-        <div class="peer-details" id="peerDetails" hidden>
-          <div class="peer-field-row">
-            <label class="peer-field">
-              <span data-i18n="panel.peerHostLabel">Second computer IP</span>
-              <input
-                id="peerHostInput"
-                type="text"
-                autocomplete="off"
-                spellcheck="false"
-                inputmode="url"
-              />
-            </label>
-            <label class="peer-field">
-              <span data-i18n="panel.peerCodeLabel">Code</span>
-              <input
-                id="peerCodeInput"
-                type="text"
-                autocomplete="off"
-                spellcheck="false"
-                inputmode="numeric"
-                maxlength="6"
-              />
-            </label>
-            <button
-              class="btn"
-              id="btnPeerPair"
-              type="button"
-              onclick="sendPeerPair()"
-              data-i18n="panel.peerPair"
-            >
-              Pair
-            </button>
-            <button
-              class="btn"
-              id="btnPeerUnpair"
-              type="button"
-              onclick="sendAction('peer-unpair')"
-              data-i18n="panel.peerUnpair"
-            >
-              Unpair
-            </button>
-          </div>
-          <div class="peer-local-row">
-            <span class="peer-local-label" data-i18n="panel.peerThisComputer">This computer</span>
-            <span class="peer-local-address" id="peerLocalAddress">&mdash;</span>
-            <button
-              class="btn"
-              id="btnPeerCode"
-              type="button"
-              onclick="sendAction('peer-code')"
-              data-i18n="panel.peerGenerateCode"
-              data-i18n-title="panel.peerGenerateCodeTitle"
-              title="The code lives for ten minutes and works once."
-            >
-              Generate code
-            </button>
-            <span class="peer-active-code" id="peerActiveCode"></span>
-          </div>
-        </div>
+        <button
+          class="toggle"
+          id="btnToggleWriteTempo"
+          type="button"
+          data-rc-action="toggle-write-tempo"
+        >
+          Off
+        </button>
       </div>
     </section>
 
-    <!-- The certificate the phone installs once, so the browser stops
-         warning about the server. -->
-    <section class="card peer-card" id="phoneCertCard" hidden>
-      <div class="peer-row">
-        <div class="peer-head">
-          <span class="peer-title" data-i18n="panel.certTitle">Phone certificate</span>
-          <span class="peer-status" data-i18n="panel.certStatus">
-            Install once on each phone to stop the browser warning
-          </span>
-          <button
-            class="btn"
-            id="btnCertToggle"
-            type="button"
-            onclick="toggleCertDetails()"
-            aria-expanded="false"
-            aria-controls="certDetails"
-            data-i18n="panel.peerShow"
-          >
-            Show
-          </button>
-        </div>
-        <div class="peer-details cert-details" id="certDetails" hidden>
-          <div id="qrCert"></div>
-          <div class="cert-copy">
-            <span class="peer-local-address" id="certUrl"></span>
-            <div class="setting-hint" data-i18n="panel.certStep1">
-              1. Read the QR with the phone and download the certificate
-            </div>
-            <div class="setting-hint" data-i18n="panel.certStep2">
-              2. Install it as a CA certificate (the page shows where)
-            </div>
-            <div class="setting-hint" data-i18n="panel.certStep3">
-              3. Open the Stage Control again: no warning
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
+    <footer class="status-bar" aria-live="polite">
+      <span id="statusDot" class="status-dot"></span>
+      <span class="status-copy">
+        <span id="statusText" class="status-text">Server stopped</span>
+        <span id="infoPort" class="status-port">Port: &mdash;</span>
+        <span class="status-sep" aria-hidden="true">&middot;</span>
+        <span id="oscStatusDot" class="status-dot small"></span>
+        <span id="oscStatusText" class="status-text">Start the server to test AbletonOSC</span>
+        <span id="oscBridgeText" class="status-port" hidden></span>
+      </span>
+      <span class="tab-bar-gap"></span>
+      <button
+        class="btn primary"
+        id="btnStart"
+        type="button"
+        data-rc-action="start"
+        data-i18n="panel.start"
+      >
+        Start
+      </button>
+      <button class="btn" id="btnStop" type="button" data-rc-action="stop" data-i18n="panel.stop">
+        Stop
+      </button>
+      <button
+        class="btn"
+        id="btnRestart"
+        type="button"
+        data-rc-action="restart"
+        data-i18n="panel.restart"
+      >
+        Restart
+      </button>
+      <button
+        class="btn"
+        id="btnDiagnoseOsc"
+        type="button"
+        data-rc-action="diagnose-osc"
+        data-i18n="panel.checkOsc"
+      >
+        Check OSC
+      </button>
+      <button
+        class="btn"
+        id="btnRefresh"
+        type="button"
+        data-rc-action="refresh"
+        data-rc-text="common.refresh"
+      >
+        Refresh
+      </button>
+      <button
+        class="btn"
+        id="btnClose"
+        type="button"
+        data-rc-action="close"
+        data-rc-text="common.close"
+      >
+        Close
+      </button>
+    </footer>
 
     <script src="../shared/i18n.js"></script>
     <script src="qrcode.js"></script>
-    <script>
-      // These window variables are injected by panel.ts when rendering the template
-      const isRunning = window.INITIAL_IS_RUNNING || false;
-      const port = window.INITIAL_PORT || 4444;
-      const primaryIp = window.INITIAL_PRIMARY_IP || '127.0.0.1';
-      let autoStart = !!window.INITIAL_AUTO_START;
-      let writeTempoOnJump = !!window.INITIAL_WRITE_TEMPO_ON_JUMP;
-      const oscDiagnostics = window.INITIAL_OSC_DIAGNOSTICS || {
-        state: 'stopped',
-        listenPort: null,
-        rxCount: 0,
-        txCount: 0,
-        lastReplyAgeMs: null,
-      };
-      const i18n = RcSetlistI18n;
-      const languageSelect = document.getElementById('languageSelect');
-      i18n.setLocale(window.INITIAL_LOCALE || 'en');
-      i18n.bindSelector(languageSelect);
-
-      const statusDot = document.getElementById('statusDot');
-      const statusText = document.getElementById('statusText');
-      const infoPort = document.getElementById('infoPort');
-      const oscStatusDot = document.getElementById('oscStatusDot');
-      const oscStatusText = document.getElementById('oscStatusText');
-      const btnDiagnoseOsc = document.getElementById('btnDiagnoseOsc');
-      const oscBridgeText = document.getElementById('oscBridgeText');
-      const bridgeHint = document.getElementById('bridgeHint');
-      const durationConfidence = window.INITIAL_DURATION_CONFIDENCE || 'estimated';
-      const durationConfidenceRow = document.getElementById('durationConfidenceRow');
-      if (durationConfidenceRow) {
-        durationConfidenceRow.hidden = durationConfidence !== 'estimated';
-      }
-      const storageInitialized = !!window.INITIAL_STORAGE_INITIALIZED;
-      const migrationPrompt = document.getElementById('migrationPrompt');
-      if (migrationPrompt) {
-        migrationPrompt.hidden = storageInitialized;
-      }
-      const qrGrid = document.getElementById('qrGrid');
-      const placeholderText = document.getElementById('placeholderText');
-      const accessTabs = document.getElementById('accessTabs');
-      const tabStageControl = document.getElementById('tabStageControl');
-      const tabPerformanceDisplay = document.getElementById('tabPerformanceDisplay');
-      const panelStageControl = document.getElementById('panelStageControl');
-      const panelPerformanceDisplay = document.getElementById('panelPerformanceDisplay');
-
-      const urlSetlist = document.getElementById('urlSetlist');
-      const urlStage = document.getElementById('urlStage');
-      const openSetlist = document.getElementById('openSetlist');
-      const openStage = document.getElementById('openStage');
-
-      const btnStart = document.getElementById('btnStart');
-      const btnStop = document.getElementById('btnStop');
-      const btnRestart = document.getElementById('btnRestart');
-      const btnToggleAutoStart = document.getElementById('btnToggleAutoStart');
-      const btnToggleWriteTempo = document.getElementById('btnToggleWriteTempo');
-
-      // The second computer. The extension hands the whole model over; the
-      // page only paints it and sends the operator's answers back.
-      const peer = window.INITIAL_PEER || {};
-      const peerStatusText = document.getElementById('peerStatusText');
-      const peerDetails = document.getElementById('peerDetails');
-      const btnPeerToggle = document.getElementById('btnPeerToggle');
-      const btnPeerUnpair = document.getElementById('btnPeerUnpair');
-      const btnPeerCode = document.getElementById('btnPeerCode');
-      const peerHostInput = document.getElementById('peerHostInput');
-      const peerCodeInput = document.getElementById('peerCodeInput');
-      const peerLocalAddress = document.getElementById('peerLocalAddress');
-      const peerActiveCode = document.getElementById('peerActiveCode');
-      const peerCodeHint = document.getElementById('peerCodeHint');
-
-      // The phone certificate: the extension says where the authority of
-      // this computer is served, and the page draws the QR for the phone.
-      const certUrl = window.INITIAL_CERT_URL || '';
-      const phoneCertCard = document.getElementById('phoneCertCard');
-      const certDetails = document.getElementById('certDetails');
-      const btnCertToggle = document.getElementById('btnCertToggle');
-      const certUrlText = document.getElementById('certUrl');
-      const qrCert = document.getElementById('qrCert');
-      let certQrDrawn = false;
-      if (certUrlText) certUrlText.textContent = certUrl;
-
-      // One QR code at a time: Stage Control is what the operator needs
-      // first, Performance Display is one click away.
-      function selectAccessTab(tab) {
-        const showStage = tab !== 'performance';
-        if (panelStageControl) panelStageControl.hidden = !showStage;
-        if (panelPerformanceDisplay) panelPerformanceDisplay.hidden = showStage;
-        if (tabStageControl) {
-          tabStageControl.classList.toggle('is-active', showStage);
-          tabStageControl.setAttribute('aria-pressed', showStage ? 'true' : 'false');
-        }
-        if (tabPerformanceDisplay) {
-          tabPerformanceDisplay.classList.toggle('is-active', !showStage);
-          tabPerformanceDisplay.setAttribute('aria-pressed', showStage ? 'false' : 'true');
-        }
-      }
-      selectAccessTab('stage');
-
-      function renderPeer() {
-        if (peerStatusText) peerStatusText.textContent = peer.statusText || '';
-        if (peerLocalAddress) {
-          peerLocalAddress.textContent = `${peer.localIp || '127.0.0.1'}:${peer.port || 4444}`;
-        }
-        if (peerHostInput && !peerHostInput.value) peerHostInput.value = peer.host || '';
-        if (peerActiveCode) peerActiveCode.textContent = peer.code || '';
-        if (peerCodeHint) peerCodeHint.textContent = peer.codeHint || '';
-        if (btnPeerCode) btnPeerCode.disabled = !peer.canGenerateCode;
-        if (btnPeerUnpair) btnPeerUnpair.disabled = !peer.paired;
-        // The panel redraws after every action, so a code that was just asked
-        // for has to show itself: folded away, nobody could read it.
-        if (peer.code && peerDetails && peerDetails.hidden) togglePeerDetails();
-      }
-
-      function togglePeerDetails() {
-        if (!peerDetails || !btnPeerToggle) return;
-        const open = peerDetails.hidden;
-        if (open && certDetails && !certDetails.hidden) {
-          // The modal has room for one open card at a time: the other one
-          // closes before this one opens.
-          toggleCertDetails();
-        }
-        peerDetails.hidden = !open;
-        btnPeerToggle.setAttribute('aria-expanded', open ? 'true' : 'false');
-        const labelKey = open ? 'panel.peerHide' : 'panel.peerShow';
-        // The page translates itself by this attribute, so it has to follow.
-        btnPeerToggle.setAttribute('data-i18n', labelKey);
-        btnPeerToggle.textContent = i18n.t(labelKey);
-      }
-
-      // The QR of the install page: drawn once, the first time the card
-      // opens, so the phone has a code to read.
-      function drawCertQr() {
-        if (certQrDrawn || !qrCert || !certUrl) return;
-        certQrDrawn = true;
-        new QRCode(qrCert, {
-          text: certUrl,
-          width: 80,
-          height: 80,
-          colorDark: '#000000',
-          colorLight: '#ffffff',
-          correctLevel: QRCode.CorrectLevel.M,
-        });
-      }
-
-      function toggleCertDetails() {
-        if (!certDetails || !btnCertToggle) return;
-        const open = certDetails.hidden;
-        if (open && peerDetails && !peerDetails.hidden) {
-          // The modal has room for one open card at a time: the other one
-          // closes before this one opens.
-          togglePeerDetails();
-        }
-        certDetails.hidden = !open;
-        btnCertToggle.setAttribute('aria-expanded', open ? 'true' : 'false');
-        const labelKey = open ? 'panel.peerHide' : 'panel.peerShow';
-        // The page translates itself by this attribute, so it has to follow.
-        btnCertToggle.setAttribute('data-i18n', labelKey);
-        btnCertToggle.textContent = i18n.t(labelKey);
-        if (open) drawCertQr();
-      }
-
-      function sendPeerPair() {
-        const host = (peerHostInput && peerHostInput.value ? peerHostInput.value : '').trim();
-        const code = (peerCodeInput && peerCodeInput.value ? peerCodeInput.value : '').trim();
-        sendAction(`peer-pair:${host}:${code}`);
-      }
-
-      renderPeer();
-
-      function renderAutoStart() {
-        if (!btnToggleAutoStart) return;
-        btnToggleAutoStart.textContent = i18n.t(autoStart ? 'panel.on' : 'panel.off');
-        btnToggleAutoStart.style.background = autoStart ? 'var(--accent)' : '';
-        btnToggleAutoStart.style.color = autoStart ? '#121214' : '';
-        if (btnToggleWriteTempo) {
-          btnToggleWriteTempo.textContent = i18n.t(writeTempoOnJump ? 'panel.on' : 'panel.off');
-          btnToggleWriteTempo.style.background = writeTempoOnJump ? 'var(--accent)' : '';
-          btnToggleWriteTempo.style.color = writeTempoOnJump ? '#121214' : '';
-        }
-      }
-      renderAutoStart();
-
-      function renderStatus() {
-        statusText.textContent = i18n.t(isRunning ? 'panel.serverRunning' : 'panel.serverStopped');
-        infoPort.textContent = isRunning
-          ? i18n.t('panel.port', { port: `${port} (HTTPS)` })
-          : i18n.t('panel.port', { port: '—' });
-      }
-
-      function renderOscStatus() {
-        const stateKeys = {
-          stopped: 'panel.oscStopped',
-          'port-conflict': 'panel.oscPortConflict',
-          'no-reply': 'panel.oscNoReply',
-          responding: 'panel.oscResponding',
-          stale: 'panel.oscStale',
-        };
-        const responding = oscDiagnostics.state === 'responding';
-        const warning = ['port-conflict', 'no-reply', 'stale'].includes(oscDiagnostics.state);
-        const stateClass = responding ? 'active' : warning ? 'warning' : 'neutral';
-        oscStatusDot.className = `status-dot ${stateClass}`;
-        oscStatusText.className = `status-text ${stateClass}`;
-        oscStatusText.textContent = i18n.t(stateKeys[oscDiagnostics.state] || 'panel.oscNoReply');
-        btnDiagnoseOsc.disabled = !isRunning;
-        if (oscBridgeText) {
-          const via = oscDiagnostics.bridge
-            ? i18n.t('panel.oscVia', {
-                name:
-                  oscDiagnostics.bridge === 'rcbridge'
-                    ? oscDiagnostics.bridgeVersion || 'RC Bridge'
-                    : 'AbletonOSC',
-                port: String(oscDiagnostics.targetPort || ''),
-              })
-            : '';
-          oscBridgeText.textContent = via;
-          oscBridgeText.hidden = !via;
-        }
-      }
-
-      // The extension cannot look into Live's User Library (the host sandboxes
-      // the filesystem), so the only truth about RC Bridge is whether it
-      // answered when the server started. That is what this line reports.
-      function renderBridge() {
-        if (!bridgeHint) return;
-        if (!isRunning || !oscDiagnostics.bridge) {
-          bridgeHint.textContent = '';
-          bridgeHint.hidden = true;
-          return;
-        }
-        if (oscDiagnostics.bridge === 'rcbridge') {
-          // The line above already names the RC Bridge. Repeating it here
-          // only pushed the QR code out of the modal.
-          bridgeHint.textContent = i18n.t('panel.bridgeInUse');
-          bridgeHint.hidden = true;
-          return;
-        }
-        bridgeHint.hidden = false;
-        bridgeHint.textContent = i18n.t('panel.bridgeMissing');
-      }
-      renderBridge();
-
-      i18n.subscribe((locale) => {
-        renderAutoStart();
-        renderStatus();
-        renderOscStatus();
-        renderBridge();
-        sendAction(`set-language:${locale}`);
-      });
-
-      function sendAction(action) {
-        const msg = { method: 'close_and_send', params: [action] };
-        if (window.webkit?.messageHandlers?.live) {
-          window.webkit.messageHandlers.live.postMessage(msg);
-        } else if (window.chrome?.webview) {
-          window.chrome.webview.postMessage(msg);
-        }
-      }
-
-      // Update UI based on server status
-      if (isRunning) {
-        statusDot.className = 'status-dot active';
-        statusText.className = 'status-text active';
-        renderStatus();
-        qrGrid.hidden = false;
-        placeholderText.hidden = true;
-        accessTabs.hidden = false;
-
-        // The phone certificate: the card is there only when the server
-        // serves the authority of this computer for the phone to install.
-        if (phoneCertCard) phoneCertCard.hidden = !certUrl;
-
-        btnStart.disabled = true;
-        btnStop.disabled = false;
-        btnRestart.disabled = false;
-
-        // URLs
-        const scheme = window.INITIAL_TLS === false ? 'http' : 'https';
-        const setlistUrl = `${scheme}://${primaryIp}:${port}/setlist?token=${window.INITIAL_TOKEN || ''}`;
-        const stageUrl = `${scheme}://${primaryIp}:${port}/performance`;
-
-        urlSetlist.textContent = setlistUrl;
-        urlStage.textContent = stageUrl;
-        openSetlist.href = setlistUrl;
-        openStage.href = stageUrl;
-
-        // Draw QR Codes
-        new QRCode(document.getElementById('qrSetlist'), {
-          text: setlistUrl,
-          width: 96,
-          height: 96,
-          colorDark: '#000000',
-          colorLight: '#ffffff',
-          correctLevel: QRCode.CorrectLevel.M,
-        });
-
-        new QRCode(document.getElementById('qrStage'), {
-          text: stageUrl,
-          width: 96,
-          height: 96,
-          colorDark: '#000000',
-          colorLight: '#ffffff',
-          correctLevel: QRCode.CorrectLevel.M,
-        });
-      } else {
-        statusDot.className = 'status-dot';
-        statusText.className = 'status-text inactive';
-        renderStatus();
-        qrGrid.hidden = true;
-        placeholderText.hidden = false;
-        accessTabs.hidden = true;
-
-        btnStart.disabled = false;
-        btnStop.disabled = true;
-        btnRestart.disabled = true;
-      }
-      renderOscStatus();
-    </script>
+    <script src="panel-shell.js"></script>
+    <script src="panel-copy.js"></script>
+    <script src="panel-network.js"></script>
+    <script src="panel-project.js"></script>
+    <script src="panel-main.js"></script>
+    <script src="panel.js"></script>
   </body>
 </html>

@@ -125,6 +125,125 @@ async function expectSquareQrCode(page, frame) {
   }
 }
 
+// The element that is really under the link the operator clicks.
+async function elementUnderTheLink(page, selector) {
+  return page.locator(selector).evaluate((link) => {
+    const rect = link.getBoundingClientRect();
+    const target = document.elementFromPoint(
+      rect.left + rect.width / 2,
+      rect.top + rect.height / 2,
+    );
+    return target?.closest('a')?.id || null;
+  });
+}
+
+// The row of the setlist that is renamed.
+const renameInputSelector =
+  '.profile-row[data-profile-id="11111111-1111-4111-8111-111111111111"] .profile-rename-input';
+
+// The state of the extension with the transport stopped.
+async function stopTheTransport(request) {
+  const fixture = await request.get('/__test__/state').then((response) => response.json());
+  const stoppedState = {
+    ...fixture,
+    state: {
+      ...fixture.state,
+      isPlaying: false,
+    },
+  };
+  await request.post('/__test__/emit', { data: stoppedState });
+  return stoppedState;
+}
+
+// The state of the extension while the songs keep moving.
+async function emitSongTimes(request, stoppedState, songTimes) {
+  for (const currentSongTime of songTimes) {
+    await request.post('/__test__/emit', {
+      data: {
+        ...stoppedState,
+        state: { ...stoppedState.state, currentSongTime },
+      },
+    });
+  }
+}
+
+// The renamed input, as the page sees it after the transport moved.
+async function readRenameState(page, selector) {
+  return page.evaluate((inputSelector) => {
+    const input = document.querySelector(inputSelector);
+    return {
+      active: document.activeElement === input,
+      connected: window.__mobileRenameInput?.isConnected === true,
+      sameNode: input === window.__mobileRenameInput,
+      selectionEnd: input?.selectionEnd,
+      selectionStart: input?.selectionStart,
+      value: input?.value,
+    };
+  }, selector);
+}
+
+// The project as it is after the setlist was renamed.
+function renamedProfilesState() {
+  return {
+    type: 'profiles_state',
+    version: 2,
+    activeProfileId: '11111111-1111-4111-8111-111111111111',
+    profiles: [
+      { id: '11111111-1111-4111-8111-111111111111', name: 'Main Setlist' },
+      { id: '22222222-2222-4222-8222-222222222222', name: '<Festival>' },
+    ],
+    deletedProfiles: [
+      {
+        id: '33333333-3333-4333-8333-333333333333',
+        name: 'Archive',
+        deletedAt: '2026-07-29T12:00:00.000Z',
+      },
+    ],
+    canMutate: true,
+  };
+}
+
+// The header of the setlist, as the page sees it in Portuguese.
+async function readCompactHeaderState(page) {
+  return page.evaluate(() => {
+    const langSelect = document.querySelector('#languageSelect');
+    const lockBtn = document.querySelector('#btnLock');
+    const lockText = document.querySelector('#lockText');
+    const actionsContainer = document.querySelector('.app-bar-actions');
+    const header = document.querySelector('header');
+
+    if (!langSelect || !lockBtn || !actionsContainer || !header) {
+      return { missing: true };
+    }
+
+    const langRect = langSelect.getBoundingClientRect();
+    const lockRect = lockBtn.getBoundingClientRect();
+    const actionsRect = actionsContainer.getBoundingClientRect();
+    const headerRect = header.getBoundingClientRect();
+
+    const overlapsLangLock = !(
+      langRect.right <= lockRect.left ||
+      langRect.left >= lockRect.right ||
+      langRect.bottom <= lockRect.top ||
+      langRect.top >= lockRect.bottom
+    );
+
+    const langSelectStyle = window.getComputedStyle(langSelect);
+    const hasTruncatingMaxWidth =
+      langSelectStyle.maxWidth === '96px' || langSelectStyle.maxWidth === '6rem';
+
+    return {
+      overlapsLangLock,
+      hasTruncatingMaxWidth,
+      actionsBottom: actionsRect.bottom,
+      headerBottom: headerRect.bottom,
+      lockText: lockText ? lockText.textContent : '',
+      scrollWidth: document.documentElement.scrollWidth,
+      clientWidth: document.documentElement.clientWidth,
+    };
+  });
+}
+
 for (const viewport of performanceViewports) {
   test(`Performance contains the full stage UI at ${viewport.name}`, async ({ page }) => {
     await page.setViewportSize(viewport);
@@ -292,47 +411,51 @@ test('Live panel keeps access links and actions usable at the SDK modal size', a
   await expect(page.locator('#bridgeHint')).toBeHidden();
   await expect(page.locator('#durationConfidenceRow')).toBeVisible();
 
-  // The second computer card open is the state that used to flatten the QR.
-  await page.locator('#btnPeerToggle').click();
-  await expect(page.locator('#peerDetails')).toBeVisible();
+  // The access code and the link of the page live in the main section.
+  await expect(page.locator('#panelMain')).toBeVisible();
+  await expect(page.locator('#accessLabel')).toHaveText('Stage Control');
+  await expect(page.locator('#openSetlist')).toBeVisible();
+  const box = await qrFrameBox(page, '#qrSetlist');
+  expect(Math.abs(box.width - box.height), '#qrSetlist must stay square').toBeLessThanOrEqual(1);
+  expect(box.width, '#qrSetlist must keep its size').toBeGreaterThanOrEqual(96);
+  await expectSquareQrCode(page, '#qrSetlist');
 
-  const accessTabs = [
-    ['#tabStageControl', '#qrSetlist', '#openSetlist'],
-    ['#tabPerformanceDisplay', '#qrStage', '#openStage'],
-  ];
-  for (const [tab, frame, link] of accessTabs) {
-    await page.locator(tab).click();
-    await expect(page.locator(link)).toBeVisible();
-    const box = await qrFrameBox(page, frame);
-    expect(Math.abs(box.width - box.height), `${frame} must stay square`).toBeLessThanOrEqual(1);
-    expect(box.width, `${frame} must keep its size`).toBeGreaterThanOrEqual(96);
-    await expectSquareQrCode(page, frame);
-  }
+  // The other page has its own code, in the same place.
+  await page.locator('#btnAccessSwap').click();
+  await expect(page.locator('#accessLabel')).toHaveText('Performance Display');
+  await expect(page.locator('#openStage')).toBeVisible();
+  const other = await qrFrameBox(page, '#qrStage');
+  expect(Math.abs(other.width - other.height), '#qrStage must stay square').toBeLessThanOrEqual(1);
+  expect(other.width, '#qrStage must keep its size').toBeGreaterThanOrEqual(96);
+  await expectSquareQrCode(page, '#qrStage');
+  await page.locator('#btnAccessSwap').click();
+  await expect(page.locator('#accessLabel')).toHaveText('Stage Control');
 
-  await page.locator('#tabStageControl').click();
-  const selectors = ['#openSetlist', '.panel-heading .btn', '.auto-start-row', '.peer-row'];
+  // The panel has three sections now. Only the section under the bar
+  // scrolls; the server controls stay where they are.
+  const selectors = ['#openSetlist', '.status-bar .btn', '.tab-pane:not([hidden])'];
   const geometry = await pageGeometry(page, selectors);
   expect(geometry.scrollHeight).toBeLessThanOrEqual(geometry.clientHeight);
   expect(geometry.scrollWidth).toBeLessThanOrEqual(geometry.clientWidth);
   for (const [selector, rect] of Object.entries(geometry.regions)) {
     expectContained(rect, geometry, selector);
   }
-  expect(geometry.regions['.panel-heading .btn'].bottom).toBeLessThanOrEqual(
+  expect(geometry.regions['.tab-pane:not([hidden])'].top).toBeLessThanOrEqual(
     geometry.regions['#openSetlist'].top,
   );
-  expect(geometry.regions['.auto-start-row'].bottom).toBeLessThanOrEqual(
-    geometry.regions['.peer-row'].top,
+  expect(geometry.regions['.status-bar .btn'].bottom).toBeLessThanOrEqual(
+    geometry.clientHeight + 1,
   );
 
-  const hit = await page.locator('#openSetlist').evaluate((link) => {
-    const rect = link.getBoundingClientRect();
-    const target = document.elementFromPoint(
-      rect.left + rect.width / 2,
-      rect.top + rect.height / 2,
-    );
-    return target?.closest('a')?.id || null;
-  });
+  const hit = await elementUnderTheLink(page, '#openSetlist');
   expect(hit).toBe('openSetlist');
+
+  // The card that is folded away is still reachable: the section scrolls.
+  await page.locator('#tabNetwork').click();
+  await page.locator('#btnPeerToggle').click();
+  await expect(page.locator('#peerDetails')).toBeVisible();
+  await page.locator('#peerDetails').scrollIntoViewIfNeeded();
+  await expect(page.locator('#peerDetails')).toBeInViewport();
 });
 
 test('Live panel scrolls instead of flattening the QR when the height runs out', async ({
@@ -345,19 +468,22 @@ test('Live panel scrolls instead of flattening the QR when the height runs out',
   await page.addInitScript(livePanelInit);
   await page.goto('/panel/index.html');
 
-  // The second computer card open is what makes the panel taller.
-  await page.locator('#btnPeerToggle').click();
-  await expect(page.locator('#peerDetails')).toBeVisible();
-
+  // The code of the page the phone opens keeps its square shape.
   const box = await qrFrameBox(page, '#qrSetlist');
   expect(Math.abs(box.width - box.height), '#qrSetlist must stay square').toBeLessThanOrEqual(1);
   expect(box.width, '#qrSetlist must keep its size').toBeGreaterThanOrEqual(96);
+  await expectSquareQrCode(page, '#qrSetlist');
+
+  // The second computer card open is what makes the section taller.
+  await page.locator('#tabNetwork').click();
+  await page.locator('#btnPeerToggle').click();
+  await expect(page.locator('#peerDetails')).toBeVisible();
 
   const scroll = await page.evaluate(() => {
-    const scroller = document.body;
+    const scroller = document.querySelector('.tab-pane:not([hidden])');
     return { clientHeight: scroller.clientHeight, scrollHeight: scroller.scrollHeight };
   });
-  expect(scroll.scrollHeight, 'the panel must scroll').toBeGreaterThan(scroll.clientHeight);
+  expect(scroll.scrollHeight, 'the section must scroll').toBeGreaterThan(scroll.clientHeight);
 
   await page.locator('#btnPeerCode').scrollIntoViewIfNeeded();
   await expect(page.locator('#btnPeerCode')).toBeInViewport();
@@ -423,20 +549,10 @@ test('mobile setlist rename keeps its focused input through live state updates',
   await page.goto('/setlist/');
   await expect(page.locator('#profileSelect option')).toHaveCount(2);
 
-  const fixture = await request.get('/__test__/state').then((response) => response.json());
-  const stoppedState = {
-    ...fixture,
-    state: {
-      ...fixture.state,
-      isPlaying: false,
-    },
-  };
-  await request.post('/__test__/emit', { data: stoppedState });
+  const stoppedState = await stopTheTransport(request);
 
   await page.locator('#btnManageProfiles').click();
-  const renameInput = page.locator(
-    '.profile-row[data-profile-id="11111111-1111-4111-8111-111111111111"] .profile-rename-input',
-  );
+  const renameInput = page.locator(renameInputSelector);
   await expect(renameInput).toBeEnabled();
   await renameInput.fill('Mobile Rename Draft');
   await renameInput.evaluate((input) => {
@@ -445,28 +561,9 @@ test('mobile setlist rename keeps its focused input through live state updates',
     window.__mobileRenameInput = input;
   });
 
-  for (const currentSongTime of [319, 320, 321]) {
-    await request.post('/__test__/emit', {
-      data: {
-        ...stoppedState,
-        state: { ...stoppedState.state, currentSongTime },
-      },
-    });
-  }
+  await emitSongTimes(request, stoppedState, [319, 320, 321]);
 
-  const afterTransport = await page.evaluate(() => {
-    const input = document.querySelector(
-      '.profile-row[data-profile-id="11111111-1111-4111-8111-111111111111"] .profile-rename-input',
-    );
-    return {
-      active: document.activeElement === input,
-      connected: window.__mobileRenameInput?.isConnected === true,
-      sameNode: input === window.__mobileRenameInput,
-      selectionEnd: input?.selectionEnd,
-      selectionStart: input?.selectionStart,
-      value: input?.value,
-    };
-  });
+  const afterTransport = await readRenameState(page, renameInputSelector);
   expect(afterTransport).toEqual({
     active: true,
     connected: true,
@@ -476,25 +573,7 @@ test('mobile setlist rename keeps its focused input through live state updates',
     value: 'Mobile Rename Draft',
   });
 
-  await request.post('/__test__/emit', {
-    data: {
-      type: 'profiles_state',
-      version: 2,
-      activeProfileId: '11111111-1111-4111-8111-111111111111',
-      profiles: [
-        { id: '11111111-1111-4111-8111-111111111111', name: 'Main Setlist' },
-        { id: '22222222-2222-4222-8222-222222222222', name: '<Festival>' },
-      ],
-      deletedProfiles: [
-        {
-          id: '33333333-3333-4333-8333-333333333333',
-          name: 'Archive',
-          deletedAt: '2026-07-29T12:00:00.000Z',
-        },
-      ],
-      canMutate: true,
-    },
-  });
+  await request.post('/__test__/emit', { data: renamedProfilesState() });
 
   await expect(renameInput).toBeFocused();
   await expect(renameInput).toHaveValue('Mobile Rename Draft');
@@ -550,43 +629,7 @@ test('Setlist compact notebook header does not overlap controls when switched to
     }
   });
 
-  const layoutState = await page.evaluate(() => {
-    const langSelect = document.querySelector('#languageSelect');
-    const lockBtn = document.querySelector('#btnLock');
-    const lockText = document.querySelector('#lockText');
-    const actionsContainer = document.querySelector('.app-bar-actions');
-    const header = document.querySelector('header');
-
-    if (!langSelect || !lockBtn || !actionsContainer || !header) {
-      return { missing: true };
-    }
-
-    const langRect = langSelect.getBoundingClientRect();
-    const lockRect = lockBtn.getBoundingClientRect();
-    const actionsRect = actionsContainer.getBoundingClientRect();
-    const headerRect = header.getBoundingClientRect();
-
-    const overlapsLangLock = !(
-      langRect.right <= lockRect.left ||
-      langRect.left >= lockRect.right ||
-      langRect.bottom <= lockRect.top ||
-      langRect.top >= lockRect.bottom
-    );
-
-    const langSelectStyle = window.getComputedStyle(langSelect);
-    const hasTruncatingMaxWidth =
-      langSelectStyle.maxWidth === '96px' || langSelectStyle.maxWidth === '6rem';
-
-    return {
-      overlapsLangLock,
-      hasTruncatingMaxWidth,
-      actionsBottom: actionsRect.bottom,
-      headerBottom: headerRect.bottom,
-      lockText: lockText ? lockText.textContent : '',
-      scrollWidth: document.documentElement.scrollWidth,
-      clientWidth: document.documentElement.clientWidth,
-    };
-  });
+  const layoutState = await readCompactHeaderState(page);
 
   expect(layoutState.missing).toBeUndefined();
   expect(layoutState.overlapsLangLock, 'languageSelect must not overlap btnLock').toBe(false);

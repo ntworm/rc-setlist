@@ -4,13 +4,22 @@ All notable public changes to Ableton RC Setlist are recorded here.
 
 ## [Unreleased]
 
-## [1.1.0] - 2026-11-05
+## [1.1.0] - 2026-11-06
 
 ### Added
 
+- **Setlists from the Live panel**: activate, rename, delete (asked once in
+  the row), create and restore setlists while the transport is stopped.
+- **Packages**: Export all writes every setlist of the Live Set (order, song
+  colours and notes, lyrics) as one `.rcsetlist` file; Import brings the
+  setlists of a package in beside the ones there, renaming on a clash, and
+  takes everything back if it fails half way. Live lets an extension write
+  only inside its own folder, so packages live in the `packages` folder of
+  the extension data; the panel shows its path with a Copy path button.
+
 - **Fold the song list**: the three dots beside a song name fold its
   sections; **Fold all / Unfold all** in the "Songs in project" bar acts on
-  every song; kept on the device per setlist. The song name is the only
+  every song; kept on the device per setlist. The song name and its number are the only
   place that jumps, and a grip on the right edge of the card reorders with a
   mouse or a finger.
 - **Phone certificate**: a local certificate authority, limited to
@@ -35,6 +44,13 @@ All notable public changes to Ableton RC Setlist are recorded here.
   number the operator reads is the number that opens the door.
 
 ### Changed
+
+- **The Live panel was redrawn**: three tabs (Main, Setlists, Network) in the
+  face of the RC Setlist pages, Martian Mono. Main shows one QR in the middle,
+  Stage Control by default, with a button beside it that swaps it for the
+  Performance Display; under it, the active setlist in four numbers and its
+  songs. Network keeps the address, the certificate and the second computer.
+- **Stage Control**: the number of a song jumps to it too, like its name.
 
 - **The panel delegates the second computer to `src/ui/peer-panel.ts`**: the
   pairing actions, the model the panel draws and the sentences it shows live

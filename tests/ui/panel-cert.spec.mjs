@@ -5,7 +5,7 @@ import { expect, test } from '@playwright/test';
 const livePanelInit = () => {
   window.INITIAL_IS_RUNNING = true;
   window.INITIAL_PORT = 4444;
-  window.INITIAL_PRIMARY_IP = '192.168.100.2';
+  window.INITIAL_PRIMARY_IP = '192.168.100.16';
   window.INITIAL_TOKEN = 'fixture-token';
   window.INITIAL_LOCALE = 'en';
   window.INITIAL_STORAGE_INITIALIZED = true;
@@ -34,6 +34,13 @@ async function openPanel(page, certUrl = CERT_URL) {
   await page.goto('/panel/index.html');
 }
 
+// The certificate lives in the network section: the operator looks for it
+// where the addresses of the machine are.
+async function openNetwork(page) {
+  await page.locator('#tabNetwork').click();
+  await expect(page.locator('#panelNetwork')).toBeVisible();
+}
+
 // The code inside the square: the image the library draws, or the canvas it
 // falls back to.
 async function qrCodeTag(page, frame) {
@@ -48,6 +55,7 @@ async function qrCodeTag(page, frame) {
 
 test('the panel shows the certificate card when the server serves one', async ({ page }) => {
   await openPanel(page);
+  await openNetwork(page);
 
   await expect(page.locator('#phoneCertCard')).toBeVisible();
   await expect(page.locator('#certDetails')).toBeHidden();
@@ -60,6 +68,7 @@ test('the panel shows the certificate card when the server serves one', async ({
 
 test('opening the second computer card closes the certificate card', async ({ page }) => {
   await openPanel(page);
+  await openNetwork(page);
 
   await page.locator('#btnCertToggle').click();
   await expect(page.locator('#certDetails')).toBeVisible();
@@ -71,6 +80,7 @@ test('opening the second computer card closes the certificate card', async ({ pa
 
 test('the certificate card stays hidden without a certificate to install', async ({ page }) => {
   await openPanel(page, '');
+  await openNetwork(page);
 
   await expect(page.locator('#phoneCertCard')).toBeHidden();
 });

@@ -459,9 +459,6 @@
   "tests/ui/layout.spec.mjs": {
     "max-lines": {
       "count": 1
-    },
-    "max-lines-per-function": {
-      "count": 2
     }
   },
   "tests/ui/mobile-target-hold.spec.mjs": {

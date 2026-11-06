@@ -10,20 +10,29 @@
 
 import { networkInterfaces } from 'node:os';
 
-import { buildSnapshot, type LanInterfaceMap } from './lan-candidates.js';
+import { buildSnapshot, type LanInterfaceMap, type LanSnapshot } from './lan-candidates.js';
 import { probeDefaultRoute, readRouteGateways, type RouteSignals } from './lan-probe.js';
 import { pickLanIps } from '../util/helpers.js';
 
 /** How long the machine gets to answer before the panel carries on. */
 const DEFAULT_TIMEOUT_MS = 1500;
 
-/** The address to announce, with the other addresses the machine holds. */
-export async function resolveLanAddress(deps?: {
+/** The readings the addresses of the machine are read with. */
+export interface LanAddressDeps {
   interfaces?: LanInterfaceMap;
   probe?: () => Promise<string | null>;
   routes?: () => Promise<RouteSignals>;
   timeoutMs?: number;
-}): Promise<{ primary: string; others: string[] }> {
+}
+
+/**
+ * Reads the addresses of the machine, and the one the panel announces.
+ *
+ * The same readings as before, with the same deadline: the route the
+ * system takes by default and the gateways of the machine. Nothing is
+ * probed twice, so the panel and the network tab always see one picture.
+ */
+export async function resolveLanSnapshot(deps?: LanAddressDeps): Promise<LanSnapshot> {
   const interfaces: LanInterfaceMap = deps?.interfaces ?? networkInterfaces();
   const readProbe: () => Promise<string | null> = deps?.probe ?? probeDefaultRoute;
   const readRoutes: () => Promise<RouteSignals> = deps?.routes ?? readRouteGateways;
@@ -39,10 +48,17 @@ export async function resolveLanAddress(deps?: {
     gateways: routeSignals.gateways,
     routeChecked: routeSignals.routeChecked,
   });
-  if (snapshot.primaryIp) {
-    return { primary: snapshot.primaryIp, others: [...snapshot.otherIps] };
-  }
-  return pickLanIps(nonInternalIpv4s(interfaces));
+  if (snapshot.primaryIp) return snapshot;
+  const fallback = pickLanIps(nonInternalIpv4s(interfaces));
+  return { ...snapshot, primaryIp: fallback.primary, otherIps: [...fallback.others] };
+}
+
+/** The address to announce, with the other addresses the machine holds. */
+export async function resolveLanAddress(
+  deps?: LanAddressDeps,
+): Promise<{ primary: string; others: string[] }> {
+  const snapshot = await resolveLanSnapshot(deps);
+  return { primary: snapshot.primaryIp, others: [...snapshot.otherIps] };
 }
 
 /** A reading that arrives late, fails or never comes is no reading at all. */

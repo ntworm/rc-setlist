@@ -85,6 +85,14 @@ test('the page says where to put the certificate, in the language of the phone',
       );
       assert.match(pt, /Configurações de Confiança de Certificados/, 'the page is in Portuguese');
       assert.match(pt, /Instalar um certificado/, 'the Android steps must be there');
+      assert.match(
+        pt,
+        /Não abra o arquivo pela notificação/,
+        'Android refuses a CA certificate opened from the download, so the page says so first',
+      );
+      assert.match(pt, /Autoridades de Certificação Raiz Confiáveis/, 'the Windows steps');
+      assert.match(pt, /Sempre Confiar/, 'the Mac steps');
+      assert.match(pt, /só vale para localhost e endereços de rede local/, 'the limit');
 
       const english = await request(port, '/ca/', {
         headers: { 'accept-language': 'en-US,en;q=0.9', host: 'rc-setlist.local' },
@@ -93,6 +101,9 @@ test('the page says where to put the certificate, in the language of the phone',
       const en = english.body.toString('utf8');
       assert.match(en, /Certificate Trust Settings/, 'the page is in English');
       assert.match(en, /Encryption and credentials/, 'the Android steps must be there');
+      assert.match(en, /Can&#39;t install CA certificates/, 'the Android refusal, escaped');
+      assert.match(en, /Trusted Root Certification Authorities/, 'the Windows steps');
+      assert.match(en, /Always Trust/, 'the Mac steps');
       assert.match(en, /https:\/\/rc-setlist\.local:4444\/setlist/);
 
       const page = pt;

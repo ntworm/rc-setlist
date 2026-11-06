@@ -112,10 +112,11 @@
     </p>
     <h2 id="idioma-da-interface">Idioma da interface</h2>
     <p>
-      A interface começa em inglês. Use o menu de idioma no painel do Live, no Controle de Palco ou
-      na Performance para escolher <strong>English</strong> ou <strong>Português (Brasil)</strong>.
-      A escolha fica salva localmente. Nomes de músicas, seções e conteúdo de letras ou cifras são
-      dados do show e nunca são traduzidos.
+      A interface começa em inglês. No painel do Live, aperte <strong>EN</strong> ou
+      <strong>PT</strong> no alto à direita para escolher <strong>English</strong> ou
+      <strong>Português (Brasil)</strong>; no Controle de Palco e na Performance, use o menu de
+      idioma da página. A escolha fica salva localmente. Nomes de músicas, seções e conteúdo de
+      letras ou cifras são dados do show e nunca são traduzidos.
     </p>
     <h2 id="sintaxe-dos-locators">Sintaxe dos locators</h2>
     <p>
@@ -344,6 +345,48 @@ Música B [bpm 96]</code></pre>
       A declaração de tags <code>[bpm N]</code> nos locators de música elimina a discrepância de
       16:59, restaura o total exato de 78:41 e limpa o indicador de aviso <code>EST.</code>.
     </p>
+    <h2 id="o-painel-do-live">O painel do Live</h2>
+    <p>
+      O painel do Live é a janela que a extensão abre dentro do Live. A barra de abas traz três abas
+      — <strong>Principal</strong>, <strong>Repertórios</strong> e <strong>Rede</strong> — e os
+      botões <strong>EN</strong> e <strong>PT</strong> no alto à direita, que mudam o idioma do
+      painel.
+    </p>
+    <h3 id="principal">Principal</h3>
+    <p>
+      A aba Principal mostra um QR no meio. Por padrão, é o QR do Controle de Palco; o botão ao lado
+      troca pelo Performance Display, no mesmo lugar. Embaixo, o repertório ativo, o número de
+      músicas, o tempo de show e o número de repertórios. Abaixo dos números, as músicas do
+      repertório ativo com suas cores.
+    </p>
+    <p>
+      No Controle de Palco, o número da música e o nome inteiro dela pulam para a música. Na tela de
+      toque, o pulo continua sendo segurar, para um toque sem querer nunca mover o show.
+    </p>
+    <h3 id="repert-rios-e-pacotes">Repertórios e pacotes</h3>
+    <p>
+      A aba Repertórios lista os repertórios do Live Set atual. Você pode ativar um, renomear,
+      apagar e criar um novo. O apagar pergunta uma vez, na própria linha, e o repertório apagado
+      fica na lista <strong>Apagados</strong>, pronto para ser restaurado. Tudo isso funciona com o
+      transporte parado.
+    </p>
+    <p>
+      <strong>Exportar todos</strong> grava um arquivo <code>.rcsetlist</code> com todos os
+      repertórios do Live Set — ordem, cores e notas das músicas, letras — na pasta
+      <code>packages</code> dos dados da extensão. No Windows, essa pasta é
+      <code>%LOCALAPPDATA%\Ableton\Extensions Data\ntworm.rc-setlist\packages</code>.
+      <strong>Importar</strong> escolhe um pacote dessa pasta e acrescenta os repertórios dele ao
+      lado dos que você já tem; um nome repetido ganha um <code>(2)</code>, e uma falha no meio
+      desfaz tudo. O botão <strong>Copiar caminho</strong> copia o caminho da pasta.
+    </p>
+    <h3 id="rede">Rede</h3>
+    <p>
+      A aba Rede guarda o endereço do computador, os endereços detectados na rede, o protocolo, a
+      porta e a porta do certificado. Ela também guarda o certificado do celular, com o QR que o
+      celular lê para instalar o certificado uma vez, e o cartão
+      <strong>Segundo computador</strong>, com o endereço, o botão <strong>Gerar código</strong> e
+      os botões <strong>Parear</strong> e <strong>Desfazer</strong>.
+    </p>
     <h2 id="controle-de-palco">Controle de Palco</h2>
     <p>Abra <code>/setlist</code> pela URL de controle com token mostrada no painel do Live.</p>
     <ul>
@@ -424,17 +467,18 @@ Música B [bpm 96]</code></pre>
     <h3 id="parear-o-segundo-computador">Parear o segundo computador</h3>
     <p>
       1. No <strong>segundo computador</strong>, inicie o servidor do RC Setlist e abra o painel
-      dentro do Live. A linha <strong>Segundo computador</strong> mostra o endereço que as outras
-      máquinas alcançam e o botão <strong>Gerar código</strong>. O botão fica desabilitado enquanto
-      o servidor está parado ou rodando sem HTTPS, e a linha diz o motivo: a rota de pareamento só
+      dentro do Live. Vá na aba <strong>Rede</strong> e aperte <strong>Mostrar</strong> para abrir o
+      cartão <strong>Segundo computador</strong>. O cartão mostra o endereço que as outras máquinas
+      alcançam e o botão <strong>Gerar código</strong>. O botão fica desabilitado enquanto o
+      servidor está parado ou rodando sem HTTPS, e o cartão diz o motivo: a rota de pareamento só
       responde sobre TLS, porque é o certificado que o computador apresenta que o prende depois. 2.
       Aperte <strong>Gerar código</strong>. O painel mostra um código de seis dígitos. Ele vale por
       dez minutos e funciona exatamente uma vez. 3. No <strong>computador principal</strong>, abra o
-      painel dentro do Live, expanda a linha <strong>Segundo computador</strong>, digite o endereço
-      do segundo computador e o código e aperte <strong>Parear</strong>. 4. O computador principal
-      guarda a credencial e a impressão digital do certificado com que o segundo computador
-      respondeu, e abre o link para ele. A linha passa a dizer se o segundo computador está
-      respondendo.
+      painel dentro do Live, vá na aba <strong>Rede</strong> e aperte <strong>Mostrar</strong> para
+      abrir o cartão <strong>Segundo computador</strong>. Digite o endereço do segundo computador e
+      o código e aperte <strong>Parear</strong>. 4. O computador principal guarda a credencial e a
+      impressão digital do certificado com que o segundo computador respondeu, e abre o link para
+      ele. A linha passa a dizer se o segundo computador está respondendo.
     </p>
     <p>
       O pareamento e o link usam a porta <code>4444</code> do segundo computador, a mesma que um
@@ -612,6 +656,6 @@ Música B [bpm 96]</code></pre>
       O raciocínio completo está em
       <a href="../architecture/song-identity.md">docs/architecture/song-identity.md</a>.
     </p>
-    <div class="source">Rendered from <code>docs\pt-BR\USER-GUIDE.md</code> on 2026-11-05.</div>
+    <div class="source">Rendered from <code>docs\pt-BR\USER-GUIDE.md</code> on 2026-11-06.</div>
   </body>
 </html>

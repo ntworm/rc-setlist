@@ -72,6 +72,10 @@ free for noncommercial use and source-available.
 - Keyboard Mapping for assigning transport and view actions to Numpad or alpha keys.
 - A second computer that follows the show: pair it from the Live panel and
   the transport commands travel to it over a pinned link.
+- A Live panel with three tabs, Main, Setlists and Network, where the QR code,
+  the setlists and the second computer live together.
+- Setlist packages: every setlist of a Live Set in one file, ready to import
+  again.
 
 ## Requirements
 

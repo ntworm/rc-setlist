@@ -1882,12 +1882,12 @@ function sendReorder(songTitles) {
 /**
  * The jump target under a pointer, if there is one.
  *
- * The name of a song jumps to that song. The number beside it, the badges,
+ * The number of a song and its whole name jump to that song. The badges,
  * the notes, the time, the dots and the grip do not: they are read, not
  * pressed. A section chip still jumps to its own section.
  */
 function resolveSetlistJumpTarget(node) {
-  const title = node?.closest?.('.song-title');
+  const title = node?.closest?.('.song-title, .song-index');
   if (title) return resolveSongJumpTarget(title);
   const section = node?.closest?.('.section-btn');
   if (!section || !songListDiv.contains(section)) return null;

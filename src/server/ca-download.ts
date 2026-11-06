@@ -18,41 +18,97 @@ const CA_CONTENT_TYPE = 'application/x-x509-ca-cert';
 const PORTUGUESE = {
   lang: 'pt-BR',
   title: 'RC Setlist — o certificado deste computador',
-  intro: 'Instale o arquivo abaixo no celular para abrir o setlist sem aviso de segurança.',
+  intro:
+    'Instale o arquivo abaixo uma vez em cada celular e em cada computador que abre o setlist, e o navegador para de mostrar o aviso de segurança.',
   button: 'Baixar o certificado (RC-Setlist-CA.crt)',
-  android: 'No Android',
-  androidSteps: [
-    'Toque no botão acima para baixar o arquivo RC-Setlist-CA.crt.',
-    'Abra Configurações > Segurança > Criptografia e credenciais > Instalar um certificado > Certificado de CA. Os nomes exatos variam conforme a marca do aparelho.',
-    'Escolha o arquivo RC-Setlist-CA.crt e confirme a instalação.',
+  sections: [
+    {
+      heading: 'No Android',
+      steps: [
+        'Toque no botão acima para baixar o arquivo RC-Setlist-CA.crt.',
+        'Não abra o arquivo pela notificação nem pela pasta Downloads: o Android recusa com "Não é possível instalar certificados de CA". A instalação é pelas Configurações.',
+        'Abra Configurações e busque "certificado de CA", ou siga Segurança > Criptografia e credenciais > Instalar um certificado > Certificado de CA. Os nomes variam conforme a marca.',
+        'Toque em Instalar assim mesmo, confirme com o PIN ou a digital e escolha o arquivo RC-Setlist-CA.crt em Downloads.',
+      ],
+    },
+    {
+      heading: 'No iPhone',
+      steps: [
+        'Toque no botão acima e permita o download do perfil.',
+        'Abra Ajustes > Perfil Baixado e toque em Instalar.',
+        'Abra Ajustes > Geral > Sobre > Configurações de Confiança de Certificados e ative RC Setlist local CA.',
+      ],
+    },
+    {
+      heading: 'No Windows',
+      steps: [
+        'Clique no botão acima e mantenha o arquivo baixado.',
+        'Dê dois cliques no arquivo RC-Setlist-CA.crt e clique em Instalar Certificado.',
+        'Escolha Usuário Atual. Marque Colocar todos os certificados no repositório a seguir, clique em Procurar e escolha Autoridades de Certificação Raiz Confiáveis.',
+        'Conclua e responda Sim ao aviso de segurança. Feche todas as janelas do navegador e abra de novo.',
+      ],
+    },
+    {
+      heading: 'No Mac',
+      steps: [
+        'Clique no botão acima para baixar o arquivo.',
+        'Dê dois cliques no arquivo RC-Setlist-CA.crt: ele abre o Acesso às Chaves. Adicione às chaves Início de Sessão.',
+        'Dê dois cliques em RC Setlist local CA, abra Confiança e escolha Sempre Confiar em Ao usar este certificado. Feche e confirme com a senha.',
+        'Feche o navegador e abra de novo.',
+      ],
+    },
   ],
-  iphone: 'No iPhone',
-  iphoneSteps: [
-    'Toque no botão acima e permita o download do perfil.',
-    'Abra Ajustes > Perfil Baixado e toque em Instalar.',
-    'Abra Ajustes > Geral > Sobre > Configurações de Confiança de Certificados e ative RC Setlist local CA.',
-  ],
+  limit:
+    'Este certificado só vale para localhost e endereços de rede local (192.168, 10 e 172.16 a 172.31). Ele não serve para nenhum site da internet.',
   test: 'Abrir o setlist para testar',
 };
 
 /** The page in English. */
-const ENGLISH = {
+const ENGLISH: typeof PORTUGUESE = {
   lang: 'en',
   title: 'RC Setlist — the certificate of this computer',
-  intro: 'Install the file below on the phone to open the setlist without a security warning.',
+  intro:
+    'Install the file below once on each phone and each computer that opens the setlist, and the browser stops showing the security warning.',
   button: 'Download the certificate (RC-Setlist-CA.crt)',
-  android: 'On Android',
-  androidSteps: [
-    'Tap the button above to download the file RC-Setlist-CA.crt.',
-    'Open Settings > Security > Encryption and credentials > Install a certificate > CA certificate. The exact menu names vary by brand.',
-    'Pick the file RC-Setlist-CA.crt and confirm the installation.',
+  sections: [
+    {
+      heading: 'On Android',
+      steps: [
+        'Tap the button above to download the file RC-Setlist-CA.crt.',
+        'Do not open the file from the notification or the Downloads folder: Android refuses with "Can\'t install CA certificates". It is installed from Settings.',
+        'Open Settings and search for "CA certificate", or go to Security > Encryption and credentials > Install a certificate > CA certificate. The names vary by brand.',
+        'Tap Install anyway, confirm with your PIN or fingerprint and pick RC-Setlist-CA.crt in Downloads.',
+      ],
+    },
+    {
+      heading: 'On iPhone',
+      steps: [
+        'Tap the button above and allow the profile to download.',
+        'Open Settings > Profile Downloaded and tap Install.',
+        'Open Settings > General > About > Certificate Trust Settings and turn on RC Setlist local CA.',
+      ],
+    },
+    {
+      heading: 'On Windows',
+      steps: [
+        'Click the button above and keep the downloaded file.',
+        'Double-click RC-Setlist-CA.crt and click Install Certificate.',
+        'Choose Current User. Select Place all certificates in the following store, click Browse and choose Trusted Root Certification Authorities.',
+        'Finish and answer Yes to the security warning. Close every browser window and open it again.',
+      ],
+    },
+    {
+      heading: 'On Mac',
+      steps: [
+        'Click the button above to download the file.',
+        'Double-click RC-Setlist-CA.crt: Keychain Access opens. Add it to the login keychain.',
+        'Double-click RC Setlist local CA, open Trust and set When using this certificate to Always Trust. Close and confirm with your password.',
+        'Quit the browser and open it again.',
+      ],
+    },
   ],
-  iphone: 'On iPhone',
-  iphoneSteps: [
-    'Tap the button above and allow the profile to download.',
-    'Open Settings > Profile Downloaded and tap Install.',
-    'Open Settings > General > About > Certificate Trust Settings and turn on RC Setlist local CA.',
-  ],
+  limit:
+    'This certificate only covers localhost and local network addresses (192.168, 10 and 172.16 to 172.31). It cannot vouch for any site on the internet.',
   test: 'Open the setlist to test',
 };
 
@@ -67,6 +123,7 @@ main { max-width: 34rem; margin: 0 auto; padding: 2rem 1.25rem 3rem; }
 h1 { font-size: 1.45rem; margin: 0 0 0.75rem; } h2 { font-size: 1.05rem; margin: 2rem 0 0.5rem; }
 p, ol { margin: 0 0 1rem; } ol { padding-left: 1.25rem; } li { margin-bottom: 0.65rem; }
 a { color: #8ab4ff; }
+.limit { margin-top: 2rem; color: #a9a9b6; font-size: 0.92rem; }
 .button { display: inline-block; padding: 0.95rem 1.3rem; border-radius: 0.6rem; background: #2f6feb; color: #fff; font-weight: 600; text-decoration: none; }
 .test a { display: inline-block; padding: 0.8rem 1.1rem; border: 1px solid #3a3a45; border-radius: 0.6rem; text-decoration: none; }
 `;
@@ -112,6 +169,16 @@ function renderSteps(steps: string[]): string {
   return steps.map((step) => `<li>${escapeHtml(step)}</li>`).join('');
 }
 
+/** One heading and its steps for each system. */
+function renderSections(sections: PageCopy['sections']): string {
+  return sections
+    .map(
+      (section) =>
+        `<h2>${escapeHtml(section.heading)}</h2>\n<ol>${renderSteps(section.steps)}</ol>`,
+    )
+    .join('\n');
+}
+
 /** The page that says where to put the certificate. */
 function renderPage(copy: PageCopy, testUrl: string): string {
   return `<!doctype html>
@@ -126,10 +193,8 @@ function renderPage(copy: PageCopy, testUrl: string): string {
 <h1>${escapeHtml(copy.title)}</h1>
 <p>${escapeHtml(copy.intro)}</p>
 <p><a class="button" href="/ca.crt">${escapeHtml(copy.button)}</a></p>
-<h2>${escapeHtml(copy.android)}</h2>
-<ol>${renderSteps(copy.androidSteps)}</ol>
-<h2>${escapeHtml(copy.iphone)}</h2>
-<ol>${renderSteps(copy.iphoneSteps)}</ol>
+${renderSections(copy.sections)}
+<p class="limit">${escapeHtml(copy.limit)}</p>
 <p class="test"><a href="${escapeHtml(testUrl)}">${escapeHtml(copy.test)}</a></p>
 </main>
 </body>
