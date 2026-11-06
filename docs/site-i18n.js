@@ -239,13 +239,13 @@
     'install.s3d': 'Abra o .ablx e aprove a instalação no Live.',
     'install.s4': 'Inicie o servidor',
     'install.s4d':
-      'Abra <b>Extensions › RC Setlist</b> e clique em <b>Iniciar</b>. O painel mostra um link e um QR code para cada tela.',
+      'Abra <b>Extensions › RC Setlist</b> e clique em <b>Iniciar</b>. O painel mostra um QR por vez, com um botão que troca entre Controle de palco e Performance Display.',
     'install.s5': 'Abra as telas',
     'install.s5d':
-      'Aponte a câmera para o QR code ou abra o link. Para o aviso de certificado sumir, instale uma vez o certificado pelo QR Certificado do celular no painel.',
+      'Aponte a câmera para o QR code ou abra o link. Para o aviso de certificado sumir, instale uma vez o certificado pelo QR Certificado no painel.',
     'install.figCap': 'O painel dentro do Live',
     'install.panelAria':
-      'O painel do RC Setlist no Live: servidor em execução na porta 4444, RC Bridge conectado, dois QR codes para Controle de palco e Performance, e os botões Iniciar, Parar e Reiniciar.',
+      'O painel do RC Setlist no Live: servidor em execução na porta 4444, RC Bridge conectado, um QR por vez, com um botão que troca entre Controle de palco e Performance Display, e os botões Iniciar, Parar e Reiniciar.',
     'install.pRun': 'Servidor em execução',
     'install.pOsc': 'Live conectado',
     'install.figFoot': 'Ilustração · os QR codes não funcionam',

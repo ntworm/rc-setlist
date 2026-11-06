@@ -15,7 +15,7 @@ relayed to it over a link whose certificate is pinned.
   the Stage Control by default, with a button beside it that swaps it for
   the Performance Display in the same place; under it, the active setlist in
   four numbers (songs, show time, setlists) and its songs with their colours.
-  Network keeps the address, the phone certificate and the second computer.
+  Network keeps the address, the certificate card and the second computer card.
 - **Setlists managed from the Live panel.** Activate, rename, delete (asked
   once in the row, and restorable), create and restore setlists while the
   transport is stopped; the panel says what each action did.
@@ -27,9 +27,9 @@ relayed to it over a link whose certificate is pinned.
   the `packages` folder of the extension data; the panel shows the path with
   a Copy path button.
 
-- **A "Second computer" row in the Live panel.** The second computer prints
+- **A "Second computer" card in the Live panel.** The second computer prints
   a six-digit code, the main computer types its address and the code, and
-  the two are paired. The row says what the link is doing: not paired,
+  the two are paired. The card says what the link is doing: not paired,
   connected, not answering, different markers, or a certificate that changed
   and needs a new pairing.
 - **A second dot in the Stage Control header.** Green when the second
@@ -49,10 +49,11 @@ relayed to it over a link whose certificate is pinned.
 ## How to use it
 
 1. On the **second computer**, start the RC Setlist server and open the Live
-   panel. Press **Generate code** and read the six digits.
-2. On the **main computer**, open the Live panel, expand the **Second
-   computer** row, type the second computer's address and the code, and
-   press **Pair**.
+   panel. Go to the **Network** tab and press **Show** in the **Second
+   computer** card. Press **Generate code** and read the six digits.
+2. On the **main computer**, open the Live panel, go to the **Network** tab
+   and press **Show** in the **Second computer** card. Type the second
+   computer's address and the code, and press **Pair**.
 3. Put both computers on the same session: Ableton **Link** on, Live's
    **Start Stop Sync** off. The relay does the transport; the native sync
    would do it twice.
@@ -79,17 +80,17 @@ export stay on the main computer.
   sections away and bring them back; **Fold all / Unfold all** in the
   "Songs in project" bar acts on every song. The choice is kept on the
   device, per setlist.
-- **One place for each job on a song card.** Hold the song **name** to jump;
-  the number, the time and the empty space do nothing. Reorder by dragging
-  the **grip** on the right edge of the card, with a mouse or a finger.
-  Holding the three dots no longer jumps.
+- **One place for each job on a song card.** Hold the song **name** or its
+  **number** to jump; the time, the notes, the badges, the three dots and the
+  grip do not. Reorder by dragging the **grip** on the right edge of the card,
+  with a mouse or a finger. Holding the three dots no longer jumps.
 - **The phone certificate.** The extension creates a certificate authority
   for this computer, limited to localhost and private addresses, and signs
-  its own server certificate with it. A new **Phone certificate** row in the
-  Live panel shows a QR to a plain page on port 4445 where a phone downloads
-  and installs it once; after that the browser stops warning.
+  its own server certificate with it. A new **Certificate** card in the Live
+  panel shows a QR to a plain page on port 4445 where a phone downloads and
+  installs it once; after that the browser stops warning.
 - **The QR points at the right network.** The address in the QR and in the
-  pairing row is the one the system really routes through, so a computer
+  pairing card is the one the system really routes through, so a computer
   with a lighting or audio network cable and Wi-Fi at the same time
   announces the Wi-Fi.
 - **The top bar keeps one row** in English and Portuguese; longer words

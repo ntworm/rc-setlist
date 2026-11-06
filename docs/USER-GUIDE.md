@@ -218,7 +218,7 @@ everything. The **Copy path** button copies the path of the folder.
 
 The Network tab keeps the address of the computer, the addresses detected on
 the network, the protocol, the port and the certificate port. It also keeps the
-phone certificate, with the QR that a phone reads to install the certificate
+**Certificate** card, with the QR that a phone reads to install the certificate
 once, and the **Second computer** card, with the address, the **Generate code**
 button and the **Pair** and **Unpair** buttons.
 

@@ -218,10 +218,10 @@ desfaz tudo. O botão **Copiar caminho** copia o caminho da pasta.
 ### Rede
 
 A aba Rede guarda o endereço do computador, os endereços detectados na rede, o
-protocolo, a porta e a porta do certificado. Ela também guarda o certificado do
-celular, com o QR que o celular lê para instalar o certificado uma vez, e o
-cartão **Segundo computador**, com o endereço, o botão **Gerar código** e os
-botões **Parear** e **Desfazer**.
+protocolo, a porta e a porta do certificado. Ela também guarda o cartão
+**Certificado**, com o QR que o celular lê para instalar o certificado uma
+vez, e o cartão **Segundo computador**, com o endereço, o botão
+**Gerar código** e os botões **Parear** e **Desfazer**.
 
 ## Controle de Palco
 

@@ -130,7 +130,7 @@
     'pt-BR': {
       'tabs.label': 'Seções do painel',
       'tab.main': 'Principal',
-      'tab.setlist': 'Repertório',
+      'tab.setlist': 'Repertórios',
       'tab.network': 'Rede',
       'common.refresh': 'Atualizar',
       'common.close': 'Fechar',

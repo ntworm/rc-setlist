@@ -222,7 +222,7 @@ test('the panel speaks English and Brazilian Portuguese', async ({ page }) => {
   await page.locator('#langPt').click();
 
   await expect(page.locator('#tabNetwork')).toHaveText('Rede');
-  await expect(page.locator('#tabSetlist')).toContainText('Repertório');
+  await expect(page.locator('#tabSetlist')).toContainText('Repertórios');
   await expect(page.locator('#langPt')).toHaveAttribute('aria-pressed', 'true');
   await expect(page.locator('#langEn')).toHaveAttribute('aria-pressed', 'false');
   // The language the operator chose travels to the extension.

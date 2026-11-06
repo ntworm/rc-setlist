@@ -16,8 +16,8 @@ certificado preso.
   centro, o do Controle de Palco por padrão, com um botão ao lado que troca
   para o Performance Display no mesmo lugar; embaixo, o repertório ativo em
   quatro números (músicas, tempo de show, repertórios) e as músicas dele com
-  as cores. A Rede guarda o endereço, o certificado do celular e o segundo
-  computador.
+  as cores. A Rede guarda o endereço, o cartão do certificado e o cartão do
+  segundo computador.
 - **Repertórios gerenciados pelo painel do Live.** Ativar, renomear, apagar
   (com pergunta na própria linha, e dá para restaurar), criar e restaurar
   repertórios com o transporte parado; o painel diz o que cada ação fez.
@@ -29,9 +29,9 @@ certificado preso.
   pasta `packages` dos dados da extensão; o painel mostra o caminho com um
   botão Copiar caminho.
 
-- **Uma linha "Segundo computador" no painel do Live.** O segundo computador
+- **Um cartão "Segundo computador" no painel do Live.** O segundo computador
   mostra um código de seis dígitos, o computador principal digita o
-  endereço dele e o código, e os dois ficam pareados. A linha diz o que o
+  endereço dele e o código, e os dois ficam pareados. O cartão diz o que o
   link está fazendo: sem pareamento, conectado, sem resposta, marcadores
   diferentes, ou certificado mudando e precisando de um pareamento novo.
 - **Um segundo ponto no cabeçalho do Controle de Palco.** Verde quando o
@@ -53,10 +53,11 @@ certificado preso.
 ## Como usar
 
 1. No **segundo computador**, inicie o servidor do RC Setlist e abra o painel
-   dentro do Live. Aperte **Gerar código** e leia os seis dígitos.
-2. No **computador principal**, abra o painel dentro do Live, expanda a linha
-   "Segundo computador", digite o endereço do segundo computador e o código,
-   e aperte **Parear**.
+   dentro do Live. Vá na aba **Rede** e aperte **Mostrar** no cartão
+   **Segundo computador**. Aperte **Gerar código** e leia os seis dígitos.
+2. No **computador principal**, abra o painel dentro do Live, vá na aba
+   **Rede** e aperte **Mostrar** no cartão **Segundo computador**. Digite o
+   endereço do segundo computador e o código, e aperte **Parear**.
 3. Ponha os dois computadores na mesma sessão: **Link** do Ableton ligado,
    **Start Stop Sync** do Live desligado. O relay cuida do transporte; a
    sincronização nativa cuidaria dele duas vezes.
@@ -84,17 +85,18 @@ CSV ficam no computador principal.
   música recolhem e reabrem as seções dela; **Recolher todas / Abrir todas**,
   na barra "Músicas no projeto", age em todas. A escolha fica salva no
   aparelho, por setlist.
-- **Um lugar para cada função no card da música.** Segure o **nome** para
-  pular; o número, o tempo e o espaço vazio não fazem nada. Reordene
-  arrastando a **alça** na borda direita do card, com mouse ou com o dedo.
-  Segurar os três pontinhos não pula mais.
+- **Um lugar para cada função no card da música.** Segure o **nome** da música
+  ou o **número** dela para pular; o tempo, as notas, os selos, os três
+  pontinhos e a alça não fazem nada. Reordene arrastando a **alça** na borda
+  direita do card, com mouse ou com o dedo. Segurar os três pontinhos não
+  pula mais.
 - **O certificado do celular.** A extensão cria uma autoridade de
   certificado para este computador, limitada a localhost e endereços
-  privados, e assina com ela o certificado do próprio servidor. Uma nova
-  linha **Certificado do celular** no painel do Live mostra um QR para uma
-  página simples na porta 4445, onde o celular baixa e instala o
-  certificado uma vez; depois disso o navegador para de avisar.
-- **O QR aponta para a rede certa.** O endereço do QR e da linha de
+  privados, e assina com ela o certificado do próprio servidor. Um novo
+  cartão **Certificado** no painel do Live mostra um QR para uma página
+  simples na porta 4445, onde o celular baixa e instala o certificado uma
+  vez; depois disso o navegador para de avisar.
+- **O QR aponta para a rede certa.** O endereço do QR e do cartão de
   pareamento é o que o sistema usa de verdade, então um computador com cabo
   de luz ou de áudio e Wi-Fi ao mesmo tempo anuncia o Wi-Fi.
 - **A barra do topo fica numa linha só** em inglês e em português; palavras

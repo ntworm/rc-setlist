@@ -30,8 +30,8 @@ free for noncommercial use and source-available.
 - **A new Live panel.** Three tabs, Main, Setlists and Network, in the face of
   the RC Setlist pages. Main shows one QR in the middle, the Stage Control by
   default, with a button beside it that swaps it for the Performance Display
-  in the same place. Network keeps the address, the phone certificate and the
-  second computer.
+  in the same place. Network keeps the address, the certificate card and the
+  second computer card.
 - **Setlist packages.** Export all writes every setlist of the Live Set (order,
   song colours and notes, lyrics) into one `.rcsetlist` file; Import brings the
   setlists of a package in beside the ones you have, numbering a name that is
@@ -50,8 +50,8 @@ free for noncommercial use and source-available.
   mouse or a finger.
 - **The phone certificate.** The extension creates a certificate authority
   for this computer, valid only for localhost and private network
-  addresses. The **Phone certificate** row in the panel shows a QR to a page
-  on port `4445` where a phone installs it once; after that the browser stops
+  addresses. The **Certificate** card in the panel shows a QR to a page on
+  port `4445` where a phone installs it once; after that the browser stops
   warning.
 - **The QR finds the right network.** The address in the QR is the one the
   system really routes through, so a computer with a lighting or audio
@@ -104,8 +104,8 @@ until this release is exercised on real macOS hardware.
    folder stays). Then open the `.ablx` and approve installation in Live.
 4. In Live, open **Extensions > RC Setlist** and start the server.
 5. Use the panel URL or QR code to open `/setlist` or `/performance`.
-6. To stop the certificate warning, scan the **Phone certificate** QR in the
-   panel once and follow the steps on that page.
+6. To stop the certificate warning, scan the **Certificate** QR in the panel
+   once and follow the steps on that page.
 7. Choose English or **Português (Brasil)** from the language menu.
 
 Users upgrading from 0.x (`Ableton-RC-Setlist-0.4.x`–`0.7.0`) run the kit's
