@@ -43,15 +43,16 @@
 
 ## A página do navegador não abre
 
-- Na primeira conexão, `ERR_CERT_AUTHORITY_INVALID` é o aviso esperado para o
-  certificado local autoassinado do RC Setlist. Continue somente se o endereço
-  for exatamente o IP mostrado no painel do Live e a rede local for confiável.
-  Cada navegador/aparelho pode exigir isso uma vez.
+- `ERR_CERT_AUTHORITY_INVALID` é o aviso esperado enquanto o certificado deste
+  computador não estiver instalado no aparelho. Escaneie o QR **Certificado do
+  celular** no painel do Live e siga os passos daquela página (porta `4445`). O
+  Android recusa o certificado aberto pela notificação do download: instale
+  pelas Configurações.
 - Abra `https://localhost:4444/health` no host.
 - Confirme que o painel informa que o servidor está em execução.
 - Libere TCP `4444` somente no perfil de rede privada.
 - Coloque host e controle na mesma LAN que não seja uma rede de convidados.
-- Aceite o certificado autoassinado somente para esse endereço exato do painel.
+- Aceite o aviso de certificado somente para esse endereço exato do painel.
 
 ## Os controles estão somente para leitura
 

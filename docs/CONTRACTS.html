@@ -1,0 +1,669 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>RC Setlist Contracts — Ableton Live</title>
+    <meta
+      name="description"
+      content="This document is the public contract for RC Setlist 1.0. Every behaviour documented here has a regression test in tests/release-contracts.test.mjs;…"
+    />
+    <link rel="canonical" href="https://ntworm.github.io/rc-setlist/CONTRACTS.html" />
+    <link rel="alternate" type="text/markdown" href="./CONTRACTS.md" />
+    <link rel="describedby" href="./llms.txt" />
+    <meta property="og:type" content="article" />
+    <meta property="og:site_name" content="RC Setlist" />
+    <meta property="og:locale" content="en" />
+    <meta property="og:title" content="RC Setlist Contracts — Ableton Live" />
+    <meta
+      property="og:description"
+      content="This document is the public contract for RC Setlist 1.0. Every behaviour documented here has a regression test in tests/release-contracts.test.mjs;…"
+    />
+    <meta property="og:url" content="https://ntworm.github.io/rc-setlist/CONTRACTS.html" />
+    <meta property="og:image" content="https://ntworm.github.io/rc-setlist/og-image.png" />
+    <style>
+      body {
+        font:
+          16px/1.55 system-ui,
+          sans-serif;
+        max-width: 920px;
+        margin: 2rem auto;
+        padding: 0 1rem;
+        color: #f2f2f2;
+        background: #0e0e0e;
+      }
+      h1,
+      h2,
+      h3,
+      h4 {
+        line-height: 1.25;
+      }
+      h1 {
+        font-size: 2.2rem;
+        margin-top: 0;
+      }
+      h2 {
+        margin-top: 2rem;
+        padding-top: 1rem;
+        border-top: 1px solid #333;
+      }
+      h3 {
+        margin-top: 1.5rem;
+      }
+      code {
+        font:
+          0.92em ui-monospace,
+          Consolas,
+          monospace;
+        background: #1a1a1a;
+        padding: 0.1em 0.35em;
+        border-radius: 0;
+      }
+      pre {
+        background: #1a1a1a;
+        padding: 0.8rem 1rem;
+        overflow-x: auto;
+        border: 1px solid #333;
+      }
+      pre code {
+        background: transparent;
+        padding: 0;
+      }
+      a {
+        color: #ffa133;
+      }
+      ul,
+      ol {
+        padding-left: 1.2em;
+      }
+      blockquote {
+        border-left: 4px solid #ffa133;
+        margin: 1em 0;
+        padding: 0.5em 1em;
+        color: #a0a0a0;
+      }
+      .crumbs {
+        font-size: 0.85em;
+        color: #a0a0a0;
+        margin-bottom: 1rem;
+      }
+      .crumbs a {
+        color: #a0a0a0;
+        text-decoration: none;
+      }
+      .crumbs a:hover {
+        color: #f2f2f2;
+      }
+      .source {
+        font-size: 0.78em;
+        color: #a0a0a0;
+        margin-top: 2rem;
+        border-top: 1px solid #333;
+        padding-top: 0.5rem;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="crumbs"><a href="./">RC Setlist</a> · <a href="./README.html">Docs</a></div>
+    <h1 id="rc-setlist-contracts">RC Setlist Contracts</h1>
+    <p>
+      This document is the public contract for RC Setlist 1.0. Every behaviour documented here has a
+      regression test in
+      <a href="../tests/release-contracts.test.mjs"><code>tests/release-contracts.test.mjs</code></a
+      >; behaviour outside this document is implementation detail and may change without notice.
+      Anything documented here stays in place until the next major version (2.0) per the SemVer
+      policy in §7.
+    </p>
+    <p>
+      Audience: extension authors writing a controller that talks to RC Setlist over WebSocket,
+      integrators reading or writing RC Setlist profiles on disk, and contributors changing any of
+      the surfaces below.
+    </p>
+    <p>Locale: <a href="./pt-BR/CONTRATOS.html">Português (Brasil)</a></p>
+    <p>---</p>
+    <h2 id="1-on-disk-formats">1. On-disk formats</h2>
+    <p>
+      Profiles live under a single storage root. 1.0 derives the root from
+      <code>manifest.json</code> <code>name</code> (<code>RC Setlist</code>), the publisher
+      (<code>ntworm</code>) and the Live suite version, so a Windows user with Ableton 12 sees
+      <code>%LOCALAPPDATA%\Ableton\Extensions Data\ntworm.rc-setlist\</code> and a macOS user sees
+      <code>~/Library/Application Support/Ableton/Extensions Data/ntworm.rc-setlist/</code>. The
+      <code>0.x</code> lineage used <code>ntworm.ableton-rc-setlist</code>; the 1.0 migration kit
+      (<code>Migrate-RC-Setlist-Data.{cmd,ps1}</code> /
+      <code>Migrate RC Setlist Data.command</code>, <code>scripts/migrate-data.mjs</code>) copies
+      the old tree to the new one without overwriting destination files.
+    </p>
+    <p>Inside a profile directory:</p>
+    <p>
+      | File | Owner | Stable since | Notes | | ----------------------------------- | ------- |
+      ------------ | ------------------------------------------------------------------ | |
+      <code>index.json</code> | manager | 0.5.1 | Registry of profiles (UUID, name, created/updated,
+      schemaVersion). | | <code>index.json.bak</code> | manager | 0.5.1 | Recovery shadow written
+      alongside <code>index.json</code>. | | <code>profile.json</code> | manager | 0.5.1 | Profile
+      metadata + path root + <code>lastSavedAt</code>. | | <code>profile.json.bak</code> | manager |
+      0.5.1 | Recovery shadow. | | <code>profiles/&lt;uuid&gt;/profile.json</code> | manager | 0.5.1
+      | Per-profile metadata. | | <code>profiles/&lt;uuid&gt;/custom-order.json</code> | manager |
+      0.5.1 | <code>string[]</code> of song titles in display order. | |
+      <code>profiles/&lt;uuid&gt;/song-book.json</code> | manager | 0.5.1 | Per-song colour
+      (<code>#rrggbb</code>, palette in §6.3) and one-line notes. | |
+      <code>profiles/&lt;uuid&gt;/lyrics/&lt;song&gt;.lrc</code> | lyrics | 0.5.1 | LRC with
+      optional <code>ar</code>/<code>ti</code>/<code>al</code>/<code>by</code> headers; UTF-8. | |
+      <code>profiles/&lt;uuid&gt;/lyrics/&lt;song&gt;.txt</code> | lyrics | 0.5.1 | Plain text; one
+      line per beat, server assigns pseudo-time. | | <code>certs/&lt;hostname&gt;.pem</code> +
+      <code>.key</code> | server | 0.5.1 | Self-signed certificate per detected LAN hostname. | |
+      <code>token</code> | server | 0.5.1 | Plain text token used for HTTP/WS auth. | |
+      <code>ui-locale</code> | prefs | 0.5.1 | <code>en</code> or <code>pt-BR</code>; anything else
+      rejected by the panel. | | <code>auto-start</code> | prefs | 0.5.1 | <code>1</code> or
+      <code>0</code>; toggles Live auto-launch. | | <code>events.log</code> | log | 0.5.1 | NDJSON,
+      append-only, 10 MiB rotation; redacts secrets (see §2.5). |
+    </p>
+    <p>
+      The 1.0 registry carries <code>schemaVersion: 2</code>. Profiles migrated from 0.x arrive with
+      <code>schemaVersion: 1</code> and are upgraded in place the first time they are opened.
+      <code>schemaVersion: 3</code> is reserved for the next major and currently rejects the profile
+      with <code>future_schema</code>.
+    </p>
+    <p>
+      The fixture <code>tests/fixtures/storage/{0.5.1,0.6.1,0.7.0}/</code> carries one minimal,
+      anonymised profile per past version so the migration path stays covered.
+    </p>
+    <p>---</p>
+    <h2 id="2-websocket-protocol-v3">2. WebSocket protocol (v3)</h2>
+    <p>
+      The HTTPS server on <code>https://&lt;host&gt;:&lt;port&gt;/</code> upgrades a WebSocket
+      connection at the same origin. The handshake requires <code>Origin</code> /
+      <code>Host</code> to be a loopback address (<code>127.0.0.1</code>, <code>::1</code>) or a
+      local-LAN address; anything else is rejected with HTTP 403 before the upgrade. After upgrade,
+      every frame is a JSON text frame.
+    </p>
+    <h3 id="2-1-server-client-frames">2.1 Server → Client frames</h3>
+    <p>
+      Every server frame carries <code>type</code> and (for state) <code>stateVersion</code> so a
+      client that connects late or reconnects can reject an out-of-order frame.
+    </p>
+    <p>
+      | <code>type</code> | Required fields | Sent when | | ------------------- |
+      ---------------------------------------------------------------------- |
+      --------------------------------------------------------------------------------- | |
+      <code>state</code> | <code>stateVersion</code>, <code>SetlistState</code> (§2.4) | Initial
+      connect (<code>sync_confirm</code> triggers re-broadcast) and on every state change. | |
+      <code>log</code> |
+      <code>level</code>
+      (<code>debug</code>/<code>info</code>/<code>warn</code>/<code>error</code>),
+      <code>scope</code>, <code>message</code>, <code>fields?</code> | Server-side log line routed
+      to console; redacted per §2.5. | | <code>pong</code> | <code>ts</code> | Heartbeat reply. | |
+      <code>auth_success</code> | <code>clientId</code>, <code>controller: true</code> | Manual
+      <code>auth</code> succeeds. | | <code>auth_failure</code> | <code>reason</code> | Manual
+      <code>auth</code> rejected; client may retry up to 3 times/minute/IP. | |
+      <code>command_ack</code> | <code>commandId</code>, <code>status</code> | Server accepted a
+      command from §2.2. | | <code>command_confirmed</code> | <code>commandId</code>,
+      <code>status</code>, <code>commandType</code>, <code>details?</code> | Handler completed;
+      <code>status</code> is one of
+      <code>confirmed</code>/<code>failed</code>/<code>expired</code>/<code>cancelled</code>. | |
+      <code>disconnect_notice</code> | <code>reason</code> | Forced close (backpressure, origin
+      rejection, …). |
+    </p>
+    <h3 id="2-2-client-server-frames">2.2 Client → Server frames</h3>
+    <p>
+      The decoder is <code>src/server/client-message.ts</code>. Every message validates
+      <code>type</code> against <code>^[a-z][a-z0-9_]{0,63}$</code>; anything else returns
+      <code>invalid_message</code>. Command IDs match <code>^[A-Za-z0-9._:-]+$</code> and are
+      required on every command.
+    </p>
+    <p>
+      | <code>type</code> | Required fields | Effect | | ---------------- |
+      ------------------------------------- |
+      --------------------------------------------------------------------------------------------------------------------------------
+      | | <code>handshake</code> | <code>clientId</code> | Begin Reliability Core sync; replies with
+      <code>state</code> once handshake completes. | | <code>sync_confirm</code> |
+      <code>stateVersion</code> | Re-broadcast the cached <code>state</code> if the version matches;
+      otherwise no-op. | | <code>auth</code> | <code>token</code> | Re-attempt auth; succeeds only
+      if <code>token === server.token</code> and server.token is non-empty. | | <code>play</code> |
+      <code>commandId</code> | Resume transport at the resting position. | | <code>stop</code> |
+      <code>commandId</code> | Stop transport; disarms any pending jump. | |
+      <code>toggle_play</code> | <code>commandId</code> | Play if stopped, stop if playing. | |
+      <code>next</code> | <code>commandId</code> | Cue-jump to the next song&#39;s first beat
+      (quantized or immediate per global quantization). | | <code>prev</code> |
+      <code>commandId</code> | Relocate to the previous song. | | <code>jump</code> |
+      <code>commandId</code>, <code>locator</code> | Cue-jump to a marker by name (locator grammar
+      in §4). | | <code>bpm</code> | <code>commandId</code>, <code>bpm</code> (20–300) | Set tempo.
+      | | <code>click</code> | <code>commandId</code>, <code>enabled</code> | Toggle metronome. | |
+      <code>pre_roll</code> | <code>commandId</code>, <code>enabled</code> | Toggle pre-roll. | |
+      <code>set_panic</code> | <code>commandId</code>, <code>enabled</code> | Enter / leave panic
+      mode (stops transport, locks non-safety commands). | | <code>set_song_color</code> |
+      <code>commandId</code>, <code>songTime</code>, <code>color</code> | Colour the song at the
+      given beat position; colour must be in §6.3. | | <code>set_song_notes</code> |
+      <code>commandId</code>, <code>songTime</code>, <code>notes</code> | Set the one-line notes;
+      <code>null</code> clears. | | <code>set_loop</code> | <code>commandId</code>,
+      <code>enabled</code>, <code>count?</code> | Arm / disarm loop on the current song. | |
+      <code>reorder</code> | <code>commandId</code>, <code>order</code> | Custom display order; must
+      contain every current song exactly once. | | <code>profile_*</code> | <code>commandId</code> |
+      Profile management (<code>profile_create</code>, <code>profile_select</code>,
+      <code>profile_rename</code>, <code>profile_delete</code>, <code>profile_restore</code>);
+      controller-only. | | <code>export_csv</code> | <code>commandId</code> | Write a UTF-8-BOM CSV
+      of the active setlist to the resolved export path. | | <code>edit_locator</code> |
+      <code>commandId</code>, <code>currentName</code>, <code>newName</code> | Rename the cue in the
+      Set (controller-only). |
+    </p>
+    <p>
+      Bounded sizes enforced by the decoder: commandId ≤ 128 chars; clientId ≤ 128; profile fields ≤
+      80; song titles ≤ 255; lyrics body ≤ 96 KiB; reorder ≤ 4096 songs; structured-text fields
+      (notes, song title, lyrics header) reject C0/C1 controls.
+    </p>
+    <p>
+      A peer connection (see §5.1) sends one frame the table above does not list:
+      <code>jump_time</code>, with <code>commandId</code>, <code>time</code> (the beat it lands on)
+      and <code>section</code> (whether that beat is a section). A jump cannot travel as an index
+      into a list, because the two computers may hold the songs in another order. Only a peer
+      connection may send it; any other client is refused with <code>unauthorized</code>. The
+      receiving side looks for a marker less than a hundredth of a beat away from that beat — the
+      closest one, and on a tie the first in its displayed order — and answers
+      <code>{&quot;type&quot;:&quot;error&quot;,&quot;code&quot;:&quot;peer_no_marker&quot;}</code>
+      when it has none.
+    </p>
+    <h3 id="2-3-reliability-core">2.3 Reliability Core</h3>
+    <p>
+      Every command is acknowledged twice: <code>command_ack</code> (server accepted the command
+      into the bus) and <code>command_confirmed</code> (handler finished). The
+      <code>status</code> enum in <code>command_confirmed</code> is <code>created</code> →
+      <code>sent</code> → <code>acknowledged</code> → <code>confirmed</code> (or
+      <code>failed</code>/<code>expired</code>/ <code>cancelled</code>). A handler that throws
+      <code>OperatorError</code> keeps the rejection inside <code>failed</code> with a stable
+      <code>reason</code>; a handler that throws anything else settles with
+      <code>execution_failed</code> and the original error is written to <code>events.log</code>,
+      never the WS frame.
+    </p>
+    <p>
+      The server emits <code>state</code> with a monotonically increasing <code>stateVersion</code>.
+      <code>sync_confirm</code> with a stale version is a no-op; the client should send
+      <code>handshake</code> to recover.
+    </p>
+    <h3 id="2-4-setliststate-shape">2.4 SetlistState shape</h3>
+    <p>
+      Mirrors <a href="../src/types.ts"><code>src/types.ts</code></a> <code>SetlistState</code>. The
+      1.0 contract adds <code>protocolVersion: 3</code> (the schema version of this frame, not of
+      on-disk profiles), <code>preRollEnabled</code>, <code>durationBpm</code>,
+      <code>declaredTempo</code>, <code>songColors</code>, <code>songNotes</code>,
+      <code>durationConfidence</code>, <code>loopIteration</code>, <code>loopCount</code>,
+      <code>currentLoopIteration</code>, <code>clipTriggerQuantization</code>. Reliability Core adds
+      <code>stateVersion</code>, <code>connection</code>, <code>transport</code>,
+      <code>currentSongId</code>, <code>currentSectionId</code>, <code>pendingCommands</code>,
+      <code>mode</code> (<code>rehearsal</code> | <code>show</code>), <code>safety</code>.
+    </p>
+    <p>
+      The 1.1 contract adds <code>peerStatus</code>, the state of the link to the paired computer
+      (§5.1): <code>paired</code> says a computer is paired at all, <code>connected</code> says the
+      link is up, <code>markersMatch</code> says both computers read the same markers, and
+      <code>fingerprintMismatch</code> says the paired computer presented another certificate and
+      the link refused it. The field travels with every <code>state</code> frame, so a client that
+      knows nothing about the second computer can ignore it.
+    </p>
+    <h3 id="2-5-log-redaction">2.5 Log redaction</h3>
+    <p>Server logs and <code>log</code> WS frames redact, by key name or value pattern:</p>
+    <ul>
+      <li>
+        Field names matching
+        <code>/(?:token|password|secret|^key$|authToken|passwordHash|apiKey)/i</code>
+      </li>
+    </ul>
+    <p>are replaced with <code>[REDACTED]</code>.</p>
+    <ul>
+      <li>
+        Windows absolute paths (<code>C:\…</code>), UNC (<code>\\…</code>), macOS
+        (<code>/Users/…</code>) and
+      </li>
+    </ul>
+    <p>Linux (<code>/home/…</code>) keep the last two path segments, normalised.</p>
+    <ul>
+      <li><code>token=…</code> query-string values are replaced with <code>***</code>.</li>
+    </ul>
+    <p>This is asserted by <code>tests/release-contracts.test.mjs</code>.</p>
+    <p>---</p>
+    <h2 id="3-osc-integration">3. OSC integration</h2>
+    <p>
+      RC Setlist prefers <strong>RC Bridge</strong> (the fork of AbletonOSC shipped inside the
+      extension and the kit) and falls back to a stock AbletonOSC when no bridge answers the probe.
+    </p>
+    <p>
+      | Layer | UDP port | Behaviour | | --------------------- | -------- |
+      -------------------------------------------------------------------------------------------------------------------
+      | | RC Bridge | 11020 | Replies to <code>/live/rcbridge/version</code> on each client socket;
+      chosen port is the ephemeral source port of the request. | | AbletonOSC (fallback) | 11000 |
+      Standard OSC; replies go to the source port of the request. | | AbletonOSC (listen) | 11001 |
+      Standard OSC; client listens here for unsolicited state. |
+    </p>
+    <p>
+      The probe runs for 700 ms (RC Bridge answers in well under 200 ms in practice). RC Bridge
+      version is <code>/live/rcbridge/version</code> and replies with a string of the form
+      <code>RC Bridge 1.0.0</code>.
+    </p>
+    <p>OSC addresses the client listens on or sends:</p>
+    <ul>
+      <li>
+        <code>/live/song/get/tempo</code> and <code>/live/song/start_listen/tempo</code> — current
+      </li>
+    </ul>
+    <p>song tempo.</p>
+    <ul>
+      <li>
+        <code>/live/clip/get/cues</code> — list of cues (<code>name</code>, <code>time</code>).
+      </li>
+      <li><code>/live/song/get/current_song_time</code> — current playhead position.</li>
+      <li><code>/live/song/get/is_playing</code> — transport state.</li>
+      <li><code>/live/clip/get/name</code> — cue rename.</li>
+      <li><code>/live/song/set/tempo</code> — set tempo (when SDK sync is unavailable).</li>
+      <li><code>/live/clip/fire</code> — cue jump.</li>
+    </ul>
+    <p>---</p>
+    <h2 id="4-locator-grammar">4. Locator grammar</h2>
+    <p>
+      A cue name in Live follows the grammar below. The parser (<a
+        href="../src/core/locator-parser.ts"
+        ><code>src/core/locator-parser.ts</code></a
+      >) accepts the exact form; anything outside the table either splits into multiple cues (<code
+        >&gt;</code
+      >
+      separator) or is treated as a plain title.
+    </p>
+    <h3 id="4-1-song-vs-section">4.1 Song vs section</h3>
+    <ul>
+      <li><code>Song Title</code> — a song locator (title only).</li>
+      <li><code>&gt; Section</code> — a section of the most recently seen song.</li>
+      <li><code>Song Title &gt; Section</code> — a section of an explicitly named song.</li>
+      <li>
+        <code>Song Title &gt;</code> (trailing <code>&gt;</code>) — an automation-only section of
+        `Song
+      </li>
+    </ul>
+    <p>Title` (no display title, but the section&#39;s tags still fire).</p>
+    <p>
+      The <code>&gt;</code> splits outside <code>[ ]</code> brackets, so
+      <code>[jump A &gt; Chorus]</code> keeps the <code>&gt;</code> inside the tag.
+    </p>
+    <h3 id="4-2-tag-table">4.2 Tag table</h3>
+    <p>
+      All tags are case-insensitive (<code>[LOOP]</code> ≡ <code>[loop]</code>). Whitespace inside
+      the tag is collapsed.
+    </p>
+    <p>
+      | Tag | Value | Effect | | ----------------------------- | ------------ |
+      -----------------------------------------------------------------------------------------------------------------------------------------------------------
+      | | <code>[stop]</code> | none | Stop the transport when the cue is reached. | |
+      <code>[next]</code> | none | Relocate to the next song&#39;s first beat when reached late. | |
+      <code>[skip]</code> | none | Skip over this song on <code>next</code>. | |
+      <code>[loop]</code> | none | Arm an infinite loop on the cue (released by the next loop arm /
+      <code>[stop]</code> / <code>[next]</code>). | | <code>[loop Nx]</code> /
+      <code>[loop N]</code> | integer ≥ 1 | Arm a counted loop on the cue; N iterations before
+      release. | | <code>[bpm N]</code> | float | Declare the tempo at this cue; durations fall back
+      to this instead of the live tempo. | | <code>[click]</code> | none | Turn the metronome on
+      when reached. | | <code>[click off]</code> / <code>[click-off]</code> | none | Turn the
+      metronome off when reached. | | <code>[hidden]</code> | none | Hide this cue from the visible
+      setlist (kept in <code>hidden[]</code>). | | <code>[ignore]</code> | none | Same effect as
+      <code>[hidden]</code>; preferred form for new cues. | | <code>[jump NAME]</code> | string |
+      When reached, hand over to the marker called NAME. Resolution: section of the same song → song
+      → any section, case-insensitive; tags ignored on the target. | | <code>_pre-roll</code> |
+      legacy alias | Treated as <code>[hidden] + preRoll</code> for backward compatibility with 0.x.
+      |
+    </p>
+    <p>Examples, all valid:</p>
+    <ul>
+      <li><code>INTRO</code></li>
+      <li><code>&gt; VERSO</code></li>
+      <li><code>Song A &gt; Chorus [loop 4x]</code></li>
+      <li><code>Song A &gt; Refrão [bpm 120]</code> — <code>[bpm]</code> on a named section.</li>
+      <li><code>Song A [bpm 120]</code></li>
+      <li>
+        <code>Song A &gt; Bridge [jump Verse]</code> (handover to the section &quot;Verse&quot;)
+      </li>
+      <li>
+        <code>Song A [hidden]</code> (kept in <code>hidden[]</code>, not in <code>songs[]</code>)
+      </li>
+    </ul>
+    <p>
+      <strong>Known parser quirks</strong> (the parser handles these cases; the inputs above with an
+      explicit song are the recommended forms):
+    </p>
+    <ul>
+      <li><code>[bpm 120] &gt; Refrão</code> (implicit empty song) — the parser parses the</li>
+    </ul>
+    <p>
+      <code>[bpm]</code> tag as belonging to the implicit song, not the section. The resulting
+      <code>section.bpm</code> is <code>null</code>. Use
+      <code>Song A &gt; Refrão [bpm 120]</code> to pin the tag on the section.
+    </p>
+    <ul>
+      <li><code>[jump A &gt; Chorus]</code> (no name) — the parser classifies this as</li>
+    </ul>
+    <p>
+      <code>kind: &#39;automation&#39;</code> because the display name is empty; the
+      <code>jumpTarget</code> is preserved on the section fields. Use
+      <code>Song A &gt; Bridge [jump Verse]</code> to keep the <code>section</code> kind.
+    </p>
+    <ul>
+      <li><code>&gt; [stop]</code> (tag-only relative automation) — the parser classifies</li>
+    </ul>
+    <p>
+      this as <code>kind: &#39;relative-automation&#39;</code>. The <code>[stop]</code> tag still
+      fires when the playhead reaches the implicit cue.
+    </p>
+    <p>
+      These quirks are documented as they exist in 1.0; any change to the parser is held for
+      <code>2.0.0</code> per §7.
+    </p>
+    <h3 id="4-3-what-is-not-in-the-grammar">4.3 What is not in the grammar</h3>
+    <ul>
+      <li>
+        <code>[anything-other]</code> — ignored, with the literal <code>[anything-other]</code>
+      </li>
+    </ul>
+    <p>stripped from the display title.</p>
+    <ul>
+      <li>Nested brackets: <code>[a [b]]</code> — not supported; treat as text.</li>
+      <li>Unicode whitespace inside tags: not normalised beyond <code>trim()</code>.</li>
+      <li>Comments inside a cue: not supported; the cue is one line in Live.</li>
+    </ul>
+    <p>---</p>
+    <h2 id="5-http-endpoints">5. HTTP endpoints</h2>
+    <p>
+      Base URL: <code>https://&lt;host&gt;:&lt;port&gt;/</code> (default port <code>4444</code>, but
+      the server binds the first free port in the <code>RC_SETLIST_HTTP_PORT</code> hint range). The
+      token is at <code>Authorization: Bearer &lt;token&gt;</code> or in the
+      <code>?token=&lt;token&gt;</code> query parameter (the latter is the QR pairing flow and is
+      the only place the token may appear in a URL). Every response carries
+      <code>X-Content-Type-Options: nosniff</code>, <code>Referrer-Policy: no-referrer</code>, and a
+      CSP that disallows inline scripts in stage pages.
+    </p>
+    <p>
+      | Method | Path | Auth | Purpose | | ------ | --------------------- | ---- |
+      -----------------------------------------------------------------------------------------------------------------
+      | | GET | <code>/</code> | no | Landing HTML (redirect to <code>/setlist</code>). | | GET |
+      <code>/setlist</code> | no | Stage Control HTML. | | GET | <code>/performance</code> | no |
+      Performance display HTML. | | GET | <code>/panel</code> | no | Live-side panel HTML (token
+      injected via <code>window.INITIAL_TOKEN</code>). | | GET | <code>/health</code> | no |
+      <code>HEAD</code>/<code>GET</code> — returns 200 with no body. | | GET |
+      <code>/static/&lt;path&gt;</code> | no | Serves <code>static/</code>; <code>..</code>, encoded
+      slashes and Unicode names are rejected. | | GET | <code>/exports/&lt;file&gt;.csv</code> | yes
+      | Returns a generated CSV; filename must match <code>[A-Za-z0-9_.-]+\.csv</code>. | | GET |
+      <code>/audio/&lt;file&gt;</code> | yes | Returns an audio asset; filename allowlist
+      per-profile. | | GET | <code>/lyrics/&lt;song&gt;</code> | yes | Returns the saved lyrics
+      (<code>.lrc</code> or <code>.txt</code>). | | GET | <code>/state</code> | yes | Returns the
+      current <code>SetlistState</code> as JSON. | | GET | <code>/api/snapshot</code> | yes |
+      Internal diagnostics; disabled in production. | | POST | <code>/api/command</code> | yes |
+      Accepts a single client message (<code>src/server/client-message.ts</code>); replies
+      <code>command_ack</code> then <code>command_confirmed</code>. |
+    </p>
+    <p>
+      <code>/api/*</code> paths require a controller token; <code>/health</code>,
+      <code>/static/*</code> and the HTML pages do not. Any unknown path returns
+      <code>404 text/plain</code> without leaking the server header.
+    </p>
+    <p>
+      One more route exists and is described in §5.1: <code>GET /peer/pair</code>, which hands the
+      peer credential to a computer that presents the right six-digit code.
+    </p>
+    <h3 id="5-1-the-second-computer">5.1 The second computer</h3>
+    <p>
+      Two computers can run the same show. The one that holds Live relays the transport commands to
+      the other over a TLS WebSocket the peer opens with the credential below.
+    </p>
+    <p>
+      <strong>The credential.</strong> <code>GET /peer/pair?code=&lt;code&gt;</code> answers
+      <code>200</code> with
+      <code>{&quot;peerToken&quot;: &quot;&lt;32 hex characters&gt;&quot;}</code> and nothing else.
+      The token is a credential of its own, stored in <code>&lt;storage&gt;/peer-token</code> next
+      to the security token, and it is never the same string as the security token. A peer token may
+      send <code>handshake</code>, <code>sync_confirm</code>, <code>jump_time</code>,
+      <code>play</code>, <code>stop</code>, <code>metronome</code>, <code>set_quantization</code>,
+      <code>trigger_count_in</code>, <code>refresh</code> and <code>set_panic</code>, and nothing
+      else: any other frame is refused with <code>unauthorized</code>, including
+      <code>jump</code> by index. A controller token may run every command.
+    </p>
+    <p>
+      The code is six digits, lives for ten minutes and works exactly once. Five wrong guesses kill
+      it, and the attempts that reach it are rate limited per address (5 per minute) and in total
+      (20 per minute). The route answers:
+    </p>
+    <ul>
+      <li><code>404</code> when no code is active, or when the request did not arrive over TLS.</li>
+      <li><code>403</code> when the code is wrong. The body does not say why.</li>
+      <li><code>429</code> when the rate limit was reached.</li>
+      <li><code>200</code> with the peer token when the code was right.</li>
+    </ul>
+    <p>The code is masked in the logs and in the URL, like every other secret in this document.</p>
+    <p>
+      <strong>The connection.</strong> A peer upgrades at the same origin with
+      <code>?token=&lt;peerToken&gt;</code> and sends
+      <code>{&quot;type&quot;:&quot;handshake&quot;,&quot;clientId&quot;:&quot;rc-peer&quot;}</code
+      >. The server answers with the usual <code>handshake_ack</code>, and the peer confirms with
+      <code>sync_confirm</code> as any client does. The link is one hop: a command that arrived from
+      a peer is never forwarded again.
+    </p>
+    <p>
+      <strong>The port.</strong> The pairing and the link always reach the second computer on port
+      <code>4444</code>, the port the server binds; the panel has no field for another one. The
+      second computer has to accept connections on that port, as it already does for a phone.
+    </p>
+    <p>
+      <strong>The certificate.</strong> The link pins the certificate. The fingerprint the pairing
+      answered with is compared against the one the socket presents before a single byte goes out; a
+      computer that presents another certificate is never talked to, and the state reports
+      <code>fingerprintMismatch</code>.
+    </p>
+    <p>
+      <strong>The state.</strong> The <code>state</code> frame carries
+      <code>peerStatus</code> (§2.4) so the page can say what the link is doing without asking.
+    </p>
+    <p>---</p>
+    <h2 id="6-compatibility-helpers">6. Compatibility helpers</h2>
+    <h3 id="6-1-version-with-single-source">6.1 Version with single source</h3>
+    <p>
+      <code>package.json</code> <code>version</code> is the only source of truth.
+      <code>scripts/sync-version.mjs</code>:
+    </p>
+    <ul>
+      <li>
+        <code>npm run version:check</code> (alias
+        <code>node scripts/sync-version.mjs --check</code>)
+      </li>
+    </ul>
+    <p>
+      reads <code>package.json</code>, <code>manifest.json</code>, <code>docs/site-i18n.js</code>,
+      and the release-template files. Exits 1 with a diff if any surface disagrees.
+    </p>
+    <ul>
+      <li><code>node scripts/sync-version.mjs --write</code> rewrites every surface listed</li>
+    </ul>
+    <p>
+      above to match <code>package.json</code>. The release pipeline calls <code>--check</code> and
+      fails if any drift has been left unfixed.
+    </p>
+    <h3 id="6-2-migration-0-x-1-0">6.2 Migration 0.x → 1.0</h3>
+    <p>
+      <code>scripts/migrate-data.mjs</code> is the testable core; the kit ships PowerShell (Windows)
+      and shell (macOS) wrappers around it. Behaviour:
+    </p>
+    <ul>
+      <li>Source: <code>%LOCALAPPDATA%\Ableton\Extensions Data\ntworm.ableton-rc-setlist</code></li>
+    </ul>
+    <p>
+      (Windows) or
+      <code>~/Library/Application Support/Ableton/Extensions Data/ntworm.ableton-rc-setlist</code>
+      (macOS). The wrappers probe both candidates.
+    </p>
+    <ul>
+      <li>Destination: the 1.0 root (see §1). Created if missing.</li>
+      <li>
+        Copy <code>profiles/</code>, <code>project-setlists/</code>, <code>token</code>,
+        <code>ui-locale</code>,
+      </li>
+    </ul>
+    <p>
+      <code>auto-start</code>, <code>certs/</code>. Never overwrite an existing destination file.
+    </p>
+    <ul>
+      <li>Idempotent: a second run with the same source is a no-op.</li>
+    </ul>
+    <h3 id="6-3-song-colour-palette">6.3 Song colour palette</h3>
+    <p>
+      Sixteen swatches in two rows; the server rejects anything outside the palette so a rogue
+      client cannot paint a song in a reserved state colour. Defined once in
+      <code>src/server/client-message.ts</code> and mirrored in
+      <code>static/setlist/marker-editor.js</code>; the test
+      <code>tests/client-message.test.mjs</code> reads the client file and fails if the two ever
+      diverge.
+    </p>
+    <p>---</p>
+    <h2 id="7-semver-policy">7. SemVer policy</h2>
+    <p>
+      <code>1.0.x</code> is the public line on
+      <code>https://github.com/ntworm/rc-setlist</code> from the date of release. Security fixes are
+      provided for the latest <code>1.x.y</code> only; older <code>1.x</code> and the
+      <code>0.x</code> lineage are unsupported. The next breaking change is <code>2.0.0</code>;
+      <code>1.x</code> is additive only.
+    </p>
+    <p>
+      | Surface | Backwards-compatible in 1.x? | | ---------------------- |
+      -------------------------------------------------------------- | | WebSocket protocol | Yes —
+      additive fields only; old clients ignore unknown fields. | | On-disk profile layout | Yes —
+      registry <code>schemaVersion: 2</code> is read-only here. | | HTTP endpoints | Yes — additive;
+      old paths keep their semantics. | | Locator grammar | Yes — additive tags only; existing tags
+      keep their meaning. | | OSC addresses | Yes — additive; the probe keeps its 700 ms timeout. |
+    </p>
+    <p>
+      Anything that needs a breaking change is held for <code>2.0.0</code>. The release notes for
+      <code>1.0.0</code> are at
+      <a href="./RELEASE-NOTES-1.0.0.html"><code>RELEASE-NOTES-1.0.0.md</code></a
+      >.
+    </p>
+    <p>---</p>
+    <h2 id="8-how-changes-to-this-document-are-tested">
+      8. How changes to this document are tested
+    </h2>
+    <p>
+      Every claim in this document is a regression test in
+      <a href="../tests/release-contracts.test.mjs"><code>tests/release-contracts.test.mjs</code></a
+      >:
+    </p>
+    <p>
+      1. <strong>Disk migration</strong> — for each past version in
+      <code>tests/fixtures/storage/</code>, load via the public manager API and assert profiles /
+      order / colours / notes / lyrics arrive identical. A corrupted fixture must not destroy the
+      original. 2. <strong>Protocol snapshot</strong> — <code>getState()</code> over a curated
+      setlist is compared to <code>tests/fixtures/state/snapshot.json</code>; mismatch =
+      <code>task verify</code> fails. 3. <strong>Locator grammar</strong> — the tag table in §4.2 is
+      read by the test (or duplicated as JSON) and every row passes through
+      <code>parseLocator</code>. 4. <strong>Bridge version</strong> — the bridge
+      <code>/live/rcbridge/version</code> reply is pinned to <code>1.0.0</code>; any drift in the
+      bridge fixtures fails the suite. 5. <strong>HTTP / WS security</strong> —
+      <code>tests/http-security.test.mjs</code> and <code>tests/ws-auth.test.mjs</code> exercise the
+      §5 and §2 allowlists; the release-contracts test re-runs the security-critical subset to
+      prevent silent drift.
+    </p>
+    <p>
+      Changing a contract here without changing the test, or vice versa, breaks
+      <code>npm run ci:public</code> and <code>npm run version:check</code>. Both run in CI before
+      any tagged release.
+    </p>
+    <div class="source">Rendered from <code>docs\CONTRACTS.md</code> on 2026-11-06.</div>
+  </body>
+</html>

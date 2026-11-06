@@ -1,0 +1,325 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>
+      Ableton Live Arrangement Tempo Automation Limitation &amp; Sampling Feasibility — RC Setlist
+    </title>
+    <meta
+      name="description"
+      content="Ableton Live Arrangement Tempo Automation Limitation &amp; Sampling Feasibility: documentation for RC Setlist, the setlist, lyrics and stage display extension for Ableton Live."
+    />
+    <link
+      rel="canonical"
+      href="https://ntworm.github.io/rc-setlist/architecture/tempo-automation-limitation.html"
+    />
+    <link rel="alternate" type="text/markdown" href="./tempo-automation-limitation.md" />
+    <link rel="describedby" href="../llms.txt" />
+    <meta property="og:type" content="article" />
+    <meta property="og:site_name" content="RC Setlist" />
+    <meta property="og:locale" content="en" />
+    <meta
+      property="og:title"
+      content="Ableton Live Arrangement Tempo Automation Limitation &amp; Sampling Feasibility — RC Setlist"
+    />
+    <meta
+      property="og:description"
+      content="Ableton Live Arrangement Tempo Automation Limitation &amp; Sampling Feasibility: documentation for RC Setlist, the setlist, lyrics and stage display extension for Ableton Live."
+    />
+    <meta
+      property="og:url"
+      content="https://ntworm.github.io/rc-setlist/architecture/tempo-automation-limitation.html"
+    />
+    <meta property="og:image" content="https://ntworm.github.io/rc-setlist/og-image.png" />
+    <style>
+      body {
+        font:
+          16px/1.55 system-ui,
+          sans-serif;
+        max-width: 920px;
+        margin: 2rem auto;
+        padding: 0 1rem;
+        color: #f2f2f2;
+        background: #0e0e0e;
+      }
+      h1,
+      h2,
+      h3,
+      h4 {
+        line-height: 1.25;
+      }
+      h1 {
+        font-size: 2.2rem;
+        margin-top: 0;
+      }
+      h2 {
+        margin-top: 2rem;
+        padding-top: 1rem;
+        border-top: 1px solid #333;
+      }
+      h3 {
+        margin-top: 1.5rem;
+      }
+      code {
+        font:
+          0.92em ui-monospace,
+          Consolas,
+          monospace;
+        background: #1a1a1a;
+        padding: 0.1em 0.35em;
+        border-radius: 0;
+      }
+      pre {
+        background: #1a1a1a;
+        padding: 0.8rem 1rem;
+        overflow-x: auto;
+        border: 1px solid #333;
+      }
+      pre code {
+        background: transparent;
+        padding: 0;
+      }
+      a {
+        color: #ffa133;
+      }
+      ul,
+      ol {
+        padding-left: 1.2em;
+      }
+      blockquote {
+        border-left: 4px solid #ffa133;
+        margin: 1em 0;
+        padding: 0.5em 1em;
+        color: #a0a0a0;
+      }
+      .crumbs {
+        font-size: 0.85em;
+        color: #a0a0a0;
+        margin-bottom: 1rem;
+      }
+      .crumbs a {
+        color: #a0a0a0;
+        text-decoration: none;
+      }
+      .crumbs a:hover {
+        color: #f2f2f2;
+      }
+      .source {
+        font-size: 0.78em;
+        color: #a0a0a0;
+        margin-top: 2rem;
+        border-top: 1px solid #333;
+        padding-top: 0.5rem;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="crumbs"><a href="../">RC Setlist</a> · <a href="../README.html">Docs</a></div>
+    <h1 id="ableton-live-arrangement-tempo-automation-limitation-sampling-feasibility">
+      Ableton Live Arrangement Tempo Automation Limitation &amp; Sampling Feasibility
+    </h1>
+    <p>
+      <strong>Date</strong>: 2026-09-07 <strong>Status</strong>: Accepted / Architectural Record
+      <strong>Applies to</strong>: RC Setlist (<code>rc-setlist</code>)
+    </p>
+    <p>---</p>
+    <h2 id="1-executive-summary">1. Executive Summary</h2>
+    <p>
+      RC Setlist computes song and setlist durations to provide musicians with exact stage timings.
+      However, when an Ableton Live set contains arrangement master tempo automations (varying BPM
+      across songs or sections) without explicit bracketed tags (<code>[bpm N]</code>), the
+      extension cannot read the automation envelope.
+    </p>
+    <p>
+      This document establishes the technical evidence proving that arrangement tempo automation
+      breakpoints are inaccessible via all available integration protocols (Extensions SDK,
+      AbletonOSC, MCP, and LOM), quantifies the empirical error caused by single-tempo fallback, and
+      defines the technical design and constraints for off-stage automated tempo sampling.
+    </p>
+    <p>---</p>
+    <h2 id="2-technical-investigation-api-surface-analysis">
+      2. Technical Investigation &amp; API Surface Analysis
+    </h2>
+    <p>
+      To determine whether arrangement master tempo automation can be read non-invasively, all four
+      integration layers available to Ableton Live were audited:
+    </p>
+    <h3 id="a-ableton-extensions-sdk-1-0-0-beta-0">
+      A. Ableton Extensions SDK (<code>1.0.0-beta.0</code>)
+    </h3>
+    <ul>
+      <li>
+        <strong>Inspection</strong>: Audited <code>src/ableton-sdk-public.d.ts</code> and runtime
+        object model.
+      </li>
+      <li>
+        <strong>Finding</strong>: The SDK exposes <code>song.tempo</code> as a single scalar
+        property and emits change events when the instantaneous tempo changes during playback.
+      </li>
+      <li>
+        <strong>Limitation</strong>: The SDK provides no API to inspect Arrangement automation
+        tracks, master mixer devices, or time-stamped tempo breakpoints. No method exists to query
+        &quot;what will the tempo be at beat $X$?&quot; without moving the playhead.
+      </li>
+    </ul>
+    <h3 id="b-abletonosc">B. AbletonOSC</h3>
+    <ul>
+      <li>
+        <strong>Inspection</strong>: Audited AbletonOSC protocol endpoints and
+        <code>src/osc/registration.ts</code>.
+      </li>
+      <li>
+        <strong>Finding</strong>: AbletonOSC exposes <code>/live/song/get/tempo</code> and
+        <code>/live/song/start_listen/tempo</code>, which query and stream the current playback
+        tempo.
+      </li>
+      <li>
+        <strong>Limitation</strong>: No OSC address exists for arrangement automation envelopes or
+        tempo curve introspection.
+      </li>
+    </ul>
+    <h3 id="c-ableton-model-context-protocol-mcp">C. Ableton Model Context Protocol (MCP)</h3>
+    <ul>
+      <li><strong>Inspection</strong>: Surveyed all 97 tools exposed by the Ableton MCP server.</li>
+      <li>
+        <strong>Finding</strong>: <code>get_clip_automation</code> inspects automation curves within
+        individual MIDI/audio clips. No tool inspects Arrangement master tempo automation envelopes
+        or timeline-wide tempo breakpoints.
+      </li>
+    </ul>
+    <h3 id="d-live-object-model-lom-python-api">D. Live Object Model (LOM) Python API</h3>
+    <ul>
+      <li>
+        <strong>Inspection</strong>: Audited Python Remote Script architecture
+        (<code>Live.Song.Song.master_track.mixer_device.song_tempo</code>).
+      </li>
+      <li>
+        <strong>Finding</strong>: While parameter automation curves exist internally within
+        Live&#39;s C++ core, the exposed Python LOM does not grant read access to arrangement
+        automation breakpoint lists. The parameter only yields its instantaneous value at the
+        current song playhead position (<code>song.current_song_time</code>).
+      </li>
+    </ul>
+    <h3 id="conclusion">Conclusion</h3>
+    <p>
+      <strong
+        >Arrangement tempo automation envelopes cannot be queried statically by any remote
+        protocol.</strong
+      >
+      The only mechanism to observe tempo automation from Live without prior declaration is by
+      advancing <code>song.current_song_time</code> to each locator and reading the resulting
+      <code>song.tempo</code>.
+    </p>
+    <p>---</p>
+    <h2 id="3-empirical-measurement-error-magnitude">
+      3. Empirical Measurement &amp; Error Magnitude
+    </h2>
+    <p>
+      On 2026-09-07, a 21-song production Ableton set containing tempo automations across
+      arrangement locators was measured.
+    </p>
+    <h3 id="setlist-breakdown-actual-arrangement-data">
+      Setlist Breakdown (Actual Arrangement Data)
+    </h3>
+    <p>
+      | # | Song Locator | Start Beat | Span (Beats) | True BPM | True Duration | | --- |
+      ---------------- | ---------- | ------------ | -------- | ------------- | | 1 | INTRO | 0 |
+      240 | 136 | 1:46 | | 2 | ORQUESTRA | 240 | 532 | 130 | 4:06 | | 3 | DERRETE | 772 | 364 | 110
+      | 3:19 | | 4 | J�LIA | 1136 | 538 | 160 | 3:22 | | 5 | WELTON | 1674 | 502 | 118 | 4:15 | | 6
+      | �GUA GELADA | 2176 | 360 | 93 | 3:52 | | 7 | DESCONFORTO | 2536 | 532 | 115 | 4:38 | | 8 |
+      SOM�LIA | 3068 | 395 | 140 | 2:49 | | 9 | SOLISURTO | 3463 | 584 | 136 | 4:18 | | 10 | BOSSA |
+      4047 | 520 | 97 | 5:22 | | 11 | TTD | 4567 | 128 | 116 | 1:06 | | 12 | T� TUDO DAN�ANDO | 4695
+      | 396 | 116 | 3:25 | | 13 | REV�S | 5091 | 620 | 120 | 5:10 | | 14 | NTNV | 5711 | 700 | 166 |
+      4:13 | | 15 | DEVANEIO | 6411 | 448 | 99 | 4:32 | | 16 | MOINHOS | 6859 | 548 | 104 | 5:16 | |
+      17 | DOURADDO | 7407 | 384 | 126 | 3:03 | | 18 | ARRAIAS C�US | 7791 | 448 | 126 | 3:33 | | 19
+      | AREIA NO TETO | 8239 | 440 | 130 | 3:23 | | 20 | CIDADE DO SUOR | 8679 | 384 | 103 | 3:44 |
+      | 21 | AR EM ROMA | 9063 | 408 | 116 | 3:31 |
+    </p>
+    <h3 id="drift-distortion-analysis">Drift &amp; Distortion Analysis</h3>
+    <ul>
+      <li>
+        <strong>Piecewise Sum (True Duration)</strong>: <strong>78:41</strong> (4,721 seconds).
+      </li>
+      <li>
+        <strong>Single Fallback at 99 BPM (Playhead at DEVANEIO)</strong>: 95:40 (5,740 seconds) �
+        <strong>+16:59 (+21.6%) distortion</strong>.
+      </li>
+      <li>
+        <strong>Single Fallback at 136 BPM (Initial Session BPM)</strong>: 69:38 (4,178 seconds) �
+        <strong>-9:03 (-11.5%) distortion</strong>.
+      </li>
+    </ul>
+    <p>
+      A 17-minute discrepancy over a 79-minute show confirms that single-tempo fallback cannot serve
+      as an authoritative timing basis for production shows.
+    </p>
+    <p>---</p>
+    <h2 id="4-architecture-solutions">4. Architecture Solutions</h2>
+    <h3 id="action-a-confidence-derivation-ui-signaling">
+      Action A: Confidence Derivation &amp; UI Signaling
+    </h3>
+    <p>
+      1. <strong>Server (<code>SetlistManager</code>)</strong>: - Evaluates whether at least one
+      locator contains a declared <code>[bpm N]</code> tag. - Sets
+      <code>durationConfidence: &#39;declared&#39;</code> if $\ge 1$ tag exists; otherwise
+      <code>&#39;estimated&#39;</code>. 2.
+      <strong
+        >Client Surfaces (<code>/setlist/</code>, <code>/performance/</code>,
+        <code>/panel/</code>)</strong
+      >: - Emits visual badge <code>EST.</code> in <code>--t-stage-micro</code> alongside total
+      duration and HUD timecard. - Non-chromatic and persistent: never relies on color alone or
+      hover tooltips.
+    </p>
+    <h3 id="action-b1-deterministic-in-place-declarations">
+      Action B1: Deterministic In-Place Declarations
+    </h3>
+    <ul>
+      <li>
+        Explicit locator naming using <code>[bpm N]</code> (e.g., <code>DEVANEIO [bpm 99]</code>).
+      </li>
+      <li>Instantaneous piecewise calculation with zero engine polling overhead.</li>
+    </ul>
+    <p>---</p>
+    <h2 id="5-action-b2-automated-off-stage-tempo-sampler-specification">
+      5. Action B2: Automated Off-Stage Tempo Sampler Specification
+    </h2>
+    <p>
+      An automated sampler function can scan song positions, query live tempo at each boundary, and
+      propose cue point renames with <code>[bpm N]</code> tags.
+    </p>
+    <h3 id="feasibility-assessment">Feasibility Assessment</h3>
+    <ul>
+      <li>
+        <strong>Extensions SDK Feasibility</strong>: High. The SDK provides
+        <code>song.setCurrentSongTime(beat)</code> and listens to <code>song.tempo</code>. However,
+        after repositioning the playhead, Live updates tempo asynchronously across an engine tick
+        (typically 10�50 ms). The sampler must wait for the tempo callback before proceeding to the
+        next cue.
+      </li>
+      <li>
+        <strong>AbletonOSC Feasibility</strong>: High. Can send
+        <code>/live/song/set/current_song_time</code> followed by <code>/live/song/get/tempo</code>.
+      </li>
+    </ul>
+    <h3 id="mandatory-operational-constraints">Mandatory Operational Constraints</h3>
+    <p>
+      1. <strong>Transport Guard</strong>: - The sampler MUST ONLY be invokable when
+      <code>isPlaying === false</code>. - If playback starts while sampling is in flight, the
+      sampler must immediately abort. 2. <strong>State Restoration Invariant</strong>: - Before
+      moving the playhead to the first locator, record
+      <code>initialPlayheadTime = song.currentTime</code>. - On completion or abort, restore
+      <code>song.setCurrentSongTime(initialPlayheadTime)</code>. 3.
+      <strong>Atomic Undo Batch</strong>: - Renaming locators must occur through a batch cue point
+      update (e.g., <code>bulk_create_cue_points</code> or single undo transaction) so the user can
+      revert the entire tagging operation with a single <code>Ctrl+Z</code> / <code>Cmd+Z</code>. 4.
+      <strong>Explicit Operator Confirmation</strong>: - The UI must display the list of detected
+      locators and proposed BPMs before writing to the Live session. 5.
+      <strong>Fail-Closed on Disconnect</strong>: - If the Bridge loses connection to Live during
+      sampling, the operation aborts without partial writes.
+    </p>
+    <div class="source">
+      Rendered from <code>docs\architecture\tempo-automation-limitation.md</code> on 2026-11-06.
+    </div>
+  </body>
+</html>

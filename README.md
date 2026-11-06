@@ -19,11 +19,41 @@ free for noncommercial use and source-available.
 [Installation](docs/INSTALL.md) ·
 [User guide](docs/USER-GUIDE.md) ·
 [Português (Brasil)](README.pt-BR.md) ·
-[Latest release](https://github.com/ntworm/rc-setlist/releases/latest)
+[1.1.0 pre-release](https://github.com/ntworm/rc-setlist/releases/tag/v1.1.0) ·
+[Stable 1.0.0](https://github.com/ntworm/rc-setlist/releases/tag/v1.0.0)
+
+> **1.1.0 is a pre-release for testing.** It adds a second computer that
+> follows the show, a song list that folds, the phone certificate and a QR
+> that finds the right network. 1.0.0 stays the stable version until 1.1.0 is
+> promoted. See [what is new in 1.1.0](docs/RELEASE-NOTES-1.1.0.md).
 
 > **Network safety:** RC Setlist serves browser controls on your local network.
 > Use it only on a trusted LAN, keep the controller URL/token private, and never
 > expose port `4444` directly to the public internet. See [SECURITY.md](SECURITY.md).
+
+## New in 1.1.0
+
+- **Two computers, one show.** Pair a second computer running Live from the
+  panel with a six-digit code. Play, Stop, jumps, metronome, quantization,
+  count-in, refresh and panic are relayed to it; setlist and marker editing
+  stay on the main computer. A second dot in the Stage Control header is
+  green when it follows, amber when its markers differ and red when it does
+  not answer.
+- **A song list that folds.** The three dots beside a song name fold its
+  sections; **Fold all / Unfold all** acts on every song. Hold the song name
+  to jump; drag the grip on the right edge of the card to reorder, with a
+  mouse or a finger.
+- **The phone certificate.** The extension creates a certificate authority
+  for this computer, valid only for localhost and private network
+  addresses. The **Phone certificate** row in the panel shows a QR to a page
+  on port `4445` where a phone installs it once; after that the browser stops
+  warning.
+- **The QR finds the right network.** The address in the QR is the one the
+  system really routes through, so a computer with a lighting or audio
+  network cable beside the Wi-Fi announces the Wi-Fi.
+- The top bar keeps one row in both languages, reordering works on Windows
+  again, saving no longer fails when Live refuses `fsync`, and pairing is
+  pinned by key, so a new address on either side keeps the link.
 
 ## Highlights
 
@@ -58,20 +88,26 @@ until this release is exercised on real macOS hardware.
 ## Quick start
 
 1. Install RC Bridge: run the kit's `Install-RC-Bridge.cmd` / `Install RC Bridge.command`, then choose RCBridge as a Control Surface in Live.
-2. Download `RC-Setlist-1.1.0.ablx` from the latest release.
-3. Open the `.ablx` and approve installation in Live.
+2. Download `RC-Setlist-1.1.0.ablx` and the installation kit from the
+   [1.1.0 pre-release](https://github.com/ntworm/rc-setlist/releases/tag/v1.1.0).
+3. Coming from 1.0, remove RC Setlist in Live's extension settings first
+   (Live refuses to install over an existing extension folder; your data
+   folder stays). Then open the `.ablx` and approve installation in Live.
 4. In Live, open **Extensions > RC Setlist** and start the server.
 5. Use the panel URL or QR code to open `/setlist` or `/performance`.
-6. Choose English or **Português (Brasil)** from the language menu.
+6. To stop the certificate warning, scan the **Phone certificate** QR in the
+   panel once and follow the steps on that page.
+7. Choose English or **Português (Brasil)** from the language menu.
 
 Users upgrading from 0.x (`Ableton-RC-Setlist-0.4.x`–`0.7.0`) run the kit's
 `Migrate-RC-Setlist-Data.cmd` (Windows) or `Migrate RC Setlist Data.command`
 (macOS) once before opening Live with 1.0. The script copies profiles,
 project-setlists and preferences into the new layout without touching the old
-one. Users coming from 1.0 (`RC-Setlist-1.0.0.ablx`) install the new package
-over the old one; there is nothing to migrate. The browser may show a
-warning for the per-install self-signed certificate. Accept it only when the
-address matches the host shown by RC Setlist on your trusted local network.
+one. Users coming from 1.0 (`RC-Setlist-1.0.0.ablx`) have nothing to migrate.
+On the first start, 1.1.0 signs a new server certificate with the
+certificate authority of this computer, so a browser that accepted the old
+certificate asks once more, or stops asking once the phone certificate is
+installed.
 Full instructions are in [docs/INSTALL.md](docs/INSTALL.md).
 
 ## Locator format

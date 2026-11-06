@@ -1,0 +1,604 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>RC Setlist user guide — Ableton Live</title>
+    <meta
+      name="description"
+      content="RC Setlist converts Ableton Live Arrangement locators into a setlist and stage display. Read INSTALL.md before this guide."
+    />
+    <link rel="canonical" href="https://ntworm.github.io/rc-setlist/USER-GUIDE.html" />
+    <link rel="alternate" type="text/markdown" href="./USER-GUIDE.md" />
+    <link rel="describedby" href="./llms.txt" />
+    <meta property="og:type" content="article" />
+    <meta property="og:site_name" content="RC Setlist" />
+    <meta property="og:locale" content="en" />
+    <meta property="og:title" content="RC Setlist user guide — Ableton Live" />
+    <meta
+      property="og:description"
+      content="RC Setlist converts Ableton Live Arrangement locators into a setlist and stage display. Read INSTALL.md before this guide."
+    />
+    <meta property="og:url" content="https://ntworm.github.io/rc-setlist/USER-GUIDE.html" />
+    <meta property="og:image" content="https://ntworm.github.io/rc-setlist/og-image.png" />
+    <style>
+      body {
+        font:
+          16px/1.55 system-ui,
+          sans-serif;
+        max-width: 920px;
+        margin: 2rem auto;
+        padding: 0 1rem;
+        color: #f2f2f2;
+        background: #0e0e0e;
+      }
+      h1,
+      h2,
+      h3,
+      h4 {
+        line-height: 1.25;
+      }
+      h1 {
+        font-size: 2.2rem;
+        margin-top: 0;
+      }
+      h2 {
+        margin-top: 2rem;
+        padding-top: 1rem;
+        border-top: 1px solid #333;
+      }
+      h3 {
+        margin-top: 1.5rem;
+      }
+      code {
+        font:
+          0.92em ui-monospace,
+          Consolas,
+          monospace;
+        background: #1a1a1a;
+        padding: 0.1em 0.35em;
+        border-radius: 0;
+      }
+      pre {
+        background: #1a1a1a;
+        padding: 0.8rem 1rem;
+        overflow-x: auto;
+        border: 1px solid #333;
+      }
+      pre code {
+        background: transparent;
+        padding: 0;
+      }
+      a {
+        color: #ffa133;
+      }
+      ul,
+      ol {
+        padding-left: 1.2em;
+      }
+      blockquote {
+        border-left: 4px solid #ffa133;
+        margin: 1em 0;
+        padding: 0.5em 1em;
+        color: #a0a0a0;
+      }
+      .crumbs {
+        font-size: 0.85em;
+        color: #a0a0a0;
+        margin-bottom: 1rem;
+      }
+      .crumbs a {
+        color: #a0a0a0;
+        text-decoration: none;
+      }
+      .crumbs a:hover {
+        color: #f2f2f2;
+      }
+      .source {
+        font-size: 0.78em;
+        color: #a0a0a0;
+        margin-top: 2rem;
+        border-top: 1px solid #333;
+        padding-top: 0.5rem;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="crumbs"><a href="./">RC Setlist</a> · <a href="./README.html">Docs</a></div>
+    <h1 id="rc-setlist-user-guide">RC Setlist user guide</h1>
+    <p>
+      RC Setlist converts Ableton Live Arrangement locators into a setlist and stage display. Read
+      <a href="INSTALL.html">INSTALL.md</a> before this guide.
+    </p>
+    <h2 id="interface-language">Interface language</h2>
+    <p>
+      The interface starts in English. Use the language menu in the Live panel, Stage Control or
+      Performance view to select <strong>English</strong> or <strong>Português (Brasil)</strong>.
+      The choice is stored locally. Song names, section names and lyric/chord content are show data
+      and are never translated.
+    </p>
+    <p>
+      In Stage Control, change the language only while Live is stopped and the panel is unlocked.
+      The selector is disabled during playback or while the safety lock is active so the show
+      surface cannot be reconfigured accidentally.
+    </p>
+    <h2 id="locator-grammar">Locator grammar</h2>
+    <p>
+      A song locator has a title. A section uses <code>Song &gt; Section</code> or the relative
+      syntax <code>&gt; Section</code> (which attaches to the preceding song). Standalone action
+      tags like <code>[stop]</code> and relative automation locators like
+      <code>&gt; [stop]</code> belong to the chronologically preceding song.
+    </p>
+    <pre><code class="lang-text">Song A [bpm 122] [click]
+&gt; Intro
+&gt; Verse
+&gt; Chorus [loop 4x]
+[stop]
+Technical cue [ignore]</code></pre>
+    <p>
+      | Tag | Effect | | ------------------------- |
+      ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+      | | <code>[loop]</code> | Loop the current section until disabled. | |
+      <code>[loop Nx]</code> | Loop the section N times. | | <code>[stop]</code> | Stop when the
+      locator is reached. | | <code>[next]</code> | Hand playback to the next song the moment this
+      marker is reached. Written on a section it still leaves the song — it does not advance to the
+      next section. | | <code>[bpm N]</code> | Set the target BPM. | | <code>[click]</code> /
+      <code>[click off]</code> | Enable or disable Live&#39;s metronome. | | <code>[skip]</code> |
+      Skip this section/song: hand playback to the next section (or song) the moment this marker is
+      reached. | | <code>[jump NAME]</code> | Hand playback to the marker called NAME the moment
+      this marker is reached — a section of this song, a song, or <code>Song &gt; Section</code>.
+      Names are matched with tags stripped, case ignored. | | <code>[hidden]</code> | Keep an
+      automation anchor out of the visible setlist. | | <code>[ignore]</code> | Technical marker
+      that hides the locator and takes precedence over any action tags. |
+    </p>
+    <p>
+      Tags are case-insensitive and removed from the display name. The <code>[ignore]</code> tag
+      takes precedence over automation tags, hiding the marker and ignoring any action tags on that
+      locator without creating songs, sections, or automations.
+    </p>
+    <h3 id="chaining-songs-with-next">Chaining songs with <code>[next]</code></h3>
+    <p>
+      To go straight from the end of one song into the next, skipping the empty bars between them,
+      put a marker where the song&#39;s audio ends and give it <code>[next]</code>:
+    </p>
+    <pre><code class="lang-text">Song A [bpm 122]
+&gt; Verse
+&gt; Chorus
+&gt; End [next]
+Song B [bpm 96]</code></pre>
+    <p>
+      When the playhead reaches <code>&gt; End</code>, RC Setlist moves it to
+      <code>Song B</code>&#39;s locator straight away — not on the next bar line. Live&#39;s own
+      locator jumps are quantized to the global quantization, which for a marker followed by a
+      one-bar gap would have landed exactly where <code>Song B</code> was starting anyway; that is
+      why this transition is not a Live cue jump. The hand-over happens about a tenth of a second
+      after the marker is crossed (the position is polled every 100 ms and AbletonOSC processes
+      commands every 100 ms), never before it, and the next song always starts from its first beat.
+      <code>[skip]</code> hands over the same way.
+    </p>
+    <p>
+      <code>[jump NAME]</code> is the same hand-over aimed anywhere:
+      <code>&gt; Verse 2 [jump Chorus]</code> goes to this song&#39;s chorus,
+      <code>&gt; Coda [jump Song B]</code> to another song&#39;s start,
+      <code>&gt; Solo [jump Song B &gt; Bridge]</code> to a section of another song. A bare name is
+      looked up in this song&#39;s sections first, then among song titles, then among every section
+      in arrangement order; a name that matches nothing does nothing.
+    </p>
+    <p>
+      Because the playhead is moved directly, Live&#39;s start marker stays where it was. Play in RC
+      Setlist resumes from wherever you stopped, so this only shows if you press Stop twice in Live,
+      which returns to the start marker.
+    </p>
+    <h2 id="editing-a-marker">Editing a marker</h2>
+    <p>
+      Double-click a song row or a section chip in Stage Control to open the marker editor. Every
+      tag is a control there — you never type a <code>[tag]</code> by hand, and you cannot delete
+      one with a stray keystroke.
+    </p>
+    <p>
+      A <strong>song</strong> carries its name, its colour, its notes, its starting tempo, and the
+      <code>[stop]</code>, <code>[next]</code> and <code>[skip]</code> behaviours. Notes are one
+      line for the stage — key, tuning, who counts in — shown under the title on the card and on the
+      performance display; like the colour they are stored beside your setlist and never written
+      into the Live project. It also lists its sections; click one to edit it, and the arrow at the
+      top of the panel brings you back to the song.
+    </p>
+    <p>
+      A <strong>section</strong> carries its name, its tempo, its loop, its click, the same three
+      behaviours, and a jump target (the marker <code>[jump NAME]</code> goes to). Loop and click
+      live here rather than on the song because that is where the music is structured.
+    </p>
+    <p>Three things the editor guarantees:</p>
+    <ul>
+      <li>
+        <strong>A tag the panel does not show is never deleted.</strong> Anything RC Setlist does
+      </li>
+    </ul>
+    <p>
+      not recognise, and anything it recognises but does not offer for that kind of marker, is
+      carried through the save untouched.
+    </p>
+    <ul>
+      <li>
+        <strong>A section keeps the prefix it already had.</strong> Live accepts both
+        <code>&gt; Verse</code> and
+      </li>
+    </ul>
+    <p><code>Song A &gt; Verse</code>; whichever spelling your set uses is preserved.</p>
+    <ul>
+      <li>
+        <strong>Saving without changing anything writes nothing.</strong> Tags are compared by
+      </li>
+    </ul>
+    <p>meaning, so reordering them is not a change.</p>
+    <p>
+      Editing is refused while the transport is playing. Renaming a locator means deleting it and
+      creating it again, and Live can only create a cue point where the playhead stands — with
+      playback running, the new marker would land wherever the playhead had reached. Stop the
+      transport first.
+    </p>
+    <p>
+      Colour is RC Setlist&#39;s own memory. It is stored beside your setlist and never written into
+      the Live project, and it follows the song through renames and moves. The eight tones are
+      deliberately desaturated: on the card, colour is identity, and the vivid hues are reserved for
+      state.
+    </p>
+    <h2 id="profiles">Profiles</h2>
+    <p>
+      Profiles belong to the current Live Set. A saved <code>.als</code> may contain multiple
+      setlists for alternate show orders, rehearsals or lineups. The active setlist selector and
+      <strong>Manage Setlists</strong> button are located at the top of Stage Control. Manage
+      Setlists does not show profiles from another Ableton project. Opening another Live Set
+      switches to that Set&#39;s separate profile registry.
+    </p>
+    <p>
+      Within the current Live Set, profiles separate setlist order, lyrics, exports and related
+      state. From Stage Control you can create, select and rename profiles, move an inactive profile
+      to recoverable trash, and restore it later with the same UUID and data. Deletion is not a
+      permanent erase.
+    </p>
+    <p>
+      Profile changes are controller-only and the transport must be stopped. The active profile and
+      the only remaining profile cannot be deleted. To move another profile to trash, type its
+      displayed name exactly in the confirmation field.
+    </p>
+    <p>
+      Older global profile storage is retained as a local backup but is not mixed into Manage
+      Setlists. An exact legacy folder for the saved Live Set is migrated without deleting its
+      source.
+    </p>
+    <h2 id="setlist-duration">Setlist duration</h2>
+    <p>
+      Stage Control shows the song duration on each song card. The header shows the total setlist
+      duration. A song runs from its song locator to the next song locator, so any transition gap is
+      included. The final song ends at Live&#39;s Arrangement end; the total runs from the first
+      song locator to that same end and also includes transitions. An em dash means Live has not
+      supplied a valid final Arrangement boundary yet.
+    </p>
+    <h3 id="duration-methodology-and-stage-stability">Duration methodology and stage stability</h3>
+    <p>
+      Durations are fixed schedule figures established at set load and do not fluctuate when
+      Live&#39;s transport knob moves or playback starts. In a live stage environment, timing
+      readouts must remain predictable targets for the crew and band rather than shifting with
+      instantaneous tempo adjustments.
+    </p>
+    <h3 id="arrangement-tempo-automation-limitation">Arrangement tempo automation limitation</h3>
+    <p>
+      Live sets often contain tempo automations drawn directly on the master track. However,
+      <strong>arrangement tempo automation envelopes cannot be inspected remotely</strong> by any
+      extension. Neither the Ableton Extensions SDK, AbletonOSC, MCP tools, nor the Live Object
+      Model (LOM) expose arrangement tempo breakpoint lists without physically sweeping the playback
+      cursor. The evidence behind that conclusion, and what RC Setlist does instead, is in
+      <a href="architecture/tempo-automation-limitation.html"
+        >docs/architecture/tempo-automation-limitation.md</a
+      >.
+    </p>
+    <h3 id="obtaining-exact-durations-bpm-n">Obtaining exact durations (<code>[bpm N]</code>)</h3>
+    <p>
+      To calculate exact piecewise song and set durations, declare the tempo explicitly in the
+      locator name using <code>[bpm N]</code> (e.g. <code>Song A [bpm 122]</code> or
+      <code>&gt; Chorus [bpm 135]</code>).
+    </p>
+    <ul>
+      <li>
+        <strong>Declared confidence</strong>: When at least one <code>[bpm]</code> tag is present,
+        RC Setlist
+      </li>
+    </ul>
+    <p>
+      calculates exact piecewise durations for tagged songs and sections, carrying tempo forward
+      across untagged boundaries.
+    </p>
+    <ul>
+      <li>
+        <strong>Estimated confidence (<code>EST.</code>)</strong>: When no locator declares a
+        <code>[bpm]</code> tag,
+      </li>
+    </ul>
+    <p>
+      RC Setlist falls back to Live&#39;s initial session tempo, marks the duration confidence as
+      estimated, and displays an <code>EST.</code> badge beside the total time and HUD timecards.
+    </p>
+    <h3 id="empirical-measurement-example">Empirical measurement example</h3>
+    <p>In a measured 21-song production set with tempo automations spanning 93 to 166 BPM:</p>
+    <ul>
+      <li><strong>Exact piecewise duration</strong>: <strong>78:41</strong> (4,721 seconds).</li>
+      <li>
+        <strong>Single-tempo fallback at 99 BPM</strong>: 95:40 —
+        <strong>a 16:59 (+21.6%) distortion</strong>.
+      </li>
+      <li>
+        <strong>Single-tempo fallback at 136 BPM</strong>: 69:38 —
+        <strong>a 9:03 (-11.5%) distortion</strong>.
+      </li>
+    </ul>
+    <p>
+      Declaring <code>[bpm N]</code> tags on song locators resolves the 16:59 discrepancy, restores
+      the exact 78:41 total, and clears the <code>EST.</code> warning badge.
+    </p>
+    <h2 id="operator-workspace">Operator workspace</h2>
+    <p>Open <code>/setlist</code> from the tokenized controller URL shown in the Live panel.</p>
+    <ul>
+      <li>Drag songs to change their displayed order.</li>
+      <li>Use Play and Stop for immediate transport actions. Play resumes where the</li>
+    </ul>
+    <p>
+      transport stopped; after you jump to a song or section while stopped (or click in Live&#39;s
+      Arrangement), Play starts from there instead.
+    </p>
+    <ul>
+      <li>Previous and Next require a deliberate 500 ms hold.</li>
+      <li>Select transport quantization; the jump scheduler applies the requested value</li>
+    </ul>
+    <p>immediately and reconciles it with a native Live reply when one is available.</p>
+    <ul>
+      <li>Use the lyrics dialog to create, time and edit lyric lines.</li>
+      <li>
+        Export the current tracklist as UTF-8 CSV (saves a copy in the active profile&#39;s
+        <code>exports/</code> folder and downloads to your browser&#39;s Downloads folder).
+      </li>
+      <li>Use fullscreen for a compact stage workstation.</li>
+    </ul>
+    <h3 id="jump-tempo-ordering">Jump tempo ordering</h3>
+    <p>
+      Explicit jumps apply the destination BPM around the cue jump. A section BPM overrides its song
+      BPM; an untagged section inherits the destination song BPM. While stopped, or with
+      quantization at None, RC Setlist uses an SDK-first tempo write and then sends the cue jump.
+      While playing with quantization on, the cue jump is handed to Live at once — Live lands it on
+      its next grid line — and the tempo is written when that landing is observed. These are
+      sequential operations, not atomic operations, so they cannot guarantee sample-accurate timing.
+      Native Arrangement tempo automation at the destination is recommended for sample-accurate
+      transitions.
+    </p>
+    <h3 id="one-bar-count-in">One-bar count-in</h3>
+    <p>
+      <code>COUNT-IN 1 BAR</code> visually counts one bar on the Play button before Play is sent,
+      when Play is requested while the transport is stopped. Live&#39;s playhead does not move,
+      Live&#39;s transport is not touched until the count ends, and Live&#39;s metronome is not
+      touched. Live&#39;s built-in &quot;Count-In&quot; menu only applies to recording, not to
+      playback.
+    </p>
+    <p>
+      By default, the count is visual only. The browser click is optional and can be turned on per
+      device by setting <code>rc-setlist.count-in-audio</code> to <code>true</code> in the
+      browser&#39;s <code>localStorage</code> (e.g., via the developer console for a notebook
+      feeding an in-ear monitor). This is off by default so the operator&#39;s phone does not beep
+      through its speaker on stage.
+    </p>
+    <p>
+      The count runs at the tempo <strong>the setlist declares</strong> for that point — the last
+      <code>[bpm]</code> at or before the playhead — and only falls back to Live&#39;s current tempo
+      when the set declares nothing. This matters at a song boundary: Live is still sitting at the
+      previous song&#39;s tempo, so counting at that would count the wrong speed for the song about
+      to start.
+    </p>
+    <p>
+      Play is sent shortly before the last beat so the transport arrives on the downbeat rather than
+      after it. Pressing Play again during the count starts immediately instead of counting again,
+      and Stop cancels it.
+    </p>
+    <p>
+      This rehearsal control does not enter Record and does not arm tracks. It also does not change
+      live jump quantization. When Live is already playing, Play and song/section jumps keep their
+      existing behavior, including the current quantization.
+    </p>
+    <p>
+      The UI keeps the last valid state visible during brief reconnects. A reconnect notice does not
+      mean the old state is newly confirmed.
+    </p>
+    <h2 id="two-computers">Two computers</h2>
+    <p>
+      Two machines can run the same show: the <strong>main computer</strong>, where Ableton Live
+      lives and where the operator stands, and a <strong>second computer</strong> that follows it.
+      The second computer runs the same extension, works on the same session, and receives the
+      transport commands the operator gives on the main one.
+    </p>
+    <h3 id="pairing-the-second-computer">Pairing the second computer</h3>
+    <p>
+      1. On the <strong>second computer</strong>, start the RC Setlist server and open the Live
+      panel. The <strong>Second computer</strong> row shows the address other machines reach it at
+      and a <strong>Generate code</strong> button. The button stays disabled while the server is
+      stopped or running without HTTPS, and the row says why: the pairing route only answers over
+      TLS, because the certificate the computer presents is what pins it afterwards. 2. Press
+      <strong>Generate code</strong>. The panel prints a six-digit code. It lives for ten minutes
+      and works exactly once. 3. On the <strong>main computer</strong>, open the Live panel, expand
+      the <strong>Second computer</strong> row, type the second computer&#39;s address and the code,
+      and press <strong>Pair</strong>. 4. The main computer stores the credential and the
+      fingerprint of the certificate the second computer answered with, and opens the link to it.
+      The row then says whether the second computer is answering.
+    </p>
+    <p>
+      The pairing and the link use port <code>4444</code> on the second computer, the same port a
+      phone opens, so its firewall has to let that port in.
+    </p>
+    <p>
+      <strong>Unpair</strong> forgets the credential and closes the link. When the stored pairing
+      cannot be removed, the panel says so and the second computer stays paired, because a pairing
+      left on disk would come back on the next start. A certificate that changed is reported as
+      such: the link refuses to talk to a computer that presents another certificate, and the row
+      asks for a new pairing.
+    </p>
+    <h3 id="both-computers-on-the-same-session">Both computers on the same session</h3>
+    <ul>
+      <li>
+        Ableton <strong>Link</strong> must be <strong>on</strong> on both computers, so they work on
+        the same
+      </li>
+    </ul>
+    <p>Arrangement and read the same markers.</p>
+    <ul>
+      <li>
+        Live&#39;s <strong>Start Stop Sync</strong> must be <strong>off</strong>. RC Setlist relays
+        the transport
+      </li>
+    </ul>
+    <p>itself; leaving the native sync on would drive the transport twice.</p>
+    <ul>
+      <li>The markers must match. A jump travels as the beat it lands on, so the</li>
+    </ul>
+    <p>
+      second computer lands on the same place only when both read the same markers. When they do
+      not, the dot says so.
+    </p>
+    <h3 id="the-dot-in-the-stage-control-header">The dot in the Stage Control header</h3>
+    <p>The Stage Control page shows a second dot beside the connection dot:</p>
+    <ul>
+      <li>
+        <strong>green</strong> — the second computer is connected and both read the same markers.
+      </li>
+      <li><strong>amber</strong> — it is connected, but the markers are different.</li>
+      <li>
+        <strong>red</strong> — it is not answering, or its certificate changed and it has to be
+      </li>
+    </ul>
+    <p>paired again.</p>
+    <ul>
+      <li><strong>no dot</strong> — there is no second computer paired, and nothing is sent</li>
+    </ul>
+    <p>anywhere.</p>
+    <h3 id="what-reaches-the-second-computer">What reaches the second computer</h3>
+    <p>
+      These travel to the paired computer: <strong>Play</strong>, <strong>Stop</strong>,
+      <strong>jump</strong> (as the beat it lands on), <strong>metronome</strong>,
+      <strong>quantization</strong>, <strong>count-in</strong>, <strong>refresh</strong> and
+      <strong>panic</strong>.
+    </p>
+    <p>
+      These stay on the main computer: setlist editing, marker editing, colours, notes, lyrics,
+      profiles, ordering and the CSV export. The second computer keeps its own setlist and its own
+      profiles.
+    </p>
+    <h3 id="a-phone-is-not-a-second-computer">A phone is not a second computer</h3>
+    <p>
+      A phone or a tablet that opens the Stage Control page is a <strong>controller</strong> of the
+      main computer: it joins the main computer&#39;s session and sees the main computer&#39;s
+      setlist. Pairing is for a second machine running Live, not for a phone. macOS is supported as
+      the second computer on an experimental basis; Windows is the validated platform.
+    </p>
+    <h2 id="performance-view">Performance view</h2>
+    <p>
+      Open <code>/performance</code> for a high-contrast, mostly read-only display. It shows the
+      active/next song and section, timecode, bar/beat, BPM/click state and lyric context.
+    </p>
+    <p>
+      The Stage Control view can show a conditional tempo-difference warning when a locator declares
+      an expected BPM and Live reports another value. The warning is hidden during normal operation
+      and is not part of the Performance display.
+    </p>
+    <p>
+      Press <code>F</code> or use the fullscreen button. When supported, Screen Wake Lock is held
+      while stage fullscreen is active and released when you leave it.
+    </p>
+    <h2 id="lyrics">Lyrics</h2>
+    <p>Use original, licensed or otherwise authorized text only.</p>
+    <p>RC Setlist accepts timed LRC lines:</p>
+    <pre><code class="lang-text">[00:00.00] The room wakes under amber light
+[00:04.50] A quiet pulse becomes our guide</code></pre>
+    <p>
+      The song selector at the top of the lyrics dialog applies to Create, Sync and Edit and opens
+      on the current Arrangement song. Existing lyrics for that song load automatically. You can
+      paste lines, advance through them while audio plays, edit timestamps and save. Inspecting
+      another song in the dialog does not replace the synchronized line for the song currently shown
+      in Stage Control. The text is stored in the active profile. Plain text is also accepted for
+      sequential display.
+    </p>
+    <h2 id="setlist-ordering-and-csv">Setlist ordering and CSV</h2>
+    <p>
+      Custom order is presentation state; it does not move locators inside the Live Set. CSV export
+      includes one row per visible song with the active <code>setlist</code>,
+      <code>start_beat</code>, declared BPM, numeric and readable duration,
+      <code>sections_count</code>, named <code>sections</code>, locator <code>automations</code> and
+      <code>lyric_lines</code>. It intentionally does not invent musical key, per-song signature,
+      play counts or last-played history. The file uses semicolon separators with UTF-8 BOM for
+      spreadsheet compatibility, is saved in the active profile directory under
+      <code>exports/</code> and is sent to your browser&#39;s Downloads.
+    </p>
+    <h2 id="auto-start">Auto-start</h2>
+    <p>
+      The panel can remember whether the local server should start with the extension. Leave
+      auto-start disabled on machines where the network service should only run during
+      rehearsals/shows.
+    </p>
+    <h2 id="safe-show-practice">Safe show practice</h2>
+    <ul>
+      <li>Rehearse the exact Live Set and extension build before a performance.</li>
+      <li>Keep the host and controller on a dedicated trusted network.</li>
+      <li>Save a fallback setlist outside RC Setlist.</li>
+      <li>Do not change profiles, network or AbletonOSC installation during a show.</li>
+      <li>Verify the active profile and transport lock before enabling control.</li>
+    </ul>
+    <p>
+      This release reads Arrangement locators. Session View support is deferred. The local Stage
+      Control and Performance links continue to use HTTPS.
+    </p>
+    <h2 id="tempo-automation-drawn-in-live">Tempo automation drawn in Live</h2>
+    <p>
+      If your Arrangement has its own tempo automation, keep
+      <strong>Set Live tempo on jump</strong> switched <strong>off</strong> in the Live panel. It
+      ships off, and this is why.
+    </p>
+    <p>
+      An explicit jump can write the destination tempo into Live before it moves the playhead.
+      Writing <code>song.tempo</code> overrides Live&#39;s tempo automation: the arrangement stops
+      following its own envelope until you press <strong>Re-Enable Automation</strong> in the
+      transport bar. One jump mid-show would flatten the tempo for the rest of the set.
+    </p>
+    <p>
+      RC Setlist also watches for this on its own. When the tempo Live reports differs from the
+      <code>[bpm N]</code> tag declared at that point in the setlist, the extension concludes that
+      something other than the setlist owns the tempo and refuses to write it, even if the setting
+      is on.
+    </p>
+    <p>
+      A <code>[bpm N]</code> tag means &quot;measure the duration with this&quot;. It does not mean
+      &quot;impose this on Live&quot;. Tagging your songs is safe with tempo automation, and it is
+      what turns an estimated set duration into an exact one.
+    </p>
+    <p>
+      Turn the setting on only when the tags are your source of truth for tempo and the Arrangement
+      has no tempo automation.
+    </p>
+    <h2 id="how-rc-setlist-recognises-your-songs">How RC Setlist recognises your songs</h2>
+    <p>
+      <strong
+        >The Ableton locator is the source of truth. RC Setlist never writes anything hidden into
+        your project.</strong
+      >
+      It recognises a song by name and position, in that order.
+    </p>
+    <ul>
+      <li>Rename a song and it stays the same song — the position did not move.</li>
+      <li>Drag it somewhere else and it stays the same song — the name did not change.</li>
+      <li>Change both at once and it is treated as a new song.</li>
+    </ul>
+    <p>
+      Anything RC Setlist keeps on the side follows that identity. Delete a locator by accident and
+      recreate it, and what it remembered comes back.
+    </p>
+    <p>
+      The full reasoning is in
+      <a href="architecture/song-identity.html">docs/architecture/song-identity.md</a>.
+    </p>
+    <div class="source">Rendered from <code>docs\USER-GUIDE.md</code> on 2026-11-06.</div>
+  </body>
+</html>

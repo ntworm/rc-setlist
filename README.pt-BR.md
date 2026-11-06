@@ -14,10 +14,41 @@ O **RC Setlist** é uma extensão de setlist, letra sincronizada e tela de palco
 [Instalação](docs/pt-BR/INSTALL.md) ·
 [Guia do usuário](docs/pt-BR/USER-GUIDE.md) ·
 [English](README.md) ·
-[Última versão](https://github.com/ntworm/rc-setlist/releases/latest)
+[Pré-lançamento 1.1.0](https://github.com/ntworm/rc-setlist/releases/tag/v1.1.0) ·
+[Estável 1.0.0](https://github.com/ntworm/rc-setlist/releases/tag/v1.0.0)
+
+> **A 1.1.0 é um pré-lançamento para testes.** Ela traz um segundo computador
+> que segue o show, uma lista de músicas que recolhe, o certificado do celular
+> e um QR que acha a rede certa. A 1.0.0 continua sendo a versão estável até a
+> 1.1.0 ser promovida. Veja [o que há de novo na 1.1.0](docs/pt-BR/NOTAS-DA-VERSAO-1.1.0.md).
 
 > **Segurança de rede:** O RC Setlist serve as páginas de controle na sua rede local.
 > Utilize apenas em redes locais (LAN/Wi-Fi) confiáveis, mantenha a URL e o token do controlador privados, e nunca exponha a porta `4444` diretamente na internet pública. Consulte [SECURITY.md](SECURITY.md).
+
+## Novo na 1.1.0
+
+- **Dois computadores, um show.** Pareie pelo painel, com um código de seis
+  dígitos, um segundo computador rodando o Live. Play, Stop, saltos,
+  metrônomo, quantização, contagem, atualizar e pânico chegam a ele; a edição
+  do setlist e dos marcadores fica no computador principal. Um segundo ponto
+  no topo do Controle de palco fica verde quando ele acompanha, âmbar quando
+  os marcadores são diferentes e vermelho quando ele não responde.
+- **A lista de músicas recolhe.** Os três pontinhos ao lado do nome da música
+  recolhem as seções dela; **Recolher todas / Abrir todas** age em todas as
+  músicas. Segure o nome da música para saltar; arraste a alça na borda
+  direita do card para reordenar, com mouse ou com o dedo.
+- **O certificado do celular.** A extensão cria uma autoridade certificadora
+  para este computador, que só vale para localhost e endereços da rede
+  local. A linha **Certificado do celular** no painel mostra um QR para uma
+  página na porta `4445` onde o celular instala o certificado uma vez; depois
+  disso o navegador para de avisar.
+- **O QR acha a rede certa.** O endereço do QR é o que o sistema usa de
+  verdade, então um computador com cabo de rede de luz ou de áudio ao lado do
+  Wi-Fi anuncia o Wi-Fi.
+- A barra do topo fica numa linha só nos dois idiomas, reordenar volta a
+  funcionar no Windows, salvar não falha mais quando o Live recusa `fsync`, e
+  o pareamento fica preso à chave, então um endereço novo de qualquer lado
+  mantém o link.
 
 ## Destaques
 
@@ -45,13 +76,19 @@ O Windows é a plataforma de lançamento validada. O suporte a macOS permanece e
 ## Início rápido
 
 1. Instale o RC Bridge: execute o `Install-RC-Bridge.cmd` (Windows) ou `Install RC Bridge.command` (macOS) do kit de instalação, e selecione RCBridge como Control Surface nas preferências do Live.
-2. Baixe o pacote `RC-Setlist-1.1.0.ablx` na versão mais recente do GitHub.
-3. Dê dois cliques no `.ablx` e aprove a instalação no Ableton Live.
+2. Baixe o `RC-Setlist-1.1.0.ablx` e o kit de instalação no
+   [pré-lançamento 1.1.0](https://github.com/ntworm/rc-setlist/releases/tag/v1.1.0).
+3. Vindo da 1.0, remova antes o RC Setlist nas configurações de extensões do
+   Live (o Live não instala por cima de uma pasta de extensão que já existe;
+   a pasta de dados fica). Depois dê dois cliques no `.ablx` e aprove a
+   instalação no Ableton Live.
 4. No Live, acesse **Extensions > RC Setlist** e inicie o servidor.
 5. Acesse a URL do painel ou escaneie o código QR com o tablet ou celular para abrir `/setlist` ou `/performance`.
-6. Escolha **Português (Brasil)** no menu de idioma.
+6. Para o aviso de certificado sumir, escaneie uma vez o QR **Certificado do
+   celular** no painel e siga os passos daquela página.
+7. Escolha **Português (Brasil)** no menu de idioma.
 
-Usuários atualizando de versões antigas 0.x (`Ableton-RC-Setlist-0.4.x` a `0.7.0`) devem executar o script de migração `Migrate-RC-Setlist-Data.cmd` (Windows) ou `Migrate RC Setlist Data.command` (macOS) uma única vez antes de abrir o Live com a versão 1.0. O script copia perfis, setlists do projeto e preferências para a nova estrutura sem alterar a pasta anterior. Quem vem da 1.0 (`RC-Setlist-1.0.0.ablx`) instala o novo pacote por cima do antigo; não há nada a migrar. Instruções completas em [docs/pt-BR/INSTALL.md](docs/pt-BR/INSTALL.md).
+Usuários atualizando de versões antigas 0.x (`Ableton-RC-Setlist-0.4.x` a `0.7.0`) devem executar o script de migração `Migrate-RC-Setlist-Data.cmd` (Windows) ou `Migrate RC Setlist Data.command` (macOS) uma única vez antes de abrir o Live com a versão 1.0. O script copia perfis, setlists do projeto e preferências para a nova estrutura sem alterar a pasta anterior. Quem vem da 1.0 (`RC-Setlist-1.0.0.ablx`) não tem nada a migrar. Na primeira partida, a 1.1.0 assina um novo certificado do servidor com a autoridade certificadora deste computador, então um navegador que tinha aceitado o certificado antigo pergunta mais uma vez, ou para de perguntar depois que o certificado do celular está instalado. Instruções completas em [docs/pt-BR/INSTALL.md](docs/pt-BR/INSTALL.md).
 
 ## Formato dos locators
 

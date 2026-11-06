@@ -1,0 +1,222 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Develop RC Setlist — Ableton Live</title>
+    <meta
+      name="description"
+      content="Develop RC Setlist: documentation for RC Setlist, the setlist, lyrics and stage display extension for Ableton Live."
+    />
+    <link rel="canonical" href="https://ntworm.github.io/rc-setlist/DEVELOPMENT.html" />
+    <link rel="alternate" type="text/markdown" href="./DEVELOPMENT.md" />
+    <link rel="describedby" href="./llms.txt" />
+    <meta property="og:type" content="article" />
+    <meta property="og:site_name" content="RC Setlist" />
+    <meta property="og:locale" content="en" />
+    <meta property="og:title" content="Develop RC Setlist — Ableton Live" />
+    <meta
+      property="og:description"
+      content="Develop RC Setlist: documentation for RC Setlist, the setlist, lyrics and stage display extension for Ableton Live."
+    />
+    <meta property="og:url" content="https://ntworm.github.io/rc-setlist/DEVELOPMENT.html" />
+    <meta property="og:image" content="https://ntworm.github.io/rc-setlist/og-image.png" />
+    <style>
+      body {
+        font:
+          16px/1.55 system-ui,
+          sans-serif;
+        max-width: 920px;
+        margin: 2rem auto;
+        padding: 0 1rem;
+        color: #f2f2f2;
+        background: #0e0e0e;
+      }
+      h1,
+      h2,
+      h3,
+      h4 {
+        line-height: 1.25;
+      }
+      h1 {
+        font-size: 2.2rem;
+        margin-top: 0;
+      }
+      h2 {
+        margin-top: 2rem;
+        padding-top: 1rem;
+        border-top: 1px solid #333;
+      }
+      h3 {
+        margin-top: 1.5rem;
+      }
+      code {
+        font:
+          0.92em ui-monospace,
+          Consolas,
+          monospace;
+        background: #1a1a1a;
+        padding: 0.1em 0.35em;
+        border-radius: 0;
+      }
+      pre {
+        background: #1a1a1a;
+        padding: 0.8rem 1rem;
+        overflow-x: auto;
+        border: 1px solid #333;
+      }
+      pre code {
+        background: transparent;
+        padding: 0;
+      }
+      a {
+        color: #ffa133;
+      }
+      ul,
+      ol {
+        padding-left: 1.2em;
+      }
+      blockquote {
+        border-left: 4px solid #ffa133;
+        margin: 1em 0;
+        padding: 0.5em 1em;
+        color: #a0a0a0;
+      }
+      .crumbs {
+        font-size: 0.85em;
+        color: #a0a0a0;
+        margin-bottom: 1rem;
+      }
+      .crumbs a {
+        color: #a0a0a0;
+        text-decoration: none;
+      }
+      .crumbs a:hover {
+        color: #f2f2f2;
+      }
+      .source {
+        font-size: 0.78em;
+        color: #a0a0a0;
+        margin-top: 2rem;
+        border-top: 1px solid #333;
+        padding-top: 0.5rem;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="crumbs"><a href="./">RC Setlist</a> · <a href="./README.html">Docs</a></div>
+    <p>﻿# Develop RC Setlist</p>
+    <h2 id="requirements">Requirements</h2>
+    <ul>
+      <li>Node.js 24.16.0 or newer in the Node 24 LTS line.</li>
+      <li>npm 11.8.0 (pinned in <code>package.json</code>).</li>
+      <li>Ableton Live 12.4.5+ Suite (Beta) for complete integration testing.</li>
+      <li>Authorized Ableton Extensions SDK/CLI archives for <code>.ablx</code> builds.</li>
+      <li>Python 3.9 or newer on the PATH for <code>npm run test:bridge</code> (Live embeds its</li>
+    </ul>
+    <p>own interpreter; the tests only need a stock one).</p>
+    <h2 id="public-gate">Public gate</h2>
+    <pre><code class="lang-bash">npm ci
+npm run ci:public
+npm run gates:quality
+npm audit --audit-level=high</code></pre>
+    <p>
+      This gate does not need or download Ableton developer archives. The quality gates
+      (<code>gates:quality</code>) group <code>lint</code>, <code>format:check</code>,
+      <code>deadcode</code> (knip), <code>deps:check</code> (dependency-cruiser) and
+      <code>lint:py</code> (ruff). They are a blocking step: the workflow runs
+      <code>npm run gates:quality</code> on every push and pull request to <code>main</code>, and a
+      failing gate fails the job.
+    </p>
+    <h2 id="authorized-release-gate">Authorized release gate</h2>
+    <p>
+      Obtain SDK/CLI archives from Ableton&#39;s official developer channel and store them outside
+      the repository. Follow <a href="../vendor/README.md">vendor/README.md</a>, then:
+    </p>
+    <pre><code class="lang-bash">npm run setup:ableton
+npm run ci:release
+npm run package:release</code></pre>
+    <p>
+      The path variables must be absolute. The setup command installs locally with
+      <code>--no-save</code> and does not add the archives to <code>package.json</code> or the
+      lockfile.
+    </p>
+    <h2 id="test-commands">Test commands</h2>
+    <pre><code class="lang-bash">npm run test:src
+npm run test:static
+npm run test:bridge
+npm run test:ui
+npm run test:release-surface
+npm run build:public
+npm run notices:check</code></pre>
+    <h2 id="quality-gates">Quality gates</h2>
+    <pre><code class="lang-bash">npm run lint           # ESLint (typescript-eslint + jsdoc), --max-warnings 0
+npm run format:check   # Prettier, reports files not yet formatted
+npm run deadcode       # knip — exports/types/files unused
+npm run deps:check     # dependency-cruiser — cycles + layer rules
+npm run lint:py        # ruff — bridge Python files
+npm run version:check  # sync-version.mjs — package.json == manifest.json
+npm run gates:quality  # all five above in one</code></pre>
+    <p>
+      <code>npm run lint</code> runs <code>eslint . --max-warnings 0</code>: every rule this
+      repository registers is an <code>error</code>, so a warning fails the gate the same way an
+      error does. The <code>no-unsafe-*</code> / <code>no-explicit-any</code> /
+      <code>no-empty</code> / <code>no-unused-vars</code> families are among them, and the SDK
+      boundary (<code>src/ableton-sdk-public.d.ts</code>) keeps the Ableton Extensions SDK surface
+      typed instead of <code>any</code>.
+    </p>
+    <p>
+      <code>format:check</code> is part of the same blocking gate, so the tree has to stay
+      formatted; the script itself lists the files that drifted.
+    </p>
+    <h2 id="architecture-boundaries">Architecture boundaries</h2>
+    <ul>
+      <li>
+        <code>src/extension.ts</code>, <code>src/context.ts</code> and
+        <code>src/ui/panel.ts</code> are SDK edges.
+      </li>
+      <li><code>src/core/</code> owns setlist state, parser, profiles and persistence rules.</li>
+      <li><code>src/integration/osc-client.ts</code> owns OSC encoding/socket behavior.</li>
+      <li>
+        <code>src/server/</code> and <code>src/server-lifecycle.ts</code> own the local network
+        service.
+      </li>
+      <li><code>static/</code> is shipped browser code with no runtime CDN dependency.</li>
+      <li><code>bridge/RCBridge/</code> is RC Bridge, the Remote Script fork of AbletonOSC that</li>
+    </ul>
+    <p>
+      ships inside the <code>.ablx</code> and the installation kit; <code>bridge/tests/</code> is
+      its unittest suite.
+    </p>
+    <p>
+      The public TypeScript configuration excludes SDK-facing files but checks the portable core.
+      The release gate checks the complete application. The type-aware ESLint rules use
+      <code>tsconfig.eslint.json</code>, which extends the same configuration and resolves
+      <code>@ableton-extensions/sdk</code> through <code>src/ableton-sdk-public.d.ts</code>, so the
+      linter and the public typecheck see the same SDK surface.
+    </p>
+    <h2 id="public-site">Public site</h2>
+    <p>
+      <code>docs/</code> is published by GitHub Pages at
+      &lt;https://ntworm.github.io/rc-setlist/&gt;. <code>docs/index.html</code>,
+      <code>docs/site-i18n.js</code>, <code>docs/llms.txt</code> and the Markdown guides are written
+      by hand; the Portuguese pages, the structured data, the sitemap and
+      <code>docs/llms-full.txt</code> are rendered from them:
+    </p>
+    <pre><code class="lang-bash">npm run site:render   # re-render after editing the landing, its strings, the README or a guide
+npm run site:check    # fails when a rendered file is stale</code></pre>
+    <p>
+      Keep <code>docs/googlea8031c5d5ee880ce.html</code> (Google Search Console verification) and
+      <code>docs/72299ed2a8455f83ed49011642aeb172.txt</code> (IndexNow key) exactly as they are. Why
+      the site is built this way:
+      <a href="architecture/site-discoverability.html">architecture/site-discoverability.md</a>.
+    </p>
+    <h2 id="generated-files">Generated files</h2>
+    <p>
+      Do not commit <code>node_modules/</code>, <code>dist/</code>, <code>.ablx</code>, release
+      candidates, certificates, tokens, <code>.env</code>, Ableton SDK/CLI archives or local test
+      output.
+    </p>
+    <div class="source">Rendered from <code>docs\DEVELOPMENT.md</code> on 2026-11-06.</div>
+  </body>
+</html>

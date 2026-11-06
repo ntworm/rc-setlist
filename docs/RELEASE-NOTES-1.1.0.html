@@ -1,0 +1,258 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Release notes — RC Setlist 1.1.0 — Ableton Live</title>
+    <meta
+      name="description"
+      content="One show, two computers. The main computer keeps Live and the operator; the second computer follows it, and the transport commands the operator gives are…"
+    />
+    <link rel="canonical" href="https://ntworm.github.io/rc-setlist/RELEASE-NOTES-1.1.0.html" />
+    <link rel="alternate" type="text/markdown" href="./RELEASE-NOTES-1.1.0.md" />
+    <link rel="describedby" href="./llms.txt" />
+    <meta property="og:type" content="article" />
+    <meta property="og:site_name" content="RC Setlist" />
+    <meta property="og:locale" content="en" />
+    <meta property="og:title" content="Release notes — RC Setlist 1.1.0 — Ableton Live" />
+    <meta
+      property="og:description"
+      content="One show, two computers. The main computer keeps Live and the operator; the second computer follows it, and the transport commands the operator gives are…"
+    />
+    <meta
+      property="og:url"
+      content="https://ntworm.github.io/rc-setlist/RELEASE-NOTES-1.1.0.html"
+    />
+    <meta property="og:image" content="https://ntworm.github.io/rc-setlist/og-image.png" />
+    <style>
+      body {
+        font:
+          16px/1.55 system-ui,
+          sans-serif;
+        max-width: 920px;
+        margin: 2rem auto;
+        padding: 0 1rem;
+        color: #f2f2f2;
+        background: #0e0e0e;
+      }
+      h1,
+      h2,
+      h3,
+      h4 {
+        line-height: 1.25;
+      }
+      h1 {
+        font-size: 2.2rem;
+        margin-top: 0;
+      }
+      h2 {
+        margin-top: 2rem;
+        padding-top: 1rem;
+        border-top: 1px solid #333;
+      }
+      h3 {
+        margin-top: 1.5rem;
+      }
+      code {
+        font:
+          0.92em ui-monospace,
+          Consolas,
+          monospace;
+        background: #1a1a1a;
+        padding: 0.1em 0.35em;
+        border-radius: 0;
+      }
+      pre {
+        background: #1a1a1a;
+        padding: 0.8rem 1rem;
+        overflow-x: auto;
+        border: 1px solid #333;
+      }
+      pre code {
+        background: transparent;
+        padding: 0;
+      }
+      a {
+        color: #ffa133;
+      }
+      ul,
+      ol {
+        padding-left: 1.2em;
+      }
+      blockquote {
+        border-left: 4px solid #ffa133;
+        margin: 1em 0;
+        padding: 0.5em 1em;
+        color: #a0a0a0;
+      }
+      .crumbs {
+        font-size: 0.85em;
+        color: #a0a0a0;
+        margin-bottom: 1rem;
+      }
+      .crumbs a {
+        color: #a0a0a0;
+        text-decoration: none;
+      }
+      .crumbs a:hover {
+        color: #f2f2f2;
+      }
+      .source {
+        font-size: 0.78em;
+        color: #a0a0a0;
+        margin-top: 2rem;
+        border-top: 1px solid #333;
+        padding-top: 0.5rem;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="crumbs"><a href="./">RC Setlist</a> · <a href="./README.html">Docs</a></div>
+    <h1 id="release-notes-rc-setlist-1-1-0">Release notes — RC Setlist 1.1.0</h1>
+    <p>
+      <strong>Release date:</strong> 2026-11-05 <strong>Supported version line:</strong>
+      <code>1.1.x</code> <strong>Also available in Portuguese:</strong>
+      <a href="pt-BR/NOTAS-DA-VERSAO-1.1.0.html"><code>pt-BR/NOTAS-DA-VERSAO-1.1.0.md</code></a>
+    </p>
+    <p>
+      One show, two computers. The main computer keeps Live and the operator; the second computer
+      follows it, and the transport commands the operator gives are relayed to it over a link whose
+      certificate is pinned.
+    </p>
+    <h2 id="highlights">Highlights</h2>
+    <ul>
+      <li>
+        <strong>A &quot;Second computer&quot; row in the Live panel.</strong> The second computer
+        prints
+      </li>
+    </ul>
+    <p>
+      a six-digit code, the main computer types its address and the code, and the two are paired.
+      The row says what the link is doing: not paired, connected, not answering, different markers,
+      or a certificate that changed and needs a new pairing.
+    </p>
+    <ul>
+      <li><strong>A second dot in the Stage Control header.</strong> Green when the second</li>
+    </ul>
+    <p>
+      computer is connected and both read the same markers, amber when it is connected and the
+      markers differ, red when it is not answering or its certificate changed, and no dot at all
+      when nothing is paired.
+    </p>
+    <ul>
+      <li><strong>The pairing route answers over TLS only.</strong> The code lives for ten</li>
+    </ul>
+    <p>
+      minutes, works exactly once, dies after five wrong guesses, and the attempts that reach it are
+      rate limited per address and in total.
+    </p>
+    <ul>
+      <li><strong>The jump travels by beat.</strong> The two computers may hold the songs in</li>
+    </ul>
+    <p>
+      another order, so a jump crosses the wire as the beat it lands on (<code>jump_time</code>) and
+      the receiving side finds the marker that sits there.
+    </p>
+    <ul>
+      <li>
+        <strong>The pairing code can be read again.</strong> The panel redraws itself with the
+      </li>
+    </ul>
+    <p>
+      code that is already alive, so the number on the screen is the number that opens the door.
+    </p>
+    <h2 id="how-to-use-it">How to use it</h2>
+    <p>
+      1. On the <strong>second computer</strong>, start the RC Setlist server and open the Live
+      panel. Press <strong>Generate code</strong> and read the six digits. 2. On the
+      <strong>main computer</strong>, open the Live panel, expand the
+      <strong>Second computer</strong> row, type the second computer&#39;s address and the code, and
+      press <strong>Pair</strong>. 3. Put both computers on the same session: Ableton
+      <strong>Link</strong> on, Live&#39;s <strong>Start Stop Sync</strong> off. The relay does the
+      transport; the native sync would do it twice.
+    </p>
+    <p>
+      A phone that opens the Stage Control page is still a controller of the main computer — it
+      joins the main session and sees the main setlist. Pairing is for a second machine running
+      Live. macOS is supported here on an experimental basis; Windows is the validated platform.
+    </p>
+    <h2 id="what-reaches-the-second-computer">What reaches the second computer</h2>
+    <p>
+      <strong>Play</strong>, <strong>Stop</strong>, <strong>jump</strong>,
+      <strong>metronome</strong>, <strong>quantization</strong>, <strong>count-in</strong>,
+      <strong>refresh</strong> and <strong>panic</strong> travel to the paired computer. Setlist
+      editing, marker editing, colours, notes, lyrics, profiles, ordering and the CSV export stay on
+      the main computer.
+    </p>
+    <h2 id="also-in-this-release">Also in this release</h2>
+    <ul>
+      <li>
+        <strong>Fold the song list.</strong> The three dots beside a song name fold that song&#39;s
+      </li>
+    </ul>
+    <p>
+      sections away and bring them back; <strong>Fold all / Unfold all</strong> in the &quot;Songs
+      in project&quot; bar acts on every song. The choice is kept on the device, per setlist.
+    </p>
+    <ul>
+      <li>
+        <strong>One place for each job on a song card.</strong> Hold the song
+        <strong>name</strong> to jump;
+      </li>
+    </ul>
+    <p>
+      the number, the time and the empty space do nothing. Reorder by dragging the
+      <strong>grip</strong> on the right edge of the card, with a mouse or a finger. Holding the
+      three dots no longer jumps.
+    </p>
+    <ul>
+      <li><strong>The phone certificate.</strong> The extension creates a certificate authority</li>
+    </ul>
+    <p>
+      for this computer, limited to localhost and private addresses, and signs its own server
+      certificate with it. A new <strong>Phone certificate</strong> row in the Live panel shows a QR
+      to a plain page on port 4445 where a phone downloads and installs it once; after that the
+      browser stops warning.
+    </p>
+    <ul>
+      <li><strong>The QR points at the right network.</strong> The address in the QR and in the</li>
+    </ul>
+    <p>
+      pairing row is the one the system really routes through, so a computer with a lighting or
+      audio network cable and Wi-Fi at the same time announces the Wi-Fi.
+    </p>
+    <ul>
+      <li><strong>The top bar keeps one row</strong> in English and Portuguese; longer words</li>
+    </ul>
+    <p>shrink its text instead of pushing buttons to a second row.</p>
+    <ul>
+      <li><strong>Reordering works on Windows again</strong>, and saving no longer fails inside</li>
+    </ul>
+    <p>Live when the file system refuses <code>fsync</code>.</p>
+    <ul>
+      <li><strong>Pairing fixes.</strong> The second computer is pinned by its key, so a new</li>
+    </ul>
+    <p>
+      network address on either side no longer breaks the link; pairing a computer with itself is
+      refused; the panel says when the code has to be generated on the second computer; PANIC
+      cancels a running count-in.
+    </p>
+    <h2 id="contracts">Contracts</h2>
+    <p>
+      <code>docs/CONTRACTS.md</code> (and <code>docs/pt-BR/CONTRATOS.md</code>) now describe the
+      pairing route, the peer credential, the <code>jump_time</code> frame and the
+      <code>peerStatus</code> field of the state frame.
+    </p>
+    <h2 id="upgrading-from-1-0">Upgrading from 1.0</h2>
+    <p>
+      Nothing to migrate. The pairing is per install and nothing is written unless the operator
+      pairs a second computer: no second dot and no outgoing connection until then. Two things are
+      new on the first start: the extension creates its certificate authority in its data folder and
+      signs a new server certificate with it, so a phone that accepted the old certificate asks once
+      more (or stops asking after the phone certificate is installed), and the install page answers
+      on port 4445 while the server runs. Live refuses to install over an existing extension folder:
+      remove RC Setlist in Live&#39;s extension settings first; the data folder stays.
+    </p>
+    <div class="source">Rendered from <code>docs\RELEASE-NOTES-1.1.0.md</code> on 2026-11-06.</div>
+  </body>
+</html>

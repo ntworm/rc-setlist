@@ -183,20 +183,21 @@
     <h2 id="a-p-gina-do-navegador-n-o-abre">A página do navegador não abre</h2>
     <ul>
       <li>
-        Na primeira conexão, <code>ERR_CERT_AUTHORITY_INVALID</code> é o aviso esperado para o
+        <code>ERR_CERT_AUTHORITY_INVALID</code> é o aviso esperado enquanto o certificado deste
       </li>
     </ul>
     <p>
-      certificado local autoassinado do RC Setlist. Continue somente se o endereço for exatamente o
-      IP mostrado no painel do Live e a rede local for confiável. Cada navegador/aparelho pode
-      exigir isso uma vez.
+      computador não estiver instalado no aparelho. Escaneie o QR
+      <strong>Certificado do celular</strong> no painel do Live e siga os passos daquela página
+      (porta <code>4445</code>). O Android recusa o certificado aberto pela notificação do download:
+      instale pelas Configurações.
     </p>
     <ul>
       <li>Abra <code>https://localhost:4444/health</code> no host.</li>
       <li>Confirme que o painel informa que o servidor está em execução.</li>
       <li>Libere TCP <code>4444</code> somente no perfil de rede privada.</li>
       <li>Coloque host e controle na mesma LAN que não seja uma rede de convidados.</li>
-      <li>Aceite o certificado autoassinado somente para esse endereço exato do painel.</li>
+      <li>Aceite o aviso de certificado somente para esse endereço exato do painel.</li>
     </ul>
     <h2 id="os-controles-est-o-somente-para-leitura">Os controles estão somente para leitura</h2>
     <p>
@@ -290,7 +291,7 @@
       setlist ou das letras. Consulte <a href="../../SUPPORT.md">SUPPORT.md</a>.
     </p>
     <div class="source">
-      Rendered from <code>docs\pt-BR\TROUBLESHOOTING.md</code> on 2026-11-05.
+      Rendered from <code>docs\pt-BR\TROUBLESHOOTING.md</code> on 2026-11-06.
     </div>
   </body>
 </html>

@@ -134,10 +134,12 @@
       Por que o navegador mostra um aviso de certificado?
     </h2>
     <p>
-      Na primeira conexão, o navegador pode mostrar <code>ERR_CERT_AUTHORITY_INVALID</code> porque o
-      RC Setlist cria um certificado local autoassinado para WebSockets seguros. Continue somente se
-      o endereço for exatamente o IP mostrado no painel do Live e a rede local for confiável. Cada
-      navegador/aparelho pode exigir isso uma vez.
+      Enquanto o certificado deste computador não estiver instalado no aparelho, o navegador mostra
+      <code>ERR_CERT_AUTHORITY_INVALID</code>. O RC Setlist assina o certificado do servidor com uma
+      autoridade certificadora própria, que só vale para localhost e endereços da rede local.
+      Escaneie uma vez o QR <strong>Certificado do celular</strong> no painel do Live para
+      instalá-la e o aviso some. Até lá, continue somente se o endereço for exatamente o IP mostrado
+      no painel do Live e a rede local for confiável.
     </p>
     <h2 id="onde-as-letras-ficam-salvas">Onde as letras ficam salvas?</h2>
     <p>
@@ -234,6 +236,6 @@
       Ligue a opção apenas quando as tags forem a sua fonte de verdade para o tempo e o Arrangement
       não tiver automação de tempo.
     </p>
-    <div class="source">Rendered from <code>docs\pt-BR\FAQ.md</code> on 2026-11-05.</div>
+    <div class="source">Rendered from <code>docs\pt-BR\FAQ.md</code> on 2026-11-06.</div>
   </body>
 </html>

@@ -190,10 +190,14 @@
       ou tablet, use a URL da LAN ou o QR code mostrado no painel.
     </p>
     <p>
-      Primeira conexão: o navegador pode mostrar <code>ERR_CERT_AUTHORITY_INVALID</code> porque o RC
-      Setlist cria um certificado local autoassinado. Continue somente se o endereço for exatamente
-      o IP mostrado no painel do Live e a rede local for confiável. Cada navegador/aparelho pode
-      exigir isso uma vez.
+      Primeira conexão: enquanto o certificado deste computador não estiver instalado, o navegador
+      mostra <code>ERR_CERT_AUTHORITY_INVALID</code>. O RC Setlist cria uma autoridade certificadora
+      para este computador, que só vale para localhost e endereços da rede local, e assina com ela o
+      certificado do servidor. Para o aviso sumir no celular, escaneie o QR
+      <strong>Certificado do celular</strong> no painel do Live: ele abre uma página simples na
+      porta <code>4445</code> com o arquivo e os passos para Android e iPhone. Até lá, continue
+      somente se o endereço for exatamente o IP mostrado no painel do Live e a rede local for
+      confiável.
     </p>
     <h2 id="4-abrir-as-duas-visualiza-es">4. Abrir as duas visualizações</h2>
     <ul>
@@ -253,6 +257,6 @@
       Não apague um diretório amplo da biblioteca do Ableton. Remova apenas o destino confirmado do
       RC Setlist.
     </p>
-    <div class="source">Rendered from <code>docs\pt-BR\INSTALL.md</code> on 2026-11-05.</div>
+    <div class="source">Rendered from <code>docs\pt-BR\INSTALL.md</code> on 2026-11-06.</div>
   </body>
 </html>

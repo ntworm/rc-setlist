@@ -2024,6 +2024,7 @@
         </header>
         <nav class="nav" aria-label="Seções" data-i18n-aria="top.navAria">
           <a href="#about" data-i18n="nav.about">Sobre</a>
+          <a href="#new" data-i18n="nav.new">Novo na 1.1</a>
           <a href="#chain" data-i18n="nav.chain">Como funciona</a>
           <a href="#locators" data-i18n="nav.locators">Locators</a>
           <a href="#views" data-i18n="nav.views">Duas telas</a>
@@ -2058,7 +2059,7 @@
               <a
                 class="btn primary"
                 id="download"
-                href="https://github.com/ntworm/rc-setlist/releases/latest"
+                href="https://github.com/ntworm/rc-setlist/releases/tag/v1.1.0"
                 data-i18n="about.download"
                 >Baixar .ablx</a
               >
@@ -2077,8 +2078,10 @@
               >
             </div>
             <p class="release" data-i18n-html="about.release">
-              Versão 1.1.0&nbsp;· source-available sob a PolyForm Noncommercial 1.0.0&nbsp;· inglês
-              e português (Brasil) no mesmo pacote
+              Versão 1.1.0, um pré-lançamento para testes&nbsp;· a versão estável é a
+              <a href="https://github.com/ntworm/rc-setlist/releases/tag/v1.0.0">1.0.0</a>&nbsp;·
+              source-available sob a PolyForm Noncommercial 1.0.0&nbsp;· inglês e português (Brasil)
+              no mesmo pacote
             </p>
 
             <figure class="fig hero-visual">
@@ -2120,6 +2123,79 @@
                 </figure>
               </div>
             </figure>
+          </div>
+        </section>
+
+        <!-- ===================== 1.1 NEW IN 1.1.0 ===================== -->
+        <section class="sec" id="new" aria-labelledby="new-title">
+          <div class="n">1.1</div>
+          <div class="c">
+            <h2 id="new-title" data-i18n-html="new.title">
+              Novo na 1.1.0 <span class="tail">— pré-lançamento, para testes</span>
+            </h2>
+            <p class="why" data-i18n="new.why">
+              Um segundo computador que segue o show, uma lista de músicas que recolhe e um celular
+              que para de reclamar do certificado.
+            </p>
+            <div class="cards c2">
+              <div class="card">
+                <span class="ic"
+                  ><svg aria-hidden="true"><use href="#g-live" /></svg
+                ></span>
+                <div>
+                  <h3 data-i18n="new.pTitle">Dois computadores, um show</h3>
+                  <p data-i18n="new.pBody">
+                    Pareie pelo painel, com um código de seis dígitos, um segundo computador rodando
+                    o Live. Play, Stop, saltos, click, quantização, contagem e pânico chegam a ele
+                    também; um segundo ponto no topo do Controle de palco mostra se ele está
+                    acompanhando.
+                  </p>
+                </div>
+              </div>
+              <div class="card">
+                <span class="ic"
+                  ><svg aria-hidden="true"><use href="#g-song" /></svg
+                ></span>
+                <div>
+                  <h3 data-i18n="new.fTitle">A lista de músicas recolhe</h3>
+                  <p data-i18n="new.fBody">
+                    Os três pontinhos ao lado da música recolhem as seções dela; Recolher todas e
+                    Abrir todas agem na lista inteira. Segure o nome da música para saltar e arraste
+                    a alça na borda direita do card para reordenar, com mouse ou com o dedo.
+                  </p>
+                </div>
+              </div>
+              <div class="card">
+                <span class="ic"
+                  ><svg aria-hidden="true"><use href="#g-phone" /></svg
+                ></span>
+                <div>
+                  <h3 data-i18n="new.cTitle">O certificado do celular</h3>
+                  <p data-i18n="new.cBody">
+                    O painel mostra um QR para uma página onde o celular instala uma vez o
+                    certificado deste computador. Depois disso o navegador abre as telas sem aviso.
+                    O certificado só vale para localhost e endereços da rede local.
+                  </p>
+                </div>
+              </div>
+              <div class="card">
+                <span class="ic"
+                  ><svg aria-hidden="true"><use href="#g-net" /></svg
+                ></span>
+                <div>
+                  <h3 data-i18n="new.nTitle">O QR acha a rede certa</h3>
+                  <p data-i18n="new.nBody">
+                    O endereço do QR é o que o computador usa de verdade, mesmo com um cabo de rede
+                    de luz ou de áudio ligado ao lado do Wi-Fi.
+                  </p>
+                </div>
+              </div>
+            </div>
+            <p class="note" data-i18n-html="new.note">
+              Vem da 1.0? Remova antes o RC Setlist nas configurações de extensões do Live e depois
+              instale a 1.1.0; a pasta de dados fica. Todas as mudanças estão nas
+              <a href="./NOTAS-DA-VERSAO-1.1.0.html">notas da versão</a>.
+            </p>
           </div>
         </section>
 
@@ -3049,9 +3125,9 @@
                   <div>
                     <h3 data-i18n="install.s1">Baixe</h3>
                     <p data-i18n-html="install.s1d">
-                      <code>RC-Setlist-1.1.0.ablx</code> e o kit de instalação, na
-                      <a href="https://github.com/ntworm/rc-setlist/releases/latest"
-                        >versão mais recente</a
+                      <code>RC-Setlist-1.1.0.ablx</code> e o kit de instalação, no
+                      <a href="https://github.com/ntworm/rc-setlist/releases/tag/v1.1.0"
+                        >pré-lançamento 1.1.0</a
                       >.
                     </p>
                   </div>
@@ -3086,8 +3162,8 @@
                   <div>
                     <h3 data-i18n="install.s5">Abra as telas</h3>
                     <p data-i18n="install.s5d">
-                      Aponte a câmera para o QR code ou abra o link. Aceite o certificado local só
-                      se o endereço for o mesmo que o painel mostra.
+                      Aponte a câmera para o QR code ou abra o link. Para o aviso de certificado
+                      sumir, instale uma vez o certificado pelo QR Certificado do celular no painel.
                     </p>
                   </div>
                 </li>

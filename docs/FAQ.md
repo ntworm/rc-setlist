@@ -23,10 +23,12 @@ have it, RC Setlist still works with it.
 
 ## Why does the browser show a certificate warning?
 
-On the first connection the browser may show `ERR_CERT_AUTHORITY_INVALID`
-because RC Setlist creates a local self-signed certificate for secure WebSockets.
-Continue only when the address exactly matches the IP shown in the Live panel
-and you are on a trusted LAN. Each browser/device may require this once.
+Until the certificate of this computer is installed on the device, the browser
+shows `ERR_CERT_AUTHORITY_INVALID`. RC Setlist signs its server certificate
+with a certificate authority of its own, valid only for localhost and private
+network addresses. Scan the **Phone certificate** QR in the Live panel once to
+install it and the warning goes away. Until then, continue only when the address
+exactly matches the IP shown in the Live panel and you are on a trusted LAN.
 
 ## Where are lyrics stored?
 

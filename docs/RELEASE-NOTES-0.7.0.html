@@ -1,0 +1,202 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Release 0.7.0 — RC Setlist</title>
+    <meta
+      name="description"
+      content="Ableton RC Setlist 0.7.0 retires the bridge&#39;s manual install, adds a marker that hands playback to a named target, and puts one line of notes on every song."
+    />
+    <link rel="canonical" href="https://ntworm.github.io/rc-setlist/RELEASE-NOTES-0.7.0.html" />
+    <link rel="alternate" type="text/markdown" href="./RELEASE-NOTES-0.7.0.md" />
+    <link rel="describedby" href="./llms.txt" />
+    <meta property="og:type" content="article" />
+    <meta property="og:site_name" content="RC Setlist" />
+    <meta property="og:locale" content="en" />
+    <meta property="og:title" content="Release 0.7.0 — RC Setlist" />
+    <meta
+      property="og:description"
+      content="Ableton RC Setlist 0.7.0 retires the bridge&#39;s manual install, adds a marker that hands playback to a named target, and puts one line of notes on every song."
+    />
+    <meta
+      property="og:url"
+      content="https://ntworm.github.io/rc-setlist/RELEASE-NOTES-0.7.0.html"
+    />
+    <meta property="og:image" content="https://ntworm.github.io/rc-setlist/og-image.png" />
+    <style>
+      body {
+        font:
+          16px/1.55 system-ui,
+          sans-serif;
+        max-width: 920px;
+        margin: 2rem auto;
+        padding: 0 1rem;
+        color: #f2f2f2;
+        background: #0e0e0e;
+      }
+      h1,
+      h2,
+      h3,
+      h4 {
+        line-height: 1.25;
+      }
+      h1 {
+        font-size: 2.2rem;
+        margin-top: 0;
+      }
+      h2 {
+        margin-top: 2rem;
+        padding-top: 1rem;
+        border-top: 1px solid #333;
+      }
+      h3 {
+        margin-top: 1.5rem;
+      }
+      code {
+        font:
+          0.92em ui-monospace,
+          Consolas,
+          monospace;
+        background: #1a1a1a;
+        padding: 0.1em 0.35em;
+        border-radius: 0;
+      }
+      pre {
+        background: #1a1a1a;
+        padding: 0.8rem 1rem;
+        overflow-x: auto;
+        border: 1px solid #333;
+      }
+      pre code {
+        background: transparent;
+        padding: 0;
+      }
+      a {
+        color: #ffa133;
+      }
+      ul,
+      ol {
+        padding-left: 1.2em;
+      }
+      blockquote {
+        border-left: 4px solid #ffa133;
+        margin: 1em 0;
+        padding: 0.5em 1em;
+        color: #a0a0a0;
+      }
+      .crumbs {
+        font-size: 0.85em;
+        color: #a0a0a0;
+        margin-bottom: 1rem;
+      }
+      .crumbs a {
+        color: #a0a0a0;
+        text-decoration: none;
+      }
+      .crumbs a:hover {
+        color: #f2f2f2;
+      }
+      .source {
+        font-size: 0.78em;
+        color: #a0a0a0;
+        margin-top: 2rem;
+        border-top: 1px solid #333;
+        padding-top: 0.5rem;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="crumbs"><a href="./">RC Setlist</a> · <a href="./README.html">Docs</a></div>
+    <h1 id="release-0-7-0">Release 0.7.0</h1>
+    <p>
+      Ableton RC Setlist 0.7.0 retires the bridge&#39;s manual install, adds a marker that hands
+      playback to a named target, and puts one line of notes on every song.
+    </p>
+    <h2 id="what-s-new">What&#39;s New</h2>
+    <ul>
+      <li>
+        <strong>RC Bridge ships inside the extension.</strong> Until now, the Control Surface the
+      </li>
+    </ul>
+    <p>
+      extension talks to was a separate download — AbletonOSC, fetched and installed by hand into
+      Live&#39;s User Library. It now ships as RC Bridge, a fork of the MIT-licensed AbletonOSC, and
+      the installation kit copies it for you: <code>Install-RC-Bridge.cmd</code> on Windows,
+      <code>Install RC Bridge.command</code> on macOS. Selecting <strong>RCBridge</strong> under
+      Settings › Link, Tempo &amp; MIDI › Control Surface stays your step, because Live offers no
+      way to do it for you — and the copy itself cannot happen from inside Live either: the
+      ExtensionHost sandboxes the filesystem to the extension&#39;s own folders, so the panel names
+      the script in use and shows the remaining step instead of pretending to install it. The fork
+      is also what makes two extensions on one machine possible. AbletonOSC sends every reply and
+      listener update to one fixed port, so only one client could hear it — RC Surface and RC
+      Setlist in the same Live could not both work. RC Bridge listens on its own port (11020, so a
+      stock AbletonOSC keeps running beside it), replies to whichever socket asked, and publishes
+      each listener&#39;s updates to every subscriber, with a 60-second lease that forgets clients
+      that went away. The extension probes for RC Bridge first and falls back to a stock AbletonOSC
+      when it is absent; the panel&#39;s OSC line says which one it is talking to (<code
+        >via RC Bridge 1.0.0 on port 11020</code
+      >). The fork also answers <code>last_event_time</code>, which upstream never did, so the
+      show&#39;s total duration no longer needs the MCP bridge.
+    </p>
+    <ul>
+      <li>
+        <strong
+          ><code>[jump NAME]</code> — a marker that hands playback to a _named_ target.</strong
+        >
+        A
+      </li>
+    </ul>
+    <p>
+      section of the same song, a song, or the form <code>Song &gt; Section</code>. Names match with
+      tags stripped and case ignored; a bare name resolves in this song&#39;s sections first, then
+      song titles, then every section in arrangement order. The hand-over is the same immediate one
+      <code>[next]</code> and <code>[skip]</code> use — no waiting for the next bar — and the marker
+      editor and the card both show it. A name that matches nothing does nothing, on purpose.
+    </p>
+    <ul>
+      <li>
+        <strong>One line of notes per song.</strong> Key, tuning, who counts in — a single line
+      </li>
+    </ul>
+    <p>
+      for the stage, edited on the song panel beside the colour, shown under the title on the card
+      and on the performance display. It is stored with the song in the song book, so it follows
+      renames and moves and never touches the Live project.
+    </p>
+    <h2 id="fixed">Fixed</h2>
+    <ul>
+      <li><strong>Operator errors survive sanitization.</strong> The command bus now attaches</li>
+    </ul>
+    <p>
+      operator-facing messages (<code>OperatorError</code> and <code>ProfileError</code>) to
+      <code>command_status.error</code>, while internal exceptions — raw filesystem paths included —
+      remain strictly sanitized and arrive as a generic <code>execution_failed</code>.
+    </p>
+    <ul>
+      <li>
+        <strong>The song book cache follows the active profile.</strong> Colours and notes are
+      </li>
+    </ul>
+    <p>
+      cached per profile and the cache is dropped on a profile switch, so one profile&#39;s edits
+      cannot leak into another.
+    </p>
+    <ul>
+      <li>
+        **The locator parser stopped splitting <code>Song &gt; Section</code> on a
+        <code>&gt;</code> that sits
+      </li>
+    </ul>
+    <p>inside a tag.**</p>
+    <p>
+      _For full details on installing, please refer to the
+      <a href="INSTALL.html">Installation Guide</a>._
+    </p>
+    <p>
+      _Leia estas notas em português:
+      <a href="pt-BR/NOTAS-DA-VERSAO-0.7.0.html">NOTAS-DA-VERSAO-0.7.0.md</a>._
+    </p>
+    <div class="source">Rendered from <code>docs\RELEASE-NOTES-0.7.0.md</code> on 2026-11-06.</div>
+  </body>
+</html>

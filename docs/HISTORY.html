@@ -1,0 +1,229 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>RC Setlist — release history — Ableton Live</title>
+    <meta
+      name="description"
+      content="This page lists every public release of RC Setlist with the headline change set. The 0.x development line is summarised for context; the 1.x line is the…"
+    />
+    <link rel="canonical" href="https://ntworm.github.io/rc-setlist/HISTORY.html" />
+    <link rel="alternate" type="text/markdown" href="./HISTORY.md" />
+    <link rel="describedby" href="./llms.txt" />
+    <meta property="og:type" content="article" />
+    <meta property="og:site_name" content="RC Setlist" />
+    <meta property="og:locale" content="en" />
+    <meta property="og:title" content="RC Setlist — release history — Ableton Live" />
+    <meta
+      property="og:description"
+      content="This page lists every public release of RC Setlist with the headline change set. The 0.x development line is summarised for context; the 1.x line is the…"
+    />
+    <meta property="og:url" content="https://ntworm.github.io/rc-setlist/HISTORY.html" />
+    <meta property="og:image" content="https://ntworm.github.io/rc-setlist/og-image.png" />
+    <style>
+      body {
+        font:
+          16px/1.55 system-ui,
+          sans-serif;
+        max-width: 920px;
+        margin: 2rem auto;
+        padding: 0 1rem;
+        color: #f2f2f2;
+        background: #0e0e0e;
+      }
+      h1,
+      h2,
+      h3,
+      h4 {
+        line-height: 1.25;
+      }
+      h1 {
+        font-size: 2.2rem;
+        margin-top: 0;
+      }
+      h2 {
+        margin-top: 2rem;
+        padding-top: 1rem;
+        border-top: 1px solid #333;
+      }
+      h3 {
+        margin-top: 1.5rem;
+      }
+      code {
+        font:
+          0.92em ui-monospace,
+          Consolas,
+          monospace;
+        background: #1a1a1a;
+        padding: 0.1em 0.35em;
+        border-radius: 0;
+      }
+      pre {
+        background: #1a1a1a;
+        padding: 0.8rem 1rem;
+        overflow-x: auto;
+        border: 1px solid #333;
+      }
+      pre code {
+        background: transparent;
+        padding: 0;
+      }
+      a {
+        color: #ffa133;
+      }
+      ul,
+      ol {
+        padding-left: 1.2em;
+      }
+      blockquote {
+        border-left: 4px solid #ffa133;
+        margin: 1em 0;
+        padding: 0.5em 1em;
+        color: #a0a0a0;
+      }
+      .crumbs {
+        font-size: 0.85em;
+        color: #a0a0a0;
+        margin-bottom: 1rem;
+      }
+      .crumbs a {
+        color: #a0a0a0;
+        text-decoration: none;
+      }
+      .crumbs a:hover {
+        color: #f2f2f2;
+      }
+      .source {
+        font-size: 0.78em;
+        color: #a0a0a0;
+        margin-top: 2rem;
+        border-top: 1px solid #333;
+        padding-top: 0.5rem;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="crumbs"><a href="./">RC Setlist</a> · <a href="./README.html">Docs</a></div>
+    <h1 id="rc-setlist-release-history">RC Setlist — release history</h1>
+    <p>
+      This page lists every public release of RC Setlist with the headline change set. The 0.x
+      development line is summarised for context; the 1.x line is the published, supported line
+      (security fixes only — see <a href="../SECURITY.md">SECURITY.md</a> for the support window).
+    </p>
+    <ul>
+      <li><a href="#100--2026-09-15">1.0.0 — first public release</a></li>
+      <li><a href="#0x--private-development-2025-09--2026-08">0.x — private development</a></li>
+    </ul>
+    <h2 id="1-0-0-2026-09-15">1.0.0 — 2026-09-15</h2>
+    <p>
+      First public release. PolyForm-Noncommercial-1.0.0 license; published to GitHub with a signed
+      kit and <code>.ablx</code> extension. Headline changes versus the last private 0.7.x build:
+    </p>
+    <ul>
+      <li>
+        <strong>Contracts.</strong> <code>docs/CONTRACTS.md</code> and
+        <code>docs/pt-BR/CONTRATOS.md</code>
+      </li>
+    </ul>
+    <p>
+      document the on-disk format, the WebSocket protocol (v3), the locator grammar, the OSC
+      integration, the HTTP endpoints, and the SemVer policy. Every claim has a regression test in
+      <code>tests/release-contracts.test.mjs</code>. The renderer no longer masks Prettier failures
+      (the <code>|| exit 0</code> is gone from <code>format:check</code>); the rendered HTML is now
+      byte-idêntico across runs and prettier-clean.
+    </p>
+    <ul>
+      <li><strong>Reliability Core.</strong> Command bus settles with a stable status</li>
+    </ul>
+    <p>
+      (<code>created</code> → <code>sent</code> → <code>acknowledged</code> →
+      <code>confirmed</code> / <code>failed</code> / <code>expired</code> / <code>cancelled</code>),
+      WS frames carry a monotonic <code>stateVersion</code>, and
+      <code>sync_confirm</code> re-broadcasts the cached state on reconnection.
+      <code>OperatorError</code> is the only catch-all a handler may throw; anything else settles as
+      <code>execution_failed</code> and the original error goes to <code>events.log</code> only.
+    </p>
+    <ul>
+      <li><strong>WebSocket hardening.</strong> Origin/Host check on upgrade, per-IP</li>
+    </ul>
+    <p>
+      auth-attempt rate limit (5/min/IP, sliding 60-second window), malformed-JSON structured error,
+      sanitized <code>log</code> frames, max payload size, heartbeat ping/pong, console-token
+      leakage prevention, backpressure thresholds.
+    </p>
+    <ul>
+      <li><strong>HTTP hardening.</strong> <code>X-Content-Type-Options: nosniff</code>,</li>
+    </ul>
+    <p>
+      <code>Referrer-Policy: no-referrer</code>, CSP on stage pages, no path traversal on
+      <code>/exports/</code>, <code>/audio/</code>, <code>/static/</code> (encoded slashes and
+      Unicode names rejected), <code>/debug/snapshot</code> off by default and token-gated.
+    </p>
+    <ul>
+      <li><strong>Profiles.</strong> Per-profile UUID identity, NFKC + case-folded name</li>
+    </ul>
+    <p>
+      uniqueness, transaction-safe registry commits with rollback on failure, index recovery from
+      <code>index.json.bak</code>, project-scoped registry that survives unsaved Sessions.
+    </p>
+    <ul>
+      <li><strong>Profiles migration.</strong> <code>scripts/migrate-data.mjs</code> (with</li>
+    </ul>
+    <p>
+      PowerShell/sh wrappers in the kit) copies the 0.x storage tree to the 1.0 location; never
+      overwrites a destination file; idempotent.
+    </p>
+    <ul>
+      <li><strong>Performance baseline.</strong> <code>scripts/bench-state-broadcast.mjs</code></li>
+    </ul>
+    <p>
+      measures the broadcast path against the mock OSC and a 40-song / 200-section setlist; results
+      land in <code>internal/PERFORMANCE-BASELINE-1.0.md</code>. Producer <code>getState()</code> +
+      serialise p95 stays well under 5 ms; the loop rate is bounded by Node&#39;s
+      <code>setInterval</code> drift, not by producer capacity.
+    </p>
+    <ul>
+      <li><strong>Landing, getting started, theme.</strong> New landing page with axe</li>
+    </ul>
+    <p>
+      accessibility, <code>docs/GETTING-STARTED.md</code> and pt-BR counterpart, full i18n table,
+      theme contract for custom skins, Playwright suite under <code>tests/ui/</code> covers landing,
+      setlist, performance, mobile-target-hold, and pre-roll flows.
+    </p>
+    <p>
+      Full notes: <a href="RELEASE-NOTES-1.0.0.html"><code>RELEASE-NOTES-1.0.0.md</code></a
+      >.
+    </p>
+    <h2 id="0-x-private-development-2025-09-2026-08">
+      0.x — private development (2025-09 → 2026-08)
+    </h2>
+    <p>
+      Private development line shipped only to early-access testers. The 0.6.0 / 0.6.1 / 0.7.0
+      release notes were folded into the <strong>Since 0.5.1</strong> section of
+      <a href="RELEASE-NOTES-1.0.0.html"><code>RELEASE-NOTES-1.0.0.md</code></a> and are no longer
+      in the repository as separate files; their binaries were never distributed publicly. Schema
+      and storage paths changed several times; treat anything pre-1.0 as draft.
+    </p>
+    <p>
+      | Release | Headline | | ------- |
+      -----------------------------------------------------------------------------------------------------------------------------------------
+      | | 0.7.0 | Profile migration foundation; song-book colours and notes; LRC + txt lyrics;
+      storage migration path; PROJECT-PROFILE-SCOPE tagged stable. | | 0.6.1 | Reliability Core
+      scaffold (settled status enum, command ack/confirmed); WS reconnect hardening; per-IP
+      backpressure thresholds. | | 0.6.0 | Atlas-style reliability pass on the transport (deduped
+      backpressure, panic mode, bounded command queue). | | 0.5.1 | Multi-profile + per-profile
+      storage; <code>profile.json</code> v1; <code>index.json</code> schema; first project-identity
+      scope. |
+    </p>
+    <p>
+      The 0.4.x and 0.3.x notes remain for completeness but those binaries were never distributed;
+      the storage shape is not loadable by 1.0 without the migration in §1 above.
+    </p>
+    <p>
+      Pre-1.0 versions are <strong>unsupported</strong>. See
+      <a href="../SECURITY.md">SECURITY.md</a> for the support window.
+    </p>
+    <div class="source">Rendered from <code>docs\HISTORY.md</code> on 2026-11-06.</div>
+  </body>
+</html>

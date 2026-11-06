@@ -1,0 +1,249 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Release 0.6.0 — RC Setlist</title>
+    <meta
+      name="description"
+      content="Ableton RC Setlist 0.6.0 rebuilds two things the app leaned on and neither of them was solid: how it measures a show, and how you change a marker. It also…"
+    />
+    <link rel="canonical" href="https://ntworm.github.io/rc-setlist/RELEASE-NOTES-0.6.0.html" />
+    <link rel="alternate" type="text/markdown" href="./RELEASE-NOTES-0.6.0.md" />
+    <link rel="describedby" href="./llms.txt" />
+    <meta property="og:type" content="article" />
+    <meta property="og:site_name" content="RC Setlist" />
+    <meta property="og:locale" content="en" />
+    <meta property="og:title" content="Release 0.6.0 — RC Setlist" />
+    <meta
+      property="og:description"
+      content="Ableton RC Setlist 0.6.0 rebuilds two things the app leaned on and neither of them was solid: how it measures a show, and how you change a marker. It also…"
+    />
+    <meta
+      property="og:url"
+      content="https://ntworm.github.io/rc-setlist/RELEASE-NOTES-0.6.0.html"
+    />
+    <meta property="og:image" content="https://ntworm.github.io/rc-setlist/og-image.png" />
+    <style>
+      body {
+        font:
+          16px/1.55 system-ui,
+          sans-serif;
+        max-width: 920px;
+        margin: 2rem auto;
+        padding: 0 1rem;
+        color: #f2f2f2;
+        background: #0e0e0e;
+      }
+      h1,
+      h2,
+      h3,
+      h4 {
+        line-height: 1.25;
+      }
+      h1 {
+        font-size: 2.2rem;
+        margin-top: 0;
+      }
+      h2 {
+        margin-top: 2rem;
+        padding-top: 1rem;
+        border-top: 1px solid #333;
+      }
+      h3 {
+        margin-top: 1.5rem;
+      }
+      code {
+        font:
+          0.92em ui-monospace,
+          Consolas,
+          monospace;
+        background: #1a1a1a;
+        padding: 0.1em 0.35em;
+        border-radius: 0;
+      }
+      pre {
+        background: #1a1a1a;
+        padding: 0.8rem 1rem;
+        overflow-x: auto;
+        border: 1px solid #333;
+      }
+      pre code {
+        background: transparent;
+        padding: 0;
+      }
+      a {
+        color: #ffa133;
+      }
+      ul,
+      ol {
+        padding-left: 1.2em;
+      }
+      blockquote {
+        border-left: 4px solid #ffa133;
+        margin: 1em 0;
+        padding: 0.5em 1em;
+        color: #a0a0a0;
+      }
+      .crumbs {
+        font-size: 0.85em;
+        color: #a0a0a0;
+        margin-bottom: 1rem;
+      }
+      .crumbs a {
+        color: #a0a0a0;
+        text-decoration: none;
+      }
+      .crumbs a:hover {
+        color: #f2f2f2;
+      }
+      .source {
+        font-size: 0.78em;
+        color: #a0a0a0;
+        margin-top: 2rem;
+        border-top: 1px solid #333;
+        padding-top: 0.5rem;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="crumbs"><a href="./">RC Setlist</a> · <a href="./README.html">Docs</a></div>
+    <h1 id="release-0-6-0">Release 0.6.0</h1>
+    <p>
+      Ableton RC Setlist 0.6.0 rebuilds two things the app leaned on and neither of them was solid:
+      how it measures a show, and how you change a marker. It also gives the stage views a surface
+      designed for a dark room rather than a bright desk.
+    </p>
+    <h2 id="what-s-new">What&#39;s New</h2>
+    <ul>
+      <li>
+        <strong>Marker editor</strong>: double-click a song or a section and every tag becomes a
+      </li>
+    </ul>
+    <p>
+      control. A song carries its name, its colour, its starting tempo and the stop, next and skip
+      behaviours, plus a list of its sections to step into and back out of. Loop and click belong to
+      a section, because that is where the music is structured. The raw text field this replaces put
+      the name and its tags in one input, where <code>[bpm 107]</code> — the tag the duration engine
+      reads — could be deleted by a stray keystroke.
+    </p>
+    <ul>
+      <li>
+        <strong>Song colours</strong>: sixteen desaturated colours in an eight by two matrix. Hue
+      </li>
+    </ul>
+    <p>
+      climbs across each row and tone deepens down each column, so two colours that read apart on a
+      dark stage are two that sit apart on the strip. Colour is RC Setlist&#39;s own memory: it is
+      stored beside your setlist, never written into the Live project, and it follows a song through
+      renames and moves.
+    </p>
+    <ul>
+      <li>
+        <strong>Songs are recognised by name and position</strong>: rename a song and it stays the
+      </li>
+    </ul>
+    <p>
+      same song; drag it elsewhere and it stays the same song. Change both at once and it is
+      honestly treated as a new one. Delete a locator by accident and recreate it, and what RC
+      Setlist remembered comes back.
+    </p>
+    <ul>
+      <li>
+        <strong>Dedicated stage typography</strong>: self-hosted Martian Mono for the interface and
+      </li>
+    </ul>
+    <p>
+      Barlow Semi Condensed for sung lyrics, which fits roughly 45% more words per line on a phone
+      without dropping below the 12px stage floor. Accents and cedillas no longer clip.
+    </p>
+    <ul>
+      <li>
+        <strong>Duration confidence</strong>: an <code>EST.</code> badge appears whenever a setlist
+        carries no
+      </li>
+    </ul>
+    <p><code>[bpm N]</code> tags, so a uniform estimate is never mistaken for an exact figure.</p>
+    <ul>
+      <li>
+        <strong>Tempo automation safety</strong>: a <strong>Set Live tempo on jump</strong> toggle,
+        off by
+      </li>
+    </ul>
+    <p>
+      default. RC Setlist also detects arrangement tempo automation on its own and refuses to write
+      tempo when it finds it, even with the toggle on.
+    </p>
+    <h2 id="bug-fixes">Bug Fixes</h2>
+    <ul>
+      <li>
+        <strong>Show duration no longer depends on what was playing.</strong> A captured field fed
+      </li>
+    </ul>
+    <p>
+      the live tempo back into the song&#39;s own duration, so a set with tempo automation measured
+      itself differently on every pass — up to 16:59 of drift on a 79-minute show. Durations now
+      come from the tempo the locators declare, integrated piecewise across one chronological
+      timeline for the whole setlist.
+    </p>
+    <ul>
+      <li>
+        <strong>Renaming a locator no longer risks losing it.</strong> The rename happens in place
+      </li>
+    </ul>
+    <p>
+      instead of deleting the cue point and creating a replacement, and Live&#39;s own cue list is
+      read back rather than the bridge&#39;s word being taken for it.
+    </p>
+    <ul>
+      <li>
+        <strong>Section prefixes are preserved.</strong> Live accepts both
+        <code>&gt; Verse</code> and
+      </li>
+    </ul>
+    <p>
+      <code>Song &gt; Verse</code>; the editor used to rewrite the first form into the second and
+      renamed every section it touched.
+    </p>
+    <ul>
+      <li>
+        <strong>Editing is refused while the transport is playing</strong>, in every mode. A rename
+      </li>
+    </ul>
+    <p>
+      moves the playhead to act on the cue, so with playback running the write landed at whatever
+      beat playback had reached.
+    </p>
+    <ul>
+      <li>
+        <strong>Marker edits refresh immediately.</strong> Cue points are polled every two seconds,
+      </li>
+    </ul>
+    <p>
+      and inside that window the editor reopened on stale values and wrote them back — which made
+      tags look like they landed at random.
+    </p>
+    <ul>
+      <li>
+        <strong>Every tag the panel writes now has a badge.</strong> <code>[skip]</code> and
+        <code>[click]</code> changed
+      </li>
+    </ul>
+    <p>what happens on stage while leaving no mark on the card.</p>
+    <ul>
+      <li>
+        <strong>Play no longer swaps to a pause glyph</strong>, which had implied that pressing it
+      </li>
+    </ul>
+    <p>again would pause.</p>
+    <p>
+      _For full details on migrating from 0.5.x, please refer to the
+      <a href="INSTALL.html">Installation Guide</a>._
+    </p>
+    <p>
+      _Leia estas notas em português:
+      <a href="pt-BR/NOTAS-DA-VERSAO-0.6.0.html">NOTAS-DA-VERSAO-0.6.0.md</a>._
+    </p>
+    <div class="source">Rendered from <code>docs\RELEASE-NOTES-0.6.0.md</code> on 2026-11-06.</div>
+  </body>
+</html>

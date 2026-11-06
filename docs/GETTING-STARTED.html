@@ -1,0 +1,224 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Getting started with RC Setlist 1.0 — Ableton Live</title>
+    <meta
+      name="description"
+      content="This guide takes you from a fresh Live install to a running setlist in under 15 minutes. If anything here disagrees with what you see on screen, open an…"
+    />
+    <link rel="canonical" href="https://ntworm.github.io/rc-setlist/GETTING-STARTED.html" />
+    <link rel="alternate" type="text/markdown" href="./GETTING-STARTED.md" />
+    <link rel="describedby" href="./llms.txt" />
+    <meta property="og:type" content="article" />
+    <meta property="og:site_name" content="RC Setlist" />
+    <meta property="og:locale" content="en" />
+    <meta property="og:title" content="Getting started with RC Setlist 1.0 — Ableton Live" />
+    <meta
+      property="og:description"
+      content="This guide takes you from a fresh Live install to a running setlist in under 15 minutes. If anything here disagrees with what you see on screen, open an…"
+    />
+    <meta property="og:url" content="https://ntworm.github.io/rc-setlist/GETTING-STARTED.html" />
+    <meta property="og:image" content="https://ntworm.github.io/rc-setlist/og-image.png" />
+    <style>
+      body {
+        font:
+          16px/1.55 system-ui,
+          sans-serif;
+        max-width: 920px;
+        margin: 2rem auto;
+        padding: 0 1rem;
+        color: #f2f2f2;
+        background: #0e0e0e;
+      }
+      h1,
+      h2,
+      h3,
+      h4 {
+        line-height: 1.25;
+      }
+      h1 {
+        font-size: 2.2rem;
+        margin-top: 0;
+      }
+      h2 {
+        margin-top: 2rem;
+        padding-top: 1rem;
+        border-top: 1px solid #333;
+      }
+      h3 {
+        margin-top: 1.5rem;
+      }
+      code {
+        font:
+          0.92em ui-monospace,
+          Consolas,
+          monospace;
+        background: #1a1a1a;
+        padding: 0.1em 0.35em;
+        border-radius: 0;
+      }
+      pre {
+        background: #1a1a1a;
+        padding: 0.8rem 1rem;
+        overflow-x: auto;
+        border: 1px solid #333;
+      }
+      pre code {
+        background: transparent;
+        padding: 0;
+      }
+      a {
+        color: #ffa133;
+      }
+      ul,
+      ol {
+        padding-left: 1.2em;
+      }
+      blockquote {
+        border-left: 4px solid #ffa133;
+        margin: 1em 0;
+        padding: 0.5em 1em;
+        color: #a0a0a0;
+      }
+      .crumbs {
+        font-size: 0.85em;
+        color: #a0a0a0;
+        margin-bottom: 1rem;
+      }
+      .crumbs a {
+        color: #a0a0a0;
+        text-decoration: none;
+      }
+      .crumbs a:hover {
+        color: #f2f2f2;
+      }
+      .source {
+        font-size: 0.78em;
+        color: #a0a0a0;
+        margin-top: 2rem;
+        border-top: 1px solid #333;
+        padding-top: 0.5rem;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="crumbs"><a href="./">RC Setlist</a> · <a href="./README.html">Docs</a></div>
+    <h1 id="getting-started-with-rc-setlist-1-0">Getting started with RC Setlist 1.0</h1>
+    <p>
+      This guide takes you from a fresh Live install to a running setlist in under 15 minutes. If
+      anything here disagrees with what you see on screen, open an issue with the
+      <code>docs/wrong</code> label.
+    </p>
+    <ul>
+      <li><a href="#1-install">1. Install</a></li>
+      <li><a href="#2-open-live-and-enable-rc-setlist">2. Open Live and enable RC Setlist</a></li>
+      <li><a href="#3-first-setlist-in-three-locators">3. First setlist in three locators</a></li>
+      <li><a href="#4-open-the-panel">4. Open the panel</a></li>
+      <li><a href="#5-pair-the-stage-phone">5. Pair the stage phone</a></li>
+      <li><a href="#next-steps">Next steps</a></li>
+    </ul>
+    <h2 id="1-install">1. Install</h2>
+    <p>You need:</p>
+    <ul>
+      <li>Ableton Live 12.4.5 Suite (Beta) or newer, with Extensions enabled.</li>
+      <li>macOS 13+ (release path) or Windows 11 23H2+ (release path). Linux is</li>
+    </ul>
+    <p>not supported by the host; the bridge is Python and runs anywhere Live does.</p>
+    <ul>
+      <li>A modern phone browser (Safari 17+, Chrome 121+) for the stage</li>
+    </ul>
+    <p>control.</p>
+    <p>
+      Open the kit you downloaded from the
+      <a href="https://github.com/ntworm/rc-setlist/releases/latest">release page</a> and
+      double-click the installer for your platform. The installer copies RC Bridge into Live&#39;s
+      User Library and prints the final URL of the local panel.
+    </p>
+    <p>
+      If you prefer to do it by hand, follow <a href="INSTALL.html">INSTALL.md</a>. The 1.0 install
+      is one RC Bridge folder plus the <code>.ablx</code> extension; nothing else needs to be on
+      disk.
+    </p>
+    <h2 id="2-open-live-and-enable-rc-setlist">2. Open Live and enable RC Setlist</h2>
+    <p>
+      1. Launch Ableton Live. 2. Open Live&#39;s <strong>Preferences → Extensions</strong> and
+      confirm <code>RC Setlist</code> appears in the list with status <strong>Enabled</strong>. 3.
+      <strong>Extensions → RC Setlist → Open panel</strong> opens the host panel. 4. The panel shows
+      the local URL, the controller token as a QR code, and the auto-detected LAN IP.
+    </p>
+    <p>
+      The URL is <code>https://&lt;lan-ip&gt;:4444/</code>; the QR embeds the same URL with the
+      token in the query string. Treat the QR like a password — anyone who scans it can stop the
+      transport.
+    </p>
+    <h2 id="3-first-setlist-in-three-locators">3. First setlist in three locators</h2>
+    <p>
+      Live uses <strong>locators</strong> (cue points in the Arrangement). Each one carries the song
+      title plus optional tags inside <code>[ ]</code> brackets. RC Setlist parses them into songs
+      and sections.
+    </p>
+    <p>Start a new Live Set, set the tempo to 120 BPM, and add three locators:</p>
+    <p>
+      | Beat | Name | Notes | | ---- | ------------------ | ---------------- | | 0 |
+      <code>INTRO</code> | First song | | 16 | <code>&gt; Verse</code> | Section of INTRO | | 48 |
+      <code>SONG 2 [bpm 100]</code> | Next song at 100 |
+    </p>
+    <p>Open the panel and confirm you see:</p>
+    <ul>
+      <li><code>INTRO</code> listed as the current song</li>
+      <li><code>Verse</code> listed as a section under INTRO</li>
+      <li><code>SONG 2</code> listed as a separate song with BPM 100</li>
+    </ul>
+    <p>
+      If the panel shows nothing, check the logs panel; a malformed locator is the most common
+      cause.
+    </p>
+    <h2 id="4-open-the-panel">4. Open the panel</h2>
+    <p>
+      The panel is the operator&#39;s primary interface. It shows the current song, the running
+      timer, the next locator, and the controls to play, stop, jump and edit. Pressing
+      <strong>Space</strong> toggles play/stop; <strong>N</strong> and <strong>P</strong> jump to
+      the next and previous locator; <strong>J</strong> opens a small dialog to type a marker name
+      and jump to it.
+    </p>
+    <p>The full reference is in <a href="USER-GUIDE.html#panel-controls">USER-GUIDE.md</a>.</p>
+    <h2 id="5-pair-the-stage-phone">5. Pair the stage phone</h2>
+    <p>
+      1. On the stage phone, scan the QR from the panel. 2. The phone opens the Stage Control page
+      at the same URL with the token already in the query string. 3. Tap
+      <strong>Confirm controller</strong> to register the phone as a controller for this session.
+    </p>
+    <p>
+      The phone now shows the next song, the section index, the running timer, and the lyrics. There
+      is no separate pairing app; the only piece of state the phone needs is the URL.
+    </p>
+    <p>
+      If the phone loses the connection, the panel re-renders and the URL stays valid until you
+      restart Live.
+    </p>
+    <h2 id="next-steps">Next steps</h2>
+    <ul>
+      <li><a href="USER-GUIDE.html">USER-GUIDE.md</a> — full panel + Stage Control</li>
+    </ul>
+    <p>reference.</p>
+    <ul>
+      <li><a href="CONTRACTS.html">CONTRACTS.md</a> — the public contract (HTTP, WS,</li>
+    </ul>
+    <p>locator grammar). Read this if you want to write your own controller.</p>
+    <ul>
+      <li><a href="THEME_CONTRACT.html">THEME_CONTRACT.md</a> — palette and typography if</li>
+    </ul>
+    <p>you want a custom skin for Stage Control.</p>
+    <ul>
+      <li><a href="TESTER-GUIDE.html">TESTER-GUIDE.md</a> — what to check on a release</li>
+    </ul>
+    <p>candidate before you ship it to the band.</p>
+    <ul>
+      <li><a href="DEVELOPMENT.html">DEVELOPMENT.md</a> — how to run the source tests and</li>
+    </ul>
+    <p>build the extension locally.</p>
+    <div class="source">Rendered from <code>docs\GETTING-STARTED.md</code> on 2026-11-06.</div>
+  </body>
+</html>

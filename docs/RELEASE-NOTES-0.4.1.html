@@ -1,0 +1,204 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>RC Setlist 0.4.1 release notes — Ableton Live</title>
+    <meta
+      name="description"
+      content="Released on July 29, 2026. Version 0.4.1 is a backward-compatible update for the existing Arrangement-based workflow."
+    />
+    <link rel="canonical" href="https://ntworm.github.io/rc-setlist/RELEASE-NOTES-0.4.1.html" />
+    <link rel="alternate" type="text/markdown" href="./RELEASE-NOTES-0.4.1.md" />
+    <link rel="describedby" href="./llms.txt" />
+    <meta property="og:type" content="article" />
+    <meta property="og:site_name" content="RC Setlist" />
+    <meta property="og:locale" content="en" />
+    <meta property="og:title" content="RC Setlist 0.4.1 release notes — Ableton Live" />
+    <meta
+      property="og:description"
+      content="Released on July 29, 2026. Version 0.4.1 is a backward-compatible update for the existing Arrangement-based workflow."
+    />
+    <meta
+      property="og:url"
+      content="https://ntworm.github.io/rc-setlist/RELEASE-NOTES-0.4.1.html"
+    />
+    <meta property="og:image" content="https://ntworm.github.io/rc-setlist/og-image.png" />
+    <style>
+      body {
+        font:
+          16px/1.55 system-ui,
+          sans-serif;
+        max-width: 920px;
+        margin: 2rem auto;
+        padding: 0 1rem;
+        color: #f2f2f2;
+        background: #0e0e0e;
+      }
+      h1,
+      h2,
+      h3,
+      h4 {
+        line-height: 1.25;
+      }
+      h1 {
+        font-size: 2.2rem;
+        margin-top: 0;
+      }
+      h2 {
+        margin-top: 2rem;
+        padding-top: 1rem;
+        border-top: 1px solid #333;
+      }
+      h3 {
+        margin-top: 1.5rem;
+      }
+      code {
+        font:
+          0.92em ui-monospace,
+          Consolas,
+          monospace;
+        background: #1a1a1a;
+        padding: 0.1em 0.35em;
+        border-radius: 0;
+      }
+      pre {
+        background: #1a1a1a;
+        padding: 0.8rem 1rem;
+        overflow-x: auto;
+        border: 1px solid #333;
+      }
+      pre code {
+        background: transparent;
+        padding: 0;
+      }
+      a {
+        color: #ffa133;
+      }
+      ul,
+      ol {
+        padding-left: 1.2em;
+      }
+      blockquote {
+        border-left: 4px solid #ffa133;
+        margin: 1em 0;
+        padding: 0.5em 1em;
+        color: #a0a0a0;
+      }
+      .crumbs {
+        font-size: 0.85em;
+        color: #a0a0a0;
+        margin-bottom: 1rem;
+      }
+      .crumbs a {
+        color: #a0a0a0;
+        text-decoration: none;
+      }
+      .crumbs a:hover {
+        color: #f2f2f2;
+      }
+      .source {
+        font-size: 0.78em;
+        color: #a0a0a0;
+        margin-top: 2rem;
+        border-top: 1px solid #333;
+        padding-top: 0.5rem;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="crumbs"><a href="./">RC Setlist</a> · <a href="./README.html">Docs</a></div>
+    <p>﻿# RC Setlist 0.4.1 release notes</p>
+    <p><a href="pt-BR/NOTAS-DA-VERSAO-0.4.1.html">Português (Brasil)</a></p>
+    <p>
+      Released on July 29, 2026. Version 0.4.1 is a backward-compatible update for the existing
+      Arrangement-based workflow.
+    </p>
+    <h2 id="what-is-new">What is new</h2>
+    <ul>
+      <li>Every song card shows its song duration, and the header shows total setlist duration</li>
+    </ul>
+    <p>when Live provides the Arrangement end.</p>
+    <ul>
+      <li>
+        <strong>Manage Setlists</strong> can create, select, rename, recoverably delete and restore
+      </li>
+    </ul>
+    <p>
+      multiple saved setlists for the current Ableton Live Set. Setlists from other projects stay
+      hidden.
+    </p>
+    <ul>
+      <li>The lyrics workspace now has one shared song selector above Create, Sync and</li>
+    </ul>
+    <p>
+      Edit. Opening the editor no longer replaces the synchronized lyrics in the show display, and
+      unsaved edits survive closing and reopening the dialog.
+    </p>
+    <ul>
+      <li>The Live panel has a compact AbletonOSC connection diagnostic without filling</li>
+    </ul>
+    <p>the panel with installation text.</p>
+    <h2 id="fixes">Fixes</h2>
+    <ul>
+      <li>
+        <code>[stop]</code> and <code>[loop]</code> markers remain sections of the preceding song,
+        and newly
+      </li>
+    </ul>
+    <p>added songs enter the saved list at their Arrangement position.</p>
+    <ul>
+      <li>Quantized and unquantized jumps keep the selected Live quantization even when</li>
+    </ul>
+    <p>another RC extension occupies AbletonOSC&#39;s fixed reply port.</p>
+    <ul>
+      <li>Total Duration, playback position and jump confirmation use a serialized MCP</li>
+    </ul>
+    <p>fallback without accumulating delayed requests.</p>
+    <ul>
+      <li>The Bars/Beats/Sixteenths bar display no longer flickers backward at normal</li>
+    </ul>
+    <p>
+      beat boundaries, while cue jumps, loops, stop/start and reconnects still update immediately.
+    </p>
+    <ul>
+      <li>Mobile setlist rename keeps keyboard focus during live state updates.</li>
+      <li>Language changes are disabled while Live is playing or the panel is locked;</li>
+    </ul>
+    <p>the lock warning is displayed in the active language.</p>
+    <ul>
+      <li>
+        The embedded Live panel keeps both <strong>Open on this computer</strong> actions visible
+      </li>
+    </ul>
+    <p>and clickable at the supported panel size.</p>
+    <h2 id="installation-notes">Installation notes</h2>
+    <ul>
+      <li>Install AbletonOSC directly at</li>
+    </ul>
+    <p>
+      <code>User Library/Remote Scripts/AbletonOSC</code>, then confirm that
+      <code>AbletonOSC/__init__.py</code> is directly inside that folder. Do not use the hidden
+      <code>User Remote Scripts</code> preferences folder.
+    </p>
+    <ul>
+      <li>
+        On the first browser connection, <code>ERR_CERT_AUTHORITY_INVALID</code> is expected for
+      </li>
+    </ul>
+    <p>
+      the local self-signed certificate. Continue only when the address exactly matches the IP shown
+      in the Live panel and you are on a trusted LAN.
+    </p>
+    <ul>
+      <li>Session View support is not included. Version 0.4.1 continues to use</li>
+    </ul>
+    <p>Arrangement locators.</p>
+    <p>
+      See the <a href="INSTALL.html">installation guide</a>,
+      <a href="USER-GUIDE.html">user guide</a> and
+      <a href="TROUBLESHOOTING.html">troubleshooting guide</a> for the complete workflow.
+    </p>
+    <div class="source">Rendered from <code>docs\RELEASE-NOTES-0.4.1.md</code> on 2026-11-06.</div>
+  </body>
+</html>

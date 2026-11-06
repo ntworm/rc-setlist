@@ -69,10 +69,14 @@ Não instale arquivos do SDK ou da CLI como usuário final.
 3. No computador principal, abra `https://localhost:4444/setlist`.
 4. Em um celular ou tablet, use a URL da LAN ou o QR code mostrado no painel.
 
-Primeira conexão: o navegador pode mostrar `ERR_CERT_AUTHORITY_INVALID` porque o
-RC Setlist cria um certificado local autoassinado. Continue somente se o endereço
-for exatamente o IP mostrado no painel do Live e a rede local for confiável. Cada
-navegador/aparelho pode exigir isso uma vez.
+Primeira conexão: enquanto o certificado deste computador não estiver
+instalado, o navegador mostra `ERR_CERT_AUTHORITY_INVALID`. O RC Setlist cria
+uma autoridade certificadora para este computador, que só vale para localhost e
+endereços da rede local, e assina com ela o certificado do servidor. Para o
+aviso sumir no celular, escaneie o QR **Certificado do celular** no painel do
+Live: ele abre uma página simples na porta `4445` com o arquivo e os passos para
+Android e iPhone. Até lá, continue somente se o endereço for exatamente o IP
+mostrado no painel do Live e a rede local for confiável.
 
 ## 4. Abrir as duas visualizações
 

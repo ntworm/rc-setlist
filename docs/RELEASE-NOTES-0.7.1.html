@@ -1,0 +1,190 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Release 0.7.1 — RC Setlist</title>
+    <meta
+      name="description"
+      content="RC Setlist 0.7.1 incorporates stage acceptance fixes from the 2026-09-16 rehearsal, improves panel visibility and mobile layouts, cleans up legacy…"
+    />
+    <link rel="canonical" href="https://ntworm.github.io/rc-setlist/RELEASE-NOTES-0.7.1.html" />
+    <link rel="alternate" type="text/markdown" href="./RELEASE-NOTES-0.7.1.md" />
+    <link rel="describedby" href="./llms.txt" />
+    <meta property="og:type" content="article" />
+    <meta property="og:site_name" content="RC Setlist" />
+    <meta property="og:locale" content="en" />
+    <meta property="og:title" content="Release 0.7.1 — RC Setlist" />
+    <meta
+      property="og:description"
+      content="RC Setlist 0.7.1 incorporates stage acceptance fixes from the 2026-09-16 rehearsal, improves panel visibility and mobile layouts, cleans up legacy…"
+    />
+    <meta
+      property="og:url"
+      content="https://ntworm.github.io/rc-setlist/RELEASE-NOTES-0.7.1.html"
+    />
+    <meta property="og:image" content="https://ntworm.github.io/rc-setlist/og-image.png" />
+    <style>
+      body {
+        font:
+          16px/1.55 system-ui,
+          sans-serif;
+        max-width: 920px;
+        margin: 2rem auto;
+        padding: 0 1rem;
+        color: #f2f2f2;
+        background: #0e0e0e;
+      }
+      h1,
+      h2,
+      h3,
+      h4 {
+        line-height: 1.25;
+      }
+      h1 {
+        font-size: 2.2rem;
+        margin-top: 0;
+      }
+      h2 {
+        margin-top: 2rem;
+        padding-top: 1rem;
+        border-top: 1px solid #333;
+      }
+      h3 {
+        margin-top: 1.5rem;
+      }
+      code {
+        font:
+          0.92em ui-monospace,
+          Consolas,
+          monospace;
+        background: #1a1a1a;
+        padding: 0.1em 0.35em;
+        border-radius: 0;
+      }
+      pre {
+        background: #1a1a1a;
+        padding: 0.8rem 1rem;
+        overflow-x: auto;
+        border: 1px solid #333;
+      }
+      pre code {
+        background: transparent;
+        padding: 0;
+      }
+      a {
+        color: #ffa133;
+      }
+      ul,
+      ol {
+        padding-left: 1.2em;
+      }
+      blockquote {
+        border-left: 4px solid #ffa133;
+        margin: 1em 0;
+        padding: 0.5em 1em;
+        color: #a0a0a0;
+      }
+      .crumbs {
+        font-size: 0.85em;
+        color: #a0a0a0;
+        margin-bottom: 1rem;
+      }
+      .crumbs a {
+        color: #a0a0a0;
+        text-decoration: none;
+      }
+      .crumbs a:hover {
+        color: #f2f2f2;
+      }
+      .source {
+        font-size: 0.78em;
+        color: #a0a0a0;
+        margin-top: 2rem;
+        border-top: 1px solid #333;
+        padding-top: 0.5rem;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="crumbs"><a href="./">RC Setlist</a> · <a href="./README.html">Docs</a></div>
+    <h1 id="release-0-7-1">Release 0.7.1</h1>
+    <p>
+      RC Setlist 0.7.1 incorporates stage acceptance fixes from the 2026-09-16 rehearsal, improves
+      panel visibility and mobile layouts, cleans up legacy installations, and aligns the product
+      name with brand guidelines.
+    </p>
+    <h2 id="what-s-new">What&#39;s New</h2>
+    <ul>
+      <li>
+        <strong>Product Name Alignment</strong>: Renamed to <strong>RC Setlist</strong> in
+        compliance with
+      </li>
+    </ul>
+    <p>Ableton&#39;s brand guidelines for third-party products.</p>
+    <ul>
+      <li>
+        <strong>One-Time Data Migration</strong>: Upgrading from 0.x seamlessly copies profiles,
+      </li>
+    </ul>
+    <p>
+      project setlists, preferences and tokens to the new layout without altering the original files
+      (scripts/migrate-data.mjs).
+    </p>
+    <ul>
+      <li><strong>High-Contrast Panel Plate</strong>: A 2px amber border (</li>
+    </ul>
+    <p>
+      gba(255, 168, 38, 0.45)) with subtle glow ensures the Live panel stands out clearly against
+      both dark and light Live themes.
+    </p>
+    <ul>
+      <li><strong>Legacy Extension Cleanup</strong>: The installer kit and script</li>
+    </ul>
+    <p>
+      (scripts/uninstall-pre-1.0-extensions.ps1) automatically clean pre-0.7.1 packages from the
+      User Library so Live only lists one active RC Setlist in the Extensions menu.
+    </p>
+    <h2 id="fixed">Fixed</h2>
+    <ul>
+      <li>
+        <strong>Panel CSS Loading</strong>: Restored styles by fixing HTML &lt;link&gt; tag parsing
+        in the
+      </li>
+    </ul>
+    <p>Live extension container.</p>
+    <ul>
+      <li>
+        <strong>Mobile Telemetry Layout</strong>: Telemetry cards in portrait mode now use a 58/42
+        split,
+      </li>
+    </ul>
+    <p>preventing clipping on phones.</p>
+    <ul>
+      <li>
+        <strong>Mobile Count-In Muting</strong>: Browser count-in audio is now silenced by default
+        on
+      </li>
+    </ul>
+    <p>
+      mobile devices to prevent unexpected audio bleed into monitors or PA; it remains an opt-in
+      setting via c-setlist.count-in-audio.
+    </p>
+    <ul>
+      <li>
+        <strong>Marker Editor Autocomplete</strong>: Target selection dropdown cleanly displays
+        markers
+      </li>
+    </ul>
+    <p>without duplicating [jump] or [loop] tags.</p>
+    <p>
+      _For full details on installing, please refer to the
+      <a href="INSTALL.html">Installation Guide</a>._
+    </p>
+    <p>
+      _Leia estas notas em português:
+      <a href="pt-BR/NOTAS-DA-VERSAO-0.7.1.html">NOTAS-DA-VERSAO-0.7.1.md</a>._
+    </p>
+    <div class="source">Rendered from <code>docs\RELEASE-NOTES-0.7.1.md</code> on 2026-11-06.</div>
+  </body>
+</html>

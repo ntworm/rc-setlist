@@ -1,0 +1,477 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>RC Setlist — Visual Design Contract — Ableton Live</title>
+    <meta
+      name="description"
+      content='Replaces the previous version of this file, which prescribed a "premium Dark Glassmorphism design system" and a palette (#ff7700, #00d2ff, #00e676, #0d0f12)…'
+    />
+    <link rel="canonical" href="https://ntworm.github.io/rc-setlist/THEME_CONTRACT.html" />
+    <link rel="alternate" type="text/markdown" href="./THEME_CONTRACT.md" />
+    <link rel="describedby" href="./llms.txt" />
+    <meta property="og:type" content="article" />
+    <meta property="og:site_name" content="RC Setlist" />
+    <meta property="og:locale" content="en" />
+    <meta property="og:title" content="RC Setlist — Visual Design Contract — Ableton Live" />
+    <meta
+      property="og:description"
+      content='Replaces the previous version of this file, which prescribed a "premium Dark Glassmorphism design system" and a palette (#ff7700, #00d2ff, #00e676, #0d0f12)…'
+    />
+    <meta property="og:url" content="https://ntworm.github.io/rc-setlist/THEME_CONTRACT.html" />
+    <meta property="og:image" content="https://ntworm.github.io/rc-setlist/og-image.png" />
+    <style>
+      body {
+        font:
+          16px/1.55 system-ui,
+          sans-serif;
+        max-width: 920px;
+        margin: 2rem auto;
+        padding: 0 1rem;
+        color: #f2f2f2;
+        background: #0e0e0e;
+      }
+      h1,
+      h2,
+      h3,
+      h4 {
+        line-height: 1.25;
+      }
+      h1 {
+        font-size: 2.2rem;
+        margin-top: 0;
+      }
+      h2 {
+        margin-top: 2rem;
+        padding-top: 1rem;
+        border-top: 1px solid #333;
+      }
+      h3 {
+        margin-top: 1.5rem;
+      }
+      code {
+        font:
+          0.92em ui-monospace,
+          Consolas,
+          monospace;
+        background: #1a1a1a;
+        padding: 0.1em 0.35em;
+        border-radius: 0;
+      }
+      pre {
+        background: #1a1a1a;
+        padding: 0.8rem 1rem;
+        overflow-x: auto;
+        border: 1px solid #333;
+      }
+      pre code {
+        background: transparent;
+        padding: 0;
+      }
+      a {
+        color: #ffa133;
+      }
+      ul,
+      ol {
+        padding-left: 1.2em;
+      }
+      blockquote {
+        border-left: 4px solid #ffa133;
+        margin: 1em 0;
+        padding: 0.5em 1em;
+        color: #a0a0a0;
+      }
+      .crumbs {
+        font-size: 0.85em;
+        color: #a0a0a0;
+        margin-bottom: 1rem;
+      }
+      .crumbs a {
+        color: #a0a0a0;
+        text-decoration: none;
+      }
+      .crumbs a:hover {
+        color: #f2f2f2;
+      }
+      .source {
+        font-size: 0.78em;
+        color: #a0a0a0;
+        margin-top: 2rem;
+        border-top: 1px solid #333;
+        padding-top: 0.5rem;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="crumbs"><a href="./">RC Setlist</a> · <a href="./README.html">Docs</a></div>
+    <h1 id="rc-setlist-visual-design-contract">RC Setlist — Visual Design Contract</h1>
+    <p>
+      Replaces the previous version of this file, which prescribed a &quot;premium Dark
+      Glassmorphism design system&quot; and a palette (<code>#ff7700</code>, <code>#00d2ff</code>,
+      <code>#00e676</code>, <code>#0d0f12</code>) that existed in no shipped stylesheet. It was the
+      first file any retheming agent would read, and it pointed the wrong way.
+    </p>
+    <p>Revised 2026-09-07, from measurement rather than taste.</p>
+    <p>---</p>
+    <h2 id="1-the-idea">1. The idea</h2>
+    <p>
+      <strong
+        >RC Setlist is an illuminated operator sheet: a monochrome instrument panel where structure
+        comes from rules, position and block inversion, and colour only exists when it carries
+        information.</strong
+      >
+    </p>
+    <p>
+      It is not an app. No cards, no diffuse shadows, no rounded corners, no confirmation dialogs.
+    </p>
+    <p>
+      The corollary settles every ambiguous case:
+      <strong>black ground, expensive ink.</strong> Every lit pixel costs the player dark adaptation
+      — rods take 20 to 40 minutes to recover from a bright field — so the interface pays per lit
+      pixel and each one has to justify itself.
+    </p>
+    <p>---</p>
+    <h2 id="2-contrast-is-measured-in-apca-lc-not-wcag-ratios">
+      2. Contrast is measured in APCA Lc, not WCAG ratios
+    </h2>
+    <p>
+      WCAG 2.x remains the legal floor. It is not the design guide, for three structural reasons:
+    </p>
+    <ul>
+      <li>It is symmetric in polarity, but human vision is not. Swapping text and</li>
+    </ul>
+    <p>background yields the same number and a different experience.</p>
+    <ul>
+      <li>It ignores size and weight, although spatial frequency is a primary driver of</li>
+    </ul>
+    <p>perceived contrast.</p>
+    <ul>
+      <li>It overstates contrast near black, to the point where 4.5:1 can be</li>
+    </ul>
+    <p>functionally unreadable when one colour is near black.</p>
+    <p>Budget, from the APCA tables:</p>
+    <p>
+      | Use | Target | | ------------------------------------- | ------------------------- | | Body
+      text | Lc 90 | | Blocks of text | Lc 75 minimum | | Non-body content text | Lc 60 minimum | |
+      Headings, large text, fine pictograms | Lc 45 minimum | | Placeholder, disabled, solid icons |
+      Lc 30 absolute floor | | Below Lc 15 | Invisible. Dividers only. |
+    </p>
+    <p>
+      Lc 90 is the target, not the floor. The previous <code>#f7f7f8</code> on
+      <code>#08090b</code> measured Lc −102.5 against a theoretical maximum of −107.9: past the top,
+      in halation, not in legibility.
+    </p>
+    <p>---</p>
+    <h2 id="3-tokens">3. Tokens</h2>
+    <p>
+      Canonical source: <code>static/shared/ui-system.css</code>. Nothing outside that file should
+      define a colour, a radius, a type size or a spacing step. Known leftovers from before the
+      retheme, still literal on 2026-09-13: the blue-tinted grounds and surfaces in
+      <code>static/setlist/setlist.css</code> (<code>#08090b</code>, <code>#101115</code>,
+      <code>#15161a</code>, <code>#17181d</code>, <code>#1b1c21</code>, <code>#0d0e11</code>) and
+      <code>static/performance/performance.css</code> (<code>#08090b</code>), the status inks
+      <code>#82eab0</code>, <code>#8ceeb8</code>, <code>#a7c7ff</code>, <code>#ff929c</code>,
+      <code>#f4cf70</code>, <code>#ffd4a1</code> in both, and <code>#252529</code>,
+      <code>#121214</code> plus the QR colours in <code>static/panel/index.html</code>. Retire them
+      by mapping to tokens, not by adding new literals.
+    </p>
+    <h3 id="ground-and-ink">Ground and ink</h3>
+    <p>
+      <code>--ui-bg #0e0e0e</code> · <code>--ui-surface #141414</code> ·
+      <code>--ui-surface-raised #1a1a1a</code> · <code>--ui-surface-soft #222222</code>
+    </p>
+    <p>
+      <code>--ui-text #f2f2f2</code> · <code>--ui-text-display #e4e4e4</code> ·
+      <code>--ui-text-2 #a0a0a0</code> · <code>--ui-text-3 #636363</code>
+    </p>
+    <p>
+      <code>--ui-text-display</code> exists because halation scales with lit area: the ink cools as
+      the glyph grows. Applies at 2.5rem and above.
+    </p>
+    <p>
+      <strong><code>--ui-text-3</code> is panel-only.</strong> It measures Lc −21.5, below the
+      absolute floor of 30. It survives a studio monitor in controlled light. It is banned from
+      <code>static/setlist/</code> and <code>static/performance/</code>.
+    </p>
+    <h3 id="rules-not-borders">Rules, not borders</h3>
+    <p><code>--ui-rule #333333</code> · <code>--ui-rule-strong #444444</code>, both opaque.</p>
+    <p>
+      A translucent white border composites to roughly 1.30:1 against its own surface — far below
+      the 3:1 that WCAG 1.4.11 asks for component boundaries — and vanishes completely under veiling
+      glare. Worse, it changes weight depending on what sits behind it. On stage the line has to
+      always be the same line.
+    </p>
+    <h3 id="semantic-channels-fill-ink-soft">Semantic channels: fill / ink / soft</h3>
+    <p>
+      <code>--ui-accent #ffa133</code> · <code>--ui-success #30d158</code> ·
+      <code>--ui-danger #ff375f</code> · <code>--ui-info #0a84ff</code> ·
+      <code>--ui-loop #bf5af2</code>
+    </p>
+    <p>
+      Each has an <code>-ink</code> and a <code>-soft</code> variant, and the split is a hard rule:
+    </p>
+    <ul>
+      <li>
+        <strong>fill</strong> — block fills, borders of 3px or more, large glyphs. **Never text
+      </li>
+    </ul>
+    <p>
+      below 1rem.** <code>#0a84ff</code> on black measures Lc −38; as small text it is unreadable,
+      as a filled block it is unmistakable.
+    </p>
+    <ul>
+      <li><strong>ink</strong> — text and fine glyphs. Targets Lc ≥ 60 on <code>--ui-bg</code>.</li>
+      <li><strong>soft</strong> — 12% wash. Never the sole carrier of anything.</li>
+    </ul>
+    <p>
+      The fill values are the RC Surface values exactly. That alignment is the family signature; the
+      <code>-ink</code> derivation is what keeps it readable.
+    </p>
+    <h3 id="geometry">Geometry</h3>
+    <p>
+      <code>--ui-radius: 0</code>. Round survives only where the model is genuinely round: the
+      record dot and the hold progress ring, via <code>--ui-radius-round</code>.
+    </p>
+    <p>
+      There is no <code>--ui-shadow</code>. A diffuse shadow over a near-black ground is invisible
+      in the dark, invisible under wash, and the single clearest tell of a SaaS card. If something
+      needs to lift, use a zero-blur offset.
+    </p>
+    <p>---</p>
+    <h2 id="4-typography">4. Typography</h2>
+    <p>
+      <strong>Martian Mono</strong>, variable, SIL OFL 1.1, self-hosted at
+      <code>static/fonts/</code>, with <code>OFL.txt</code> beside it.
+    </p>
+    <p>
+      Before this revision the product had no typeface at all: <code>--ui-font</code> listed Inter
+      and fell straight through to the operating system default. The same player&#39;s phone and
+      laptop rendered the same show in different fonts.
+    </p>
+    <p>
+      Rule for the suite:
+      <strong>one technical mono per product, served locally, licence file alongside.</strong> RC
+      Surface ships Departure Mono; RC Setlist ships Martian Mono. Same register, opposite
+      construction — Departure is pixel bound to an 11px grid, Martian is a brutalist outline built
+      for UI density. Family is a method, not a shared file.
+    </p>
+    <p>
+      Banned as interface faces: Inter, Outfit, Poppins, Montserrat, Roboto, JetBrains Mono, and any
+      system-default fallback used as the actual identity.
+    </p>
+    <p>
+      Berkeley Mono is <strong>closed</strong>, not deferred. The US Graphics EULA (DX-200-09)
+      forbids sharing the file by public link, forbids redistribution and sublicensing, and requires
+      a separately purchased MX Module for <code>@font-face</code>. Do not reopen without written
+      permission from <code>legal@usgraphics.com</code>.
+    </p>
+    <p>
+      Three weight stops, not seven: <code>--ui-wght-body 400</code>,
+      <code>--ui-wght-strong 600</code>, <code>--ui-wght-display 800</code>. Three width stops:
+      <code>--ui-wdth-dense 87.5</code> for lists, labels and the panel;
+      <code>--ui-wdth-base 100</code> for body and lyrics; <code>--ui-wdth-display 112.5</code> for
+      numeric readouts only.
+    </p>
+    <p>
+      Always declare <code>font-variation-settings</code> explicitly, but
+      <strong>only force the axis the font errs on</strong>. Never set low-level
+      <code>&#39;wght&#39;</code> in <code>font-variation-settings</code> on inherited elements
+      (<code>body</code>, <code>html</code>), as doing so overrides and nullifies all downstream
+      <code>font-weight</code> declarations across the application cascade. Express weight using
+      standard CSS <code>font-weight</code>, and use <code>font-variation-settings</code> solely to
+      constrain width (<code>&#39;wdth&#39; 75</code> or <code>&#39;wdth&#39; var(...)</code>).
+    </p>
+    <p>
+      Sung text (lyrics) uses <strong>Barlow Semi Condensed</strong> (SIL OFL 1.1, self-hosted at
+      <code>static/fonts/</code>, weights 500 and 700, Latin-1 complete) via tokens
+      <code>--ui-font-lyric</code> and <code>--t-stage-lyric</code>. While interface readouts stay
+      strictly monospaced with Martian Mono (advance 0.70em/char), lyrics require a proportional
+      condensed face (advance 0.471em/char) to prevent mid-verse truncation on mobile screens while
+      maintaining complete diacritic clearance.
+    </p>
+    <p>
+      <code>letter-spacing</code> on uppercase is <strong>zero</strong>. Tracking is a landing-page
+      tic and it breaks the mono grid.
+    </p>
+    <h3 id="scale">Scale</h3>
+    <p>
+      Two regimes over one palette, in <code>ui-system.css</code>: <code>--t-panel-*</code> for the
+      panel inside Live, <code>--t-stage-*</code> for the phone and laptop on stage.
+    </p>
+    <p>
+      <strong
+        >Floor on the stage pages is <code>--t-stage-micro</code> (12px), uppercase only.</strong
+      >
+      Before this revision the click state rendered at 6.7px — execution information at five
+      arcminutes.
+    </p>
+    <p>
+      <strong><code>--t-stage-display</code> floors at 2.5rem (40px)</strong> for the current song
+      and section. Derived from ANSI/HFS-100: 20 arcminutes at 600 mm is about 29px, at 800 mm about
+      39px, plus margin for a dilated pupil, a glance rather than a read, and wash on the screen.
+    </p>
+    <p>
+      The song outranks the clock. Any layout where the timecode is set larger than the song name is
+      a defect.
+    </p>
+    <p>---</p>
+    <h2 id="5-state-is-never-carried-by-colour-alone">5. State is never carried by colour alone</h2>
+    <p>
+      Under coloured stage wash, chromatic adaptation models fail to predict appearance;
+      <code>#ff375f</code> and <code>#ffa133</code> converge under red. Around 8% of men cannot
+      separate success from danger under any light.
+    </p>
+    <p>Redundant channels, in order of strength:</p>
+    <p>
+      1. <strong>Fixed position.</strong> A reserved announcer slot that never reflows, so the
+      glance costs a rectangle rather than a read. 2. <strong>Block inversion</strong>, the Live
+      idiom: active is a solid fill with <code>--ui-bg</code> text at weight 800;
+      hovered-but-not-current is desaturated inversion; inert is a 1px rule and no fill. 3.
+      <strong>A 4px edge bar plus an uppercase word</strong>: <code>NOW</code>, <code>ARMED</code>,
+      <code>NEXT</code>, <code>ERR</code>, <code>NO LINK</code>. 4.
+      <strong>Luminance level within one hue</strong>, the Elektron convention. A new hue only when
+      the category is new. 5. <strong>Pulse on the musical beat.</strong> Halve above 180 BPM — on
+      the quarter note that is exactly 3 Hz, the WCAG 2.3.1 limit — and keep the pulsing area small.
+      It rides the rule, never a card fill.
+    </p>
+    <p>---</p>
+    <h2 id="6-touch-and-irreversible-actions">6. Touch and irreversible actions</h2>
+    <p>
+      | Surface | Minimum target | Primary action | Gap | | ------------------- | -------------- |
+      -------------- | ---- | | Stage (phone) | 56px | 64px | 20px | | Panel (Live, mouse) | 24px |
+      28px | 8px |
+    </p>
+    <p>
+      44px satisfies WCAG AAA and is still 7.3 mm, below the 9.2 mm measured as the one-handed thumb
+      minimum. Two densities over one palette.
+    </p>
+    <p>
+      Activate on <code>pointerup</code>, cancellable by sliding off. Nothing executes on
+      <code>pointerdown</code>.
+    </p>
+    <p>
+      <strong>Never resolve an irreversible action with a confirmation dialog.</strong> A second
+      screen blows the two-second glance budget. Use the 500 ms hold gate in
+      <code>static/setlist/transport-runtime.js</code> instead — it handles pointer, touch,
+      keyboard, <code>blur</code>, <code>visibilitychange</code>, a 12px move tolerance and
+      synthetic-click suppression, and it is the best stage decision in the product.
+    </p>
+    <p>
+      Every control whose mistake is expensive is held, not tapped. That now includes Stop, which
+      halts the band mid-song and sits a thumb&#39;s width from Play.
+    </p>
+    <p>
+      Toggles must change more than colour. A glance has to answer &quot;is click on?&quot; without
+      a hue comparison.
+    </p>
+    <p>---</p>
+    <h2 id="7-the-panel-inside-live">7. The panel inside Live</h2>
+    <p>
+      The panel is a different design regime, not a smaller stage page. It shares tokens and
+      typeface; it does not share density or rules.
+    </p>
+    <ul>
+      <li>Mouse density: 12px body, 11px labels, 24–28px controls. Never 44px targets,</li>
+    </ul>
+    <p>never a 40px readout.</p>
+    <ul>
+      <li>Surface elevation is allowed here and only here. The four-surface stack</li>
+    </ul>
+    <p>
+      measures 1.12:1 to 1.43:1 between steps — it dies on stage and works on a studio monitor.
+      <code>--ui-text-3</code> follows the same rule.
+    </p>
+    <ul>
+      <li>
+        One step darker and flatter than Live, with its
+        <strong>own 1px <code>--ui-rule</code> frame</strong>.
+      </li>
+    </ul>
+    <p>
+      Live measures <code>Desktop #2a2a2a</code> and <code>SurfaceBackground #363636</code>. Do not
+      copy Live&#39;s greys; that reads as a bad imitation. The frame is also what keeps the panel
+      deliberate against a _light_ Live theme, which the SDK gives no way to detect.
+    </p>
+    <ul>
+      <li>
+        <strong>Amber never marks a Live object as selected.</strong> Live&#39;s own accent is
+      </li>
+    </ul>
+    <p>
+      <code>#ffad56</code> — six degrees of hue from ours — and to a Live user amber already means
+      &quot;this is the chosen item&quot;. Amber is RC focus only; object selection uses block
+      inversion.
+    </p>
+    <p>---</p>
+    <h2 id="8-never">8. Never</h2>
+    <ul>
+      <li>Never a red night mode. Aviation abandoned red: it distorts colour, demands</li>
+    </ul>
+    <p>
+      more accommodation so near focus and perceived contrast both degrade, and in glass cockpits it
+      interferes with discriminating the colours on the display itself.
+    </p>
+    <ul>
+      <li>Never pure white on pure black, or anything near it. More contrast there is</li>
+    </ul>
+    <p>not more legibility; it is halation and ghosting while scrolling.</p>
+    <ul>
+      <li>Never colour as the sole channel on a stage page.</li>
+      <li>
+        Never small text in <code>--ui-danger</code>, <code>--ui-info</code> or
+        <code>--ui-loop</code>. Use <code>-ink</code>.
+      </li>
+      <li>Never an alpha white border as a component boundary.</li>
+      <li>Never <code>box-shadow</code> as hierarchy.</li>
+      <li>Never large areas filled with solid light colour.</li>
+      <li>Never assume haptics. On a mic stand or on the floor the vibration does not</li>
+    </ul>
+    <p>
+      reach the player, and it becomes an audible buzz on stage. Haptics reinforce
+      &quot;received&quot;; they never carry state.
+    </p>
+    <ul>
+      <li>Never increase density. The portrait performance view already stacks two cards,</li>
+    </ul>
+    <p>three telemetry readouts and lyrics inside 400px. Every revision is a chance to remove.</p>
+    <ul>
+      <li>
+        Never treat &quot;readable in my office with the lights off&quot; as validation. The test
+      </li>
+    </ul>
+    <p>is stage wash on the screen, at the real distance and angle.</p>
+    <h2 id="9-never-remove">9. Never remove</h2>
+    <p>
+      <code>prefers-reduced-motion</code>, <code>env(safe-area-inset-*)</code> on all four sides,
+      <code>viewport-fit=cover</code>, <code>100dvh</code>, <code>:focus-visible</code>,
+      <code>.sr-only</code>, <code>aria-live</code>, <code>tabular-nums</code>, the three-level
+      connection degradation (<code>ok</code> / <code>.connection-stale</code> /
+      <code>.connection-empty</code>), and the hold gate with its <code>.hold-button</code>,
+      <code>.hold-progress</code>, <code>.is-holding</code>, <code>.is-holding-section-ready</code>,
+      <code>.is-holding-song</code> and <code>.is-touch-holding</code> classes.
+    </p>
+    <h2 id="10-known-open-items">10. Known open items</h2>
+    <ul>
+      <li>
+        <strong>Resolved</strong>: The Unicode glyphs <code>↻</code>, <code>■</code>,
+        <code>⏭</code> and <code>♩</code> were converted to inline <code>currentColor</code> SVG
+        icons.
+      </li>
+      <li>
+        <strong>Resolved</strong>: Font tokens <code>--ui-font-lyric</code> and
+        <code>--t-stage-lyric</code> are connected to self-hosted Barlow Semi Condensed.
+      </li>
+      <li>
+        <strong>Resolved</strong>: CSS drifts between <code>setlist.css</code> and
+        <code>performance.css</code> (overlay dimensions, z-index, badge alpha borders) harmonized.
+      </li>
+      <li>
+        <strong>Deferred (Phase 5 Visual Direction)</strong>: The fixed-position announcer, the
+        56/64px stage targets and a scroll-free <code>/performance</code> remain deferred per
+        product decision.
+      </li>
+    </ul>
+    <div class="source">Rendered from <code>docs\THEME_CONTRACT.md</code> on 2026-11-06.</div>
+  </body>
+</html>

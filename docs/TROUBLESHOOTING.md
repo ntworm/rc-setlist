@@ -42,15 +42,16 @@
 
 ## The browser page does not open
 
-- On the first connection, `ERR_CERT_AUTHORITY_INVALID` is the expected warning
-  for RC Setlist's local self-signed certificate. Continue only when the address
-  exactly matches the IP shown in the Live panel and you are on a trusted LAN.
-  Each browser/device may require this once.
+- `ERR_CERT_AUTHORITY_INVALID` is the expected warning until the certificate of
+  this computer is installed on the device. Scan the **Phone certificate** QR in
+  the Live panel and follow the steps on that page (port `4445`). Android
+  refuses a certificate opened from the download notification: install it from
+  Settings instead.
 - Open `https://localhost:4444/health` on the host.
 - Confirm the panel reports the server as running.
 - Allow inbound TCP `4444` only on the private network profile.
 - Put host and controller on the same non-guest LAN.
-- Accept the self-signed certificate only for that exact panel address.
+- Accept the certificate warning only for that exact panel address.
 
 ## Controls are read-only
 

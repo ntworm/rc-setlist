@@ -1,0 +1,229 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Song identity — the locator is the source of truth — RC Setlist</title>
+    <meta
+      name="description"
+      content="This is a product concept, not an implementation detail. It decides how RC Setlist recognises your songs, and therefore what happens to anything it keeps on…"
+    />
+    <link
+      rel="canonical"
+      href="https://ntworm.github.io/rc-setlist/architecture/song-identity.html"
+    />
+    <link rel="alternate" type="text/markdown" href="./song-identity.md" />
+    <link rel="describedby" href="../llms.txt" />
+    <meta property="og:type" content="article" />
+    <meta property="og:site_name" content="RC Setlist" />
+    <meta property="og:locale" content="en" />
+    <meta
+      property="og:title"
+      content="Song identity — the locator is the source of truth — RC Setlist"
+    />
+    <meta
+      property="og:description"
+      content="This is a product concept, not an implementation detail. It decides how RC Setlist recognises your songs, and therefore what happens to anything it keeps on…"
+    />
+    <meta
+      property="og:url"
+      content="https://ntworm.github.io/rc-setlist/architecture/song-identity.html"
+    />
+    <meta property="og:image" content="https://ntworm.github.io/rc-setlist/og-image.png" />
+    <style>
+      body {
+        font:
+          16px/1.55 system-ui,
+          sans-serif;
+        max-width: 920px;
+        margin: 2rem auto;
+        padding: 0 1rem;
+        color: #f2f2f2;
+        background: #0e0e0e;
+      }
+      h1,
+      h2,
+      h3,
+      h4 {
+        line-height: 1.25;
+      }
+      h1 {
+        font-size: 2.2rem;
+        margin-top: 0;
+      }
+      h2 {
+        margin-top: 2rem;
+        padding-top: 1rem;
+        border-top: 1px solid #333;
+      }
+      h3 {
+        margin-top: 1.5rem;
+      }
+      code {
+        font:
+          0.92em ui-monospace,
+          Consolas,
+          monospace;
+        background: #1a1a1a;
+        padding: 0.1em 0.35em;
+        border-radius: 0;
+      }
+      pre {
+        background: #1a1a1a;
+        padding: 0.8rem 1rem;
+        overflow-x: auto;
+        border: 1px solid #333;
+      }
+      pre code {
+        background: transparent;
+        padding: 0;
+      }
+      a {
+        color: #ffa133;
+      }
+      ul,
+      ol {
+        padding-left: 1.2em;
+      }
+      blockquote {
+        border-left: 4px solid #ffa133;
+        margin: 1em 0;
+        padding: 0.5em 1em;
+        color: #a0a0a0;
+      }
+      .crumbs {
+        font-size: 0.85em;
+        color: #a0a0a0;
+        margin-bottom: 1rem;
+      }
+      .crumbs a {
+        color: #a0a0a0;
+        text-decoration: none;
+      }
+      .crumbs a:hover {
+        color: #f2f2f2;
+      }
+      .source {
+        font-size: 0.78em;
+        color: #a0a0a0;
+        margin-top: 2rem;
+        border-top: 1px solid #333;
+        padding-top: 0.5rem;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="crumbs"><a href="../">RC Setlist</a> · <a href="../README.html">Docs</a></div>
+    <h1 id="song-identity-the-locator-is-the-source-of-truth">
+      Song identity — the locator is the source of truth
+    </h1>
+    <p>
+      This is a product concept, not an implementation detail. It decides how RC Setlist recognises
+      your songs, and therefore what happens to anything it keeps on the side: colour, notes, and
+      whatever comes later.
+    </p>
+    <h2 id="the-rule-in-one-paragraph">The rule, in one paragraph</h2>
+    <p>
+      <strong
+        >The Ableton locator is the source of truth. RC Setlist never writes anything hidden into
+        your project.</strong
+      >
+      It recognises a song by name and position, in that order. Rename a song and it stays the same
+      song, because the position did not move. Drag it somewhere else and it stays the same song,
+      because the name did not change. Change both at once and RC Setlist treats it as a new song.
+    </p>
+    <p>
+      That is the whole contract. It fits on one line of a manual and it is worth learning, because
+      everything the extension remembers about a song follows it.
+    </p>
+    <h2 id="why-identity-has-to-be-worked-out-at-all">Why identity has to be worked out at all</h2>
+    <p>
+      A Live cue point has no id. The only handles are its name and its beat position, and both of
+      them move. Nothing in the Live Object Model or in the Extensions SDK gives a stable reference.
+    </p>
+    <p>
+      So the id is assigned and maintained by RC Setlist, by matching what it has stored against
+      what Live reports every time the cue list reloads.
+    </p>
+    <h2 id="how-the-matching-runs">How the matching runs</h2>
+    <p>
+      Three passes, most certain first. Every pass refuses to guess: it only matches when exactly
+      one candidate exists on each side.
+    </p>
+    <p>
+      1. <strong>Name and position both unchanged.</strong> Nothing to interpret. 2.
+      <strong>Same position, different name.</strong> Somebody renamed it. 3.
+      <strong>Same name, different position.</strong> Somebody dragged it.
+    </p>
+    <p>
+      Cues left over are new songs. Stored entries left over are remembered as tombstones rather
+      than deleted — delete a locator by accident, recreate it, and its colour comes back. A
+      tombstone is forgotten for good after twenty reloads without reappearing.
+    </p>
+    <h2 id="the-case-that-has-no-answer-and-the-bias-that-resolves-it">
+      The case that has no answer, and the bias that resolves it
+    </h2>
+    <p>
+      If a song&#39;s name <strong>and</strong> position both changed in the same reload, that is
+      indistinguishable from deleting one song and adding another. The information needed to tell
+      them apart does not exist.
+    </p>
+    <p>RC Setlist treats it as a new song, and the old entry becomes a tombstone.</p>
+    <p>
+      This is the same bias every pass uses:
+      <strong
+        >an ambiguous case loses the association rather than attaching it to the wrong song.</strong
+      >
+      A lost colour is two clicks to restore. A colour on the wrong card is discovered on stage, in
+      the dark, while the reader is looking for the next song.
+    </p>
+    <p>
+      Matching by name similarity would recover more cases. It was considered and rejected for
+      exactly that reason: it raises the hit rate and introduces the chance of being confidently
+      wrong.
+    </p>
+    <h2 id="why-not-stamp-an-id-into-the-locator-name">
+      Why not stamp an id into the locator name
+    </h2>
+    <p>
+      Writing something like <code>[id 7f3a]</code> into every locator would make identity exact,
+      and it was considered seriously. Two things sank it.
+    </p>
+    <p>
+      It is only exact if <strong>every</strong> rename goes through RC Setlist. The moment a
+      locator is renamed by hand in Live and the stamp goes with it — or a locator is copied, or a
+      section duplicated — identity is lost anyway, and the same ambiguous case is back. The stamp
+      trades a rare failure for a fragile dependency on the user never editing in Live.
+    </p>
+    <p>
+      And the cost is permanent: every locator in the Arrangement carries visible clutter forever,
+      in the lane the user also reads while working in Live.
+    </p>
+    <p>
+      Reconciliation does not depend on the user cooperating. Rename in Live, drag in Live, edit in
+      RC Setlist — it reconciles the same way. It is robust against real behaviour rather than ideal
+      behaviour.
+    </p>
+    <h2 id="where-this-lives">Where this lives</h2>
+    <p>
+      <code>src/core/song-identity.ts</code> — <code>reconcileSongIdentities</code>, a pure
+      function. Neither the clock nor a random source is read directly; both are injected, so the
+      reconciliation is a pure function of its inputs and is tested exactly.
+    </p>
+    <p>
+      <code>tests/song-identity.test.mjs</code> covers rename, move, a bis with a repeated title,
+      renaming one half of a bis, delete and recreate, tombstone ageing, the ambiguous pair, and
+      order preservation.
+    </p>
+    <h2 id="the-bug-this-prevents">The bug this prevents</h2>
+    <p>
+      An earlier build keyed observed tempo by song <strong>title</strong>. In a set with a bis —
+      the same song played twice — the two occurrences collapsed into one, and a value observed at
+      the first contaminated the second. Identity by name alone is not enough, and this module is
+      why that class of bug does not come back.
+    </p>
+    <div class="source">
+      Rendered from <code>docs\architecture\song-identity.md</code> on 2026-11-06.
+    </div>
+  </body>
+</html>

@@ -2041,6 +2041,7 @@
         </header>
         <nav class="nav" aria-label="Sections" data-i18n-aria="top.navAria">
           <a href="#about" data-i18n="nav.about">About</a>
+          <a href="#new" data-i18n="nav.new">New in 1.1</a>
           <a href="#chain" data-i18n="nav.chain">Chain</a>
           <a href="#locators" data-i18n="nav.locators">Locators</a>
           <a href="#views" data-i18n="nav.views">Two views</a>
@@ -2075,7 +2076,7 @@
               <a
                 class="btn primary"
                 id="download"
-                href="https://github.com/ntworm/rc-setlist/releases/latest"
+                href="https://github.com/ntworm/rc-setlist/releases/tag/v1.1.0"
                 data-i18n="about.download"
                 >Download .ablx</a
               >
@@ -2104,8 +2105,10 @@
               >
             </div>
             <p class="release" data-i18n-html="about.release">
-              Release 1.1.0&nbsp;· source-available under PolyForm Noncommercial 1.0.0&nbsp;·
-              English and Português (Brasil) in the same package
+              Release 1.1.0, a pre-release for testing&nbsp;· the stable version is
+              <a href="https://github.com/ntworm/rc-setlist/releases/tag/v1.0.0">1.0.0</a>&nbsp;·
+              source-available under PolyForm Noncommercial 1.0.0&nbsp;· English and Português
+              (Brasil) in the same package
             </p>
 
             <figure class="fig hero-visual">
@@ -2149,6 +2152,80 @@
                 </figure>
               </div>
             </figure>
+          </div>
+        </section>
+
+        <!-- ===================== 1.1 NEW IN 1.1.0 ===================== -->
+        <section class="sec" id="new" aria-labelledby="new-title">
+          <div class="n">1.1</div>
+          <div class="c">
+            <h2 id="new-title" data-i18n-html="new.title">
+              New in 1.1.0 <span class="tail">— pre-release, for testing</span>
+            </h2>
+            <p class="why" data-i18n="new.why">
+              A second computer that follows the show, a song list that folds, and a phone that
+              stops warning about the certificate.
+            </p>
+            <div class="cards c2">
+              <div class="card">
+                <span class="ic"
+                  ><svg aria-hidden="true"><use href="#g-live" /></svg
+                ></span>
+                <div>
+                  <h3 data-i18n="new.pTitle">Two computers, one show</h3>
+                  <p data-i18n="new.pBody">
+                    Pair a second computer running Live from the panel with a six-digit code. Play,
+                    Stop, jumps, click, quantization, count-in and panic reach it too; a second dot
+                    in the Stage Control header says whether it follows.
+                  </p>
+                </div>
+              </div>
+              <div class="card">
+                <span class="ic"
+                  ><svg aria-hidden="true"><use href="#g-song" /></svg
+                ></span>
+                <div>
+                  <h3 data-i18n="new.fTitle">A song list that folds</h3>
+                  <p data-i18n="new.fBody">
+                    The three dots beside a song fold its sections; Fold all and Unfold all act on
+                    the whole list. Hold the song name to jump, and drag the grip on the right edge
+                    of the card to reorder, with a mouse or a finger.
+                  </p>
+                </div>
+              </div>
+              <div class="card">
+                <span class="ic"
+                  ><svg aria-hidden="true"><use href="#g-phone" /></svg
+                ></span>
+                <div>
+                  <h3 data-i18n="new.cTitle">The phone certificate</h3>
+                  <p data-i18n="new.cBody">
+                    The panel shows a QR to a page where the phone installs this computer's
+                    certificate once. After that the browser opens the views without a warning. The
+                    certificate is valid only for localhost and local network addresses.
+                  </p>
+                </div>
+              </div>
+              <div class="card">
+                <span class="ic"
+                  ><svg aria-hidden="true"><use href="#g-net" /></svg
+                ></span>
+                <div>
+                  <h3 data-i18n="new.nTitle">The QR finds the right network</h3>
+                  <p data-i18n="new.nBody">
+                    The address in the QR is the one the computer really uses, even with a lighting
+                    or audio network cable plugged in beside the Wi-Fi.
+                  </p>
+                </div>
+              </div>
+            </div>
+            <p class="note" data-i18n-html="new.note">
+              Coming from 1.0? Remove RC Setlist in Live's extension settings first, then install
+              1.1.0; your data folder stays. All the changes are in the
+              <a href="https://github.com/ntworm/rc-setlist/blob/main/docs/RELEASE-NOTES-1.1.0.md"
+                >release notes</a
+              >.
+            </p>
           </div>
         </section>
 
@@ -3067,8 +3144,8 @@
                     <h3 data-i18n="install.s1">Download</h3>
                     <p data-i18n-html="install.s1d">
                       <code>RC-Setlist-1.1.0.ablx</code> and the installation kit, from the
-                      <a href="https://github.com/ntworm/rc-setlist/releases/latest"
-                        >latest release</a
+                      <a href="https://github.com/ntworm/rc-setlist/releases/tag/v1.1.0"
+                        >1.1.0 pre-release</a
                       >.
                     </p>
                   </div>
@@ -3105,8 +3182,8 @@
                   <div>
                     <h3 data-i18n="install.s5">Open the views</h3>
                     <p data-i18n="install.s5d">
-                      Scan the QR code or open the link. Accept the local certificate only when the
-                      address matches the one the panel shows.
+                      Scan the QR code or open the link. To stop the certificate warning, install
+                      the certificate once from the Phone certificate QR in the panel.
                     </p>
                   </div>
                 </li>

@@ -16,6 +16,7 @@
     'top.language': 'Idioma',
     'top.navAria': 'Seções',
     'nav.about': 'Sobre',
+    'nav.new': 'Novo na 1.1',
     'nav.chain': 'Como funciona',
     'nav.locators': 'Locators',
     'nav.views': 'Duas telas',
@@ -38,11 +39,29 @@
     'about.new': 'O que há de novo na 1.1.0',
     'about.source': 'Código-fonte',
     'about.release':
-      'Versão 1.1.0&nbsp;· source-available sob a PolyForm Noncommercial 1.0.0&nbsp;· inglês e português (Brasil) no mesmo pacote',
+      'Versão 1.1.0, um pré-lançamento para testes&nbsp;· a versão estável é a <a href="https://github.com/ntworm/rc-setlist/releases/tag/v1.0.0">1.0.0</a>&nbsp;· source-available sob a PolyForm Noncommercial 1.0.0&nbsp;· inglês e português (Brasil) no mesmo pacote',
     'about.figCap': 'As duas telas, exatamente como vêm',
     'about.figMeta': 'Prints reais · dados fictícios de demonstração',
     'about.figAlt':
       'Controle de palco: setlist de cinco músicas com seções e tags, a música 3 destacada como ativa, estado do show, quantização, click e transporte.',
+
+    'new.title': 'Novo na 1.1.0 <span class="tail">— pré-lançamento, para testes</span>',
+    'new.why':
+      'Um segundo computador que segue o show, uma lista de músicas que recolhe e um celular que para de reclamar do certificado.',
+    'new.pTitle': 'Dois computadores, um show',
+    'new.pBody':
+      'Pareie pelo painel, com um código de seis dígitos, um segundo computador rodando o Live. Play, Stop, saltos, click, quantização, contagem e pânico chegam a ele também; um segundo ponto no topo do Controle de palco mostra se ele está acompanhando.',
+    'new.fTitle': 'A lista de músicas recolhe',
+    'new.fBody':
+      'Os três pontinhos ao lado da música recolhem as seções dela; Recolher todas e Abrir todas agem na lista inteira. Segure o nome da música para saltar e arraste a alça na borda direita do card para reordenar, com mouse ou com o dedo.',
+    'new.cTitle': 'O certificado do celular',
+    'new.cBody':
+      'O painel mostra um QR para uma página onde o celular instala uma vez o certificado deste computador. Depois disso o navegador abre as telas sem aviso. O certificado só vale para localhost e endereços da rede local.',
+    'new.nTitle': 'O QR acha a rede certa',
+    'new.nBody':
+      'O endereço do QR é o que o computador usa de verdade, mesmo com um cabo de rede de luz ou de áudio ligado ao lado do Wi-Fi.',
+    'new.note':
+      'Vem da 1.0? Remova antes o RC Setlist nas configurações de extensões do Live e depois instale a 1.1.0; a pasta de dados fica. Todas as mudanças estão nas <a href="./pt-BR/NOTAS-DA-VERSAO-1.1.0.html">notas da versão</a>.',
 
     'chain.title': 'Cadeia de sinal <span class="tail">— quem manda no tempo é o Live</span>',
     'chain.why':
@@ -206,7 +225,7 @@
     'install.title': 'Instalação <span class="tail">— cinco passos até o primeiro Play</span>',
     'install.s1': 'Baixe',
     'install.s1d':
-      '<code>RC-Setlist-1.1.0.ablx</code> e o kit de instalação, na <a href="https://github.com/ntworm/rc-setlist/releases/latest">versão mais recente</a>.',
+      '<code>RC-Setlist-1.1.0.ablx</code> e o kit de instalação, no <a href="https://github.com/ntworm/rc-setlist/releases/tag/v1.1.0">pré-lançamento 1.1.0</a>.',
     'install.s2': 'Instale o RC Bridge',
     'install.s2d':
       'Rode <code>Install-RC-Bridge.cmd</code> (Windows) ou <code>Install RC Bridge.command</code> (macOS), que vêm no kit. No Live, abra <b>Settings › Link, Tempo &amp; MIDI</b> e escolha <b>RCBridge</b> como Control Surface.',
@@ -217,7 +236,7 @@
       'Abra <b>Extensions › RC Setlist</b> e clique em <b>Iniciar</b>. O painel mostra um link e um QR code para cada tela.',
     'install.s5': 'Abra as telas',
     'install.s5d':
-      'Aponte a câmera para o QR code ou abra o link. Aceite o certificado local só se o endereço for o mesmo que o painel mostra.',
+      'Aponte a câmera para o QR code ou abra o link. Para o aviso de certificado sumir, instale uma vez o certificado pelo QR Certificado do celular no painel.',
     'install.figCap': 'O painel dentro do Live',
     'install.panelAria':
       'O painel do RC Setlist no Live: servidor em execução na porta 4444, RC Bridge conectado, dois QR codes para Controle de palco e Performance, e os botões Iniciar, Parar e Reiniciar.',

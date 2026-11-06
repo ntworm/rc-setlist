@@ -1,0 +1,291 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>RC Setlist tester guide — Ableton Live</title>
+    <meta
+      name="description"
+      content="Use only the release-candidate directory supplied by the maintainer. Start with START-HERE.html and record every result in its checklist. The version under…"
+    />
+    <link rel="canonical" href="https://ntworm.github.io/rc-setlist/TESTER-GUIDE.html" />
+    <link rel="alternate" type="text/markdown" href="./TESTER-GUIDE.md" />
+    <link rel="describedby" href="./llms.txt" />
+    <meta property="og:type" content="article" />
+    <meta property="og:site_name" content="RC Setlist" />
+    <meta property="og:locale" content="en" />
+    <meta property="og:title" content="RC Setlist tester guide — Ableton Live" />
+    <meta
+      property="og:description"
+      content="Use only the release-candidate directory supplied by the maintainer. Start with START-HERE.html and record every result in its checklist. The version under…"
+    />
+    <meta property="og:url" content="https://ntworm.github.io/rc-setlist/TESTER-GUIDE.html" />
+    <meta property="og:image" content="https://ntworm.github.io/rc-setlist/og-image.png" />
+    <style>
+      body {
+        font:
+          16px/1.55 system-ui,
+          sans-serif;
+        max-width: 920px;
+        margin: 2rem auto;
+        padding: 0 1rem;
+        color: #f2f2f2;
+        background: #0e0e0e;
+      }
+      h1,
+      h2,
+      h3,
+      h4 {
+        line-height: 1.25;
+      }
+      h1 {
+        font-size: 2.2rem;
+        margin-top: 0;
+      }
+      h2 {
+        margin-top: 2rem;
+        padding-top: 1rem;
+        border-top: 1px solid #333;
+      }
+      h3 {
+        margin-top: 1.5rem;
+      }
+      code {
+        font:
+          0.92em ui-monospace,
+          Consolas,
+          monospace;
+        background: #1a1a1a;
+        padding: 0.1em 0.35em;
+        border-radius: 0;
+      }
+      pre {
+        background: #1a1a1a;
+        padding: 0.8rem 1rem;
+        overflow-x: auto;
+        border: 1px solid #333;
+      }
+      pre code {
+        background: transparent;
+        padding: 0;
+      }
+      a {
+        color: #ffa133;
+      }
+      ul,
+      ol {
+        padding-left: 1.2em;
+      }
+      blockquote {
+        border-left: 4px solid #ffa133;
+        margin: 1em 0;
+        padding: 0.5em 1em;
+        color: #a0a0a0;
+      }
+      .crumbs {
+        font-size: 0.85em;
+        color: #a0a0a0;
+        margin-bottom: 1rem;
+      }
+      .crumbs a {
+        color: #a0a0a0;
+        text-decoration: none;
+      }
+      .crumbs a:hover {
+        color: #f2f2f2;
+      }
+      .source {
+        font-size: 0.78em;
+        color: #a0a0a0;
+        margin-top: 2rem;
+        border-top: 1px solid #333;
+        padding-top: 0.5rem;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="crumbs"><a href="./">RC Setlist</a> · <a href="./README.html">Docs</a></div>
+    <p>﻿# RC Setlist tester guide</p>
+    <p>
+      Use only the release-candidate directory supplied by the maintainer. Start with
+      <code>START-HERE.html</code> and record every result in its checklist. The version under test
+      is the one printed in the kit&#39;s <code>README.txt</code> and shown in the Live panel.
+    </p>
+    <h2 id="environment-record">Environment record</h2>
+    <ul>
+      <li>Operating system and version</li>
+      <li>Ableton Live version and edition</li>
+      <li>RC Setlist version shown in the panel</li>
+      <li>
+        Which Remote Script the panel reports (<code>via RC Bridge 1.0.0 on port 11020</code>,
+      </li>
+    </ul>
+    <p>or <code>via AbletonOSC on port 11000</code>)</p>
+    <ul>
+      <li>Browser and controller device</li>
+      <li>Network type (trusted private LAN only)</li>
+    </ul>
+    <h2 id="installation">Installation</h2>
+    <p>
+      1. Verify the SHA-256 listed in <code>SHA256SUMS.txt</code>. 2. Run the RC Bridge installer
+      from the kit&#39;s <code>RC-Bridge</code> folder (<code>Install-RC-Bridge.cmd</code> on
+      Windows, <code>Install RC Bridge.command</code> on macOS), then choose
+      <strong>RCBridge</strong> under Settings › Link, Tempo &amp; MIDI › Control Surface. 3.
+      Install the <code>.ablx</code> package named in the kit&#39;s <code>README.txt</code>. 4. Open
+      <strong>Extensions &gt; RC Setlist</strong> and start the server. The OSC line must read
+      <code>via RC Bridge</code>. 5. Confirm no private path, SDK archive or real song content
+      appears in the kit. 6. With a fresh extension-data directory, confirm the first Start creates
+      the default profile and starts the server without a persistence error.
+    </p>
+    <h2 id="functional-matrix">Functional matrix</h2>
+    <ul>
+      <li>Load the fictional example locators.</li>
+      <li>
+        Confirm song and section parsing, including a <code>Song &gt; Section</code> locator whose
+      </li>
+    </ul>
+    <p>tag text contains <code>&gt;</code>.</p>
+    <ul>
+      <li>
+        Confirm <code>[bpm]</code>, <code>[click]</code>, <code>[click off]</code>,
+        <code>[loop 2x]</code>, <code>[stop]</code>, <code>[next]</code>,
+      </li>
+    </ul>
+    <p><code>[skip]</code> and <code>[jump NAME]</code>.</p>
+    <ul>
+      <li>
+        Place <code>[next]</code> on a marker at the end of a song with one empty bar before the
+      </li>
+    </ul>
+    <p>
+      next song: playback must land on the next song&#39;s first beat within about a tenth of a
+      second of crossing the marker, never before it.
+    </p>
+    <ul>
+      <li>
+        Place <code>[jump Chorus]</code> on a section: playback must move to the section called
+      </li>
+    </ul>
+    <p>
+      Chorus of the same song; <code>[jump Other Song &gt; Bridge]</code> must reach that song&#39;s
+      section.
+    </p>
+    <ul>
+      <li>Open the marker editor on a song and on a section: the Jump-to field writes</li>
+    </ul>
+    <p>
+      <code>[jump NAME]</code> into the locator; the Notes field (song only) never changes the
+      locator name and its text appears under the title on the card and on the performance display.
+    </p>
+    <ul>
+      <li>Confirm operator Play/Stop and the 500 ms Previous/Next hold.</li>
+      <li>
+        Count-in (<code>COUNT-IN 1 BAR</code>): while stopped, press Play and confirm one bar is
+      </li>
+    </ul>
+    <p>
+      counted in the browser at the tempo the setlist declares for the playhead, then Live starts on
+      the beat it was sitting on. Live&#39;s playhead must not move during the count and its
+      metronome must not be touched.
+    </p>
+    <ul>
+      <li>Start with Click off and confirm it is still off after the count; repeat with</li>
+    </ul>
+    <p>Click on and confirm it stays on.</p>
+    <ul>
+      <li>Start at beat zero and confirm the count runs and Live starts at beat zero</li>
+    </ul>
+    <p>(nothing is rewound).</p>
+    <ul>
+      <li>Press Stop during the count and confirm it is cancelled; press Play again</li>
+    </ul>
+    <p>during the count and confirm Live starts immediately.</p>
+    <ul>
+      <li>Change the manual Click during the count and confirm that manual choice wins.</li>
+      <li>While already playing, jump with quantization enabled and confirm no count-in</li>
+    </ul>
+    <p>runs and the jump lands on the grid line the page announces.</p>
+    <ul>
+      <li>Stop, jump to a section, then press Play: Live must start from that section,</li>
+    </ul>
+    <p>
+      not from where it was stopped. Stop without jumping, then Play: Live must resume where it
+      stopped.
+    </p>
+    <ul>
+      <li>Confirm song/section jumps, click controls and Refresh all produce an OSC</li>
+    </ul>
+    <p>action rather than only updating the browser display.</p>
+    <ul>
+      <li>Confirm setlist reordering and persistence after restart.</li>
+      <li>Colour a song and write a note, switch to a second profile, and confirm the</li>
+    </ul>
+    <p>second profile shows neither; switch back and confirm both are still there.</p>
+    <ul>
+      <li>Create, edit, save and reload fictional lyrics.</li>
+      <li>Open Lyrics while a timed lyric is active, switch the shared song selector and</li>
+    </ul>
+    <p>all three tabs, and confirm the active Stage Control lyric never disappears.</p>
+    <ul>
+      <li>Confirm Stage Control selects the active Arrangement song and loads its saved</li>
+    </ul>
+    <p>text when the Lyrics dialog opens.</p>
+    <ul>
+      <li>Edit a lyric without saving, close and reopen the dialog, and confirm the</li>
+    </ul>
+    <p>unsaved line and enabled Save action remain intact.</p>
+    <ul>
+      <li>Confirm performance-view lyric progression.</li>
+      <li>If previous extension data exists, confirm its missing lyrics migrate into the</li>
+    </ul>
+    <p>default profile and its project-specific lyrics appear as separate profiles.</p>
+    <ul>
+      <li>Export CSV and open it in a spreadsheet. Confirm it identifies the active</li>
+    </ul>
+    <p>
+      setlist and includes named <code>sections</code>, <code>sections_count</code>,
+      <code>automations</code> and <code>lyric_lines</code> without placeholder play-history
+      columns.
+    </p>
+    <ul>
+      <li>Confirm controller/read-only behavior with and without the token.</li>
+      <li>Confirm empty set, malformed locator and missing Remote Script states are</li>
+    </ul>
+    <p>explained in the panel and in Stage Control.</p>
+    <ul>
+      <li>Confirm fullscreen and Wake Lock fallback remain usable.</li>
+      <li>Confirm Stage Control disables language changes during playback and while</li>
+    </ul>
+    <p>
+      locked, enables them only when stopped and unlocked, and shows the lock warning in the
+      selected interface language.
+    </p>
+    <ul>
+      <li>During continuous playback, watch several Bars/Beats/Sixteenths transitions,</li>
+    </ul>
+    <p>
+      especially beat <code>4</code> into beat <code>1</code>, and confirm the label never flashes
+      back to the previous sixteenth. Then confirm a real backward section jump, loop and
+      stopped-position change still reposition the label immediately.
+    </p>
+    <h2 id="network-and-resilience">Network and resilience</h2>
+    <ul>
+      <li>Restart the browser while Live continues running.</li>
+      <li>Stop/start the server from the panel.</li>
+      <li>Disconnect/reconnect Wi-Fi on the controller.</li>
+      <li>
+        Confirm stale state is labeled and no transport command executes without control
+        authorization.
+      </li>
+      <li>With RC Surface (or another OSC client) running beside RC Setlist, confirm</li>
+    </ul>
+    <p>both keep receiving replies; the OSC line must not report a port conflict.</p>
+    <h2 id="platform-decision">Platform decision</h2>
+    <p>
+      Windows must pass before publication. A macOS result is recorded separately and does not
+      change experimental status unless the entire matrix passes on real hardware.
+    </p>
+    <p>Do not authorize publication while any release-blocking item is unresolved.</p>
+    <div class="source">Rendered from <code>docs\TESTER-GUIDE.md</code> on 2026-11-06.</div>
+  </body>
+</html>
