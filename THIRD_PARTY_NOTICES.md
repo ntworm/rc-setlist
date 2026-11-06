@@ -767,7 +767,7 @@ freely, subject to the following restrictions:
 
 License: BSD-3-Clause
 
-Source: https://github.com/PeculiarVentures/PKI.js
+Source: git://github.com/PeculiarVentures/PKI.js.git
 
 ```text
 Copyright (c) 2014, GlobalSign
