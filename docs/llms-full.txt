@@ -27,13 +27,7 @@ free for noncommercial use and source-available.
 [Installation](https://github.com/ntworm/rc-setlist/blob/main/docs/INSTALL.md) ·
 [User guide](https://github.com/ntworm/rc-setlist/blob/main/docs/USER-GUIDE.md) ·
 [Português (Brasil)](https://github.com/ntworm/rc-setlist/blob/main/README.pt-BR.md) ·
-[1.1.0 pre-release](https://github.com/ntworm/rc-setlist/releases/tag/v1.1.0) ·
-[Stable 1.0.0](https://github.com/ntworm/rc-setlist/releases/tag/v1.0.0)
-
-> **1.1.0 is a pre-release for testing.** It adds a second computer that
-> follows the show, a song list that folds, the phone certificate and a QR
-> that finds the right network. 1.0.0 stays the stable version until 1.1.0 is
-> promoted. See [what is new in 1.1.0](https://github.com/ntworm/rc-setlist/blob/main/docs/RELEASE-NOTES-1.1.0.md).
+[Latest release](https://github.com/ntworm/rc-setlist/releases/latest)
 
 > **Network safety:** RC Setlist serves browser controls on your local network.
 > Use it only on a trusted LAN, keep the controller URL/token private, and never
@@ -41,6 +35,17 @@ free for noncommercial use and source-available.
 
 ## New in 1.1.0
 
+- **A new Live panel.** Three tabs, Main, Setlists and Network, in the face of
+  the RC Setlist pages. Main shows one QR in the middle, the Stage Control by
+  default, with a button beside it that swaps it for the Performance Display
+  in the same place. Network keeps the address, the phone certificate and the
+  second computer.
+- **Setlist packages.** Export all writes every setlist of the Live Set (order,
+  song colours and notes, lyrics) into one `.rcsetlist` file; Import brings the
+  setlists of a package in beside the ones you have, numbering a name that is
+  taken. Live lets an extension write only inside its own folder, so packages
+  live in the `packages` folder of the extension data; the panel shows the
+  path.
 - **Two computers, one show.** Pair a second computer running Live from the
   panel with a six-digit code. Play, Stop, jumps, metronome, quantization,
   count-in, refresh and panic are relayed to it; setlist and marker editing
@@ -97,7 +102,7 @@ until this release is exercised on real macOS hardware.
 
 1. Install RC Bridge: run the kit's `Install-RC-Bridge.cmd` / `Install RC Bridge.command`, then choose RCBridge as a Control Surface in Live.
 2. Download `RC-Setlist-1.1.0.ablx` and the installation kit from the
-   [1.1.0 pre-release](https://github.com/ntworm/rc-setlist/releases/tag/v1.1.0).
+   [1.1.0 release](https://github.com/ntworm/rc-setlist/releases/tag/v1.1.0).
 3. Coming from 1.0, remove RC Setlist in Live's extension settings first
    (Live refuses to install over an existing extension folder; your data
    folder stays). Then open the `.ablx` and approve installation in Live.

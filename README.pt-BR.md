@@ -14,19 +14,24 @@ O **RC Setlist** é uma extensão de setlist, letra sincronizada e tela de palco
 [Instalação](docs/pt-BR/INSTALL.md) ·
 [Guia do usuário](docs/pt-BR/USER-GUIDE.md) ·
 [English](README.md) ·
-[Pré-lançamento 1.1.0](https://github.com/ntworm/rc-setlist/releases/tag/v1.1.0) ·
-[Estável 1.0.0](https://github.com/ntworm/rc-setlist/releases/tag/v1.0.0)
-
-> **A 1.1.0 é um pré-lançamento para testes.** Ela traz um segundo computador
-> que segue o show, uma lista de músicas que recolhe, o certificado do celular
-> e um QR que acha a rede certa. A 1.0.0 continua sendo a versão estável até a
-> 1.1.0 ser promovida. Veja [o que há de novo na 1.1.0](docs/pt-BR/NOTAS-DA-VERSAO-1.1.0.md).
+[Versão mais recente](https://github.com/ntworm/rc-setlist/releases/latest)
 
 > **Segurança de rede:** O RC Setlist serve as páginas de controle na sua rede local.
 > Utilize apenas em redes locais (LAN/Wi-Fi) confiáveis, mantenha a URL e o token do controlador privados, e nunca exponha a porta `4444` diretamente na internet pública. Consulte [SECURITY.md](SECURITY.md).
 
 ## Novo na 1.1.0
 
+- **Um painel do Live novo.** Três abas, Principal, Repertórios e Rede, na
+  cara das páginas do RC Setlist. A Principal mostra um QR no centro, o do
+  Controle de Palco por padrão, com um botão ao lado que troca para o
+  Performance Display no mesmo lugar. A Rede guarda o endereço, o certificado
+  do celular e o segundo computador.
+- **Pacotes de repertórios.** Exportar todos grava todos os repertórios do
+  Live Set (ordem, cores e notas das músicas, letras) num arquivo `.rcsetlist`;
+  Importar traz os repertórios de um pacote para o lado dos seus, numerando um
+  nome repetido. O Live só deixa a extensão gravar dentro da pasta dela, então
+  os pacotes ficam na pasta `packages` dos dados da extensão; o painel mostra o
+  caminho.
 - **Dois computadores, um show.** Pareie pelo painel, com um código de seis
   dígitos, um segundo computador rodando o Live. Play, Stop, saltos,
   metrônomo, quantização, contagem, atualizar e pânico chegam a ele; a edição
@@ -78,8 +83,8 @@ O Windows é a plataforma de lançamento validada. O suporte a macOS permanece e
 ## Início rápido
 
 1. Instale o RC Bridge: execute o `Install-RC-Bridge.cmd` (Windows) ou `Install RC Bridge.command` (macOS) do kit de instalação, e selecione RCBridge como Control Surface nas preferências do Live.
-2. Baixe o `RC-Setlist-1.1.0.ablx` e o kit de instalação no
-   [pré-lançamento 1.1.0](https://github.com/ntworm/rc-setlist/releases/tag/v1.1.0).
+2. Baixe o `RC-Setlist-1.1.0.ablx` e o kit de instalação na
+   [versão 1.1.0](https://github.com/ntworm/rc-setlist/releases/tag/v1.1.0).
 3. Vindo da 1.0, remova antes o RC Setlist nas configurações de extensões do
    Live (o Live não instala por cima de uma pasta de extensão que já existe;
    a pasta de dados fica). Depois dê dois cliques no `.ablx` e aprove a
