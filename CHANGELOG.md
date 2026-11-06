@@ -20,15 +20,15 @@ All notable public changes to Ableton RC Setlist are recorded here.
 - **Fold the song list**: the three dots beside a song name fold its
   sections; **Fold all / Unfold all** in the "Songs in project" bar acts on
   every song; kept on the device per setlist. The song name and its number are the only
-  place that jumps, and a grip on the right edge of the card reorders with a
+  places that jump, and a grip on the right edge of the card reorders with a
   mouse or a finger.
 - **Phone certificate**: a local certificate authority, limited to
   localhost and private addresses, signs the server certificate; the Live
   panel shows a QR to an install page on port 4445.
-- **Network address**: the QR and the pairing row announce the address the
+- **Network address**: the QR and the pairing card announce the address the
   system routes through instead of the first private address.
 - **Two computers, one show**: the Live panel gained a **Second computer**
-  row. The second computer prints a six-digit pairing code, the main computer
+  card, in the Network tab. The second computer prints a six-digit pairing code, the main computer
   types its address and the code, and the transport commands the operator
   gives are relayed to it over a link whose certificate is pinned.
 - **A second dot in the Stage Control header**: green when the second

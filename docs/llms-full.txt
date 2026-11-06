@@ -53,8 +53,7 @@ free for noncommercial use and source-available.
   green when it follows, amber when its markers differ and red when it does
   not answer.
 - **A song list that folds.** The three dots beside a song name fold its
-  sections; **Fold all / Unfold all** acts on every song. Hold the song name
-  to jump; drag the grip on the right edge of the card to reorder, with a
+  sections; **Fold all / Unfold all** acts on every song. Hold the song name or its number to jump; drag the grip on the right edge of the card to reorder, with a
   mouse or a finger.
 - **The phone certificate.** The extension creates a certificate authority
   for this computer, valid only for localhost and private network
@@ -114,7 +113,8 @@ until this release is exercised on real macOS hardware.
 5. Use the panel URL or QR code to open `/setlist` or `/performance`.
 6. To stop the certificate warning, scan the **Certificate** QR in the panel
    once and follow the steps on that page.
-7. Choose English or **Português (Brasil)** from the language menu.
+7. Press **EN** or **PT** at the top right of the panel to choose English or
+   **Português (Brasil)**.
 
 Users upgrading from 0.x (`Ableton-RC-Setlist-0.4.x`–`0.7.0`) run the kit's
 `Migrate-RC-Setlist-Data.cmd` (Windows) or `Migrate RC Setlist Data.command`
@@ -755,7 +755,7 @@ and receives the transport commands the operator gives on the main one.
    address and the code, and press **Pair**.
 4. The main computer stores the credential and the fingerprint of the
    certificate the second computer answered with, and opens the link to it.
-   The row then says whether the second computer is answering.
+   The card then says whether the second computer is answering.
 
 The pairing and the link use port `4444` on the second computer, the same
 port a phone opens, so its firewall has to let that port in.

@@ -302,7 +302,7 @@ and receives the transport commands the operator gives on the main one.
    address and the code, and press **Pair**.
 4. The main computer stores the credential and the fingerprint of the
    certificate the second computer answered with, and opens the link to it.
-   The row then says whether the second computer is answering.
+   The card then says whether the second computer is answering.
 
 The pairing and the link use port `4444` on the second computer, the same
 port a phone opens, so its firewall has to let that port in.

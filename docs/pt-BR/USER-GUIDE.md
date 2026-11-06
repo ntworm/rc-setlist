@@ -303,7 +303,7 @@ recebe os comandos de transporte que o operador dá no principal.
    endereço do segundo computador e o código e aperte **Parear**.
 4. O computador principal guarda a credencial e a impressão digital do
    certificado com que o segundo computador respondeu, e abre o link para ele.
-   A linha passa a dizer se o segundo computador está respondendo.
+   O cartão passa a dizer se o segundo computador está respondendo.
 
 O pareamento e o link usam a porta `4444` do segundo computador, a mesma que
 um celular abre, então o firewall dele precisa deixar essa porta entrar.

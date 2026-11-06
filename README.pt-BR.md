@@ -40,7 +40,7 @@ O **RC Setlist** é uma extensão de setlist, letra sincronizada e tela de palco
   os marcadores são diferentes e vermelho quando ele não responde.
 - **A lista de músicas recolhe.** Os três pontinhos ao lado do nome da música
   recolhem as seções dela; **Recolher todas / Abrir todas** age em todas as
-  músicas. Segure o nome da música para saltar; arraste a alça na borda
+  músicas. Segure o nome da música ou o número dela para saltar; arraste a alça na borda
   direita do card para reordenar, com mouse ou com o dedo.
 - **O certificado do celular.** A extensão cria uma autoridade certificadora
   para este computador, que só vale para localhost e endereços da rede
@@ -93,7 +93,7 @@ O Windows é a plataforma de lançamento validada. O suporte a macOS permanece e
 5. Acesse a URL do painel ou escaneie o código QR com o tablet ou celular para abrir `/setlist` ou `/performance`.
 6. Para o aviso de certificado sumir, escaneie uma vez o QR **Certificado** no
    painel e siga os passos daquela página.
-7. Escolha **Português (Brasil)** no menu de idioma.
+7. Aperte **EN** ou **PT** no alto do painel para escolher **Português (Brasil)**.
 
 Usuários atualizando de versões antigas 0.x (`Ableton-RC-Setlist-0.4.x` a `0.7.0`) devem executar o script de migração `Migrate-RC-Setlist-Data.cmd` (Windows) ou `Migrate RC Setlist Data.command` (macOS) uma única vez antes de abrir o Live com a versão 1.0. O script copia perfis, setlists do projeto e preferências para a nova estrutura sem alterar a pasta anterior. Quem vem da 1.0 (`RC-Setlist-1.0.0.ablx`) não tem nada a migrar. Na primeira partida, a 1.1.0 assina um novo certificado do servidor com a autoridade certificadora deste computador, então um navegador que tinha aceitado o certificado antigo pergunta mais uma vez, ou para de perguntar depois que o certificado do celular está instalado. Instruções completas em [docs/pt-BR/INSTALL.md](docs/pt-BR/INSTALL.md).
 
