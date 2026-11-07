@@ -1,8 +1,10 @@
-﻿RC BRIDGE — the script that lets RC Setlist talk to Live
-RC BRIDGE — o script que deixa o RC Setlist falar com o Live
+﻿RC BRIDGE
+==========
 
 EN
 --
+RC Bridge is the Live Remote Script that RC Setlist talks to.
+
 1. Windows: double-click Install-RC-Bridge.cmd.
    macOS:    double-click "Install RC Bridge.command" (right-click > Open the first time).
    Either one copies the RCBridge folder into Live's User Library. Nothing to download.
@@ -11,15 +13,17 @@ EN
 3. In Live's Extensions panel, open RC Setlist and press Start.
    The panel shows "via RC Bridge 1.0.0 on port 11020" when it is working.
 
-If you already use AbletonOSC, keep it — RC Bridge uses its own port and the two
+If you already use AbletonOSC, keep it: RC Bridge uses its own port and the two
 run side by side.
 
-Manual copy, if you prefer: put the RCBridge folder in
+Manual copy: put the RCBridge folder in
   Windows: %USERPROFILE%\Documents\Ableton\User Library\Remote Scripts\
   macOS:   ~/Music/Ableton/User Library/Remote Scripts/
 
 PT-BR
 -----
+O RC Bridge é o Remote Script do Live com o qual o RC Setlist fala.
+
 1. Windows: clique duas vezes em Install-RC-Bridge.cmd.
    macOS:    clique duas vezes em "Install RC Bridge.command" (na primeira vez, botão direito > Abrir).
    Qualquer um dos dois copia a pasta RCBridge para a User Library do Live. Nada para baixar.
@@ -28,10 +32,10 @@ PT-BR
 3. No painel de Extensões do Live, abra o RC Setlist e aperte Iniciar.
    O painel mostra "via RC Bridge 1.0.0 na porta 11020" quando está funcionando.
 
-Se você já usa o AbletonOSC, pode manter — o RC Bridge usa uma porta própria e os
+Se você já usa o AbletonOSC, pode manter: o RC Bridge usa uma porta própria e os
 dois convivem.
 
-Cópia manual, se preferir: coloque a pasta RCBridge em
+Cópia manual: coloque a pasta RCBridge em
   Windows: %USERPROFILE%\Documents\Ableton\User Library\Remote Scripts\
   macOS:   ~/Music/Ableton/User Library/Remote Scripts/
 

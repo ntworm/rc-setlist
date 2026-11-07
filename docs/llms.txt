@@ -1,11 +1,12 @@
 # RC Setlist
 
-> RC Setlist is a setlist extension for Ableton Live 12 (Suite, 12.4.5 or later). It turns Arrangement locators into a setlist that one person runs from a laptop or tablet (Stage Control) and a read-only stage display for the band (Performance), with synchronized .lrc lyrics, served to any browser on the local network. It is free for noncommercial use under the PolyForm Noncommercial License 1.0.0, and its source is on GitHub. Made by Gabriel Worm (ntworm).
+> RC Setlist is a setlist extension for Ableton Live. It reads the locators of an Arrangement and serves a setlist to any browser on the local network: Stage Control for the operator, a read-only Performance display for the band, and synchronized .lrc lyrics.
 
-- Name: RC Setlist. Releases before 1.0 were published as "Ableton RC Setlist"; the name changed to follow Ableton's brand guidelines. RC Setlist is an independent project, not affiliated with or endorsed by Ableton AG.
+- Name: RC Setlist. RC Setlist is an independent project, not affiliated with or endorsed by Ableton AG.
+- Author: Gabriel Worm (ntworm).
 - What ships: one `.ablx` Live Extension plus RC Bridge, a bundled Remote Script (a fork of AbletonOSC) that is selected in Live as a Control Surface.
 - Requirements: Ableton Live 12.4.5 or later, Suite edition, with Extensions support. Windows is validated; macOS is experimental.
-- Price and licence: no cost. Noncommercial use, modification and redistribution are allowed; commercial use is not. Source-available, not OSI open source.
+- Price and licence: no cost. Noncommercial use, modification and redistribution are allowed; commercial use is not. Source-available, not OSI open source. PolyForm Noncommercial 1.0.0.
 - Privacy: local network only. No account, cloud sync, analytics or telemetry.
 - Languages: English and Brazilian Portuguese in the same package.
 - Scope: reads Arrangement View locators (Session View is not supported yet). Live keeps playing the backing tracks; RC Setlist runs the setlist, moves through the Arrangement and shows the lyrics.
@@ -16,7 +17,7 @@
 ## Docs
 
 - [Getting started](https://ntworm.github.io/rc-setlist/GETTING-STARTED.md): from a fresh Live install to a running setlist in about 15 minutes
-- [Installation](https://ntworm.github.io/rc-setlist/INSTALL.md): installing the extension and RC Bridge, first start, upgrading from 0.x
+- [Installation](https://ntworm.github.io/rc-setlist/INSTALL.md): installing the extension and RC Bridge, the first start, the 0.x data migration
 - [User guide](https://ntworm.github.io/rc-setlist/USER-GUIDE.md): locators and tags, Stage Control, Performance, lyrics, setlists and profiles
 - [FAQ](https://ntworm.github.io/rc-setlist/FAQ.md): licensing, RC Bridge, the certificate warning, lyrics, macOS, count-in and upgrading
 - [Troubleshooting](https://ntworm.github.io/rc-setlist/TROUBLESHOOTING.md): the extension, RC Bridge, the playhead or the browser pages not working
