@@ -203,7 +203,7 @@
                 "name": "Para onde vão os dados do show?",
                 "acceptedAnswer": {
                   "@type": "Answer",
-                  "text": "Para lugar nenhum. Setlists, letras e exportações ficam em perfis locais."
+                  "text": "Repertórios, letras e exportações ficam em perfis locais. Nada é enviado a um servidor."
                 }
               },
               {
@@ -2045,8 +2045,8 @@
               não comercial.
             </p>
             <p class="lede" data-i18n="about.lede">
-              Os locators do seu Arrangement viram o show: o setlist de quem opera, a tela de palco
-              de quem toca. O Live manda no tempo; o navegador só acompanha.
+              Lê os localizadores do Arrangement de um Live Set e mostra no navegador um setlist
+              para quem opera e uma tela só de leitura para a banda. O tempo vem do Live.
             </p>
             <ul class="spec">
               <li data-i18n="about.spec1">Live 12.4.5+ Suite (Beta)</li>
@@ -2084,7 +2084,7 @@
             <figure class="fig hero-visual">
               <figcaption class="fig-bar">
                 <span class="id">Fig. 1</span>
-                <span class="cap" data-i18n="about.figCap">As duas telas, exatamente como vêm</span>
+                <span class="cap" data-i18n="about.figCap">As duas telas</span>
                 <span class="meta" data-i18n="about.figMeta"
                   >Prints reais · dados fictícios de demonstração</span
                 >
@@ -2129,8 +2129,9 @@
           <div class="c">
             <h2 id="new-title" data-i18n-html="new.title">Novo na 1.1.0</h2>
             <p class="why" data-i18n="new.why">
-              Um segundo computador que segue o show, uma lista de músicas que recolhe e um celular
-              que para de reclamar do certificado.
+              Painel do Live com gestão e pacotes de repertórios, sincronização com um segundo
+              computador, lista de músicas recolhível, certificado local e escolha do endereço de
+              rede.
             </p>
             <div class="cards c2">
               <div class="card">
@@ -2138,11 +2139,11 @@
                   ><svg aria-hidden="true"><use href="#g-session" /></svg
                 ></span>
                 <div>
-                  <h3 data-i18n="new.lTitle">Um painel do Live novo</h3>
+                  <h3 data-i18n="new.lTitle">Painel do Live</h3>
                   <p data-i18n="new.lBody">
-                    Três abas, Principal, Repertórios e Rede, na cara das páginas do RC Setlist. A
-                    Principal mostra um QR no centro, o do Controle de Palco por padrão, com um
-                    botão ao lado que troca para o Performance Display no mesmo lugar.
+                    Três abas: Principal, Repertórios, Rede. A Principal mostra um QR, do Controle
+                    de palco por padrão, e um botão que troca para a tela Performance; abaixo, o
+                    repertório ativo, o número de músicas, o tempo de show e a lista de músicas.
                   </p>
                 </div>
               </div>
@@ -2153,9 +2154,10 @@
                 <div>
                   <h3 data-i18n="new.pkTitle">Pacotes de repertórios</h3>
                   <p data-i18n="new.pkBody">
-                    Exportar todos grava todos os repertórios do Live Set num arquivo .rcsetlist;
-                    Importar traz um pacote ao lado dos seus. A pasta packages fica nos dados da
-                    extensão, e o painel mostra o caminho.
+                    Exportar todos grava os repertórios do Live Set (ordem, cores e notas das
+                    músicas, letras) num arquivo .rcsetlist. Importar acrescenta os repertórios de
+                    um pacote aos existentes; um nome repetido ganha um número. Os arquivos ficam na
+                    pasta packages dos dados da extensão.
                   </p>
                 </div>
               </div>
@@ -2164,12 +2166,11 @@
                   ><svg aria-hidden="true"><use href="#g-live" /></svg
                 ></span>
                 <div>
-                  <h3 data-i18n="new.pTitle">Dois computadores, um show</h3>
+                  <h3 data-i18n="new.pTitle">Segundo computador</h3>
                   <p data-i18n="new.pBody">
-                    Pareie pelo painel, com um código de seis dígitos, um segundo computador rodando
-                    o Live. Play, Stop, saltos, click, quantização, contagem e pânico chegam a ele
-                    também; um segundo ponto no topo do Controle de palco mostra se ele está
-                    acompanhando.
+                    Pareie um segundo computador com o Live usando um código de seis dígitos. Play,
+                    Stop, saltos, click, quantização, contagem e pânico são enviados a ele. Um
+                    segundo ponto de estado no topo do Controle de palco mostra o estado do link.
                   </p>
                 </div>
               </div>
@@ -2178,11 +2179,11 @@
                   ><svg aria-hidden="true"><use href="#g-song" /></svg
                 ></span>
                 <div>
-                  <h3 data-i18n="new.fTitle">A lista de músicas recolhe</h3>
+                  <h3 data-i18n="new.fTitle">Lista de músicas recolhível</h3>
                   <p data-i18n="new.fBody">
-                    Os três pontinhos ao lado da música recolhem as seções dela; Recolher todas e
-                    Abrir todas agem na lista inteira. Segure o nome da música para saltar e arraste
-                    a alça na borda direita do card para reordenar, com mouse ou com o dedo.
+                    O botão de três pontos ao lado de uma música recolhe as seções dela; Recolher
+                    todas e Abrir todas agem na lista inteira. Segure o nome ou o número da música
+                    para saltar; arraste a alça na borda direita do card para reordenar.
                   </p>
                 </div>
               </div>
@@ -2191,11 +2192,12 @@
                   ><svg aria-hidden="true"><use href="#g-phone" /></svg
                 ></span>
                 <div>
-                  <h3 data-i18n="new.cTitle">O certificado do celular</h3>
+                  <h3 data-i18n="new.cTitle">Certificado local</h3>
                   <p data-i18n="new.cBody">
-                    O painel mostra um QR para uma página onde o celular instala uma vez o
-                    certificado deste computador. Depois disso o navegador abre as telas sem aviso.
-                    O certificado só vale para localhost e endereços da rede local.
+                    A extensão cria uma autoridade certificadora para este computador, válida para
+                    localhost e endereços privados da rede. Instalada uma vez num celular ou
+                    computador, ela remove o aviso do navegador. A aba Rede mostra um QR para a
+                    página de instalação.
                   </p>
                 </div>
               </div>
@@ -2204,17 +2206,17 @@
                   ><svg aria-hidden="true"><use href="#g-net" /></svg
                 ></span>
                 <div>
-                  <h3 data-i18n="new.nTitle">O QR acha a rede certa</h3>
+                  <h3 data-i18n="new.nTitle">Endereço de rede</h3>
                   <p data-i18n="new.nBody">
-                    O endereço do QR é o que o computador usa de verdade, mesmo com um cabo de rede
-                    de luz ou de áudio ligado ao lado do Wi-Fi.
+                    O QR usa o endereço da rota padrão, não o primeiro endereço privado, então uma
+                    segunda interface de rede (luz, áudio) não substitui o endereço do Wi-Fi.
                   </p>
                 </div>
               </div>
             </div>
             <p class="note" data-i18n-html="new.note">
-              Vem da 1.0? Remova antes o RC Setlist nas configurações de extensões do Live e depois
-              instale a 1.1.0; a pasta de dados fica. Todas as mudanças estão nas
+              Atualizando da 1.0: remova o RC Setlist nas configurações de extensões do Live e
+              instale a 1.1.0. A pasta de dados é mantida. Lista completa:
               <a href="./NOTAS-DA-VERSAO-1.1.0.html">notas da versão</a>.
             </p>
           </div>
@@ -2512,7 +2514,7 @@
                   <tr>
                     <td class="k"><code>[next]</code></td>
                     <td data-i18n="loc.tNext">
-                      Pula para a próxima música assim que o Live passa por esse locator.
+                      Segue para a próxima música quando a reprodução chega ao marcador.
                     </td>
                     <td>
                       <span class="b b-next"
@@ -2540,7 +2542,7 @@
                   </tr>
                   <tr>
                     <td class="k"><code>[jump Chorus]</code></td>
-                    <td data-i18n="loc.tJump">Pula para uma música ou seção pelo nome.</td>
+                    <td data-i18n="loc.tJump">Salta para uma música ou seção pelo nome.</td>
                     <td>
                       <span class="b b-jump"
                         ><svg aria-hidden="true"><use href="#i-next" /></svg>JUMP → Chorus</span
@@ -2576,7 +2578,7 @@
             <figure class="fig">
               <figcaption class="fig-bar">
                 <span class="id">Fig. 3</span>
-                <span class="cap" data-i18n="loc.durCap">Um set medido, três formas de contar</span>
+                <span class="cap" data-i18n="loc.durCap">Duração de um set, três métodos</span>
                 <span class="meta" data-i18n="loc.durMeta">21 músicas · de 93 a 166 BPM</span>
               </figcaption>
               <div class="fig-body">
@@ -2626,12 +2628,10 @@
         <section class="sec" id="views" aria-labelledby="views-title">
           <div class="n">4.0</div>
           <div class="c">
-            <h2 id="views-title" data-i18n-html="views.title">
-              Duas telas <span class="tail">— figs. 4 a 6</span>
-            </h2>
+            <h2 id="views-title" data-i18n-html="views.title">Duas telas</h2>
             <p class="why" data-i18n="views.why">
-              O Controle de palco é de quem opera o show. A Performance é de quem toca: só leitura,
-              alto contraste, dá para ler preso no pedestal do microfone.
+              O Controle de palco é a tela de quem opera. A Performance é uma tela só de leitura, de
+              alto contraste, para a banda.
             </p>
 
             <fieldset class="viewer">
@@ -2752,7 +2752,7 @@
                           <tr>
                             <td><span class="key">6</span></td>
                             <td data-i18n="views.s6">Linha da letra</td>
-                            <td data-i18n="views.s6d">A linha que está sendo cantada agora.</td>
+                            <td data-i18n="views.s6d">Linha atual da letra.</td>
                           </tr>
                           <tr>
                             <td><span class="key">7</span></td>
@@ -2846,7 +2846,7 @@
                             <td><span class="key">2</span></td>
                             <td data-i18n="views.p2">Seção ativa</td>
                             <td data-i18n="views.p2d">
-                              Onde a banda está, quantas repetições faltam, qual seção vem depois.
+                              Seção atual, loops restantes, próxima seção.
                             </td>
                           </tr>
                           <tr>
@@ -2994,12 +2994,10 @@
         <section class="sec" id="safety" aria-labelledby="safety-title">
           <div class="n">5.0</div>
           <div class="c">
-            <h2 id="safety-title" data-i18n-html="safety.title">
-              Segurança no palco <span class="tail">— nada dispara sem querer</span>
-            </h2>
+            <h2 id="safety-title" data-i18n-html="safety.title">Segurança no palco</h2>
             <p class="why" data-i18n="safety.why">
-              Todo botão que pode parar o show precisa ser segurado, não só tocado. Nada de janela
-              de confirmação no meio da música.
+              Os controles que mudam a reprodução agem depois de 500 ms segurados, não num toque.
+              Não há janelas de confirmação.
             </p>
 
             <figure class="fig">
@@ -3124,8 +3122,8 @@
                 <div>
                   <h3 data-i18n="safety.rTitle">Quedas de conexão</h3>
                   <p data-i18n="safety.rBody">
-                    Uma reconexão mantém na tela o último estado válido e avisa, em vez de apagar
-                    tudo.
+                    Depois de uma reconexão, o último estado válido fica na tela com um aviso de
+                    estado.
                   </p>
                 </div>
               </div>
@@ -3137,9 +3135,7 @@
         <section class="sec" id="install" aria-labelledby="install-title">
           <div class="n">6.0</div>
           <div class="c">
-            <h2 id="install-title" data-i18n-html="install.title">
-              Instalação <span class="tail">— cinco passos até o primeiro Play</span>
-            </h2>
+            <h2 id="install-title" data-i18n-html="install.title">Instalação</h2>
             <div class="install">
               <ol class="steps">
                 <li>
@@ -3184,8 +3180,8 @@
                   <div>
                     <h3 data-i18n="install.s5">Abra as telas</h3>
                     <p data-i18n="install.s5d">
-                      Aponte a câmera para o QR code ou abra o link. Para o aviso de certificado
-                      sumir, instale uma vez o certificado pelo QR Certificado no painel.
+                      Leia o QR ou abra o link. Para remover o aviso de certificado, instale o
+                      certificado uma vez pelo QR da aba Rede do painel.
                     </p>
                   </div>
                 </li>
@@ -3393,7 +3389,8 @@
                 <div>
                   <h4 data-i18n="faq.c">Para onde vão os dados do show?</h4>
                   <p data-i18n="faq.cd">
-                    Para lugar nenhum. Setlists, letras e exportações ficam em perfis locais.
+                    Repertórios, letras e exportações ficam em perfis locais. Nada é enviado a um
+                    servidor.
                   </p>
                 </div>
               </div>

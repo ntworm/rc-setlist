@@ -21,39 +21,40 @@ O **RC Setlist** é uma extensão de setlist, letra sincronizada e tela de palco
 
 ## Novo na 1.1.0
 
-- **Um painel do Live novo.** Três abas, Principal, Repertórios e Rede, na
-  cara das páginas do RC Setlist. A Principal mostra um QR no centro, o do
-  Controle de Palco por padrão, com um botão ao lado que troca para o
-  Performance Display no mesmo lugar. A Rede guarda o endereço, o cartão do
-  certificado e o cartão do segundo computador.
-- **Pacotes de repertórios.** Exportar todos grava todos os repertórios do
-  Live Set (ordem, cores e notas das músicas, letras) num arquivo `.rcsetlist`;
-  Importar traz os repertórios de um pacote para o lado dos seus, numerando um
-  nome repetido. O Live só deixa a extensão gravar dentro da pasta dela, então
-  os pacotes ficam na pasta `packages` dos dados da extensão; o painel mostra o
-  caminho.
-- **Dois computadores, um show.** Pareie pelo painel, com um código de seis
-  dígitos, um segundo computador rodando o Live. Play, Stop, saltos,
-  metrônomo, quantização, contagem, atualizar e pânico chegam a ele; a edição
-  do setlist e dos marcadores fica no computador principal. Um segundo ponto
-  no topo do Controle de palco fica verde quando ele acompanha, âmbar quando
-  os marcadores são diferentes e vermelho quando ele não responde.
-- **A lista de músicas recolhe.** Os três pontinhos ao lado do nome da música
-  recolhem as seções dela; **Recolher todas / Abrir todas** age em todas as
-  músicas. Segure o nome da música ou o número dela para saltar; arraste a alça na borda
-  direita do card para reordenar, com mouse ou com o dedo.
-- **O certificado do celular.** A extensão cria uma autoridade certificadora
-  para este computador, que só vale para localhost e endereços da rede
-  local. O cartão **Certificado** no painel mostra um QR para uma página na
-  porta `4445` onde o celular instala o certificado uma vez; depois disso o
-  navegador para de avisar.
-- **O QR acha a rede certa.** O endereço do QR é o que o sistema usa de
-  verdade, então um computador com cabo de rede de luz ou de áudio ao lado do
-  Wi-Fi anuncia o Wi-Fi.
-- A barra do topo fica numa linha só nos dois idiomas, reordenar volta a
-  funcionar no Windows, salvar não falha mais quando o Live recusa `fsync`, e
-  o pareamento fica preso à chave, então um endereço novo de qualquer lado
-  mantém o link.
+- **Painel do Live.** Três abas: Principal, Repertórios, Rede. A Principal
+  mostra um QR, do Controle de palco por padrão, e um botão que troca para a
+  tela Performance; abaixo, o repertório ativo, o número de músicas, o tempo de
+  show e a lista de músicas.
+- **Gestão de repertórios no painel.** Ativar, renomear, apagar, criar e
+  restaurar repertórios com o transporte parado. Apagar pede confirmação na
+  própria linha e pode ser desfeito pela lista de apagados.
+- **Pacotes de repertórios.** _Exportar todos_ grava os repertórios do Live Set
+  (ordem, cores e notas das músicas, letras) num arquivo `.rcsetlist`.
+  _Importar_ acrescenta os repertórios de um pacote aos existentes; um nome
+  repetido ganha um número, e uma importação que falha é desfeita. Os arquivos
+  ficam na pasta `packages` dos dados da extensão, porque o Live só deixa a
+  extensão gravar ali; o painel mostra o caminho.
+- **Segundo computador.** Pareie um segundo computador com o Live usando um
+  código de seis dígitos. Play, Stop, saltos, click, quantização, contagem,
+  atualizar e pânico são enviados a ele; a edição de repertório e de
+  marcadores fica no principal. Um segundo ponto de estado no topo do Controle
+  de palco fica verde com o link ativo e os marcadores iguais, âmbar com
+  marcadores diferentes, vermelho quando ele não responde.
+- **Lista de músicas recolhível.** O botão de três pontos ao lado de uma música
+  recolhe as seções dela; _Recolher todas / Abrir todas_ age na lista inteira.
+  Segure o nome ou o número da música para saltar; arraste a alça na borda
+  direita do card para reordenar.
+- **Certificado local.** A extensão cria uma autoridade certificadora para este
+  computador, válida para localhost e endereços privados da rede. A aba Rede
+  mostra um QR para uma página de instalação na porta `4445`; com o
+  certificado instalado num aparelho, o navegador deixa de avisar.
+- **Endereço de rede.** O QR usa o endereço da rota padrão, não o primeiro
+  endereço privado, então uma segunda interface de rede (luz, áudio) não
+  substitui o endereço do Wi-Fi.
+- **Correções.** A barra do topo fica numa linha nos dois idiomas; reordenar
+  funciona no Windows; salvar não falha mais quando o Live recusa `fsync`; o
+  pareamento fica preso à chave do segundo computador, então uma mudança de
+  endereço mantém o link.
 
 ## Destaques
 

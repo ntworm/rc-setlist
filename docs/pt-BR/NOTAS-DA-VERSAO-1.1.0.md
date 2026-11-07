@@ -4,51 +4,44 @@
 **Linha de versões suportada:** `1.1.x`
 **Also available in English:** [`../RELEASE-NOTES-1.1.0.md`](../RELEASE-NOTES-1.1.0.md)
 
-Um show, dois computadores. O computador principal continua com o Live e com
-o operador; o segundo computador segue o principal, e os comandos de
-transporte que o operador dá são encaminhados para ele por um link com o
-certificado preso.
+Mudanças da 1.1.0, começando pelo painel do Live novo.
 
 ## Destaques
 
-- **Um painel do Live novo.** Três abas, Principal, Repertórios e Rede, na
-  cara das páginas do RC Setlist (Martian Mono). A Principal mostra um QR no
-  centro, o do Controle de Palco por padrão, com um botão ao lado que troca
-  para o Performance Display no mesmo lugar; embaixo, o repertório ativo em
-  quatro números (músicas, tempo de show, repertórios) e as músicas dele com
-  as cores. A Rede guarda o endereço, o cartão do certificado e o cartão do
-  segundo computador.
-- **Repertórios gerenciados pelo painel do Live.** Ativar, renomear, apagar
-  (com pergunta na própria linha, e dá para restaurar), criar e restaurar
-  repertórios com o transporte parado; o painel diz o que cada ação fez.
-- **Pacotes de repertórios.** Exportar todos grava todos os repertórios do
-  Live Set (ordem, cores e notas das músicas, letras) num arquivo
-  `.rcsetlist`; Importar traz os repertórios de um pacote para o lado dos
-  seus, numerando um nome repetido, e desfaz tudo se falhar no meio. O Live
-  só deixa a extensão gravar dentro da pasta dela, então os pacotes ficam na
-  pasta `packages` dos dados da extensão; o painel mostra o caminho com um
-  botão Copiar caminho.
-
-- **Um cartão "Segundo computador" no painel do Live.** O segundo computador
-  mostra um código de seis dígitos, o computador principal digita o
-  endereço dele e o código, e os dois ficam pareados. O cartão diz o que o
-  link está fazendo: sem pareamento, conectado, sem resposta, marcadores
-  diferentes, ou certificado mudando e precisando de um pareamento novo.
-- **Um segundo ponto no cabeçalho do Controle de Palco.** Verde quando o
-  segundo computador está conectado e os dois leem os mesmos marcadores,
-  amarelo quando está conectado e os marcadores são diferentes, vermelho
-  quando não está respondendo ou o certificado mudou, e nenhum ponto quando
-  não há nada pareado.
-- **A rota de pareamento só responde sobre TLS.** O código vale por dez
-  minutos, funciona exatamente uma vez, morre depois de cinco palpites
-  errados, e as tentativas que chegam até ele são limitadas por endereço e
-  no total.
-- **O salto viaja por beat.** Os dois computadores podem ter as músicas em
-  outra ordem, então um salto cruza a rede como o beat em que ele pousa
-  (`jump_time`), e o lado que recebe procura o marcador que está ali.
-- **O código de pareamento pode ser lido de novo.** O painel se redesenha
-  com o código que ainda está vivo, então o número na tela é o número que
-  abre a porta.
+- **Painel do Live.** Três abas: Principal, Repertórios, Rede. A Principal
+  mostra um QR, do Controle de palco por padrão, e um botão que troca para a
+  tela Performance; abaixo, o repertório ativo, o número de músicas, o tempo de
+  show e a lista de músicas.
+- **Gestão de repertórios no painel.** Ativar, renomear, apagar, criar e
+  restaurar repertórios com o transporte parado. Apagar pede confirmação na
+  própria linha e pode ser desfeito pela lista de apagados.
+- **Pacotes de repertórios.** _Exportar todos_ grava os repertórios do Live Set
+  (ordem, cores e notas das músicas, letras) num arquivo `.rcsetlist`.
+  _Importar_ acrescenta os repertórios de um pacote aos existentes; um nome
+  repetido ganha um número, e uma importação que falha é desfeita. Os arquivos
+  ficam na pasta `packages` dos dados da extensão, porque o Live só deixa a
+  extensão gravar ali; o painel mostra o caminho.
+- **Segundo computador.** Pareie um segundo computador com o Live usando um
+  código de seis dígitos. Play, Stop, saltos, click, quantização, contagem,
+  atualizar e pânico são enviados a ele; a edição de repertório e de
+  marcadores fica no principal. Um segundo ponto de estado no topo do Controle
+  de palco fica verde com o link ativo e os marcadores iguais, âmbar com
+  marcadores diferentes, vermelho quando ele não responde.
+- **Lista de músicas recolhível.** O botão de três pontos ao lado de uma música
+  recolhe as seções dela; _Recolher todas / Abrir todas_ age na lista inteira.
+  Segure o nome ou o número da música para saltar; arraste a alça na borda
+  direita do card para reordenar.
+- **Certificado local.** A extensão cria uma autoridade certificadora para este
+  computador, válida para localhost e endereços privados da rede. A aba Rede
+  mostra um QR para uma página de instalação na porta `4445`; com o
+  certificado instalado num aparelho, o navegador deixa de avisar.
+- **Endereço de rede.** O QR usa o endereço da rota padrão, não o primeiro
+  endereço privado, então uma segunda interface de rede (luz, áudio) não
+  substitui o endereço do Wi-Fi.
+- **Correções.** A barra do topo fica numa linha nos dois idiomas; reordenar
+  funciona no Windows; salvar não falha mais quando o Live recusa `fsync`; o
+  pareamento fica preso à chave do segundo computador, então uma mudança de
+  endereço mantém o link.
 
 ## Como usar
 
@@ -77,37 +70,14 @@ CSV ficam no computador principal.
 
 ## Também nesta versão
 
-- **O número da música também pula para ela**, como o nome, no Controle de
-  Palco. Na tela de toque o pulo continua sendo segurar, para um toque sem
-  querer nunca mover o show.
-
-- **Recolher a lista de músicas.** Os três pontinhos ao lado do nome da
-  música recolhem e reabrem as seções dela; **Recolher todas / Abrir todas**,
-  na barra "Músicas no projeto", age em todas. A escolha fica salva no
-  aparelho, por setlist.
-- **Um lugar para cada função no card da música.** Segure o **nome** da música
-  ou o **número** dela para pular; o tempo, as notas, os selos, os três
-  pontinhos e a alça não fazem nada. Reordene arrastando a **alça** na borda
-  direita do card, com mouse ou com o dedo. Segurar os três pontinhos não
-  pula mais.
-- **O certificado do celular.** A extensão cria uma autoridade de
-  certificado para este computador, limitada a localhost e endereços
-  privados, e assina com ela o certificado do próprio servidor. Um novo
-  cartão **Certificado** no painel do Live mostra um QR para uma página
-  simples na porta 4445, onde o celular baixa e instala o certificado uma
-  vez; depois disso o navegador para de avisar.
-- **O QR aponta para a rede certa.** O endereço do QR e do cartão de
-  pareamento é o que o sistema usa de verdade, então um computador com cabo
-  de luz ou de áudio e Wi-Fi ao mesmo tempo anuncia o Wi-Fi.
-- **A barra do topo fica numa linha só** em inglês e em português; palavras
-  maiores diminuem o texto em vez de empurrar botões para uma segunda linha.
-- **Reordenar voltou a funcionar no Windows**, e salvar não falha mais
-  dentro do Live quando o sistema de arquivos recusa o `fsync`.
-- **Correções do pareamento.** O segundo computador é fixado pela chave,
-  então um endereço novo em qualquer lado não quebra mais o link; parear um
-  computador com ele mesmo é recusado; o painel avisa quando o código tem
-  que ser gerado no segundo computador; o PANIC cancela uma contagem em
-  andamento.
+- No card da música, só o nome e o número iniciam um salto; o tempo, as notas,
+  os badges, o botão de três pontos e a alça não. Numa tela de toque, o salto
+  exige segurar 500 ms.
+- O estado de _Recolher todas / Abrir todas_ fica guardado no aparelho, por
+  repertório.
+- Parear um computador com ele mesmo é recusado, e o painel avisa quando o
+  código tem de ser gerado no segundo computador.
+- O PANIC cancela uma contagem em andamento.
 
 ## Contratos
 

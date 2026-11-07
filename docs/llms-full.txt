@@ -35,37 +35,37 @@ free for noncommercial use and source-available.
 
 ## New in 1.1.0
 
-- **A new Live panel.** Three tabs, Main, Setlists and Network, in the face of
-  the RC Setlist pages. Main shows one QR in the middle, the Stage Control by
-  default, with a button beside it that swaps it for the Performance Display
-  in the same place. Network keeps the address, the certificate card and the
-  second computer card.
-- **Setlist packages.** Export all writes every setlist of the Live Set (order,
-  song colours and notes, lyrics) into one `.rcsetlist` file; Import brings the
-  setlists of a package in beside the ones you have, numbering a name that is
-  taken. Live lets an extension write only inside its own folder, so packages
-  live in the `packages` folder of the extension data; the panel shows the
-  path.
-- **Two computers, one show.** Pair a second computer running Live from the
-  panel with a six-digit code. Play, Stop, jumps, metronome, quantization,
-  count-in, refresh and panic are relayed to it; setlist and marker editing
-  stay on the main computer. A second dot in the Stage Control header is
-  green when it follows, amber when its markers differ and red when it does
-  not answer.
-- **A song list that folds.** The three dots beside a song name fold its
-  sections; **Fold all / Unfold all** acts on every song. Hold the song name or its number to jump; drag the grip on the right edge of the card to reorder, with a
-  mouse or a finger.
-- **The phone certificate.** The extension creates a certificate authority
-  for this computer, valid only for localhost and private network
-  addresses. The **Certificate** card in the panel shows a QR to a page on
-  port `4445` where a phone installs it once; after that the browser stops
-  warning.
-- **The QR finds the right network.** The address in the QR is the one the
-  system really routes through, so a computer with a lighting or audio
-  network cable beside the Wi-Fi announces the Wi-Fi.
-- The top bar keeps one row in both languages, reordering works on Windows
-  again, saving no longer fails when Live refuses `fsync`, and pairing is
-  pinned by key, so a new address on either side keeps the link.
+- **Live panel.** Three tabs: Main, Setlists, Network. Main shows one QR code,
+  Stage Control by default, and a button that switches it to the Performance
+  view; below it, the active setlist, song count, show time and song list.
+- **Setlist management in the panel.** Activate, rename, delete, create and
+  restore setlists while the transport is stopped. A delete is confirmed in
+  the row and can be undone from the Deleted list.
+- **Setlist packages.** _Export all_ writes the setlists of the Live Set
+  (order, song colours and notes, lyrics) to one `.rcsetlist` file. _Import_
+  adds the setlists of a package to the existing ones; a duplicate name gets a
+  number, and a failed import is rolled back. Files are kept in the `packages`
+  folder of the extension data, because Live allows an extension to write only
+  there; the panel shows the path.
+- **Second computer.** Pair a second computer running Live with a six-digit
+  code. Play, Stop, jumps, click, quantization, count-in, refresh and panic are
+  sent to it; setlist and marker editing stay on the main computer. A second
+  status dot in the Stage Control header is green when the link is up and the
+  markers match, amber when the markers differ, red when it does not answer.
+- **Collapsible song list.** The three-dot button next to a song collapses its
+  sections; _Fold all / Unfold all_ acts on the whole list. Hold the song name
+  or number to jump; drag the grip on the right edge of the card to reorder.
+- **Local certificate.** The extension creates a certificate authority for
+  this computer, valid for localhost and private network addresses. The
+  Network tab shows a QR code for an install page on port `4445`; once the
+  certificate is installed on a device, the browser no longer warns.
+- **Network address.** The QR code uses the address of the default route
+  instead of the first private address, so a second network interface
+  (lighting, audio) does not replace the Wi-Fi address.
+- **Fixes.** The top bar stays on one row in both languages; reordering works
+  on Windows; saving no longer fails when Live refuses `fsync`; pairing is
+  bound to the key of the second computer, so an address change keeps the
+  link.
 
 ## Highlights
 
@@ -1165,47 +1165,41 @@ and real setlist/lyrics content. See [SUPPORT.md](https://github.com/ntworm/rc-s
 **Supported version line:** `1.1.x`
 **Also available in Portuguese:** [`pt-BR/NOTAS-DA-VERSAO-1.1.0.md`](https://github.com/ntworm/rc-setlist/blob/main/docs/pt-BR/NOTAS-DA-VERSAO-1.1.0.md)
 
-One show, two computers. The main computer keeps Live and the operator; the
-second computer follows it, and the transport commands the operator gives are
-relayed to it over a link whose certificate is pinned.
+Changes in 1.1.0, with the new Live panel first.
 
 ## Highlights
 
-- **A new Live panel.** Three tabs, Main, Setlists and Network, in the face
-  of the RC Setlist pages (Martian Mono). Main shows one QR in the middle,
-  the Stage Control by default, with a button beside it that swaps it for
-  the Performance Display in the same place; under it, the active setlist in
-  four numbers (songs, show time, setlists) and its songs with their colours.
-  Network keeps the address, the certificate card and the second computer card.
-- **Setlists managed from the Live panel.** Activate, rename, delete (asked
-  once in the row, and restorable), create and restore setlists while the
-  transport is stopped; the panel says what each action did.
-- **Setlist packages.** Export all writes every setlist of the Live Set
-  (order, song colours and notes, lyrics) into one `.rcsetlist` file; Import
-  brings the setlists of a package in beside the ones you have, numbering a
-  name that is taken, and takes everything back if it fails half way. Live
-  lets an extension write only inside its own folder, so packages live in
-  the `packages` folder of the extension data; the panel shows the path with
-  a Copy path button.
-
-- **A "Second computer" card in the Live panel.** The second computer prints
-  a six-digit code, the main computer types its address and the code, and
-  the two are paired. The card says what the link is doing: not paired,
-  connected, not answering, different markers, or a certificate that changed
-  and needs a new pairing.
-- **A second dot in the Stage Control header.** Green when the second
-  computer is connected and both read the same markers, amber when it is
-  connected and the markers differ, red when it is not answering or its
-  certificate changed, and no dot at all when nothing is paired.
-- **The pairing route answers over TLS only.** The code lives for ten
-  minutes, works exactly once, dies after five wrong guesses, and the
-  attempts that reach it are rate limited per address and in total.
-- **The jump travels by beat.** The two computers may hold the songs in
-  another order, so a jump crosses the wire as the beat it lands on
-  (`jump_time`) and the receiving side finds the marker that sits there.
-- **The pairing code can be read again.** The panel redraws itself with the
-  code that is already alive, so the number on the screen is the number that
-  opens the door.
+- **Live panel.** Three tabs: Main, Setlists, Network. Main shows one QR code,
+  Stage Control by default, and a button that switches it to the Performance
+  view; below it, the active setlist, song count, show time and song list.
+- **Setlist management in the panel.** Activate, rename, delete, create and
+  restore setlists while the transport is stopped. A delete is confirmed in
+  the row and can be undone from the Deleted list.
+- **Setlist packages.** _Export all_ writes the setlists of the Live Set
+  (order, song colours and notes, lyrics) to one `.rcsetlist` file. _Import_
+  adds the setlists of a package to the existing ones; a duplicate name gets a
+  number, and a failed import is rolled back. Files are kept in the `packages`
+  folder of the extension data, because Live allows an extension to write only
+  there; the panel shows the path.
+- **Second computer.** Pair a second computer running Live with a six-digit
+  code. Play, Stop, jumps, click, quantization, count-in, refresh and panic are
+  sent to it; setlist and marker editing stay on the main computer. A second
+  status dot in the Stage Control header is green when the link is up and the
+  markers match, amber when the markers differ, red when it does not answer.
+- **Collapsible song list.** The three-dot button next to a song collapses its
+  sections; _Fold all / Unfold all_ acts on the whole list. Hold the song name
+  or number to jump; drag the grip on the right edge of the card to reorder.
+- **Local certificate.** The extension creates a certificate authority for
+  this computer, valid for localhost and private network addresses. The
+  Network tab shows a QR code for an install page on port `4445`; once the
+  certificate is installed on a device, the browser no longer warns.
+- **Network address.** The QR code uses the address of the default route
+  instead of the first private address, so a second network interface
+  (lighting, audio) does not replace the Wi-Fi address.
+- **Fixes.** The top bar stays on one row in both languages; reordering works
+  on Windows; saving no longer fails when Live refuses `fsync`; pairing is
+  bound to the key of the second computer, so an address change keeps the
+  link.
 
 ## How to use it
 
@@ -1233,35 +1227,13 @@ export stay on the main computer.
 
 ## Also in this release
 
-- **The number of a song jumps to it too**, like its name, in the Stage
-  Control. On a touch screen a jump is still a hold, so a stray tap never
-  moves the show.
-
-- **Fold the song list.** The three dots beside a song name fold that song's
-  sections away and bring them back; **Fold all / Unfold all** in the
-  "Songs in project" bar acts on every song. The choice is kept on the
-  device, per setlist.
-- **One place for each job on a song card.** Hold the song **name** or its
-  **number** to jump; the time, the notes, the badges, the three dots and the
-  grip do not. Reorder by dragging the **grip** on the right edge of the card,
-  with a mouse or a finger. Holding the three dots no longer jumps.
-- **The phone certificate.** The extension creates a certificate authority
-  for this computer, limited to localhost and private addresses, and signs
-  its own server certificate with it. A new **Certificate** card in the Live
-  panel shows a QR to a plain page on port 4445 where a phone downloads and
-  installs it once; after that the browser stops warning.
-- **The QR points at the right network.** The address in the QR and in the
-  pairing card is the one the system really routes through, so a computer
-  with a lighting or audio network cable and Wi-Fi at the same time
-  announces the Wi-Fi.
-- **The top bar keeps one row** in English and Portuguese; longer words
-  shrink its text instead of pushing buttons to a second row.
-- **Reordering works on Windows again**, and saving no longer fails inside
-  Live when the file system refuses `fsync`.
-- **Pairing fixes.** The second computer is pinned by its key, so a new
-  network address on either side no longer breaks the link; pairing a
-  computer with itself is refused; the panel says when the code has to be
-  generated on the second computer; PANIC cancels a running count-in.
+- On a song card, only the song name and number start a jump; the time,
+  notes, badges, three-dot button and grip do not. On a touch screen a jump is
+  a 500 ms hold.
+- The _Fold all / Unfold all_ state is stored on the device, per setlist.
+- Pairing a computer with itself is refused, and the panel states when the
+  code has to be generated on the second computer.
+- PANIC cancels a running count-in.
 
 ## Contracts
 

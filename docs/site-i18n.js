@@ -26,7 +26,7 @@
     'nav.docs': 'Docs',
 
     'about.lede':
-      'Os locators do seu Arrangement viram o show: o setlist de quem opera, a tela de palco de quem toca. O Live manda no tempo; o navegador só acompanha.',
+      'Lê os localizadores do Arrangement de um Live Set e mostra no navegador um setlist para quem opera e uma tela só de leitura para a banda. O tempo vem do Live.',
 
     'about.tagline':
       'Setlist, letra sincronizada e tela de palco para o Ableton Live 12 — grátis para uso não comercial.',
@@ -40,34 +40,34 @@
     'about.source': 'Código-fonte',
     'about.release':
       'Versão 1.1.0&nbsp;· source-available sob a PolyForm Noncommercial 1.0.0&nbsp;· inglês e português (Brasil) no mesmo pacote',
-    'about.figCap': 'As duas telas, exatamente como vêm',
+    'about.figCap': 'As duas telas',
     'about.figMeta': 'Prints reais · dados fictícios de demonstração',
     'about.figAlt':
       'Controle de palco: setlist de cinco músicas com seções e tags, a música 3 destacada como ativa, estado do show, quantização, click e transporte.',
 
     'new.title': 'Novo na 1.1.0',
     'new.why':
-      'Um segundo computador que segue o show, uma lista de músicas que recolhe e um celular que para de reclamar do certificado.',
-    'new.lTitle': 'Um painel do Live novo',
+      'Painel do Live com gestão e pacotes de repertórios, sincronização com um segundo computador, lista de músicas recolhível, certificado local e escolha do endereço de rede.',
+    'new.lTitle': 'Painel do Live',
     'new.lBody':
-      'Três abas, Principal, Repertórios e Rede, na cara das páginas do RC Setlist. A Principal mostra um QR no centro, o do Controle de Palco por padrão, com um botão ao lado que troca para o Performance Display no mesmo lugar.',
+      'Três abas: Principal, Repertórios, Rede. A Principal mostra um QR, do Controle de palco por padrão, e um botão que troca para a tela Performance; abaixo, o repertório ativo, o número de músicas, o tempo de show e a lista de músicas.',
     'new.pkTitle': 'Pacotes de repertórios',
     'new.pkBody':
-      'Exportar todos grava todos os repertórios do Live Set num arquivo .rcsetlist; Importar traz um pacote ao lado dos seus. A pasta packages fica nos dados da extensão, e o painel mostra o caminho.',
-    'new.pTitle': 'Dois computadores, um show',
+      'Exportar todos grava os repertórios do Live Set (ordem, cores e notas das músicas, letras) num arquivo .rcsetlist. Importar acrescenta os repertórios de um pacote aos existentes; um nome repetido ganha um número. Os arquivos ficam na pasta packages dos dados da extensão.',
+    'new.pTitle': 'Segundo computador',
     'new.pBody':
-      'Pareie pelo painel, com um código de seis dígitos, um segundo computador rodando o Live. Play, Stop, saltos, click, quantização, contagem e pânico chegam a ele também; um segundo ponto no topo do Controle de palco mostra se ele está acompanhando.',
-    'new.fTitle': 'A lista de músicas recolhe',
+      'Pareie um segundo computador com o Live usando um código de seis dígitos. Play, Stop, saltos, click, quantização, contagem e pânico são enviados a ele. Um segundo ponto de estado no topo do Controle de palco mostra o estado do link.',
+    'new.fTitle': 'Lista de músicas recolhível',
     'new.fBody':
-      'Os três pontinhos ao lado da música recolhem as seções dela; Recolher todas e Abrir todas agem na lista inteira. Segure o nome da música para saltar e arraste a alça na borda direita do card para reordenar, com mouse ou com o dedo.',
-    'new.cTitle': 'O certificado do celular',
+      'O botão de três pontos ao lado de uma música recolhe as seções dela; Recolher todas e Abrir todas agem na lista inteira. Segure o nome ou o número da música para saltar; arraste a alça na borda direita do card para reordenar.',
+    'new.cTitle': 'Certificado local',
     'new.cBody':
-      'O painel mostra um QR para uma página onde o celular instala uma vez o certificado deste computador. Depois disso o navegador abre as telas sem aviso. O certificado só vale para localhost e endereços da rede local.',
-    'new.nTitle': 'O QR acha a rede certa',
+      'A extensão cria uma autoridade certificadora para este computador, válida para localhost e endereços privados da rede. Instalada uma vez num celular ou computador, ela remove o aviso do navegador. A aba Rede mostra um QR para a página de instalação.',
+    'new.nTitle': 'Endereço de rede',
     'new.nBody':
-      'O endereço do QR é o que o computador usa de verdade, mesmo com um cabo de rede de luz ou de áudio ligado ao lado do Wi-Fi.',
+      'O QR usa o endereço da rota padrão, não o primeiro endereço privado, então uma segunda interface de rede (luz, áudio) não substitui o endereço do Wi-Fi.',
     'new.note':
-      'Vem da 1.0? Remova antes o RC Setlist nas configurações de extensões do Live e depois instale a 1.1.0; a pasta de dados fica. Todas as mudanças estão nas <a href="./pt-BR/NOTAS-DA-VERSAO-1.1.0.html">notas da versão</a>.',
+      'Atualizando da 1.0: remova o RC Setlist nas configurações de extensões do Live e instale a 1.1.0. A pasta de dados é mantida. Lista completa: <a href="./pt-BR/NOTAS-DA-VERSAO-1.1.0.html">notas da versão</a>.',
 
     'chain.title': 'Cadeia de sinal <span class="tail">— quem manda no tempo é o Live</span>',
     'chain.why':
@@ -113,16 +113,16 @@
     'loc.tBpm': 'Informa o BPM. As durações ficam exatas.',
     'loc.tClick': 'Liga ou desliga o click (metrônomo) do Live nesse locator.',
     'loc.tLoop': 'Repete a seção até você desligar o loop, ou N vezes.',
-    'loc.tNext': 'Pula para a próxima música assim que o Live passa por esse locator.',
+    'loc.tNext': 'Segue para a próxima música quando a reprodução chega ao marcador.',
     'loc.tStop': 'Para o Live nesse locator.',
     'loc.tSkip': 'Pula esta música ou seção.',
-    'loc.tJump': 'Pula para uma música ou seção pelo nome.',
+    'loc.tJump': 'Salta para uma música ou seção pelo nome.',
     'loc.tHidden': 'Esconde do setlist um locator usado só para automação.',
     'loc.tIgnore': 'Locator técnico: fica oculto e as tags dele não fazem nada.',
     'loc.tagsNote':
       'Tanto faz maiúscula ou minúscula, e as tags não aparecem no nome exibido. Fora [hidden] e [ignore], você nem precisa digitá-las: dê dois cliques numa música ou seção no Controle de palco e cada tag vira um controle.',
     'loc.durTitle': 'Duração do set',
-    'loc.durCap': 'Um set medido, três formas de contar',
+    'loc.durCap': 'Duração de um set, três métodos',
     'loc.durMeta': '21 músicas · de 93 a 166 BPM',
     'loc.durA': '[bpm] em todas as músicas',
     'loc.durAsub': 'Exata, música a música',
@@ -133,9 +133,9 @@
     'loc.durFoot':
       'Nenhuma extensão consegue ler a automação de andamento sem tocar a música. Use [bpm] e o aviso EST. some.',
 
-    'views.title': 'Duas telas <span class="tail">— figs. 4 a 6</span>',
+    'views.title': 'Duas telas',
     'views.why':
-      'O Controle de palco é de quem opera o show. A Performance é de quem toca: só leitura, alto contraste, dá para ler preso no pedestal do microfone.',
+      'O Controle de palco é a tela de quem opera. A Performance é uma tela só de leitura, de alto contraste, para a banda.',
     'views.pick': 'Escolha uma tela',
     'views.tabStage': 'Controle de palco',
     'views.tabPerf': 'Performance',
@@ -157,7 +157,7 @@
     'views.s5': 'Estado do show',
     'views.s5d': 'Música e seção atuais e as próximas, BPM, compasso, tempo do show e da música.',
     'views.s6': 'Linha da letra',
-    'views.s6d': 'A linha que está sendo cantada agora.',
+    'views.s6d': 'Linha atual da letra.',
     'views.s7': 'Quantização · click',
     'views.s7d': 'Grade dos saltos, click do Live, contagem de um compasso e botão de atualizar.',
     'views.s8': 'Transporte',
@@ -171,7 +171,7 @@
     'views.p1': 'Música atual',
     'views.p1d': 'Título, tags e a próxima música.',
     'views.p2': 'Seção ativa',
-    'views.p2d': 'Onde a banda está, quantas repetições faltam, qual seção vem depois.',
+    'views.p2d': 'Seção atual, loops restantes, próxima seção.',
     'views.p3': 'Letra · cifras',
     'views.p3d': 'A letra sincronizada acompanha a música; a linha atual fica destacada.',
     'views.p4': 'Timecode',
@@ -198,9 +198,9 @@
     'views.lrcNote':
       'Cole a letra, marque o tempo de cada linha com a música tocando, edite e salve. Ela fica no perfil ativo, fora do Live Set. Texto sem tempo também funciona.',
 
-    'safety.title': 'Segurança no palco <span class="tail">— nada dispara sem querer</span>',
+    'safety.title': 'Segurança no palco',
     'safety.why':
-      'Todo botão que pode parar o show precisa ser segurado, não só tocado. Nada de janela de confirmação no meio da música.',
+      'Os controles que mudam a reprodução agem depois de 500 ms segurados, não num toque. Não há janelas de confirmação.',
     'safety.figCap': 'Segurar para enviar — próxima música, seção anterior, Stop',
     'safety.figMeta': 'De 0 a 800 ms',
     'safety.holdAria':
@@ -226,9 +226,9 @@
       'Editar locators, trocar de setlist e mudar o idioma ficam bloqueados enquanto o Live toca.',
     'safety.rTitle': 'Quedas de conexão',
     'safety.rBody':
-      'Uma reconexão mantém na tela o último estado válido e avisa, em vez de apagar tudo.',
+      'Depois de uma reconexão, o último estado válido fica na tela com um aviso de estado.',
 
-    'install.title': 'Instalação <span class="tail">— cinco passos até o primeiro Play</span>',
+    'install.title': 'Instalação',
     'install.s1': 'Baixe',
     'install.s1d':
       '<code>RC-Setlist-1.1.0.ablx</code> e o kit de instalação, na <a href="https://github.com/ntworm/rc-setlist/releases/tag/v1.1.0">versão 1.1.0</a>.',
@@ -242,7 +242,7 @@
       'Abra <b>Extensions › RC Setlist</b> e clique em <b>Iniciar</b>. O painel mostra um QR por vez, com um botão que troca entre Controle de palco e Performance Display.',
     'install.s5': 'Abra as telas',
     'install.s5d':
-      'Aponte a câmera para o QR code ou abra o link. Para o aviso de certificado sumir, instale uma vez o certificado pelo QR Certificado no painel.',
+      'Leia o QR ou abra o link. Para remover o aviso de certificado, instale o certificado uma vez pelo QR da aba Rede do painel.',
     'install.figCap': 'O painel dentro do Live',
     'install.panelAria':
       'O painel do RC Setlist no Live: servidor em execução na porta 4444, RC Bridge conectado, um QR por vez, com um botão que troca entre Controle de palco e Performance Display, e os botões Iniciar, Parar e Reiniciar.',
@@ -278,7 +278,8 @@
     'faq.b': 'Preciso do AbletonOSC?',
     'faq.bd': 'Não. O RC Bridge vem no kit e roda ao lado de um AbletonOSC comum ou do RC Surface.',
     'faq.c': 'Para onde vão os dados do show?',
-    'faq.cd': 'Para lugar nenhum. Setlists, letras e exportações ficam em perfis locais.',
+    'faq.cd':
+      'Repertórios, letras e exportações ficam em perfis locais. Nada é enviado a um servidor.',
     'faq.d': 'Por que a contagem não tem som?',
     'faq.dd':
       'Por padrão ela é só visual. Um notebook ligado no in-ear pode ativar o som, um aparelho por vez.',

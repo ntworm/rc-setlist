@@ -203,7 +203,7 @@
                 "name": "Where does my show data go?",
                 "acceptedAnswer": {
                   "@type": "Answer",
-                  "text": "Nowhere. Setlists, lyrics and exports stay in local profiles."
+                  "text": "Setlists, lyrics and exports are stored in local profiles. Nothing is sent to a server."
                 }
               },
               {
@@ -2062,8 +2062,8 @@
               use.
             </p>
             <p class="lede" data-i18n="about.lede">
-              Your Arrangement locators become the show: a setlist for whoever runs it, a stage
-              display for whoever plays it. Live keeps the clock; the browser reads it.
+              Reads the Arrangement locators of a Live Set and shows them in the browser: a setlist
+              for the operator and a read-only display for the band. Timing comes from Live.
             </p>
             <ul class="spec">
               <li data-i18n="about.spec1">Live 12.4.5+ Suite (Beta)</li>
@@ -2111,7 +2111,7 @@
             <figure class="fig hero-visual">
               <figcaption class="fig-bar">
                 <span class="id">Fig. 1</span>
-                <span class="cap" data-i18n="about.figCap">The two views, as shipped</span>
+                <span class="cap" data-i18n="about.figCap">The two views</span>
                 <span class="meta" data-i18n="about.figMeta"
                   >Real captures · neutral demo data</span
                 >
@@ -2158,8 +2158,8 @@
           <div class="c">
             <h2 id="new-title" data-i18n-html="new.title">New in 1.1.0</h2>
             <p class="why" data-i18n="new.why">
-              A second computer that follows the show, a song list that folds, and a phone that
-              stops warning about the certificate.
+              Live panel with setlist management and packages, second-computer sync, collapsible
+              song list, local certificate and network address selection.
             </p>
             <div class="cards c2">
               <div class="card">
@@ -2167,11 +2167,11 @@
                   ><svg aria-hidden="true"><use href="#g-session" /></svg
                 ></span>
                 <div>
-                  <h3 data-i18n="new.lTitle">A new Live panel</h3>
+                  <h3 data-i18n="new.lTitle">Live panel</h3>
                   <p data-i18n="new.lBody">
-                    Three tabs, Main, Setlists and Network, in the face of the RC Setlist pages.
-                    Main shows one QR in the middle, the Stage Control by default, with a button
-                    beside it that swaps it for the Performance Display in the same place.
+                    Three tabs: Main, Setlists, Network. Main shows one QR code, Stage Control by
+                    default, and a button that switches it to the Performance view; below it, the
+                    active setlist, song count, show time and song list.
                   </p>
                 </div>
               </div>
@@ -2182,9 +2182,10 @@
                 <div>
                   <h3 data-i18n="new.pkTitle">Setlist packages</h3>
                   <p data-i18n="new.pkBody">
-                    Export all writes every setlist of the Live Set into a .rcsetlist file; Import
-                    brings a package in beside the ones you have. The packages folder lives in the
-                    extension data, and the panel shows the path.
+                    Export all writes the setlists of the Live Set (order, song colours and notes,
+                    lyrics) to one .rcsetlist file. Import adds the setlists of a package to the
+                    existing ones; a duplicate name gets a number. Files are kept in the packages
+                    folder of the extension data.
                   </p>
                 </div>
               </div>
@@ -2193,11 +2194,11 @@
                   ><svg aria-hidden="true"><use href="#g-live" /></svg
                 ></span>
                 <div>
-                  <h3 data-i18n="new.pTitle">Two computers, one show</h3>
+                  <h3 data-i18n="new.pTitle">Second computer</h3>
                   <p data-i18n="new.pBody">
-                    Pair a second computer running Live from the panel with a six-digit code. Play,
-                    Stop, jumps, click, quantization, count-in and panic reach it too; a second dot
-                    in the Stage Control header says whether it follows.
+                    Pair a second computer running Live with a six-digit code. Play, Stop, jumps,
+                    click, quantization, count-in and panic are sent to it. A second status dot in
+                    the Stage Control header shows the state of the link.
                   </p>
                 </div>
               </div>
@@ -2206,11 +2207,11 @@
                   ><svg aria-hidden="true"><use href="#g-song" /></svg
                 ></span>
                 <div>
-                  <h3 data-i18n="new.fTitle">A song list that folds</h3>
+                  <h3 data-i18n="new.fTitle">Collapsible song list</h3>
                   <p data-i18n="new.fBody">
-                    The three dots beside a song fold its sections; Fold all and Unfold all act on
-                    the whole list. Hold the song name to jump, and drag the grip on the right edge
-                    of the card to reorder, with a mouse or a finger.
+                    The three-dot button next to a song collapses its sections; Fold all and Unfold
+                    all act on the whole list. Hold the song name or number to jump; drag the grip
+                    on the right edge of the card to reorder.
                   </p>
                 </div>
               </div>
@@ -2219,11 +2220,12 @@
                   ><svg aria-hidden="true"><use href="#g-phone" /></svg
                 ></span>
                 <div>
-                  <h3 data-i18n="new.cTitle">The phone certificate</h3>
+                  <h3 data-i18n="new.cTitle">Local certificate</h3>
                   <p data-i18n="new.cBody">
-                    The panel shows a QR to a page where the phone installs this computer's
-                    certificate once. After that the browser opens the views without a warning. The
-                    certificate is valid only for localhost and local network addresses.
+                    The extension creates a certificate authority for this computer, valid for
+                    localhost and private network addresses. Installed once on a phone or computer,
+                    it removes the browser warning. The Network tab shows a QR code for the install
+                    page.
                   </p>
                 </div>
               </div>
@@ -2232,17 +2234,18 @@
                   ><svg aria-hidden="true"><use href="#g-net" /></svg
                 ></span>
                 <div>
-                  <h3 data-i18n="new.nTitle">The QR finds the right network</h3>
+                  <h3 data-i18n="new.nTitle">Network address</h3>
                   <p data-i18n="new.nBody">
-                    The address in the QR is the one the computer really uses, even with a lighting
-                    or audio network cable plugged in beside the Wi-Fi.
+                    The QR code uses the address of the default route instead of the first private
+                    address, so a second network interface (lighting, audio) does not replace the
+                    Wi-Fi address.
                   </p>
                 </div>
               </div>
             </div>
             <p class="note" data-i18n-html="new.note">
-              Coming from 1.0? Remove RC Setlist in Live's extension settings first, then install
-              1.1.0; your data folder stays. All the changes are in the
+              Upgrading from 1.0: remove RC Setlist in Live's extension settings, then install
+              1.1.0. The data folder is kept. Full list of changes:
               <a href="https://github.com/ntworm/rc-setlist/blob/main/docs/RELEASE-NOTES-1.1.0.md"
                 >release notes</a
               >.
@@ -2532,7 +2535,7 @@
                   <tr>
                     <td class="k"><code>[next]</code></td>
                     <td data-i18n="loc.tNext">
-                      Hands playback to the next song the moment the marker is crossed.
+                      Continues to the next song when playback reaches the marker.
                     </td>
                     <td>
                       <span class="b b-next"
@@ -2560,7 +2563,7 @@
                   </tr>
                   <tr>
                     <td class="k"><code>[jump Chorus]</code></td>
-                    <td data-i18n="loc.tJump">Hands playback to a named song or section.</td>
+                    <td data-i18n="loc.tJump">Jumps to a named song or section.</td>
                     <td>
                       <span class="b b-jump"
                         ><svg aria-hidden="true"><use href="#i-next" /></svg>JUMP → Chorus</span
@@ -2592,9 +2595,7 @@
             <figure class="fig">
               <figcaption class="fig-bar">
                 <span class="id">Fig. 3</span>
-                <span class="cap" data-i18n="loc.durCap"
-                  >One measured set, three ways to count it</span
-                >
+                <span class="cap" data-i18n="loc.durCap">Duration of one set, three methods</span>
                 <span class="meta" data-i18n="loc.durMeta">21 songs · 93 to 166 BPM</span>
               </figcaption>
               <div class="fig-body">
@@ -2644,12 +2645,10 @@
         <section class="sec" id="views" aria-labelledby="views-title">
           <div class="n">4.0</div>
           <div class="c">
-            <h2 id="views-title" data-i18n-html="views.title">
-              Two views <span class="tail">— figs. 4 to 6</span>
-            </h2>
+            <h2 id="views-title" data-i18n-html="views.title">Two views</h2>
             <p class="why" data-i18n="views.why">
-              Stage Control is for whoever runs the show. Performance is for whoever plays it:
-              read-only, high contrast, readable from the mic stand.
+              Stage Control is the operator view. Performance is a read-only, high-contrast view for
+              the band.
             </p>
 
             <fieldset class="viewer">
@@ -2771,7 +2770,7 @@
                           <tr>
                             <td><span class="key">6</span></td>
                             <td data-i18n="views.s6">Lyric line</td>
-                            <td data-i18n="views.s6d">The line being sung right now.</td>
+                            <td data-i18n="views.s6d">Current lyric line.</td>
                           </tr>
                           <tr>
                             <td><span class="key">7</span></td>
@@ -2866,8 +2865,7 @@
                             <td><span class="key">2</span></td>
                             <td data-i18n="views.p2">Active section</td>
                             <td data-i18n="views.p2d">
-                              Where the band is now, how many loops remain, which section comes
-                              next.
+                              Current section, remaining loops, next section.
                             </td>
                           </tr>
                           <tr>
@@ -3013,12 +3011,10 @@
         <section class="sec" id="safety" aria-labelledby="safety-title">
           <div class="n">5.0</div>
           <div class="c">
-            <h2 id="safety-title" data-i18n-html="safety.title">
-              Stage safety <span class="tail">— nothing fires by accident</span>
-            </h2>
+            <h2 id="safety-title" data-i18n-html="safety.title">Stage safety</h2>
             <p class="why" data-i18n="safety.why">
-              Every control that can stop the show is held, not tapped. No confirmation dialogs
-              mid-song.
+              Controls that change playback act after a 500 ms hold, not on a tap. There are no
+              confirmation dialogs.
             </p>
 
             <figure class="fig">
@@ -3142,8 +3138,7 @@
                 <div>
                   <h3 data-i18n="safety.rTitle">Brief drops</h3>
                   <p data-i18n="safety.rBody">
-                    A reconnect keeps the last valid state on screen and says so, instead of going
-                    blank.
+                    After a reconnect, the last valid state stays on screen with a status label.
                   </p>
                 </div>
               </div>
@@ -3155,9 +3150,7 @@
         <section class="sec" id="install" aria-labelledby="install-title">
           <div class="n">6.0</div>
           <div class="c">
-            <h2 id="install-title" data-i18n-html="install.title">
-              Installation <span class="tail">— five steps to the first cue</span>
-            </h2>
+            <h2 id="install-title" data-i18n-html="install.title">Installation</h2>
             <div class="install">
               <ol class="steps">
                 <li>
@@ -3204,8 +3197,8 @@
                   <div>
                     <h3 data-i18n="install.s5">Open the views</h3>
                     <p data-i18n="install.s5d">
-                      Scan the QR code or open the link. To stop the certificate warning, install
-                      the certificate once from the Phone certificate QR in the panel.
+                      Scan the QR code or open the link. To remove the certificate warning, install
+                      the certificate once from the QR code in the Network tab of the panel.
                     </p>
                   </div>
                 </li>
@@ -3412,7 +3405,8 @@
                 <div>
                   <h4 data-i18n="faq.c">Where does my show data go?</h4>
                   <p data-i18n="faq.cd">
-                    Nowhere. Setlists, lyrics and exports stay in local profiles.
+                    Setlists, lyrics and exports are stored in local profiles. Nothing is sent to a
+                    server.
                   </p>
                 </div>
               </div>

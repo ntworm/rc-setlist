@@ -27,37 +27,37 @@ free for noncommercial use and source-available.
 
 ## New in 1.1.0
 
-- **A new Live panel.** Three tabs, Main, Setlists and Network, in the face of
-  the RC Setlist pages. Main shows one QR in the middle, the Stage Control by
-  default, with a button beside it that swaps it for the Performance Display
-  in the same place. Network keeps the address, the certificate card and the
-  second computer card.
-- **Setlist packages.** Export all writes every setlist of the Live Set (order,
-  song colours and notes, lyrics) into one `.rcsetlist` file; Import brings the
-  setlists of a package in beside the ones you have, numbering a name that is
-  taken. Live lets an extension write only inside its own folder, so packages
-  live in the `packages` folder of the extension data; the panel shows the
-  path.
-- **Two computers, one show.** Pair a second computer running Live from the
-  panel with a six-digit code. Play, Stop, jumps, metronome, quantization,
-  count-in, refresh and panic are relayed to it; setlist and marker editing
-  stay on the main computer. A second dot in the Stage Control header is
-  green when it follows, amber when its markers differ and red when it does
-  not answer.
-- **A song list that folds.** The three dots beside a song name fold its
-  sections; **Fold all / Unfold all** acts on every song. Hold the song name or its number to jump; drag the grip on the right edge of the card to reorder, with a
-  mouse or a finger.
-- **The phone certificate.** The extension creates a certificate authority
-  for this computer, valid only for localhost and private network
-  addresses. The **Certificate** card in the panel shows a QR to a page on
-  port `4445` where a phone installs it once; after that the browser stops
-  warning.
-- **The QR finds the right network.** The address in the QR is the one the
-  system really routes through, so a computer with a lighting or audio
-  network cable beside the Wi-Fi announces the Wi-Fi.
-- The top bar keeps one row in both languages, reordering works on Windows
-  again, saving no longer fails when Live refuses `fsync`, and pairing is
-  pinned by key, so a new address on either side keeps the link.
+- **Live panel.** Three tabs: Main, Setlists, Network. Main shows one QR code,
+  Stage Control by default, and a button that switches it to the Performance
+  view; below it, the active setlist, song count, show time and song list.
+- **Setlist management in the panel.** Activate, rename, delete, create and
+  restore setlists while the transport is stopped. A delete is confirmed in
+  the row and can be undone from the Deleted list.
+- **Setlist packages.** _Export all_ writes the setlists of the Live Set
+  (order, song colours and notes, lyrics) to one `.rcsetlist` file. _Import_
+  adds the setlists of a package to the existing ones; a duplicate name gets a
+  number, and a failed import is rolled back. Files are kept in the `packages`
+  folder of the extension data, because Live allows an extension to write only
+  there; the panel shows the path.
+- **Second computer.** Pair a second computer running Live with a six-digit
+  code. Play, Stop, jumps, click, quantization, count-in, refresh and panic are
+  sent to it; setlist and marker editing stay on the main computer. A second
+  status dot in the Stage Control header is green when the link is up and the
+  markers match, amber when the markers differ, red when it does not answer.
+- **Collapsible song list.** The three-dot button next to a song collapses its
+  sections; _Fold all / Unfold all_ acts on the whole list. Hold the song name
+  or number to jump; drag the grip on the right edge of the card to reorder.
+- **Local certificate.** The extension creates a certificate authority for
+  this computer, valid for localhost and private network addresses. The
+  Network tab shows a QR code for an install page on port `4445`; once the
+  certificate is installed on a device, the browser no longer warns.
+- **Network address.** The QR code uses the address of the default route
+  instead of the first private address, so a second network interface
+  (lighting, audio) does not replace the Wi-Fi address.
+- **Fixes.** The top bar stays on one row in both languages; reordering works
+  on Windows; saving no longer fails when Live refuses `fsync`; pairing is
+  bound to the key of the second computer, so an address change keeps the
+  link.
 
 ## Highlights
 
