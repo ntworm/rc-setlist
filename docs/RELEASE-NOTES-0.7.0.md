@@ -27,8 +27,8 @@ song.
   Bridge first and falls back to a stock AbletonOSC when it is absent; the
   panel's OSC line says which one it is talking to
   (`via RC Bridge 1.0.0 on port 11020`). The fork also answers
-  `last_event_time`, which upstream never did, so the show's total duration no
-  longer needs the MCP bridge.
+  `last_event_time`, which upstream never did, so the show's total duration
+  reads directly without the MCP bridge.
 - **`[jump NAME]` — a marker that hands playback to a _named_ target.** A
   section of the same song, a song, or the form `Song > Section`. Names match
   with tags stripped and case ignored; a bare name resolves in this song's

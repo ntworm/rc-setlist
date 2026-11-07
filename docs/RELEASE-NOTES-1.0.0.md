@@ -52,7 +52,7 @@ Library and print the one remaining step. Selecting **RCBridge**
 under Settings › Link, Tempo & MIDI › Control Surface stays the user's
 step, because Live offers no way to do it for them. The fork also
 exposes `last_event_time`, which upstream never did, so the show's
-total duration no longer needs the MCP bridge.
+total duration reads directly without the MCP bridge.
 
 A stock AbletonOSC sends every reply and every listener update to one
 fixed port, 11001, so only one client per machine could hear it —
@@ -157,7 +157,7 @@ after the page said it had. The jump is now handed to Live the moment
 it is requested and Live lands it on the very grid line the page shows;
 the landing sample applies the destination's tempo and loop.
 
-### Song list no longer rebuilds every two seconds (0.6.1)
+### Song list stability and selective rebuilds (0.6.1)
 
 Cues arrive from the Live SDK every 100ms and from AbletonOSC every
 2000ms, and the two do not agree to the last decimal. The manager
@@ -288,7 +288,7 @@ were removed cleanly.
 
 ### Renamed to "RC Setlist"
 
-The product name no longer includes "Ableton" (Ableton trademark
+The product name omits "Ableton" (Ableton trademark
 guidelines). Old 0.x data lives in `<Extensions Data>/ntworm.ableton-rc-setlist`;
 the kit migrates it to `<Extensions Data>/ntworm.rc-setlist` and the
 old Live extension entry must be removed from

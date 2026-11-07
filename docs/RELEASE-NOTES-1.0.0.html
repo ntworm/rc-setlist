@@ -200,7 +200,7 @@
       print the one remaining step. Selecting <strong>RCBridge</strong> under Settings › Link, Tempo
       &amp; MIDI › Control Surface stays the user&#39;s step, because Live offers no way to do it
       for them. The fork also exposes <code>last_event_time</code>, which upstream never did, so the
-      show&#39;s total duration no longer needs the MCP bridge.
+      show&#39;s total duration reads directly without the MCP bridge.
     </p>
     <p>
       A stock AbletonOSC sends every reply and every listener update to one fixed port, 11001, so
@@ -301,8 +301,8 @@
       Live lands it on the very grid line the page shows; the landing sample applies the
       destination&#39;s tempo and loop.
     </p>
-    <h3 id="song-list-no-longer-rebuilds-every-two-seconds-0-6-1">
-      Song list no longer rebuilds every two seconds (0.6.1)
+    <h3 id="song-list-stability-and-selective-rebuilds-0-6-1">
+      Song list stability and selective rebuilds (0.6.1)
     </h3>
     <p>
       Cues arrive from the Live SDK every 100ms and from AbletonOSC every 2000ms, and the two do not
@@ -432,10 +432,10 @@
     <h2 id="changed-in-1-0">Changed in 1.0</h2>
     <h3 id="renamed-to-rc-setlist">Renamed to &quot;RC Setlist&quot;</h3>
     <p>
-      The product name no longer includes &quot;Ableton&quot; (Ableton trademark guidelines). Old
-      0.x data lives in <code>&lt;Extensions Data&gt;/ntworm.ableton-rc-setlist</code>; the kit
-      migrates it to <code>&lt;Extensions Data&gt;/ntworm.rc-setlist</code> and the old Live
-      extension entry must be removed from <strong>Settings &gt; Extensions</strong>.
+      The product name omits &quot;Ableton&quot; (Ableton trademark guidelines). Old 0.x data lives
+      in <code>&lt;Extensions Data&gt;/ntworm.ableton-rc-setlist</code>; the kit migrates it to
+      <code>&lt;Extensions Data&gt;/ntworm.rc-setlist</code> and the old Live extension entry must
+      be removed from <strong>Settings &gt; Extensions</strong>.
     </p>
     <h3 id="contracts-documented">Contracts documented</h3>
     <p>

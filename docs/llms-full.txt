@@ -413,7 +413,7 @@ a file that already exists at the destination.
 
 The kit's `RC-Bridge/Install-RC-Bridge.ps1` (Windows) or
 `RC-Bridge/Install RC Bridge.command` (macOS) automatically removes any
-`Ableton-RC-Setlist-*.ablx` that was previously installed in your User Library.
+`Ableton-RC-Setlist-*.ablx` that was installed in your User Library.
 No separate uninstall step is needed. If you ran the installer before upgrading
 to 1.0, use the included `uninstall-pre-1.0-extensions.ps1` as a manual
 fallback (see [TROUBLESHOOTING.md](https://github.com/ntworm/rc-setlist/blob/main/docs/TROUBLESHOOTING.md)).
@@ -866,7 +866,7 @@ Stage Control and Performance links use HTTPS.
 ## Tempo automation drawn in Live
 
 If your Arrangement has its own tempo automation, keep **Set Live tempo on jump**
-switched **off** in the Live panel. It ships off, and this is why.
+switched **off** in the Live panel. The default is off, and the next paragraph explains why.
 
 An explicit jump can write the destination tempo into Live before it moves the
 playhead. Writing `song.tempo` overrides Live's tempo automation: the arrangement
@@ -1042,7 +1042,7 @@ Arrangement has no tempo automation.
 - `Waiting for AbletonOSC` means the local server is running, but no reply has
   arrived. Recheck the exact folder above, the Control Surface selection and
   then restart Live.
-- `AbletonOSC connection interrupted` means replies were received previously
+- `AbletonOSC connection interrupted` means replies were received earlier
   but have stopped.
 - The extension decides which script to use when the server starts. If you
   installed and selected RC Bridge with the server already running, press

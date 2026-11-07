@@ -1,13 +1,13 @@
-﻿# Release 0.5.1
+# Release 0.5.1
 
-RC Setlist 0.5.1 is here! This release brings significant usability improvements, particularly to the stage transport controls, along with crucial bug fixes to ensure bulletproof live performance reliability.
+RC Setlist 0.5.1 updates stage transport controls, keyboard mapping and show clock synchronization.
 
 ## What's New
 
-- **Keyboard Mapping Support**: You can now map keyboard keys (like Numpad or Alphanumeric) to stage transport controls, making page turns and song navigation much easier without relying on touch or mouse.
-- **Count-in Pre-roll Toggle**: You can now toggle the 1-bar pre-roll count-in directly from the Stage Control panel. This allows starting playback without a count-in when needed.
-- **Hold-to-Select Mobile Improvements**: Mobile transport navigation now requires a "hold" gesture for safe jumps between songs, preventing accidental misfires. The threshold for these holds has been carefully tuned.
-- **Section Editing via Double-Click**: You can now double-click to inline-edit section tags directly from the desktop Setlist view.
+- **Keyboard Mapping Support**: Allows mapping keyboard keys (like Numpad or Alphanumeric) to stage transport controls for page turns and song navigation.
+- **Count-in Pre-roll Toggle**: Adds a toggle for the 1-bar pre-roll count-in in the Stage Control panel.
+- **Hold-to-Select Mobile Navigation**: Mobile transport navigation requires a hold gesture for jumps between songs to avoid unintended activation.
+- **Section Editing via Double-Click**: Double-click opens inline editing for section tags in the desktop Setlist view.
 
 ## Bug Fixes
 

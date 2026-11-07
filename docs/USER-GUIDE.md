@@ -413,7 +413,7 @@ Stage Control and Performance links use HTTPS.
 ## Tempo automation drawn in Live
 
 If your Arrangement has its own tempo automation, keep **Set Live tempo on jump**
-switched **off** in the Live panel. It ships off, and this is why.
+switched **off** in the Live panel. The default is off, and the next paragraph explains why.
 
 An explicit jump can write the destination tempo into Live before it moves the
 playhead. Writing `song.tempo` overrides Live's tempo automation: the arrangement

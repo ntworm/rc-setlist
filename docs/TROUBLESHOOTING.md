@@ -1,4 +1,4 @@
-﻿# Troubleshooting
+# Troubleshooting
 
 ## RC Setlist does not appear in Live
 
@@ -27,7 +27,7 @@
 - `Waiting for AbletonOSC` means the local server is running, but no reply has
   arrived. Recheck the exact folder above, the Control Surface selection and
   then restart Live.
-- `AbletonOSC connection interrupted` means replies were received previously
+- `AbletonOSC connection interrupted` means replies were received earlier
   but have stopped.
 - The extension decides which script to use when the server starts. If you
   installed and selected RC Bridge with the server already running, press

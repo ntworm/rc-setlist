@@ -183,7 +183,7 @@
     </ul>
     <p>the tempo reports that arrive before any position as a stopped playhead at zero.</p>
     <ul>
-      <li><strong>Stop no longer fires an abandoned jump.</strong> A jump waiting for its</li>
+      <li><strong>Stop clears pending jumps.</strong> A jump waiting for its</li>
     </ul>
     <p>
       quantization boundary stayed armed through Stop and could carry the transport off to a section
@@ -209,11 +209,9 @@
     </ul>
     <p>locator is deleted.</p>
     <ul>
-      <li>
-        <strong>The song list no longer rebuilds itself every two seconds</strong>, and the beat
-      </li>
+      <li><strong>The song list rebuilds on song change only</strong>, and the beat</li>
     </ul>
-    <p>flash no longer forces a full page layout on every beat.</p>
+    <p>flash avoids full page layout recomputations on every beat.</p>
     <ul>
       <li>
         <strong>The count digit replaces the play triangle</strong> instead of being drawn over

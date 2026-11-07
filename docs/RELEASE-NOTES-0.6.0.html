@@ -155,7 +155,7 @@
     </ul>
     <p>
       Barlow Semi Condensed for sung lyrics, which fits roughly 45% more words per line on a phone
-      without dropping below the 12px stage floor. Accents and cedillas no longer clip.
+      without dropping below the 12px stage floor. Accents and cedillas render without clipping.
     </p>
     <ul>
       <li>
@@ -177,7 +177,8 @@
     <h2 id="bug-fixes">Bug Fixes</h2>
     <ul>
       <li>
-        <strong>Show duration no longer depends on what was playing.</strong> A captured field fed
+        <strong>Show duration calculates independently of playback state.</strong> A captured field
+        fed
       </li>
     </ul>
     <p>
@@ -188,12 +189,12 @@
     </p>
     <ul>
       <li>
-        <strong>Renaming a locator no longer risks losing it.</strong> The rename happens in place
+        <strong>Renaming a locator happens in place.</strong> The rename operates on the existing
       </li>
     </ul>
     <p>
-      instead of deleting the cue point and creating a replacement, and Live&#39;s own cue list is
-      read back rather than the bridge&#39;s word being taken for it.
+      cue point without deleting it, and Live&#39;s own cue list is read back rather than the
+      bridge&#39;s word being taken for it.
     </p>
     <ul>
       <li>
@@ -201,10 +202,7 @@
         <code>&gt; Verse</code> and
       </li>
     </ul>
-    <p>
-      <code>Song &gt; Verse</code>; the editor used to rewrite the first form into the second and
-      renamed every section it touched.
-    </p>
+    <p><code>Song &gt; Verse</code>; the editor preserves the original form.</p>
     <ul>
       <li>
         <strong>Editing is refused while the transport is playing</strong>, in every mode. A rename
@@ -232,10 +230,10 @@
     <p>what happens on stage while leaving no mark on the card.</p>
     <ul>
       <li>
-        <strong>Play no longer swaps to a pause glyph</strong>, which had implied that pressing it
+        <strong>Play maintains the play glyph during playback</strong>, rather than swapping to a
+        pause glyph.
       </li>
     </ul>
-    <p>again would pause.</p>
     <p>
       _For full details on migrating from 0.5.x, please refer to the
       <a href="INSTALL.html">Installation Guide</a>._

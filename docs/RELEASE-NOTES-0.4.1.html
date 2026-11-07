@@ -108,7 +108,7 @@
   </head>
   <body>
     <div class="crumbs"><a href="./">RC Setlist</a> · <a href="./README.html">Docs</a></div>
-    <p>﻿# RC Setlist 0.4.1 release notes</p>
+    <h1 id="rc-setlist-0-4-1-release-notes">RC Setlist 0.4.1 release notes</h1>
     <p><a href="pt-BR/NOTAS-DA-VERSAO-0.4.1.html">Português (Brasil)</a></p>
     <p>
       Released on July 29, 2026. Version 0.4.1 is a backward-compatible update for the existing
@@ -132,8 +132,8 @@
       <li>The lyrics workspace now has one shared song selector above Create, Sync and</li>
     </ul>
     <p>
-      Edit. Opening the editor no longer replaces the synchronized lyrics in the show display, and
-      unsaved edits survive closing and reopening the dialog.
+      Edit. Opening the editor preserves the synchronized lyrics in the show display, and unsaved
+      edits survive closing and reopening the dialog.
     </p>
     <ul>
       <li>The Live panel has a compact AbletonOSC connection diagnostic without filling</li>
@@ -156,7 +156,7 @@
     </ul>
     <p>fallback without accumulating delayed requests.</p>
     <ul>
-      <li>The Bars/Beats/Sixteenths bar display no longer flickers backward at normal</li>
+      <li>The Bars/Beats/Sixteenths bar display advances monotonically at normal</li>
     </ul>
     <p>
       beat boundaries, while cue jumps, loops, stop/start and reconnects still update immediately.

@@ -44,7 +44,7 @@ things that only show on a phone in a dark room.
 - **The first Play after start-up resumes where Live is**, instead of reading
   the tempo reports that arrive before any position as a stopped playhead at
   zero.
-- **Stop no longer fires an abandoned jump.** A jump waiting for its
+- **Stop clears pending jumps.** A jump waiting for its
   quantization boundary stayed armed through Stop and could carry the transport
   off to a section you had already changed your mind about, seconds later.
 - **A jump while stopped moves the playhead immediately**, so the count-in
@@ -56,8 +56,8 @@ things that only show on a phone in a dark room.
   beat, was always. Song and section tags are now evaluated independently.
 - **An empty Live Set clears the previous songs**, including when the last
   locator is deleted.
-- **The song list no longer rebuilds itself every two seconds**, and the beat
-  flash no longer forces a full page layout on every beat.
+- **The song list rebuilds on song change only**, and the beat
+  flash avoids full page layout recomputations on every beat.
 - **The count digit replaces the play triangle** instead of being drawn over
   it, and a second press silences the count instead of leaving the bar sounding
   under the playback it started.

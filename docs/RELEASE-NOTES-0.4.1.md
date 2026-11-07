@@ -1,4 +1,4 @@
-﻿# RC Setlist 0.4.1 release notes
+# RC Setlist 0.4.1 release notes
 
 [Português (Brasil)](pt-BR/NOTAS-DA-VERSAO-0.4.1.md)
 
@@ -13,7 +13,7 @@ the existing Arrangement-based workflow.
   multiple saved setlists for the current Ableton Live Set. Setlists from other
   projects stay hidden.
 - The lyrics workspace now has one shared song selector above Create, Sync and
-  Edit. Opening the editor no longer replaces the synchronized lyrics in the
+  Edit. Opening the editor preserves the synchronized lyrics in the
   show display, and unsaved edits survive closing and reopening the dialog.
 - The Live panel has a compact AbletonOSC connection diagnostic without filling
   the panel with installation text.
@@ -26,7 +26,7 @@ the existing Arrangement-based workflow.
   another RC extension occupies AbletonOSC's fixed reply port.
 - Total Duration, playback position and jump confirmation use a serialized MCP
   fallback without accumulating delayed requests.
-- The Bars/Beats/Sixteenths bar display no longer flickers backward at normal
+- The Bars/Beats/Sixteenths bar display advances monotonically at normal
   beat boundaries, while cue jumps, loops, stop/start and reconnects still
   update immediately.
 - Mobile setlist rename keeps keyboard focus during live state updates.
