@@ -109,66 +109,63 @@
     <h2 id="requirements">Requirements</h2>
     <ul>
       <li>Ableton Live 12.4.5+ Suite (Beta) with Extensions support.</li>
-      <li>RC Bridge selected as a Control Surface in Live. It ships with the extension</li>
-    </ul>
-    <p>
-      and the installation kit; step 1 below installs it. (A stock
-      <a href="https://github.com/ideoforms/AbletonOSC">AbletonOSC</a> also works.)
-    </p>
-    <ul>
       <li>Windows for the validated release path. macOS is experimental.</li>
+      <li>RC Bridge selected as a Control Surface in Live; the section below installs</li>
     </ul>
+    <p>it. A stock <a href="https://github.com/ideoforms/AbletonOSC">AbletonOSC</a> also works.</p>
     <p>
-      Node.js 24.16.0 is required only for source development, not for installing the release
-      package.
+      Node.js 24.16.0 is required for source development, not for installing the release package.
     </p>
-    <h2 id="1-install-rc-bridge">1. Install RC Bridge</h2>
+    <p>
+      After the installation, follow <a href="GETTING-STARTED.html">Getting started</a> for the
+      first show.
+    </p>
+    <h2 id="install-rc-bridge">Install RC Bridge</h2>
     <p>
       RC Bridge is the Live Remote Script that RC Setlist talks to. It is a fork of the MIT-licensed
       <a href="https://github.com/ideoforms/AbletonOSC">AbletonOSC</a> that answers each client on
       its own port, so it never fights another RC extension for a reply port and runs beside a stock
-      AbletonOSC if you have one. Nothing to download: it is inside the extension and inside the
-      installation kit.
+      AbletonOSC. It is inside the extension and inside the installation kit, so there is nothing to
+      download.
     </p>
-    <p>Pick one of the two ways to put it in Live&#39;s User Library:</p>
+    <p>Put the script in Live&#39;s User Library in one of two ways:</p>
     <ul>
-      <li><strong>From the kit</strong> — in the <code>RC-Bridge</code> folder, double-click</li>
+      <li><strong>From the kit</strong>: in the <code>RC-Bridge</code> folder, double-click</li>
     </ul>
     <p>
       <code>Install-RC-Bridge.cmd</code> (Windows) or <code>Install RC Bridge.command</code> (macOS;
       right-click › Open the first time). It copies the script and prints the last step.
     </p>
     <ul>
-      <li><strong>By hand</strong> — copy the <code>RCBridge</code> folder from the kit into</li>
+      <li><strong>By hand</strong>: copy the <code>RCBridge</code> folder from the kit into</li>
     </ul>
     <p>
-      - Windows: <code>%USERPROFILE%\Documents\Ableton\User Library\Remote Scripts\RCBridge</code> -
-      macOS: <code>~/Music/Ableton/User Library/Remote Scripts/RCBridge</code>
+      <code>%USERPROFILE%\Documents\Ableton\User Library\Remote Scripts\RCBridge</code> on Windows
+      or <code>~/Music/Ableton/User Library/Remote Scripts/RCBridge</code> on macOS.
     </p>
     <p>
-      Then the one step Live cannot do for you: open
-      <strong>Settings/Preferences &gt; Link, Tempo &amp; MIDI</strong> and choose
+      Then open <strong>Settings/Preferences &gt; Link, Tempo &amp; MIDI</strong> and choose
       <strong>RCBridge</strong> as a Control Surface. Input and Output can stay <code>None</code>.
       If Live was already open when the script was copied, close and reopen it once so it sees the
       new folder.
     </p>
     <p>
       Use <code>User Library/Remote Scripts/</code>, not Live&#39;s hidden
-      <code>User Remote Scripts</code> preferences folder (that one is for
-      <code>UserConfiguration.txt</code>). Confirm that <code>RCBridge/__init__.py</code> exists
+      <code>User Remote Scripts</code> preferences folder, which holds
+      <code>UserConfiguration.txt</code>. Confirm that <code>RCBridge/__init__.py</code> exists
       directly at that location, without another nested <code>RCBridge</code> folder.
     </p>
     <p>
-      If you already use AbletonOSC for other tools, keep it. RC Bridge listens on port 11020;
-      AbletonOSC keeps 11000. RC Setlist looks for RC Bridge first and falls back to AbletonOSC when
-      it is not there, so both work — RC Bridge is the one that also works next to RC Surface. The
-      panel&#39;s OSC line says which one is in use (<code>via RC Bridge 1.0.0 on port 11020</code
+      RC Bridge listens on port 11020 and AbletonOSC keeps 11000. RC Setlist looks for RC Bridge
+      first and falls back to AbletonOSC when it is not there, so both work; RC Bridge is the one
+      that also works next to RC Surface. The panel&#39;s OSC line says which one is in use (<code
+        >via RC Bridge 1.0.0 on port 11020</code
       >). The extension itself cannot copy the script for you: Live runs extensions in a sandbox
       that cannot write to your User Library.
     </p>
-    <h2 id="2-install-rc-setlist">2. Install RC Setlist</h2>
+    <h2 id="install-the-extension">Install the extension</h2>
     <p>
-      1. Download <code>RC-Setlist-1.0.0.ablx</code> from the
+      1. Download <code>RC-Setlist-1.1.0.ablx</code> from the
       <a href="https://github.com/ntworm/rc-setlist/releases/latest">latest GitHub release</a>. 2.
       Open the <code>.ablx</code> and follow the Ableton Live installation prompt. 3. Restart Live
       if the extension does not appear immediately. 4. Open
@@ -180,67 +177,60 @@
       Control or Performance view. The choice is remembered locally.
     </p>
     <p>Do not install SDK or CLI archives as an end user.</p>
-    <h2 id="3-start-the-local-server">3. Start the local server</h2>
+    <h2 id="start-the-local-server">Start the local server</h2>
     <p>
       1. In the RC Setlist panel, choose <strong>Start Server</strong>. 2. Confirm the panel reports
       a local URL and QR code. 3. On the host computer, open
-      <code>https://localhost:4444/setlist</code>. 4. On a phone/tablet, use the LAN URL or QR code
-      shown by the panel.
+      <code>https://localhost:4444/setlist</code>. 4. On a phone or tablet, use the LAN URL or the
+      QR code shown by the panel.
     </p>
     <p>
-      First connection: until the certificate of this computer is installed, your browser shows
-      <code>ERR_CERT_AUTHORITY_INVALID</code>. RC Setlist creates a certificate authority for this
-      computer, valid only for localhost and private network addresses, and signs its server
-      certificate with it. To stop the warning on a phone, scan the
-      <strong>Phone certificate</strong> QR in the Live panel: it opens a plain page on port
-      <code>4445</code> with the file and the steps for Android and iPhone. Until then, continue
-      only when the address exactly matches the IP shown in the Live panel and you are on a trusted
-      LAN.
-    </p>
-    <h2 id="4-open-the-two-views">4. Open the two views</h2>
-    <ul>
-      <li>Operator workspace: <code>https://&lt;host-ip&gt;:4444/setlist</code></li>
-      <li>Stage display: <code>https://&lt;host-ip&gt;:4444/performance</code></li>
-    </ul>
-    <h2 id="updating-from-0-x-ableton-rc-setlist-0-4-x-0-7-0">
-      Updating from 0.x (Ableton RC Setlist 0.4.x–0.7.0)
-    </h2>
-    <p>
-      The 0.x builds were named <strong>Ableton RC Setlist</strong>; since 1.0 the name is
-      <strong>RC Setlist</strong>. The rename follows Ableton&#39;s brand guidelines. Your profiles,
-      project-setlists, token and preferences live in a folder whose name is derived from the
-      manifest name, so they must move.
-    </p>
-    <p>
-      Run the kit&#39;s <code>Migrate-RC-Setlist-Data.cmd</code> (Windows) or
-      <code>Migrate RC Setlist Data.command</code> (macOS)
-      <strong>once, before opening Live</strong> with 1.0. It copies your old
-      <code>ntworm.ableton-rc-setlist</code> data into the new <code>ntworm.rc-setlist</code> folder
-      without touching the old one and never overwrites a file that already exists at the
-      destination.
-    </p>
-    <p>
-      The kit&#39;s <code>RC-Bridge/Install-RC-Bridge.ps1</code> (Windows) or
-      <code>RC-Bridge/Install RC Bridge.command</code> (macOS) automatically removes any
-      <code>Ableton-RC-Setlist-*.ablx</code> that was previously installed in your User Library. No
-      separate uninstall step is needed. If you ran the installer before upgrading to 1.0, use the
-      included <code>uninstall-pre-1.0-extensions.ps1</code> as a manual fallback (see
-      <a href="TROUBLESHOOTING.html">TROUBLESHOOTING.md</a>).
+      RC Setlist creates a certificate authority for this computer, valid only for localhost and
+      private network addresses, and signs its server certificate with it. Until the certificate of
+      this computer is installed on the device, the browser shows
+      <code>ERR_CERT_AUTHORITY_INVALID</code>. Scan the <strong>Phone certificate</strong> QR in the
+      Live panel: it opens a plain page on port <code>4445</code> with the file and the steps for
+      Android and iPhone. Until then, continue only when the address exactly matches the IP shown in
+      the Live panel and you are on a trusted LAN.
     </p>
     <p>
       The controller URL contains a token. Treat it like a local password and do not post
       screenshots containing the full URL.
     </p>
-    <h2 id="5-verify-the-first-session">5. Verify the first session</h2>
+    <h2 id="open-the-views">Open the views</h2>
+    <ul>
+      <li>Stage Control, for the operator: <code>https://&lt;host-ip&gt;:4444/setlist</code></li>
+      <li>
+        Performance, the read-only display for the band:
+        <code>https://&lt;host-ip&gt;:4444/performance</code>
+      </li>
+    </ul>
+    <h2 id="migrate-data-from-a-0-x-build">Migrate data from a 0.x build</h2>
     <p>
-      1. Load a Live Set with fictional test locators from
-      <a href="../examples/README.md">the example</a>. 2. In the RC Setlist panel, choose
-      <strong>Check OSC</strong> and confirm received traffic. 3. Confirm songs/sections appear in
-      <code>/setlist</code>. 4. Open <code>/performance</code> and verify the active song follows
-      Live&#39;s playhead. 5. Try Play/Stop and a guarded Previous/Next hold from the controller
-      view. 6. Close and reopen Live to verify your selected profile and auto-start choice.
+      Data from a 0.x build lives in the <code>ntworm.ableton-rc-setlist</code> folder, where the
+      profiles, project-setlists, token and preferences are stored; the current extension uses
+      <code>ntworm.rc-setlist</code>.
     </p>
-    <p>For the complete matrix, use <a href="TESTER-GUIDE.html">TESTER-GUIDE.md</a>.</p>
+    <p>
+      Run the kit&#39;s <code>Migrate-RC-Setlist-Data.cmd</code> (Windows) or
+      <code>Migrate RC Setlist Data.command</code> (macOS)
+      <strong>once, before opening Live</strong>. It copies your old data into the new folder
+      without touching the old one and never overwrites a file that already exists at the
+      destination.
+    </p>
+    <p>
+      The kit&#39;s <code>RC-Bridge/Install-RC-Bridge.ps1</code> (Windows) or
+      <code>RC-Bridge/Install RC Bridge.command</code> (macOS) removes any
+      <code>Ableton-RC-Setlist-*.ablx</code> that was previously installed in your User Library. No
+      separate uninstall step is needed. If you installed the extension from a 0.x build, use the
+      included <code>uninstall-pre-1.0-extensions.ps1</code> as a manual fallback (see
+      <a href="TROUBLESHOOTING.html">TROUBLESHOOTING.md</a>).
+    </p>
+    <p>
+      In Live, remove the old <strong>Ableton RC Setlist</strong> entry from
+      <strong>Settings &gt; Extensions</strong> so the two extensions do not coexist on the same
+      machine.
+    </p>
     <h2 id="update">Update</h2>
     <p>
       Install the newer <code>.ablx</code> through Live. Keep a backup of important lyrics and

@@ -133,18 +133,18 @@
       <strong>RCBridge</strong> under Settings › Link, Tempo &amp; MIDI › Control Surface. 3.
       Install the <code>.ablx</code> package named in the kit&#39;s <code>README.txt</code>. 4. Open
       <strong>Extensions &gt; RC Setlist</strong> and start the server. The OSC line must read
-      <code>via RC Bridge</code>. 5. Confirm no private path, SDK archive or real song content
-      appears in the kit. 6. With a fresh extension-data directory, confirm the first Start creates
-      the default profile and starts the server without a persistence error.
+      <code>via RC Bridge</code>. 5. Confirm that the kit contains no private path, no SDK archive
+      and no real song content. 6. With a fresh extension-data directory, confirm that the first
+      Start creates the default profile and starts the server without a persistence error.
     </p>
     <h2 id="functional-matrix">Functional matrix</h2>
     <ul>
       <li>Load the fictional example locators.</li>
       <li>
-        Confirm song and section parsing, including a <code>Song &gt; Section</code> locator whose
+        Confirm that songs and sections are parsed, including a <code>Song &gt; Section</code>
       </li>
     </ul>
-    <p>tag text contains <code>&gt;</code>.</p>
+    <p>locator whose tag text contains <code>&gt;</code>.</p>
     <ul>
       <li>
         Confirm <code>[bpm]</code>, <code>[click]</code>, <code>[click off]</code>,
@@ -175,36 +175,39 @@
     </ul>
     <p>
       <code>[jump NAME]</code> into the locator; the Notes field (song only) never changes the
-      locator name and its text appears under the title on the card and on the performance display.
+      locator name, and its text appears under the title on the card and on the performance display.
     </p>
     <ul>
-      <li>Confirm operator Play/Stop and the 500 ms Previous/Next hold.</li>
+      <li>Confirm the operator Play/Stop and the 500 ms Previous/Next hold.</li>
       <li>
-        Count-in (<code>COUNT-IN 1 BAR</code>): while stopped, press Play and confirm one bar is
+        Count-in (<code>COUNT-IN 1 BAR</code>): while stopped, press Play and confirm that one
       </li>
     </ul>
     <p>
-      counted in the browser at the tempo the setlist declares for the playhead, then Live starts on
-      the beat it was sitting on. Live&#39;s playhead must not move during the count and its
-      metronome must not be touched.
+      bar is counted in the browser at the tempo the setlist declares for the playhead, then Live
+      starts on the beat it was sitting on. Live&#39;s playhead must not move during the count and
+      its metronome must not be touched.
     </p>
     <ul>
-      <li>Start with Click off and confirm it is still off after the count; repeat with</li>
+      <li>Start with Click off and confirm that it is still off after the count;</li>
     </ul>
-    <p>Click on and confirm it stays on.</p>
+    <p>repeat with Click on and confirm that it stays on.</p>
     <ul>
-      <li>Start at beat zero and confirm the count runs and Live starts at beat zero</li>
+      <li>Start at beat zero and confirm that the count runs and Live starts at beat</li>
     </ul>
-    <p>(nothing is rewound).</p>
+    <p>zero (nothing is rewound).</p>
     <ul>
-      <li>Press Stop during the count and confirm it is cancelled; press Play again</li>
+      <li>Press Stop during the count and confirm that it is cancelled; press Play</li>
     </ul>
-    <p>during the count and confirm Live starts immediately.</p>
+    <p>again during the count and confirm that Live starts immediately.</p>
     <ul>
-      <li>Change the manual Click during the count and confirm that manual choice wins.</li>
-      <li>While already playing, jump with quantization enabled and confirm no count-in</li>
+      <li>Change the manual Click during the count and confirm that the manual choice</li>
     </ul>
-    <p>runs and the jump lands on the grid line the page announces.</p>
+    <p>wins.</p>
+    <ul>
+      <li>While already playing, jump with quantization enabled and confirm that no</li>
+    </ul>
+    <p>count-in runs and the jump lands on the grid line the page announces.</p>
     <ul>
       <li>Stop, jump to a section, then press Play: Live must start from that section,</li>
     </ul>
@@ -213,77 +216,79 @@
       stopped.
     </p>
     <ul>
-      <li>Confirm song/section jumps, click controls and Refresh all produce an OSC</li>
+      <li>Confirm that song/section jumps, click controls and Refresh all produce an</li>
     </ul>
-    <p>action rather than only updating the browser display.</p>
+    <p>OSC action rather than only updating the browser display.</p>
     <ul>
-      <li>Confirm setlist reordering and persistence after restart.</li>
-      <li>Colour a song and write a note, switch to a second profile, and confirm the</li>
+      <li>Confirm that setlist reordering survives a restart.</li>
+      <li>Colour a song and write a note, switch to a second profile, and confirm that</li>
     </ul>
-    <p>second profile shows neither; switch back and confirm both are still there.</p>
+    <p>the second profile shows neither; switch back and confirm that both are still there.</p>
     <ul>
       <li>Create, edit, save and reload fictional lyrics.</li>
-      <li>Open Lyrics while a timed lyric is active, switch the shared song selector and</li>
+      <li>Open Lyrics while a timed lyric is active, switch the shared song selector</li>
     </ul>
-    <p>all three tabs, and confirm the active Stage Control lyric never disappears.</p>
+    <p>and all three tabs, and confirm that the active Stage Control lyric never disappears.</p>
     <ul>
-      <li>Confirm Stage Control selects the active Arrangement song and loads its saved</li>
+      <li>Confirm that Stage Control selects the active Arrangement song and loads its</li>
     </ul>
-    <p>text when the Lyrics dialog opens.</p>
+    <p>saved text when the Lyrics dialog opens.</p>
     <ul>
-      <li>Edit a lyric without saving, close and reopen the dialog, and confirm the</li>
+      <li>Edit a lyric without saving, close and reopen the dialog, and confirm that</li>
     </ul>
-    <p>unsaved line and enabled Save action remain intact.</p>
+    <p>the unsaved line and the enabled Save action remain intact.</p>
     <ul>
-      <li>Confirm performance-view lyric progression.</li>
-      <li>If previous extension data exists, confirm its missing lyrics migrate into the</li>
-    </ul>
-    <p>default profile and its project-specific lyrics appear as separate profiles.</p>
-    <ul>
-      <li>Export CSV and open it in a spreadsheet. Confirm it identifies the active</li>
+      <li>Confirm the progression of the lyrics in the performance view.</li>
+      <li>If previous extension data exists, confirm that its missing lyrics migrate</li>
     </ul>
     <p>
-      setlist and includes named <code>sections</code>, <code>sections_count</code>,
-      <code>automations</code> and <code>lyric_lines</code> without placeholder play-history
+      into the default profile and that its project-specific lyrics appear as separate profiles.
+    </p>
+    <ul>
+      <li>Export CSV and open it in a spreadsheet. Confirm that it identifies the</li>
+    </ul>
+    <p>
+      active setlist and includes named <code>sections</code>, <code>sections_count</code>,
+      <code>automations</code> and <code>lyric_lines</code>, without placeholder play-history
       columns.
     </p>
     <ul>
-      <li>Confirm controller/read-only behavior with and without the token.</li>
-      <li>Confirm empty set, malformed locator and missing Remote Script states are</li>
+      <li>Confirm the controller/read-only behavior with and without the token.</li>
+      <li>Confirm that the panel and Stage Control explain the empty set, the malformed</li>
     </ul>
-    <p>explained in the panel and in Stage Control.</p>
+    <p>locator and the missing Remote Script.</p>
     <ul>
-      <li>Confirm fullscreen and Wake Lock fallback remain usable.</li>
-      <li>Confirm Stage Control disables language changes during playback and while</li>
+      <li>Confirm that fullscreen and the Wake Lock fallback remain usable.</li>
+      <li>Confirm that Stage Control disables language changes during playback and</li>
     </ul>
     <p>
-      locked, enables them only when stopped and unlocked, and shows the lock warning in the
+      while locked, enables them only when stopped and unlocked, and shows the lock warning in the
       selected interface language.
     </p>
     <ul>
       <li>During continuous playback, watch several Bars/Beats/Sixteenths transitions,</li>
     </ul>
     <p>
-      especially beat <code>4</code> into beat <code>1</code>, and confirm the label never flashes
-      back to the previous sixteenth. Then confirm a real backward section jump, loop and
-      stopped-position change still reposition the label immediately.
+      especially beat <code>4</code> into beat <code>1</code>, and confirm that the label never
+      flashes back to the previous sixteenth. Then confirm that a real backward section jump, a loop
+      and a stopped-position change still reposition the label immediately.
     </p>
     <h2 id="network-and-resilience">Network and resilience</h2>
     <ul>
       <li>Restart the browser while Live continues running.</li>
-      <li>Stop/start the server from the panel.</li>
-      <li>Disconnect/reconnect Wi-Fi on the controller.</li>
-      <li>
-        Confirm stale state is labeled and no transport command executes without control
-        authorization.
-      </li>
+      <li>Stop and start the server from the panel.</li>
+      <li>Disconnect and reconnect the Wi-Fi on the controller.</li>
+      <li>Confirm that a stale state is labeled and that no transport command executes</li>
+    </ul>
+    <p>without control authorization.</p>
+    <ul>
       <li>With RC Surface (or another OSC client) running beside RC Setlist, confirm</li>
     </ul>
-    <p>both keep receiving replies; the OSC line must not report a port conflict.</p>
+    <p>that both keep receiving replies; the OSC line must not report a port conflict.</p>
     <h2 id="platform-decision">Platform decision</h2>
     <p>
       Windows must pass before publication. A macOS result is recorded separately and does not
-      change experimental status unless the entire matrix passes on real hardware.
+      change the experimental status unless the entire matrix passes on real hardware.
     </p>
     <p>Do not authorize publication while any release-blocking item is unresolved.</p>
     <div class="source">Rendered from <code>docs\TESTER-GUIDE.md</code> on 2026-11-07.</div>

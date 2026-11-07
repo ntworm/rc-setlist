@@ -122,11 +122,12 @@
       Model operations. It is a fork of the MIT-licensed AbletonOSC
       (&lt;https://github.com/ideoforms/AbletonOSC&gt;) that answers each client on its own port, so
       it never fights another RC extension for a reply port and runs beside a stock AbletonOSC. It
-      ships inside the extension and inside the installation kit; the kit&#39;s installer (<code
+      ships inside the extension and inside the installation kit, and the kit&#39;s installer (<code
         >Install-RC-Bridge.cmd</code
       >
       / <code>Install RC Bridge.command</code>) copies it into Live&#39;s User Library. You do not
-      need AbletonOSC — but if you already have it, RC Setlist still works with it.
+      need AbletonOSC; if you already have it, RC Setlist still works with it. See
+      <a href="INSTALL.html#install-rc-bridge">Install RC Bridge</a>.
     </p>
     <h2 id="why-does-the-browser-show-a-certificate-warning">
       Why does the browser show a certificate warning?
@@ -135,9 +136,10 @@
       Until the certificate of this computer is installed on the device, the browser shows
       <code>ERR_CERT_AUTHORITY_INVALID</code>. RC Setlist signs its server certificate with a
       certificate authority of its own, valid only for localhost and private network addresses. Scan
-      the <strong>Phone certificate</strong> QR in the Live panel once to install it and the warning
-      goes away. Until then, continue only when the address exactly matches the IP shown in the Live
-      panel and you are on a trusted LAN.
+      the <strong>Phone certificate</strong> QR in the Live panel once to install it. Until then,
+      continue only when the address exactly matches the IP shown in the Live panel and you are on a
+      trusted LAN. The steps are in
+      <a href="INSTALL.html#start-the-local-server">Start the local server</a>.
     </p>
     <h2 id="where-are-lyrics-stored">Where are lyrics stored?</h2>
     <p>
@@ -165,8 +167,8 @@
       Can I sell RC Setlist or a modified version?
     </h2>
     <p>
-      Not under PolyForm Noncommercial 1.0.0. Read <a href="../LICENSE">the license</a>; seek your
-      own legal advice for a specific use.
+      Not under this license. Read <a href="../LICENSE">the license</a>; seek your own legal advice
+      for a specific use.
     </p>
     <h2 id="why-is-my-setlist-total-duration-different-from-what-i-expected">
       Why is my setlist total duration different from what I expected?
@@ -200,23 +202,16 @@
     </p>
     <h2 id="how-do-i-upgrade-from-0-x">How do I upgrade from 0.x?</h2>
     <p>
-      The product was renamed from <strong>Ableton RC Setlist</strong> to
-      <strong>RC Setlist</strong> in 1.0. Run the kit&#39;s
-      <code>Migrate-RC-Setlist-Data.cmd</code> (Windows) or
-      <code>Migrate RC Setlist Data.command</code> (macOS)
-      <strong>once, before opening Live</strong> with 1.0. It copies your old profiles,
-      project-setlists, token and preferences into the new data folder without touching the old one
-      and never overwrites an existing file. Then, in Live, open
-      <strong>Settings &gt; Extensions</strong> and remove the old
-      <strong>Ableton RC Setlist</strong> entry so the two extensions do not coexist on the same
-      machine. Skipping the migration or leaving both extensions installed makes your old profiles
-      invisible to the new extension.
+      Run the kit&#39;s migration script once, before you open Live, and remove the old
+      <strong>Ableton RC Setlist</strong> entry from <strong>Settings &gt; Extensions</strong> so
+      the two extensions do not coexist. The full steps are in
+      <a href="INSTALL.html#migrate-data-from-a-0-x-build">Migrate data from a 0.x build</a>.
     </p>
-    <h2 id="tempo-automation-drawn-in-live">Tempo automation drawn in Live</h2>
+    <h2 id="tempo-automation">Tempo automation</h2>
     <p>
       If your Arrangement has its own tempo automation, keep
       <strong>Set Live tempo on jump</strong> switched <strong>off</strong> in the Live panel. The
-      default is off, and the next paragraph explains why.
+      default is off.
     </p>
     <p>
       An explicit jump can write the destination tempo into Live before it moves the playhead.
@@ -231,9 +226,8 @@
       is on.
     </p>
     <p>
-      A <code>[bpm N]</code> tag means &quot;measure the duration with this&quot;. It does not mean
-      &quot;impose this on Live&quot;. Tagging your songs is safe with tempo automation, and it is
-      what turns an estimated set duration into an exact one.
+      A <code>[bpm N]</code> tag declares the tempo used to measure the duration. RC Setlist does
+      not impose that tempo on Live.
     </p>
     <p>
       Turn the setting on only when the tags are your source of truth for tempo and the Arrangement

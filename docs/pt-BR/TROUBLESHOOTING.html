@@ -205,17 +205,16 @@
       transporte e escrita. Não o compartilhe publicamente.
     </p>
     <p>
-      Se músicas, letras e timecode atualizam, mas transporte e navegação falham, confirme que você
-      usa 0.3.0 ou superior. Em versões anteriores, os comandos OSC de saída podiam falhar ao ser
-      codificados no runtime embutido do Ableton.
+      As ações de transporte e navegação precisam do RC Setlist 0.3.0 ou superior. Quando as
+      músicas, as letras e o timecode atualizam, mas toda ação de transporte ou navegação falha,
+      escolha <strong>Verificar OSC</strong> no painel e leia a seção de OSC acima.
     </p>
     <h2 id="o-primeiro-in-cio-mostra-erro-de-persist-ncia-do-perfil">
       O primeiro início mostra erro de persistência do perfil
     </h2>
+    <p>A primeira gravação do perfil precisa do RC Setlist 0.3.0 ou superior.</p>
     <p>
-      Instale 0.3.0 ou superior. Em versões anteriores, a gravação do perfil inicial podia ser
-      concluída e a extensão falhar logo depois, porque usava uma API de runtime indisponível. Se o
-      erro continuar depois de atualizar, capture um trecho sanitizado de
+      Se o erro continuar depois de atualizar, capture um trecho sanitizado de
       <code>ExtensionHost.txt</code> sem apagar os dados do perfil.
     </p>
     <h2 id="as-letras-n-o-correspondem-m-sica">As letras não correspondem à música</h2>
@@ -226,20 +225,13 @@
       <li>Salve novamente no editor interno e atualize o estado.</li>
     </ul>
     <p>
-      Ao atualizar de uma versão antiga chamada <strong>RC SETLIST</strong> ou
-      <strong>Ableton Setlist Bridge</strong>, reinicie o servidor uma vez. O RC Setlist importa
-      letras e ordem ausentes das pastas conhecidas sem apagar pastas antigas ou substituir arquivos
-      já existentes no perfil novo.
+      Reinicie o servidor uma vez. O RC Setlist importa letras e ordem ausentes das pastas
+      conhecidas de extensões anteriores, sem apagar pastas antigas nem substituir arquivos já
+      existentes no perfil novo.
     </p>
     <p>
-      Ao atualizar do <strong>Ableton RC Setlist</strong> 0.x (0.4.x–0.7.0), rode
-      <code>Migrate-RC-Setlist-Data.cmd</code> (Windows) ou
-      <code>Migrate RC Setlist Data.command</code> (macOS) do kit
-      <strong>uma vez, antes de abrir o Live</strong> com a 1.0. Ele copia perfis, project-setlists,
-      token e preferências para a pasta nova sem mexer na antiga. No Live, remova a entrada antiga
-      <strong>Ableton RC Setlist</strong> em <strong>Configurações &gt; Extensões</strong> para que
-      as duas extensões não coexistam na mesma máquina. Pular a migração ou deixar as duas
-      instaladas faz os perfis antigos ficarem invisíveis para a extensão nova.
+      Os dados de uma build 0.x ficam em outra pasta. Veja
+      <a href="INSTALL.html#migrar-os-dados-do-0-x">Migrar os dados do 0.x</a>.
     </p>
     <h2 id="outra-extens-o-usa-a-porta-osc-11001">Outra extensão usa a porta OSC 11001</h2>
     <p>
@@ -269,20 +261,28 @@
     </p>
     <h2 id="aparecem-setlists-de-outro-live-set">Aparecem setlists de outro Live Set</h2>
     <p>
-      O RC Setlist guarda vários setlists somente dentro do escopo do Live Set atual. A lista global
-      de perfis não aparece no projeto aberto. Se o projeto foi trocado enquanto uma versão antiga
-      estava rodando, reinicie o servidor do RC Setlist depois de abrir o <code>.als</code> correto.
+      O RC Setlist guarda cada operação de perfil dentro do escopo do Live Set atual. A lista global
+      de perfis não aparece, e um Live Set novo e não salvo não importa outra sessão temporária
+      automaticamente.
     </p>
     <p>
-      Os dados globais antigos continuam preservados como backup. Somente a antiga pasta por projeto
-      que corresponde exatamente ao Live Set salvo atual é importada automaticamente.
+      Os dados globais antigos continuam preservados como backup. Somente a pasta por projeto que
+      corresponde exatamente ao Live Set salvo atual é importada automaticamente.
     </p>
     <p>
-      Se os metadados do projeto chegarem depois da inicialização, o escopo temporário do projeto é
-      promovido ao escopo do <code>.als</code> salvo. Perfis criados durante a espera, inclusive
-      <code>Second Setlist</code>, são copiados sem apagar a origem temporária. Em um Set não
-      identificado, letras ausentes só são recuperadas quando uma única ordem personalizada antiga
-      corresponde à lista completa de músicas atual; resultados ambíguos permanecem intactos.
+      Se os metadados do projeto chegarem depois da inicialização, ou se você usar
+      <strong>Save As</strong> sem mudar o Song handle, o escopo temporário do projeto é promovido
+      ao escopo do <code>.als</code> salvo, e só quando esses metadados atrasados ainda correspondem
+      à mesma sessão do Live e ao mesmo escopo de perfil. Perfis criados durante a espera, inclusive
+      <code>Second Setlist</code>, são copiados sem apagar a origem temporária.
+    </p>
+    <p>
+      Depois de trocar de Live Set, reinicie o RC Setlist antes de abrir o <code>.als</code> salvo
+      pretendido. A pasta temporária criada quando o Song handle muda é mantida para recuperação
+      manual, mas os perfis dela não são migrados automaticamente. Outras pastas temporárias de
+      sessões anteriores também são mantidas para recuperação manual. Em um Set não identificado,
+      letras ausentes só são recuperadas quando uma única ordem personalizada antiga corresponde à
+      lista completa de músicas atual; resultados ambíguos permanecem intactos.
     </p>
     <h2 id="o-que-incluir-em-um-bug-report">O que incluir em um bug report</h2>
     <p>

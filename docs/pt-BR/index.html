@@ -490,21 +490,14 @@
         z-index: 1;
       }
 
-      /* ================= numbered section rail ================= */
+      /* ================= sections ================= */
       .sec {
         display: grid;
-        grid-template-columns: 76px minmax(0, 1fr);
+        grid-template-columns: minmax(0, 1fr);
         border-top: 1px solid var(--rule);
       }
       .sec:first-of-type {
         border-top: 0;
-      }
-      .sec > .n {
-        padding: 46px 12px 0 0;
-        color: var(--accent);
-        font-size: 20px;
-        line-height: 28px;
-        font-weight: 600;
       }
       .sec > .c {
         padding: 44px 0 56px;
@@ -534,10 +527,6 @@
       }
       .duo h3:first-child {
         margin-top: 0;
-      }
-      h3 .num {
-        color: var(--accent-ink);
-        margin-right: 0.3em;
       }
       h4,
       .h4 {
@@ -604,14 +593,6 @@
         background: var(--accent);
         color: var(--bg);
         padding: 0.06em 0.14em 0.04em;
-      }
-      .tagline {
-        margin: -14px 0 18px;
-        font-size: 13px;
-        line-height: 1.5;
-        font-weight: 600;
-        color: var(--accent);
-        max-width: 56ch;
       }
       .lede {
         font-size: 15px;
@@ -1742,12 +1723,6 @@
         }
       }
       @media (max-width: 760px) {
-        .sec {
-          grid-template-columns: minmax(0, 1fr);
-        }
-        .sec > .n {
-          color: var(--accent-ink);
-        }
         .mast .grow {
           padding: 0;
           border-left: 0;
@@ -1766,11 +1741,6 @@
         .hero-duo > figure:last-child {
           width: 62%;
           margin: 0 auto;
-        }
-        .sec > .n {
-          padding: 34px 0 0;
-          font-size: 14px;
-          line-height: 20px;
         }
         .sec > .c {
           padding-top: 8px;
@@ -2010,7 +1980,7 @@
       <div class="stick">
         <header class="mast">
           <span class="brand">RC Setlist</span>
-          <span class="ver">v1.1.0</span>
+          <span class="ver" data-i18n="top.ver">Versão 1.1.0</span>
           <span class="req" data-i18n="top.req">Live 12.4.5+ Suite</span>
           <span class="grow"></span>
           <label class="lang">
@@ -2023,13 +1993,13 @@
         </header>
         <nav class="nav" aria-label="Seções" data-i18n-aria="top.navAria">
           <a href="#about" data-i18n="nav.about">Sobre</a>
-          <a href="#new" data-i18n="nav.new">Novo na 1.1</a>
           <a href="#chain" data-i18n="nav.chain">Como funciona</a>
           <a href="#locators" data-i18n="nav.locators">Locators</a>
           <a href="#views" data-i18n="nav.views">Duas telas</a>
           <a href="#safety" data-i18n="nav.safety">Segurança</a>
           <a href="#install" data-i18n="nav.install">Instalação</a>
           <a href="#trouble" data-i18n="nav.trouble">Problemas</a>
+          <a href="#new" data-i18n="nav.new">Novo na 1.1</a>
           <a href="#docs" data-i18n="nav.docs">Docs</a>
         </nav>
       </div>
@@ -2037,22 +2007,20 @@
       <main id="main">
         <!-- ===================== 1.0 WHAT IT IS ===================== -->
         <section class="sec" id="about" aria-labelledby="about-title">
-          <div class="n">1.0</div>
           <div class="c">
             <h1 id="about-title"><span class="rc">RC</span> Setlist</h1>
-            <p class="tagline" data-i18n="about.tagline">
-              Setlist, letra sincronizada e tela de palco para o Ableton Live 12 — grátis para uso
-              não comercial.
-            </p>
             <p class="lede" data-i18n="about.lede">
-              Lê os localizadores do Arrangement de um Live Set e mostra no navegador um setlist
-              para quem opera e uma tela só de leitura para a banda. O tempo vem do Live.
+              O RC Setlist é uma extensão para o Ableton Live 12 que roda um show a partir do
+              Arrangement. Marque cada música e cada seção com um locator no Live, e o RC Setlist os
+              transforma em um setlist no navegador. Quem opera inicia músicas e salta entre seções
+              de um notebook ou tablet; a banda vê a seção atual, a próxima música e a letra nos
+              próprios celulares.
             </p>
             <ul class="spec">
               <li data-i18n="about.spec1">Live 12.4.5+ Suite (Beta)</li>
-              <li data-i18n="about.spec2">RC Bridge incluído</li>
-              <li data-i18n="about.spec3">Qualquer navegador da sua rede</li>
-              <li data-i18n="about.spec4">Sem conta · sem telemetria</li>
+              <li data-i18n="about.spec2">Windows (macOS experimental)</li>
+              <li data-i18n="about.spec3">Qualquer navegador na mesma rede</li>
+              <li data-i18n="about.spec4">Grátis para uso não comercial</li>
             </ul>
             <div class="acts">
               <a
@@ -2076,18 +2044,11 @@
                 >Código-fonte</a
               >
             </div>
-            <p class="release" data-i18n-html="about.release">
-              Versão 1.1.0&nbsp;· source-available sob a PolyForm Noncommercial 1.0.0&nbsp;· inglês
-              e português (Brasil) no mesmo pacote
-            </p>
 
             <figure class="fig hero-visual">
               <figcaption class="fig-bar">
                 <span class="id">Fig. 1</span>
                 <span class="cap" data-i18n="about.figCap">As duas telas</span>
-                <span class="meta" data-i18n="about.figMeta"
-                  >Prints reais · dados fictícios de demonstração</span
-                >
               </figcaption>
               <div class="fig-body hero-duo">
                 <figure>
@@ -2123,114 +2084,12 @@
           </div>
         </section>
 
-        <!-- ===================== 1.1 NEW IN 1.1.0 ===================== -->
-        <section class="sec" id="new" aria-labelledby="new-title">
-          <div class="n">1.1</div>
-          <div class="c">
-            <h2 id="new-title" data-i18n-html="new.title">Novo na 1.1.0</h2>
-            <p class="why" data-i18n="new.why">
-              Painel do Live com gestão e pacotes de repertórios, sincronização com um segundo
-              computador, lista de músicas recolhível, certificado local e escolha do endereço de
-              rede.
-            </p>
-            <div class="cards c2">
-              <div class="card">
-                <span class="ic"
-                  ><svg aria-hidden="true"><use href="#g-session" /></svg
-                ></span>
-                <div>
-                  <h3 data-i18n="new.lTitle">Painel do Live</h3>
-                  <p data-i18n="new.lBody">
-                    Três abas: Principal, Repertórios, Rede. A Principal mostra um QR, do Controle
-                    de palco por padrão, e um botão que troca para a tela Performance; abaixo, o
-                    repertório ativo, o número de músicas, o tempo de show e a lista de músicas.
-                  </p>
-                </div>
-              </div>
-              <div class="card">
-                <span class="ic"
-                  ><svg aria-hidden="true"><use href="#g-law" /></svg
-                ></span>
-                <div>
-                  <h3 data-i18n="new.pkTitle">Pacotes de repertórios</h3>
-                  <p data-i18n="new.pkBody">
-                    Exportar todos grava os repertórios do Live Set (ordem, cores e notas das
-                    músicas, letras) num arquivo .rcsetlist. Importar acrescenta os repertórios de
-                    um pacote aos existentes; um nome repetido ganha um número. Os arquivos ficam na
-                    pasta packages dos dados da extensão.
-                  </p>
-                </div>
-              </div>
-              <div class="card">
-                <span class="ic"
-                  ><svg aria-hidden="true"><use href="#g-live" /></svg
-                ></span>
-                <div>
-                  <h3 data-i18n="new.pTitle">Segundo computador</h3>
-                  <p data-i18n="new.pBody">
-                    Pareie um segundo computador com o Live usando um código de seis dígitos. Play,
-                    Stop, saltos, click, quantização, contagem e pânico são enviados a ele. Um
-                    segundo ponto de estado no topo do Controle de palco mostra o estado do link.
-                  </p>
-                </div>
-              </div>
-              <div class="card">
-                <span class="ic"
-                  ><svg aria-hidden="true"><use href="#g-song" /></svg
-                ></span>
-                <div>
-                  <h3 data-i18n="new.fTitle">Lista de músicas recolhível</h3>
-                  <p data-i18n="new.fBody">
-                    O botão de três pontos ao lado de uma música recolhe as seções dela; Recolher
-                    todas e Abrir todas agem na lista inteira. Segure o nome ou o número da música
-                    para saltar; arraste a alça na borda direita do card para reordenar.
-                  </p>
-                </div>
-              </div>
-              <div class="card">
-                <span class="ic"
-                  ><svg aria-hidden="true"><use href="#g-phone" /></svg
-                ></span>
-                <div>
-                  <h3 data-i18n="new.cTitle">Certificado local</h3>
-                  <p data-i18n="new.cBody">
-                    A extensão cria uma autoridade certificadora para este computador, válida para
-                    localhost e endereços privados da rede. Instalada uma vez num celular ou
-                    computador, ela remove o aviso do navegador. A aba Rede mostra um QR para a
-                    página de instalação.
-                  </p>
-                </div>
-              </div>
-              <div class="card">
-                <span class="ic"
-                  ><svg aria-hidden="true"><use href="#g-net" /></svg
-                ></span>
-                <div>
-                  <h3 data-i18n="new.nTitle">Endereço de rede</h3>
-                  <p data-i18n="new.nBody">
-                    O QR usa o endereço da rota padrão, não o primeiro endereço privado, então uma
-                    segunda interface de rede (luz, áudio) não substitui o endereço do Wi-Fi.
-                  </p>
-                </div>
-              </div>
-            </div>
-            <p class="note" data-i18n-html="new.note">
-              Para atualizar: remova o RC Setlist nas configurações de extensões do Live e instale a
-              1.1.0. A pasta de dados é mantida. Lista completa:
-              <a href="./NOTAS-DA-VERSAO-1.1.0.html">notas da versão</a>.
-            </p>
-          </div>
-        </section>
-
         <!-- ===================== 2.0 SIGNAL CHAIN ===================== -->
         <section class="sec" id="chain" aria-labelledby="chain-title">
-          <div class="n">2.0</div>
           <div class="c">
-            <h2 id="chain-title" data-i18n-html="chain.title">
-              Cadeia de sinal <span class="tail">— o Live é a referência de tempo</span>
-            </h2>
+            <h2 id="chain-title" data-i18n-html="chain.title">Cadeia de sinal</h2>
             <p class="why" data-i18n="chain.why">
-              O Live toca; o RC Setlist lê a posição e pede os saltos; os navegadores só mostram o
+              O RC Setlist lê a posição da música no Live, pede para o Live avançar e mostra só o
               que o Live confirmou.
             </p>
             <div class="duo">
@@ -2276,10 +2135,7 @@
                 </div>
               </div>
               <div>
-                <h3>
-                  <span class="num">2.1</span>
-                  <span data-i18n="chain.needTitle">Do que você precisa</span>
-                </h3>
+                <h3><span data-i18n="chain.needTitle">Do que você precisa</span></h3>
                 <div class="scroll">
                   <table class="stack">
                     <thead>
@@ -2330,13 +2186,12 @@
 
         <!-- ===================== 3.0 LOCATORS ===================== -->
         <section class="sec" id="locators" aria-labelledby="locators-title">
-          <div class="n">3.0</div>
           <div class="c">
             <h2 id="locators-title" data-i18n-html="loc.title">
-              Locators <span class="tail">— do Arrangement ao palco</span>
+              Locators — do Arrangement ao palco
             </h2>
             <p class="why" data-i18n="loc.why">
-              Dê nome aos locators uma vez só. Músicas, seções e tags saem direto do Arrangement.
+              Músicas, seções e tags saem dos locators que você escreve no Arrangement.
             </p>
 
             <figure class="fig">
@@ -2345,7 +2200,6 @@
                 <span class="cap" data-i18n="loc.figCap"
                   >O que você digita no Live, o que o operador vê</span
                 >
-                <span class="meta" data-i18n="loc.figMeta">Ilustração desta página</span>
               </figcaption>
               <div class="fig-body">
                 <p class="h4" data-i18n="loc.inLive">Locators do Arrangement</p>
@@ -2399,7 +2253,7 @@
                 <div class="reads"><i>▼</i> <span data-i18n="loc.reads">O RC Setlist lê</span></div>
 
                 <p class="h4" data-i18n="loc.inStage">
-                  No Controle de palco — os cards que ele mostra
+                  No Controle de palco: os cards que ele mostra
                 </p>
                 <div class="list" style="margin-top: 10px">
                   <div class="list-head">
@@ -2464,9 +2318,7 @@
               </div>
             </figure>
 
-            <h3>
-              <span class="num">3.1</span> <span data-i18n="loc.tagsTitle">Tags disponíveis</span>
-            </h3>
+            <h3><span data-i18n="loc.tagsTitle">Tags disponíveis</span></h3>
             <div class="scroll">
               <table class="stack tags">
                 <thead>
@@ -2554,14 +2406,14 @@
                     <td data-i18n="loc.tHidden">
                       Esconde do setlist um locator usado só para automação.
                     </td>
-                    <td class="none">—</td>
+                    <td class="none" data-i18n="loc.tNone">Nenhum</td>
                   </tr>
                   <tr>
                     <td class="k"><code>[ignore]</code></td>
                     <td data-i18n="loc.tIgnore">
                       Locator técnico: fica oculto e as tags dele não fazem nada.
                     </td>
-                    <td class="none">—</td>
+                    <td class="none" data-i18n="loc.tNone">Nenhum</td>
                   </tr>
                 </tbody>
               </table>
@@ -2572,9 +2424,7 @@
               no Controle de palco e cada tag vira um controle.
             </p>
 
-            <h3>
-              <span class="num">3.2</span> <span data-i18n="loc.durTitle">Duração do set</span>
-            </h3>
+            <h3><span data-i18n="loc.durTitle">Duração do set</span></h3>
             <figure class="fig">
               <figcaption class="fig-bar">
                 <span class="id">Fig. 3</span>
@@ -2626,7 +2476,6 @@
 
         <!-- ===================== 4.0 TWO VIEWS ===================== -->
         <section class="sec" id="views" aria-labelledby="views-title">
-          <div class="n">4.0</div>
           <div class="c">
             <h2 id="views-title" data-i18n-html="views.title">Duas telas</h2>
             <p class="why" data-i18n="views.why">
@@ -2652,7 +2501,7 @@
                     <figcaption class="fig-bar">
                       <span class="id">Fig. 4</span>
                       <span class="cap" data-i18n="views.stageCap"
-                        >Controle de palco — /setlist, para quem opera</span
+                        >Controle de palco: /setlist, para quem opera</span
                       >
                       <span class="meta">1600 × 900</span>
                     </figcaption>
@@ -2767,7 +2616,7 @@
                             <td data-i18n="views.s8">Transporte</td>
                             <td data-i18n="views.s8d">
                               Música ou seção anterior e próxima, Play e Stop. Tudo, menos o Play,
-                              pede para segurar o botão — veja 5.0.
+                              pede para segurar o botão. Veja Segurança no palco.
                             </td>
                           </tr>
                           <tr>
@@ -2789,7 +2638,7 @@
                     <figcaption class="fig-bar">
                       <span class="id">Fig. 5</span>
                       <span class="cap" data-i18n="views.perfCap"
-                        >Performance — /performance, para a banda</span
+                        >Performance: /performance, para a banda</span
                       >
                       <span class="meta">1920 × 1080</span>
                     </figcaption>
@@ -2872,8 +2721,8 @@
                             <td><span class="key">6</span></td>
                             <td data-i18n="views.p6">BPM · click</td>
                             <td data-i18n="views.p6d">
-                              O andamento e se o click está ligado — escrito na tela, não só pela
-                              cor.
+                              O andamento e se o click está ligado (escrito na tela, não só pela
+                              cor).
                             </td>
                           </tr>
                           <tr>
@@ -2992,7 +2841,6 @@
 
         <!-- ===================== 5.0 STAGE SAFETY ===================== -->
         <section class="sec" id="safety" aria-labelledby="safety-title">
-          <div class="n">5.0</div>
           <div class="c">
             <h2 id="safety-title" data-i18n-html="safety.title">Segurança no palco</h2>
             <p class="why" data-i18n="safety.why">
@@ -3004,7 +2852,7 @@
               <figcaption class="fig-bar">
                 <span class="id">Fig. 7</span>
                 <span class="cap" data-i18n="safety.figCap"
-                  >Segurar para enviar — próxima música, seção anterior, Stop</span
+                  >Segurar para enviar: próxima música, seção anterior, Stop</span
                 >
                 <span class="meta" data-i18n="safety.figMeta">De 0 a 800 ms</span>
               </figcaption>
@@ -3133,7 +2981,6 @@
 
         <!-- ===================== 6.0 INSTALL ===================== -->
         <section class="sec" id="install" aria-labelledby="install-title">
-          <div class="n">6.0</div>
           <div class="c">
             <h2 id="install-title" data-i18n-html="install.title">Instalação</h2>
             <div class="install">
@@ -3231,7 +3078,7 @@
             </div>
             <p class="note" data-i18n-html="install.note">
               Se você usava uma versão 0.x: rode uma vez o script de migração do kit, antes de abrir
-              o Live — veja o <a href="./INSTALL.html">guia de instalação</a>. O Windows é suportado
+              o Live. Veja o <a href="./INSTALL.html">guia de instalação</a>. O Windows é suportado
               e testado; o suporte a macOS é experimental.
             </p>
           </div>
@@ -3239,13 +3086,9 @@
 
         <!-- ===================== 7.0 WHEN IT FAILS ===================== -->
         <section class="sec" id="trouble" aria-labelledby="trouble-title">
-          <div class="n">7.0</div>
           <div class="c">
             <h2 id="trouble-title" data-i18n="trouble.title">Quando não funciona</h2>
-            <h3>
-              <span class="num">7.1</span>
-              <span data-i18n="trouble.tsTitle">Solução de problemas</span>
-            </h3>
+            <h3><span data-i18n="trouble.tsTitle">Solução de problemas</span></h3>
             <div class="cards c2">
               <div class="card">
                 <span class="ic"
@@ -3266,7 +3109,7 @@
                 <div>
                   <h4 data-i18n="trouble.b">O RCBridge não está na lista</h4>
                   <p data-i18n-html="trouble.bd">
-                    O lugar dele é <code>User Library/Remote Scripts/RCBridge</code> — o instalador
+                    O lugar dele é <code>User Library/Remote Scripts/RCBridge</code>: o instalador
                     do kit põe lá. Reinicie o Live uma vez.
                   </p>
                 </div>
@@ -3321,10 +3164,7 @@
               </div>
             </div>
 
-            <h3 id="faq">
-              <span class="num">7.2</span>
-              <span data-i18n="trouble.faqTitle">Perguntas frequentes</span>
-            </h3>
+            <h3 id="faq"><span data-i18n="trouble.faqTitle">Perguntas frequentes</span></h3>
             <div class="cards c3">
               <div class="card">
                 <span class="ic"
@@ -3433,9 +3273,89 @@
           </div>
         </section>
 
+        <!-- ===================== 1.1 NEW IN 1.1.0 ===================== -->
+        <section class="sec" id="new" aria-labelledby="new-title">
+          <div class="c">
+            <h2 id="new-title" data-i18n-html="new.title">Novo na 1.1.0</h2>
+            <div class="cards c2">
+              <div class="card">
+                <span class="ic"
+                  ><svg aria-hidden="true"><use href="#g-session" /></svg
+                ></span>
+                <div>
+                  <h3 data-i18n="new.lTitle">Painel do Live</h3>
+                  <p data-i18n="new.lBody">
+                    Três abas: Principal, Repertórios, Rede. Um QR code, o repertório ativo e a
+                    lista de músicas.
+                  </p>
+                </div>
+              </div>
+              <div class="card">
+                <span class="ic"
+                  ><svg aria-hidden="true"><use href="#g-law" /></svg
+                ></span>
+                <div>
+                  <h3 data-i18n="new.pkTitle">Pacotes de repertórios</h3>
+                  <p data-i18n="new.pkBody">
+                    Exportar grava os repertórios do Live Set num arquivo .rcsetlist; Importar
+                    acrescenta um pacote.
+                  </p>
+                </div>
+              </div>
+              <div class="card">
+                <span class="ic"
+                  ><svg aria-hidden="true"><use href="#g-live" /></svg
+                ></span>
+                <div>
+                  <h3 data-i18n="new.pTitle">Segundo computador</h3>
+                  <p data-i18n="new.pBody">
+                    Pareie um segundo computador com o Live por um código de seis dígitos; os
+                    comandos de transporte vão para ele.
+                  </p>
+                </div>
+              </div>
+              <div class="card">
+                <span class="ic"
+                  ><svg aria-hidden="true"><use href="#g-song" /></svg
+                ></span>
+                <div>
+                  <h3 data-i18n="new.fTitle">Lista de músicas recolhível</h3>
+                  <p data-i18n="new.fBody">
+                    O botão de três pontos recolhe as seções de uma música; segure o nome ou o
+                    número para saltar.
+                  </p>
+                </div>
+              </div>
+              <div class="card">
+                <span class="ic"
+                  ><svg aria-hidden="true"><use href="#g-phone" /></svg
+                ></span>
+                <div>
+                  <h3 data-i18n="new.cTitle">Certificado local</h3>
+                  <p data-i18n="new.cBody">
+                    A extensão cria uma autoridade certificadora válida para localhost e endereços
+                    privados.
+                  </p>
+                </div>
+              </div>
+              <div class="card">
+                <span class="ic"
+                  ><svg aria-hidden="true"><use href="#g-net" /></svg
+                ></span>
+                <div>
+                  <h3 data-i18n="new.nTitle">Endereço de rede</h3>
+                  <p data-i18n="new.nBody">
+                    O QR usa o endereço da rota padrão, então uma segunda interface não substitui o
+                    endereço do Wi-Fi.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
         <!-- ===================== 8.0 DOCS ===================== -->
         <section class="sec" id="docs" aria-labelledby="docs-title">
-          <div class="n">8.0</div>
           <div class="c">
             <h2 id="docs-title" data-i18n="docs.title">Documentos de referência</h2>
             <div class="docs">
@@ -3483,7 +3403,9 @@
       <footer class="colophon">
         <div class="line">
           <span data-i18n-html="foot.made">Feito por <b>Gabriel Worm</b></span>
-          <span>PolyForm Noncommercial 1.0.0</span>
+          <span data-i18n="foot.license"
+            >Código-fonte disponível sob a PolyForm Noncommercial 1.0.0</span
+          >
           <a href="https://github.com/ntworm/rc-setlist/blob/main/NOTICE" data-i18n="foot.credits"
             >Créditos e licenças</a
           >

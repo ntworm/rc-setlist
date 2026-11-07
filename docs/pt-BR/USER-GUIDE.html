@@ -114,16 +114,23 @@
     <p>
       A interface começa em inglês. No painel do Live, aperte <strong>EN</strong> ou
       <strong>PT</strong> no alto à direita para escolher <strong>English</strong> ou
-      <strong>Português (Brasil)</strong>; no Controle de Palco e na Performance, use o menu de
-      idioma da página. A escolha fica salva localmente. Nomes de músicas, seções e conteúdo de
-      letras ou cifras são dados do show e nunca são traduzidos.
+      <strong>Português (Brasil)</strong>. No Controle de Palco e na Performance, use o menu de
+      idioma da página. A escolha fica salva localmente.
+    </p>
+    <p>
+      Nomes de músicas, seções e o conteúdo de letras ou cifras são dados do show. Nunca são
+      traduzidos.
+    </p>
+    <p>
+      No Controle de palco, troque o idioma só com o Live parado e o painel desbloqueado. O seletor
+      fica desabilitado durante a reprodução e enquanto a trava de segurança estiver ativa.
     </p>
     <h2 id="sintaxe-dos-locators">Sintaxe dos locators</h2>
     <p>
       Um locator de música tem um título. Uma seção usa <code>Música &gt; Seção</code> ou a sintaxe
-      relativa <code>&gt; Seção</code> (que se vincula à música anterior). Tags de ação isoladas
-      como <code>[stop]</code> e locators de automação relativa como
-      <code>&gt; [stop]</code> pertencem à música cronologicamente anterior.
+      relativa <code>&gt; Seção</code>, que se vincula à música anterior. Tags de ação isoladas como
+      <code>[stop]</code> e locators de automação relativa como <code>&gt; [stop]</code> pertencem à
+      música cronologicamente anterior.
     </p>
     <pre><code class="lang-text">Música A [bpm 122] [click]
 &gt; Intro
@@ -131,29 +138,43 @@
 &gt; Refrão [loop 4x]
 [stop]
 Marcador Técnico [ignore]</code></pre>
+    <ul>
+      <li><code>[loop]</code>: Repete a seção atual em loop contínuo até ser desativado.</li>
+      <li><code>[loop Nx]</code>: Repete a seção exatamente N vezes.</li>
+      <li><code>[stop]</code>: Interrompe a reprodução quando o locator é alcançado.</li>
+      <li><code>[next]</code>: Salta a reprodução para a próxima música no instante em que este</li>
+    </ul>
     <p>
-      | Tag | Efeito | | ------------------------- |
-      -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-      | | <code>[loop]</code> | Repete a seção atual em loop contínuo até ser desativado. | |
-      <code>[loop Nx]</code> | Repete a seção exatamente N vezes. | | <code>[stop]</code> |
-      Interrompe a reprodução quando o locator é alcançado. | | <code>[next]</code> | Salta a
-      reprodução para a próxima música no instante em que este marcador é alcançado. Usada em uma
-      seção, encerra a música atual a partir dali, sem avançar para as seções seguintes. | |
-      <code>[bpm N]</code> | Define o andamento (BPM) esperado. | | <code>[click]</code> /
-      <code>[click off]</code> | Ativa ou desativa o metrônomo nativo do Live. | |
-      <code>[skip]</code> | Avança para a próxima seção (ou para a próxima música, caso seja a
-      última seção) no instante em que este marcador é alcançado. O trecho posterior ao marcador não
-      toca. | | <code>[jump NOME]</code> | Salta a reprodução para o marcador indicado em NOME no
-      instante em que este marcador é alcançado — uma seção desta música, uma música, ou
-      <code>Música &gt; Seção</code>. Nomes são comparados sem as tags e sem diferenciar
-      maiúsculas/minúsculas. | | <code>[hidden]</code> | Oculta uma âncora de automação do setlist
-      visível. | | <code>[ignore]</code> | Marcador técnico que oculta o locator e tem precedência
-      sobre qualquer tag de ação. |
+      marcador é alcançado. Em uma seção, encerra a música atual a partir dali, sem avançar para as
+      seções seguintes.
     </p>
+    <ul>
+      <li><code>[bpm N]</code>: Define o andamento (BPM) esperado.</li>
+      <li>
+        <code>[click]</code> / <code>[click off]</code>: Ativa ou desativa o metrônomo nativo do
+        Live.
+      </li>
+      <li>
+        <code>[skip]</code>: Avança para a próxima seção, ou para a próxima música, no instante
+      </li>
+    </ul>
+    <p>em que este marcador é alcançado.</p>
+    <ul>
+      <li><code>[jump NOME]</code>: Salta a reprodução para o marcador indicado em NOME no</li>
+    </ul>
     <p>
-      As tags não diferenciam maiúsculas de minúsculas e não aparecem no nome exibido. A tag
-      <code>[ignore]</code> tem precedência sobre tags de automação, ocultando o marcador e
-      ignorando quaisquer tags de ação no locator sem criar músicas, seções ou automações.
+      instante em que este marcador é alcançado: uma seção desta música, uma música, ou
+      <code>Música &gt; Seção</code>. Nomes são comparados sem as tags e sem diferenciar
+      maiúsculas/minúsculas.
+    </p>
+    <ul>
+      <li><code>[hidden]</code>: Oculta uma âncora de automação do setlist visível.</li>
+      <li><code>[ignore]</code>: Marcador técnico que oculta o locator e tem precedência sobre</li>
+    </ul>
+    <p>qualquer tag de ação.</p>
+    <p>
+      As tags não diferenciam maiúsculas de minúsculas e não aparecem no nome exibido. Um locator
+      marcado com <code>[ignore]</code> não cria nenhuma música, seção ou automação.
     </p>
     <h3 id="emendar-m-sicas-com-next">Emendar músicas com <code>[next]</code></h3>
     <p>
@@ -167,21 +188,20 @@ Marcador Técnico [ignore]</code></pre>
 Música B [bpm 96]</code></pre>
     <p>
       Quando o cursor alcança <code>&gt; Fim</code>, o RC Setlist move a reprodução para o locator
-      de <code>Música B</code> imediatamente — sem esperar o próximo compasso. Os saltos de locator
-      do próprio Live são quantizados pela quantização global, o que, em um marcador seguido de
-      compassos vazios, atrasaria a transição; por isso essa mudança não usa o salto de cue nativo
-      do Live. A transição ocorre cerca de um décimo de segundo depois de o marcador ser cruzado (a
-      posição é lida a cada 100 ms e o AbletonOSC processa comandos a cada 100 ms), nunca antes, e a
-      próxima música sempre começa do seu primeiro tempo (downbeat). <code>[skip]</code> passa a
-      reprodução do mesmo jeito.
+      de <code>Música B</code> imediatamente, sem esperar o próximo compasso. Os saltos de locator
+      do próprio Live esperam a quantização global, por isso essa mudança não usa o salto de cue
+      nativo do Live. A mudança acontece cerca de um décimo de segundo depois de o marcador ser
+      cruzado, nunca antes: a posição é lida a cada 100 ms e o AbletonOSC processa comandos a cada
+      100 ms. A próxima música sempre começa do seu primeiro tempo (downbeat).
+      <code>[skip]</code> passa a reprodução do mesmo jeito.
     </p>
     <p>
-      <code>[jump NOME]</code> é a mesma passagem apontada para qualquer lugar:
+      <code>[jump NOME]</code> é a mesma passagem apontada para qualquer lugar.
       <code>&gt; Verso 2 [jump Refrão]</code> vai para o refrão desta música,
-      <code>&gt; Coda [jump Música B]</code> para o início de outra música,
+      <code>&gt; Coda [jump Música B]</code> para o início de outra música, e
       <code>&gt; Solo [jump Música B &gt; Ponte]</code> para uma seção de outra música. Um nome
       sozinho é procurado primeiro nas seções desta música, depois nos títulos das músicas, depois
-      em todas as seções na ordem do arranjo; um nome que não bate com nada não faz nada.
+      em todas as seções na ordem do arranjo. Um nome que não bate com nada não faz nada.
     </p>
     <p>
       Como o playhead é movido diretamente, o marcador de início do Live fica onde estava. O Play do
@@ -191,26 +211,22 @@ Música B [bpm 96]</code></pre>
     <h2 id="editar-um-marcador">Editar um marcador</h2>
     <p>
       Dê um clique duplo na linha de uma música ou no chip de uma seção no Controle de Palco para
-      abrir o editor de marcadores. Nele, cada tag é um controle visual — você nunca digita uma
-      <code>[tag]</code> à mão nem corre o risco de apagar uma sem querer.
+      abrir o editor de marcadores. Nele, cada tag é um controle visual. Você nunca digita uma
+      <code>[tag]</code> à mão, e uma tecla solta não apaga nenhuma.
     </p>
     <p>
       Uma <strong>música</strong> carrega nome, cor, notas, andamento inicial e os comportamentos
-      <code>[stop]</code>, <code>[next]</code> e <code>[skip]</code>. As notas são uma linha para o
-      palco — tom, afinação, quem começa — mostrada abaixo do título no card e na tela de
-      performance; assim como a cor, ficam guardadas no perfil do setlist e nunca vão para o projeto
-      do Live. Ela também lista suas seções: clique em uma para editá-la, e a seta no topo do painel
-      traz você de volta para a música.
+      <code>[stop]</code>, <code>[next]</code> e <code>[skip]</code>. Ela também lista suas seções:
+      clique em uma para editá-la, e a seta no topo do painel traz você de volta para a música.
     </p>
     <p>
       Uma <strong>seção</strong> carrega nome, andamento, loop, click e os mesmos três
-      comportamentos. Loop e click ficam guardados na seção, e não na música.
+      comportamentos, além de um destino de salto (o marcador para onde
+      <code>[jump NOME]</code> vai). Loop e click ficam guardados na seção, e não na música.
     </p>
-    <p>Três garantias do editor:</p>
+    <p>O editor garante três coisas:</p>
     <ul>
-      <li>
-        <strong>Uma tag que o painel não mostra nunca é apagada.</strong> Tudo que o RC Setlist não
-      </li>
+      <li>Uma tag que o painel não mostra nunca é apagada. Tudo que o RC Setlist não</li>
     </ul>
     <p>
       reconhece, e tudo que ele reconhece mas não oferece para aquele tipo de marcador, atravessa o
@@ -218,68 +234,68 @@ Música B [bpm 96]</code></pre>
     </p>
     <ul>
       <li>
-        <strong>Uma seção mantém o prefixo que já tinha.</strong> O Live aceita tanto
-        <code>&gt; Verso</code>
+        Uma seção mantém o prefixo que já tinha. O Live aceita tanto <code>&gt; Verso</code> quanto
       </li>
     </ul>
-    <p>quanto <code>Música A &gt; Verso</code>; a grafia que o seu set usa é preservada.</p>
+    <p><code>Música A &gt; Verso</code>; a grafia que o seu set usa é preservada.</p>
     <ul>
-      <li><strong>Salvar sem mudar nada não escreve nada.</strong> As tags são comparadas por</li>
+      <li>Salvar sem mudar nada não escreve nada. As tags são comparadas por</li>
     </ul>
     <p>significado, então reordená-las não é uma mudança.</p>
     <p>
       A edição não é permitida com o transporte em reprodução. Renomear um locator significa
-      apagá-lo e criá-lo de novo, e o Live só cria um cue point onde o playhead está — com a
-      reprodução rodando, o marcador novo cairia na posição em que o playhead tivesse chegado no
-      momento. Pare o transporte antes de editar.
+      apagá-lo e criá-lo de novo, e o Live só cria um cue point onde o playhead está. Com a
+      reprodução rodando, o marcador novo cairia na posição em que o playhead tivesse chegado. Pare
+      o transporte antes de editar.
+    </p>
+    <h3 id="cores-e-notas">Cores e notas</h3>
+    <p>
+      As notas são uma linha para o palco (tom, afinação, quem começa), mostrada abaixo do título no
+      card e na tela de performance. Cores e notas ficam guardadas ao lado do seu setlist e nunca
+      são escritas no projeto do Live. A cor acompanha a música quando você a renomeia ou a move.
     </p>
     <p>
-      A atribuição de cor é gerenciada pelo próprio RC Setlist. Ela fica guardada junto ao seu
-      setlist, nunca é escrita no projeto do Live, e acompanha a música quando você a renomeia ou a
-      move. Os oito tons são dessaturados: no card a cor identifica a música, e as cores vivas são
-      usadas só para indicar estados operacionais.
+      Os oito tons são dessaturados. No card a cor identifica a música, e as cores vivas são usadas
+      só para indicar estados operacionais.
     </p>
     <h2 id="perfis">Perfis</h2>
     <p>
-      Os perfis pertencem ao Live Set atual. O seletor de setlist ativo e o botão
-      <strong>Gerenciar setlists</strong> ficam no topo do Controle de Palco. Um
-      <code>.als</code> salvo pode ter vários setlists para ordens, ensaios ou formações diferentes,
-      mas <strong>Gerenciar setlists</strong> não mostra perfis de outro projeto do Ableton. Ao
-      abrir outro Live Set, o RC Setlist troca para o registro separado daquele Set.
+      Os perfis pertencem ao Live Set atual. Um <code>.als</code> salvo pode ter vários setlists
+      para ordens, ensaios ou formações diferentes. O seletor de setlist ativo e o botão
+      <strong>Gerenciar setlists</strong> ficam no topo do Controle de palco.
+      <strong>Gerenciar setlists</strong> não mostra perfis de outro projeto do Ableton. Ao abrir
+      outro Live Set, o RC Setlist troca para o registro separado daquele Set.
     </p>
     <p>
       Dentro do Live Set atual, os perfis separam ordem do setlist, letras, exportações e estados
-      relacionados. No Controle de Palco você pode criar, selecionar e renomear perfis, mover um
+      relacionados. No Controle de palco você pode criar, selecionar e renomear perfis, mover um
       perfil inativo para a lixeira recuperável e restaurá-lo depois com o mesmo UUID e os mesmos
-      dados. A exclusão não apaga permanentemente.
+      dados.
     </p>
     <p>
-      As alterações de perfil são exclusivas do controlador e o transporte deve estar parado. O
-      perfil ativo e o único perfil restante não podem ser excluídos. Para mover outro perfil para a
+      As alterações de perfil vêm só do controlador, e o transporte deve estar parado. O perfil
+      ativo e o único perfil restante não podem ser excluídos. Para mover outro perfil para a
       lixeira, digite exatamente o nome exibido no campo de confirmação.
     </p>
     <p>
-      O armazenamento global de versões antigas continua preservado como backup local, mas não é
-      misturado em <strong>Gerenciar setlists</strong>. Somente uma pasta legada que corresponda
-      exatamente ao Live Set salvo é migrada, sem apagar a origem.
+      Uma pasta de perfis deixada por uma versão anterior continua guardada como backup local e não
+      é misturada em <strong>Gerenciar setlists</strong>. Uma pasta legada que corresponda
+      exatamente ao Live Set salvo é migrada, e a origem não é apagada.
     </p>
     <h2 id="dura-o-do-setlist">Duração do setlist</h2>
     <p>
-      O Controle de Palco mostra a duração de cada música no cartão correspondente. O cabeçalho
+      O Controle de palco mostra a duração de cada música no cartão correspondente. O cabeçalho
       mostra a duração total do setlist. Cada música vai do seu locator até o locator da próxima
       música, incluindo qualquer intervalo de transição. A última música termina no fim do
-      Arrangement informado pelo Live; o total vai do primeiro locator até esse mesmo fim e também
+      Arrangement informado pelo Live. O total vai do primeiro locator até esse mesmo fim e também
       inclui as transições. Um travessão indica que o Live ainda não forneceu um limite final válido
       do Arrangement.
     </p>
-    <h3 id="metodologia-de-dura-o-e-estabilidade-em-palco">
-      Metodologia de duração e estabilidade em palco
-    </h3>
+    <h3 id="dura-es-fixas">Durações fixas</h3>
     <p>
-      As durações são referências fixas de cronograma estabelecidas no carregamento do set e não
-      oscilam quando o knob de tempo do Live é girado ou quando a reprodução começa. Os tempos
-      previstos mantêm o mesmo valor para a equipe e a banda, em vez de mudar com ajustes
-      momentâneos de andamento.
+      As durações são referências fixas de cronograma estabelecidas no carregamento do set. Elas não
+      mudam quando o knob de tempo do Live é girado ou quando a reprodução começa, então a equipe e
+      a banda leem os mesmos valores.
     </p>
     <h3 id="limita-o-de-automa-o-de-tempo-do-arrangement">
       Limitação de automação de tempo do Arrangement
@@ -306,95 +322,82 @@ Música B [bpm 96]</code></pre>
       <code>Música A [bpm 122]</code> ou <code>&gt; Refrão [bpm 135]</code>).
     </p>
     <ul>
-      <li>
-        <strong>Confiança declarada</strong>: Havendo pelo menos uma tag <code>[bpm]</code>, o RC
-        Setlist calcula
-      </li>
+      <li>Havendo pelo menos uma tag <code>[bpm]</code>, o RC Setlist calcula durações exatas</li>
     </ul>
     <p>
-      durações exatas trecho a trecho para músicas e seções com tag, propagando o andamento através
-      de limites sem tag.
+      trecho a trecho para músicas e seções com tag, propagando o andamento através de limites sem
+      tag. A confiança da duração é declarada.
     </p>
     <ul>
-      <li>
-        <strong>Confiança estimada (<code>EST.</code>)</strong>: Se nenhum locator contiver tag
-        <code>[bpm]</code>, o RC Setlist
-      </li>
+      <li>Se nenhum locator contiver tag <code>[bpm]</code>, o RC Setlist utiliza o andamento</li>
     </ul>
     <p>
-      utiliza o andamento inicial da sessão do Live, classifica a confiança da duração como estimada
-      e exibe o indicador <code>EST.</code> ao lado do tempo total e nos cartões do HUD.
+      inicial da sessão do Live e classifica a confiança da duração como estimada, exibindo o
+      indicador <code>EST.</code> ao lado do tempo total e nos cartões do HUD.
     </p>
-    <h3 id="exemplo-de-medi-o-real">Exemplo de medição real</h3>
+    <h3 id="exemplo-de-medi-o">Exemplo de medição</h3>
     <p>Em um setlist de produção medido com 21 músicas e andamentos entre 93 e 166 BPM:</p>
-    <ul>
-      <li>
-        <strong>Duração exata trecho a trecho</strong>: <strong>78:41</strong> (4.721 segundos).
-      </li>
-      <li>
-        <strong>Estimativa de andamento único a 99 BPM</strong>: 95:40 —
-        <strong>erro de 16:59 (+21,6%)</strong>.
-      </li>
-      <li>
-        <strong>Estimativa de andamento único a 136 BPM</strong>: 69:38 —
-        <strong>erro de 9:03 (-11,5%)</strong>.
-      </li>
-    </ul>
+    <p>
+      | Medição | Duração | Diferença em relação ao total exato | |
+      --------------------------------------- | ---------------------- |
+      ----------------------------------- | | Duração exata trecho a trecho | 78:41 (4.721 segundos)
+      | — | | Estimativa de andamento único a 99 BPM | 95:40 | 16:59 (+21,6%) | | Estimativa de
+      andamento único a 136 BPM | 69:38 | 9:03 (-11,5%) |
+    </p>
     <p>
       A declaração de tags <code>[bpm N]</code> nos locators de música elimina a discrepância de
-      16:59, restaura o total exato de 78:41 e limpa o indicador de aviso <code>EST.</code>.
+      16:59 e traz o total de volta para 78:41.
     </p>
     <h2 id="o-painel-do-live">O painel do Live</h2>
     <p>
       O painel do Live é a janela que a extensão abre dentro do Live. A barra de abas traz três abas
-      — <strong>Principal</strong>, <strong>Repertórios</strong> e <strong>Rede</strong> — e os
-      botões <strong>EN</strong> e <strong>PT</strong> no alto à direita, que mudam o idioma do
-      painel.
+      (<strong>Principal</strong>, <strong>Repertórios</strong> e <strong>Rede</strong>) e os botões
+      <strong>EN</strong> e <strong>PT</strong> no alto à direita, que mudam o idioma do painel.
     </p>
     <h3 id="principal">Principal</h3>
     <p>
-      A aba Principal mostra um QR no meio. Por padrão, é o QR do Controle de Palco; o botão ao lado
-      troca pelo Performance Display, no mesmo lugar. Embaixo, o repertório ativo, o número de
-      músicas, o tempo de show e o número de repertórios. Abaixo dos números, as músicas do
-      repertório ativo com suas cores.
+      A aba <strong>Principal</strong> mostra um QR no meio. Por padrão, é o QR do Controle de
+      palco. O botão ao lado troca pela <strong>Tela de performance</strong>, no mesmo lugar. Abaixo
+      estão o repertório ativo, o número de músicas, o tempo de show e o número de repertórios.
+      Abaixo dos números estão as músicas do repertório ativo com suas cores.
     </p>
     <p>
-      No Controle de Palco, o número da música e o nome inteiro dela pulam para a música. Na tela de
+      No Controle de palco, o número da música e o nome inteiro dela pulam para a música. Na tela de
       toque, o pulo continua sendo segurar, para um toque sem querer nunca mover o show.
     </p>
     <h3 id="repert-rios-e-pacotes">Repertórios e pacotes</h3>
     <p>
-      A aba Repertórios lista os repertórios do Live Set atual. Você pode ativar um, renomear,
-      apagar e criar um novo. O apagar pergunta uma vez, na própria linha, e o repertório apagado
-      fica na lista <strong>Apagados</strong>, pronto para ser restaurado. Tudo isso funciona com o
-      transporte parado.
+      A aba <strong>Repertórios</strong> lista os repertórios do Live Set atual. Você pode ativar
+      um, renomear, apagar e criar um novo. O apagar pergunta uma vez, na própria linha, e o
+      repertório apagado fica na lista <strong>Setlists excluídos</strong>, pronto para ser
+      restaurado. Tudo isso funciona com o transporte parado.
     </p>
     <p>
       <strong>Exportar todos</strong> grava um arquivo <code>.rcsetlist</code> com todos os
-      repertórios do Live Set — ordem, cores e notas das músicas, letras — na pasta
+      repertórios do Live Set (ordem, cores e notas das músicas, letras) na pasta
       <code>packages</code> dos dados da extensão. No Windows, essa pasta é
       <code>%LOCALAPPDATA%\Ableton\Extensions Data\ntworm.rc-setlist\packages</code>.
       <strong>Importar</strong> escolhe um pacote dessa pasta e acrescenta os repertórios dele ao
-      lado dos que você já tem; um nome repetido ganha um <code>(2)</code>, e uma falha no meio
+      lado dos que você já tem. Um nome repetido ganha um <code>(2)</code>, e uma falha no meio
       desfaz tudo. O botão <strong>Copiar caminho</strong> copia o caminho da pasta.
     </p>
     <h3 id="rede">Rede</h3>
     <p>
-      A aba Rede guarda o endereço do computador, os endereços detectados na rede, o protocolo, a
-      porta e a porta do certificado. Ela também guarda o cartão <strong>Certificado</strong>, com o
-      QR que o celular lê para instalar o certificado uma vez, e o cartão
-      <strong>Segundo computador</strong>, com o endereço, o botão <strong>Gerar código</strong> e
-      os botões <strong>Parear</strong> e <strong>Desfazer</strong>.
+      A aba <strong>Rede</strong> guarda o endereço do computador, os endereços detectados na rede,
+      o protocolo, a porta e a porta do certificado. Ela também guarda o cartão
+      <strong>Certificado</strong>, com o QR que o celular lê para instalar o certificado uma vez, e
+      o cartão <strong>Segundo computador</strong>, com o endereço, o botão
+      <strong>Gerar código</strong> e os botões <strong>Parear</strong> e <strong>Desfazer</strong>.
     </p>
-    <h2 id="controle-de-palco">Controle de Palco</h2>
+    <h2 id="controle-de-palco">Controle de palco</h2>
     <p>Abra <code>/setlist</code> pela URL de controle com token mostrada no painel do Live.</p>
     <ul>
       <li>Arraste músicas para mudar a ordem exibida.</li>
       <li>Use Play e Stop para ações imediatas. O Play retoma de onde o transporte</li>
     </ul>
     <p>
-      parou; depois de saltar para uma música ou seção com o transporte parado (ou clicar no Arranjo
-      do Live), o Play começa dali.
+      parou. Depois de saltar para uma música ou seção com o transporte parado, ou clicar no Arranjo
+      do Live, o Play começa dali.
     </p>
     <ul>
       <li>Anterior e Próxima exigem um hold deliberado de 500 ms.</li>
@@ -403,19 +406,20 @@ Música B [bpm 96]</code></pre>
     <p>pedido e o reconcilia com a resposta nativa do Live quando ela estiver disponível.</p>
     <ul>
       <li>Use a janela de letras para criar, sincronizar e editar linhas.</li>
-      <li>
-        Exporte o setlist atual como CSV UTF-8 (salva uma cópia na pasta <code>exports/</code> do
-        perfil ativo e baixa na pasta de Downloads do seu navegador).
-      </li>
+      <li>Exporte o setlist atual como CSV UTF-8.</li>
       <li>Use a tela cheia para uma estação compacta de palco.</li>
     </ul>
+    <p>
+      A interface mantém o último estado válido durante reconexões breves. O aviso de reconexão não
+      confirma o estado antigo.
+    </p>
     <h3 id="ordem-de-tempo-dos-saltos">Ordem de tempo dos saltos</h3>
     <p>
       Saltos explícitos aplicam o BPM de destino em torno do salto de cue. O BPM da seção substitui
       o BPM da música; uma seção sem BPM herda o BPM da música de destino. Com o transporte parado,
       ou com a quantização em None, o RC Setlist usa uma escrita de tempo SDK-first e depois envia o
-      salto de cue. Tocando com quantização, o salto de cue é entregue ao Live na hora — o Live o
-      executa na próxima linha da grade — e o tempo é escrito quando essa chegada é observada. As
+      salto de cue. Tocando com quantização, o salto de cue é entregue ao Live na hora. O Live o
+      executa na próxima linha da grade, e o tempo é escrito quando essa chegada é observada. As
       operações são sequenciais, não atômicas, portanto não garantem precisão de amostra. A
       automação de tempo nativa no Arrangement no destino é recomendada para transições com precisão
       de amostra dentro do Live.
@@ -436,8 +440,8 @@ Música B [bpm 96]</code></pre>
       não apite pelo alto-falante no palco.
     </p>
     <p>
-      A contagem roda no tempo que <strong>o setlist declara</strong> para aquele ponto — o último
-      <code>[bpm]</code> em ou antes do playhead — e só recorre ao tempo atual do Live quando o set
+      A contagem roda no tempo que <strong>o setlist declara</strong> para aquele ponto (o último
+      <code>[bpm]</code> em ou antes do playhead) e só recorre ao tempo atual do Live quando o set
       não declara nada. Isso importa na virada de música: o Live ainda está no tempo da música
       anterior, então contar por ele seria contar na velocidade errada para a música que vai
       começar.
@@ -451,10 +455,6 @@ Música B [bpm 96]</code></pre>
       Esse controle de ensaio não entra em Record e não arma pistas. Ele também não altera a
       quantização dos saltos. Quando o Live já está tocando, Play e os saltos de música/seção mantêm
       o comportamento existente, incluindo a quantização atual.
-    </p>
-    <p>
-      A interface mantém o último estado válido durante reconexões breves. O aviso de reconexão não
-      significa que o estado antigo acabou de ser confirmado.
     </p>
     <h2 id="dois-computadores">Dois computadores</h2>
     <p>
@@ -516,22 +516,20 @@ Música B [bpm 96]</code></pre>
       Quando não batem, o ponto avisa.
     </p>
     <h3 id="o-ponto-no-cabe-alho-do-controle-de-palco">
-      O ponto no cabeçalho do Controle de Palco
+      O ponto no cabeçalho do Controle de palco
     </h3>
-    <p>A página do Controle de Palco mostra um segundo ponto ao lado do ponto de conexão:</p>
+    <p>A página do Controle de palco mostra um segundo ponto ao lado do ponto de conexão:</p>
     <ul>
-      <li><strong>verde</strong> — o segundo computador está conectado e os dois leem os mesmos</li>
+      <li><strong>verde</strong>: o segundo computador está conectado e os dois leem os mesmos</li>
     </ul>
     <p>marcadores.</p>
     <ul>
-      <li><strong>amarelo</strong> — está conectado, mas os marcadores são diferentes.</li>
-      <li>
-        <strong>vermelho</strong> — não está respondendo, ou o certificado mudou e ele precisa
-      </li>
+      <li><strong>amarelo</strong>: está conectado, mas os marcadores são diferentes.</li>
+      <li><strong>vermelho</strong>: não está respondendo, ou o certificado mudou e ele precisa</li>
     </ul>
     <p>ser pareado de novo.</p>
     <ul>
-      <li><strong>sem ponto</strong> — não há segundo computador pareado, e nada é enviado para</li>
+      <li><strong>sem ponto</strong>: não há segundo computador pareado, e nada é enviado para</li>
     </ul>
     <p>lugar nenhum.</p>
     <h3 id="o-que-chega-ao-segundo-computador">O que chega ao segundo computador</h3>
@@ -548,7 +546,7 @@ Música B [bpm 96]</code></pre>
     </p>
     <h3 id="um-celular-n-o-um-segundo-computador">Um celular não é um segundo computador</h3>
     <p>
-      Um celular ou tablet que abre a página do Controle de Palco é um
+      Um celular ou tablet que abre a página do Controle de palco é um
       <strong>controlador</strong> do computador principal: ele entra na sessão do principal e vê o
       setlist do principal. O pareamento serve para uma segunda máquina rodando Live, não para um
       celular. O macOS é suportado como segundo computador de forma experimental; o Windows é a
@@ -570,9 +568,12 @@ Música B [bpm 96]</code></pre>
     <pre><code class="lang-text">[00:00.00] Primeira linha
 [00:04.50] Segunda linha</code></pre>
     <p>
-      Na janela de letras você pode colar linhas, avançar por elas durante o áudio, editar
-      timestamps e salvar. O texto fica no perfil ativo. Texto simples também é aceito para exibição
-      sequencial.
+      O seletor de músicas no topo da janela de letras vale para <strong>Criar</strong>,
+      <strong>Sincronizar</strong> e <strong>Editar</strong>, e abre na música atual do Arrangement.
+      As letras já existentes dessa música carregam sozinhas. Você pode colar linhas, avançar por
+      elas enquanto o áudio toca, editar os timestamps e salvar. Inspecionar outra música na janela
+      não substitui a linha sincronizada da música que está aparecendo no Controle de palco. O texto
+      fica no perfil ativo. Texto simples também é aceito para exibição sequencial.
     </p>
     <h2 id="ordem-e-csv">Ordem e CSV</h2>
     <p>
@@ -583,7 +584,7 @@ Música B [bpm 96]</code></pre>
       <code>automations</code> e <code>lyric_lines</code>. Ele não inventa tom, fórmula de compasso
       por música, contagem de execuções nem histórico da última reprodução. O arquivo usa ponto e
       vírgula com BOM UTF-8 para compatibilidade com planilhas, é salvo no diretório do perfil ativo
-      na pasta <code>exports/</code> e enviado para os Downloads do navegador.
+      na pasta <code>exports/</code> e é enviado para os Downloads do navegador.
     </p>
     <h2 id="in-cio-autom-tico">Início automático</h2>
     <p>
@@ -600,20 +601,20 @@ Música B [bpm 96]</code></pre>
     </ul>
     <p>
       O RC Setlist lê locators do Arrangement. O Session View não é suportado. Os links locais do
-      Controle de Palco e da Performance usam HTTPS.
+      Controle de palco e da Performance usam HTTPS.
     </p>
     <h2 id="automa-o-de-tempo-desenhada-no-live">Automação de tempo desenhada no Live</h2>
     <p>
       Se o seu Arrangement tem automação de andamento desenhada na faixa master, mantenha a opção
-      <strong>Definir o tempo do Live ao pular</strong> <strong>desligada</strong> no painel do Live
-      (ela já vem desligada por padrão).
+      <strong>Definir o tempo do Live ao pular</strong> <strong>desligada</strong> no painel do
+      Live. A opção já vem desligada por padrão.
     </p>
     <p>
       Um salto explícito pode aplicar o andamento de destino ao Live antes de mover o cursor.
       Escrever <code>song.tempo</code> sobrepõe a automação de andamento nativa do Live: o arranjo
       para de seguir o envelope desenhado até que você clique no botão
-      <strong>Re-Enable Automation</strong> na barra de transporte. Executar um salto nessas
-      condições fixaria um andamento estático para o restante do show.
+      <strong>Re-Enable Automation</strong> na barra de transporte. Um salto no meio do show
+      seguraria esse andamento até o fim do set.
     </p>
     <p>
       O RC Setlist monitora isso: quando o andamento reportado pelo Live diverge da tag
@@ -622,10 +623,9 @@ Música B [bpm 96]</code></pre>
       painel.
     </p>
     <p>
-      A inclusão da tag <code>[bpm N]</code> funciona como &quot;calcule a duração usando esta
-      referência&quot;, e não como imposição obrigatória de andamento ao Live. Declarar o BPM das
-      músicas é totalmente seguro em projetos com automação de andamento e é o que converte uma
-      estimativa de duração em uma duração exata.
+      A tag <code>[bpm N]</code> diz ao RC Setlist como medir a duração. Ela não impõe esse
+      andamento ao Live. Declarar o BPM das músicas é seguro em projetos com automação de andamento,
+      e é o que converte uma estimativa de duração em uma duração exata.
     </p>
     <p>
       Ligue essa opção apenas quando as tags forem a fonte primária de andamento do seu show e o
@@ -635,21 +635,17 @@ Música B [bpm 96]</code></pre>
       Como o RC Setlist reconhece as suas músicas
     </h2>
     <p>
-      <strong
-        >O locator do Ableton é a única fonte da identidade da música. O RC Setlist não acrescenta
-        dados próprios ao seu projeto do Live.</strong
-      >
-      Ele identifica uma música por nome e posição, nessa ordem:
+      <strong>O locator do Ableton é a única fonte da identidade da música.</strong> O RC Setlist
+      identifica uma música por nome e posição, nessa ordem:
     </p>
     <ul>
-      <li>Renomeie uma música e ela continua a mesma — a posição não mudou.</li>
-      <li>Mova o marcador para outro compasso e ela continua a mesma — o nome não mudou.</li>
+      <li>Renomeie uma música e ela continua a mesma: a posição não mudou.</li>
+      <li>Mova o marcador para outro compasso e ela continua a mesma: o nome não mudou.</li>
       <li>Altere ambos simultaneamente e ela será tratada como uma nova música.</li>
     </ul>
     <p>
-      Tudo o que o RC Setlist armazena externamente (cores, notas e letras) respeita essa
-      identidade. Caso você exclua um locator por engano e o recrie na mesma posição ou com o mesmo
-      nome, os dados associados são restaurados automaticamente.
+      Tudo o que o RC Setlist armazena externamente ao projeto do Live respeita essa identidade.
+      Exclua um locator por engano e recrie-o, e o RC Setlist restaura os dados que guardou.
     </p>
     <p>
       O raciocínio completo está em

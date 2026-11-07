@@ -3,10 +3,10 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>Release notes — RC Setlist 1.1.0 — Ableton Live</title>
+    <title>RC Setlist 1.1.0 release notes — Ableton Live</title>
     <meta
       name="description"
-      content="Release notes — RC Setlist 1.1.0: documentation for RC Setlist, the setlist, lyrics and stage display extension for Ableton Live."
+      content="RC Setlist 1.1.0 release notes: documentation for RC Setlist, the setlist, lyrics and stage display extension for Ableton Live."
     />
     <link rel="canonical" href="https://ntworm.github.io/rc-setlist/RELEASE-NOTES-1.1.0.html" />
     <link rel="alternate" type="text/markdown" href="./RELEASE-NOTES-1.1.0.md" />
@@ -14,10 +14,10 @@
     <meta property="og:type" content="article" />
     <meta property="og:site_name" content="RC Setlist" />
     <meta property="og:locale" content="en" />
-    <meta property="og:title" content="Release notes — RC Setlist 1.1.0 — Ableton Live" />
+    <meta property="og:title" content="RC Setlist 1.1.0 release notes — Ableton Live" />
     <meta
       property="og:description"
-      content="Release notes — RC Setlist 1.1.0: documentation for RC Setlist, the setlist, lyrics and stage display extension for Ableton Live."
+      content="RC Setlist 1.1.0 release notes: documentation for RC Setlist, the setlist, lyrics and stage display extension for Ableton Live."
     />
     <meta
       property="og:url"
@@ -108,68 +108,72 @@
   </head>
   <body>
     <div class="crumbs"><a href="./">RC Setlist</a> · <a href="./README.html">Docs</a></div>
-    <h1 id="release-notes-rc-setlist-1-1-0">Release notes — RC Setlist 1.1.0</h1>
+    <h1 id="rc-setlist-1-1-0-release-notes">RC Setlist 1.1.0 release notes</h1>
     <p>
       <strong>Release date:</strong> 2026-11-06 <strong>Supported version line:</strong>
       <code>1.1.x</code> <strong>Also available in Portuguese:</strong>
       <a href="pt-BR/NOTAS-DA-VERSAO-1.1.0.html"><code>pt-BR/NOTAS-DA-VERSAO-1.1.0.md</code></a>
     </p>
-    <p>Changes in 1.1.0, with the new Live panel first.</p>
-    <h2 id="highlights">Highlights</h2>
+    <h2 id="new-features">New features</h2>
     <ul>
       <li>
-        <strong>Live panel.</strong> Three tabs: Main, Setlists, Network. Main shows one QR code,
+        <strong>Live panel.</strong> A new Live panel has three tabs: <strong>Main</strong>,
+        <strong>Setlists</strong> and
       </li>
     </ul>
     <p>
-      Stage Control by default, and a button that switches it to the Performance view; below it, the
-      active setlist, song count, show time and song list.
+      <strong>Network</strong>. <strong>Main</strong> shows one QR code, the Stage Control page by
+      default and a button that swaps it for the Performance page; below it, the active setlist, the
+      song count, the show time and the song list.
     </p>
     <ul>
       <li>
-        <strong>Setlist management in the panel.</strong> Activate, rename, delete, create and
+        <strong>Setlist management.</strong> The <strong>Setlists</strong> tab activates, renames,
+        deletes,
       </li>
     </ul>
     <p>
-      restore setlists while the transport is stopped. A delete is confirmed in the row and can be
-      undone from the Deleted list.
-    </p>
-    <ul>
-      <li><strong>Setlist packages.</strong> _Export all_ writes the setlists of the Live Set</li>
-    </ul>
-    <p>
-      (order, song colours and notes, lyrics) to one <code>.rcsetlist</code> file. _Import_ adds the
-      setlists of a package to the existing ones; a duplicate name gets a number, and a failed
-      import is rolled back. Files are kept in the <code>packages</code> folder of the extension
-      data, because Live allows an extension to write only there; the panel shows the path.
+      creates and restores setlists while the transport is stopped. A delete is confirmed in the row
+      and can be undone from the <strong>Deleted setlists</strong> list.
     </p>
     <ul>
       <li>
-        <strong>Second computer.</strong> Pair a second computer running Live with a six-digit
+        <strong>Setlist packages.</strong> <strong>Export all</strong> in the
+        <strong>Setlists</strong> tab writes every
       </li>
     </ul>
     <p>
-      code. Play, Stop, jumps, click, quantization, count-in, refresh and panic are sent to it;
-      setlist and marker editing stay on the main computer. A second status dot in the Stage Control
-      header is green when the link is up and the markers match, amber when the markers differ, red
-      when it does not answer.
+      setlist of the Live Set (order, song colours and notes, lyrics) to one
+      <code>.rcsetlist</code> file, and <strong>Import</strong> adds the setlists of a package to
+      the ones already there: a repeated name gets a number, and a failed import is rolled back. The
+      files stay in the <code>packages</code> folder of the extension data, because Live lets an
+      extension write only there, and the panel shows the path.
     </p>
     <ul>
       <li>
-        <strong>Collapsible song list.</strong> The three-dot button next to a song collapses its
+        <strong>Second computer.</strong> The <strong>Network</strong> tab pairs a second computer
+        running
       </li>
     </ul>
     <p>
-      sections; _Fold all / Unfold all_ acts on the whole list. Hold the song name or number to
-      jump; drag the grip on the right edge of the card to reorder.
+      Live with a six-digit code. A second status dot in the Stage Control header is green when the
+      link is up and the markers match, amber when the markers differ and red when the computer does
+      not answer.
+    </p>
+    <ul>
+      <li><strong>Collapsible song list.</strong> The three-dot button next to a song folds its</li>
+    </ul>
+    <p>
+      sections, and <strong>Fold all / Unfold all</strong> acts on the whole list. Hold the song
+      name or its number to jump; drag the grip on the right edge of the card to reorder.
     </p>
     <ul>
       <li><strong>Local certificate.</strong> The extension creates a certificate authority for</li>
     </ul>
     <p>
-      this computer, valid for localhost and private network addresses. The Network tab shows a QR
-      code for an install page on port <code>4445</code>; with the certificate installed, the
-      browser opens the pages without a warning.
+      this computer, valid for localhost and private network addresses. The
+      <strong>Network</strong> tab shows a QR code for an install page on port <code>4445</code>;
+      with the certificate installed, the browser opens the pages without a warning.
     </p>
     <ul>
       <li><strong>Network address.</strong> The QR code uses the address of the default route</li>
@@ -178,16 +182,15 @@
       instead of the first private address, so a second network interface (lighting, audio) does not
       replace the Wi-Fi address.
     </p>
+    <h2 id="fixes">Fixes</h2>
     <ul>
-      <li>
-        <strong>Fixes.</strong> The top bar stays on one row in both languages; reordering works
-      </li>
+      <li>The top bar stays on one row in both languages.</li>
+      <li>Reordering works on Windows.</li>
+      <li>Saving works when Live refuses <code>fsync</code>.</li>
+      <li>The pairing is bound to the key of the second computer, so an address change</li>
     </ul>
-    <p>
-      on Windows; saving works when Live refuses <code>fsync</code>; pairing is bound to the key of
-      the second computer, so an address change keeps the link.
-    </p>
-    <h2 id="how-to-use-it">How to use it</h2>
+    <p>keeps the link.</p>
+    <h2 id="pairing-a-second-computer">Pairing a second computer</h2>
     <p>
       1. On the <strong>second computer</strong>, start the RC Setlist server and open the Live
       panel. Go to the <strong>Network</strong> tab and press <strong>Show</strong> in the
@@ -196,8 +199,8 @@
       <strong>Network</strong> tab and press <strong>Show</strong> in the
       <strong>Second computer</strong> card. Type the second computer&#39;s address and the code,
       and press <strong>Pair</strong>. 3. Put both computers on the same session: Ableton
-      <strong>Link</strong> on, Live&#39;s <strong>Start Stop Sync</strong> off. The relay does the
-      transport; the native sync would do it twice.
+      <strong>Link</strong> on, Live&#39;s <strong>Start Stop Sync</strong> off. RC Setlist relays
+      the transport; the native sync would drive it twice.
     </p>
     <p>
       A phone that opens the Stage Control page is a controller of the main computer: it joins the
@@ -212,36 +215,38 @@
       editing, marker editing, colours, notes, lyrics, profiles, ordering and the CSV export stay on
       the main computer.
     </p>
-    <h2 id="also-in-this-release">Also in this release</h2>
+    <h2 id="other-changes">Other changes</h2>
     <ul>
-      <li>On a song card, only the song name and number start a jump; the time,</li>
+      <li>On a song card, only the song name and its number start a jump; the time,</li>
     </ul>
     <p>
-      notes, badges, three-dot button and grip do not. On a touch screen a jump is a 500 ms hold.
+      the notes, the badges, the three-dot button and the grip do not. On a touch screen a jump is a
+      500 ms hold.
     </p>
     <ul>
-      <li>The _Fold all / Unfold all_ state is stored on the device, per setlist.</li>
-      <li>Pairing a computer with itself is refused, and the panel states when the</li>
+      <li>
+        The <strong>Fold all / Unfold all</strong> state is stored on the device, per setlist.
+      </li>
+      <li>Pairing a computer with itself is refused, and the panel says when the code</li>
     </ul>
-    <p>code has to be generated on the second computer.</p>
+    <p>has to be generated on the second computer.</p>
     <ul>
-      <li>PANIC cancels a running count-in.</li>
+      <li><strong>panic</strong> cancels a running count-in.</li>
     </ul>
     <h2 id="contracts">Contracts</h2>
     <p>
-      <code>docs/CONTRACTS.md</code> (and <code>docs/pt-BR/CONTRATOS.md</code>) now describe the
-      pairing route, the peer credential, the <code>jump_time</code> frame and the
+      <code>docs/CONTRACTS.md</code> (and <code>docs/pt-BR/CONTRATOS.md</code>) describe the pairing
+      route, the peer credential, the <code>jump_time</code> frame and the
       <code>peerStatus</code> field of the state frame.
     </p>
     <h2 id="upgrading-from-1-0">Upgrading from 1.0</h2>
     <p>
       Nothing to migrate. The pairing is per install and nothing is written unless the operator
-      pairs a second computer: no second dot and no outgoing connection until then. Two things are
-      new on the first start: the extension creates its certificate authority in its data folder and
-      signs a new server certificate with it, so a phone that accepted the old certificate asks once
-      more (or stops asking after the phone certificate is installed), and the install page answers
-      on port 4445 while the server runs. Live refuses to install over an existing extension folder:
-      remove RC Setlist in Live&#39;s extension settings first; the data folder stays.
+      pairs a second computer: no second dot and no outgoing connection until then. On the first
+      start the extension signs a new server certificate, so a phone that accepted the old
+      certificate asks once more, or stops asking after the phone certificate is installed. The
+      install page answers while the server runs. Live refuses to install over an existing extension
+      folder: remove RC Setlist in Live&#39;s extension settings first; the data folder stays.
     </p>
     <div class="source">Rendered from <code>docs\RELEASE-NOTES-1.1.0.md</code> on 2026-11-07.</div>
   </body>

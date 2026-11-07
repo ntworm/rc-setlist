@@ -3,10 +3,10 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>Notas da versão — RC Setlist 1.1.0 — Ableton Live</title>
+    <title>Notas da versão RC Setlist 1.1.0 — Ableton Live</title>
     <meta
       name="description"
-      content="Notas da versão — RC Setlist 1.1.0: documentação do RC Setlist, a extensão de setlist, letra e tela de palco para o Ableton Live."
+      content="Notas da versão RC Setlist 1.1.0: documentação do RC Setlist, a extensão de setlist, letra e tela de palco para o Ableton Live."
     />
     <link
       rel="canonical"
@@ -17,10 +17,10 @@
     <meta property="og:type" content="article" />
     <meta property="og:site_name" content="RC Setlist" />
     <meta property="og:locale" content="pt_BR" />
-    <meta property="og:title" content="Notas da versão — RC Setlist 1.1.0 — Ableton Live" />
+    <meta property="og:title" content="Notas da versão RC Setlist 1.1.0 — Ableton Live" />
     <meta
       property="og:description"
-      content="Notas da versão — RC Setlist 1.1.0: documentação do RC Setlist, a extensão de setlist, letra e tela de palco para o Ableton Live."
+      content="Notas da versão RC Setlist 1.1.0: documentação do RC Setlist, a extensão de setlist, letra e tela de palco para o Ableton Live."
     />
     <meta
       property="og:url"
@@ -111,49 +111,57 @@
   </head>
   <body>
     <div class="crumbs"><a href="./">RC Setlist</a> · <a href="./README.html">Documentação</a></div>
-    <h1 id="notas-da-vers-o-rc-setlist-1-1-0">Notas da versão — RC Setlist 1.1.0</h1>
+    <h1 id="notas-da-vers-o-rc-setlist-1-1-0">Notas da versão RC Setlist 1.1.0</h1>
     <p>
       <strong>Data de lançamento:</strong> 2026-11-06 <strong>Linha de versões suportada:</strong>
-      <code>1.1.x</code> <strong>Also available in English:</strong>
+      <code>1.1.x</code> <strong>Também disponível em inglês:</strong>
       <a href="../RELEASE-NOTES-1.1.0.md"><code>../RELEASE-NOTES-1.1.0.md</code></a>
     </p>
-    <p>Mudanças da 1.1.0, começando pelo painel do Live novo.</p>
-    <h2 id="destaques">Destaques</h2>
-    <ul>
-      <li><strong>Painel do Live.</strong> Três abas: Principal, Repertórios, Rede. A Principal</li>
-    </ul>
-    <p>
-      mostra um QR, do Controle de palco por padrão, e um botão que troca para a tela Performance;
-      abaixo, o repertório ativo, o número de músicas, o tempo de show e a lista de músicas.
-    </p>
-    <ul>
-      <li><strong>Gestão de repertórios no painel.</strong> Ativar, renomear, apagar, criar e</li>
-    </ul>
-    <p>
-      restaurar repertórios com o transporte parado. Apagar pede confirmação na própria linha e pode
-      ser desfeito pela lista de apagados.
-    </p>
+    <h2 id="novidades">Novidades</h2>
     <ul>
       <li>
-        <strong>Pacotes de repertórios.</strong> _Exportar todos_ grava os repertórios do Live Set
+        <strong>Painel do Live.</strong> O painel do Live é novo e tem três abas:
+        <strong>Principal</strong>,
       </li>
     </ul>
     <p>
-      (ordem, cores e notas das músicas, letras) num arquivo <code>.rcsetlist</code>. _Importar_
-      acrescenta os repertórios de um pacote aos existentes; um nome repetido ganha um número, e uma
-      importação que falha é desfeita. Os arquivos ficam na pasta <code>packages</code> dos dados da
-      extensão, porque o Live só deixa a extensão gravar ali; o painel mostra o caminho.
+      <strong>Repertórios</strong> e <strong>Rede</strong>. <strong>Principal</strong> mostra um QR,
+      do Controle de palco por padrão, e um botão que troca para a tela Performance; abaixo, o
+      repertório ativo, o número de músicas, o tempo de show e a lista de músicas.
     </p>
     <ul>
       <li>
-        <strong>Segundo computador.</strong> Pareie um segundo computador com o Live usando um
+        <strong>Gestão de repertórios.</strong> A aba <strong>Repertórios</strong> ativa, renomeia,
+        apaga,
       </li>
     </ul>
     <p>
-      código de seis dígitos. Play, Stop, saltos, click, quantização, contagem, atualizar e pânico
-      são enviados a ele; a edição de repertório e de marcadores fica no principal. Um segundo ponto
-      de estado no topo do Controle de palco fica verde com o link ativo e os marcadores iguais,
-      âmbar com marcadores diferentes, vermelho quando ele não responde.
+      cria e restaura repertórios com o transporte parado. Apagar pede confirmação na própria linha
+      e pode ser desfeito pela lista de <strong>Setlists excluídos</strong>.
+    </p>
+    <ul>
+      <li>
+        <strong>Pacotes de repertórios.</strong> <strong>Exportar todos</strong>, na aba
+        <strong>Repertórios</strong>,
+      </li>
+    </ul>
+    <p>
+      grava todos os repertórios do Live Set (ordem, cores e notas das músicas, letras) num arquivo
+      <code>.rcsetlist</code>, e <strong>Importar</strong> acrescenta os repertórios de um pacote
+      aos existentes: um nome repetido ganha um número, e uma importação que falha é desfeita. Os
+      arquivos ficam na pasta <code>packages</code> dos dados da extensão, porque o Live só deixa a
+      extensão gravar ali, e o painel mostra o caminho.
+    </p>
+    <ul>
+      <li>
+        <strong>Segundo computador.</strong> A aba <strong>Rede</strong> pareia um segundo
+        computador com o
+      </li>
+    </ul>
+    <p>
+      Live usando um código de seis dígitos. Um segundo ponto de estado no topo do Controle de palco
+      fica verde com o link ativo e os marcadores iguais, âmbar com marcadores diferentes e vermelho
+      quando o computador não responde.
     </p>
     <ul>
       <li>
@@ -161,8 +169,9 @@
       </li>
     </ul>
     <p>
-      recolhe as seções dela; _Recolher todas / Abrir todas_ age na lista inteira. Segure o nome ou
-      o número da música para saltar; arraste a alça na borda direita do card para reordenar.
+      recolhe as seções dela, e <strong>Recolher todas / Abrir todas</strong> age na lista inteira.
+      Segure o nome ou o número da música para saltar; arraste a alça na borda direita do card para
+      reordenar.
     </p>
     <ul>
       <li>
@@ -170,9 +179,9 @@
       </li>
     </ul>
     <p>
-      computador, válida para localhost e endereços privados da rede. A aba Rede mostra um QR para
-      uma página de instalação na porta <code>4445</code>; com o certificado instalado, o navegador
-      abre as páginas sem aviso.
+      computador, válida para localhost e endereços privados da rede. A aba
+      <strong>Rede</strong> mostra um QR para uma página de instalação na porta <code>4445</code>;
+      com o certificado instalado, o navegador abre as páginas sem aviso.
     </p>
     <ul>
       <li><strong>Endereço de rede.</strong> O QR usa o endereço da rota padrão, não o primeiro</li>
@@ -181,16 +190,15 @@
       endereço privado, então uma segunda interface de rede (luz, áudio) não substitui o endereço do
       Wi-Fi.
     </p>
+    <h2 id="corre-es">Correções</h2>
     <ul>
-      <li>
-        <strong>Correções.</strong> A barra do topo fica numa linha nos dois idiomas; reordenar
-      </li>
+      <li>A barra do topo fica numa linha nos dois idiomas.</li>
+      <li>Reordenar funciona no Windows.</li>
+      <li>Salvar funciona quando o Live recusa <code>fsync</code>.</li>
+      <li>O pareamento fica preso à chave do segundo computador, então uma mudança de</li>
     </ul>
-    <p>
-      funciona no Windows; salvar funciona quando o Live recusa <code>fsync</code>; o pareamento
-      fica preso à chave do segundo computador, então uma mudança de endereço mantém o link.
-    </p>
-    <h2 id="como-usar">Como usar</h2>
+    <p>endereço mantém o link.</p>
+    <h2 id="parear-um-segundo-computador">Parear um segundo computador</h2>
     <p>
       1. No <strong>segundo computador</strong>, inicie o servidor do RC Setlist e abra o painel
       dentro do Live. Vá na aba <strong>Rede</strong> e aperte <strong>Mostrar</strong> no cartão
@@ -200,10 +208,10 @@
       <strong>Segundo computador</strong>. Digite o endereço do segundo computador e o código, e
       aperte <strong>Parear</strong>. 3. Ponha os dois computadores na mesma sessão:
       <strong>Link</strong> do Ableton ligado, <strong>Start Stop Sync</strong> do Live desligado. O
-      relay cuida do transporte; a sincronização nativa cuidaria dele duas vezes.
+      RC Setlist repassa o transporte; a sincronização nativa dirigiria o transporte duas vezes.
     </p>
     <p>
-      Um celular que abre a página do Controle de Palco é um controlador do computador principal:
+      Um celular que abre a página do Controle de palco é um controlador do computador principal:
       ele entra na sessão do principal e vê o setlist do principal. O pareamento serve para uma
       segunda máquina rodando Live. O macOS é suportado de forma experimental; o Windows é a
       plataforma validada.
@@ -216,7 +224,7 @@
       Edição do setlist, edição de marcadores, cores, notas, letras, perfis, ordenação e a
       exportação CSV ficam no computador principal.
     </p>
-    <h2 id="tamb-m-nesta-vers-o">Também nesta versão</h2>
+    <h2 id="outras-mudan-as">Outras mudanças</h2>
     <ul>
       <li>No card da música, só o nome e o número iniciam um salto; o tempo, as notas,</li>
     </ul>
@@ -225,7 +233,9 @@
       ms.
     </p>
     <ul>
-      <li>O estado de _Recolher todas / Abrir todas_ fica guardado no aparelho, por</li>
+      <li>
+        O estado de <strong>Recolher todas / Abrir todas</strong> fica guardado no aparelho, por
+      </li>
     </ul>
     <p>repertório.</p>
     <ul>
@@ -233,24 +243,23 @@
     </ul>
     <p>código tem de ser gerado no segundo computador.</p>
     <ul>
-      <li>O PANIC cancela uma contagem em andamento.</li>
+      <li><strong>pânico</strong> cancela uma contagem em andamento.</li>
     </ul>
     <h2 id="contratos">Contratos</h2>
     <p>
-      <code>docs/CONTRACTS.md</code> (e <code>docs/pt-BR/CONTRATOS.md</code>) agora descrevem a rota
-      de pareamento, a credencial do par, o frame <code>jump_time</code> e o campo
+      <code>docs/CONTRACTS.md</code> (e <code>docs/pt-BR/CONTRATOS.md</code>) descrevem a rota de
+      pareamento, a credencial do par, o frame <code>jump_time</code> e o campo
       <code>peerStatus</code> do frame de estado.
     </p>
     <h2 id="atualizando-da-1-0">Atualizando da 1.0</h2>
     <p>
       Nada a migrar. O pareamento é por instalação e nada é gravado a não ser que o operador pareie
-      um segundo computador: até lá, sem segundo ponto e sem conexão de saída. Duas coisas são novas
-      no primeiro início: a extensão cria a autoridade de certificado na pasta de dados e assina com
-      ela um novo certificado do servidor, então um celular que tinha aceitado o certificado antigo
-      pergunta mais uma vez (ou para de perguntar depois de instalar o certificado do celular), e a
-      página de instalação responde na porta 4445 enquanto o servidor roda. O Live recusa instalar
-      por cima de uma pasta de extensão existente: remova o RC Setlist nas configurações de
-      extensões do Live antes; a pasta de dados fica.
+      um segundo computador: até lá, sem segundo ponto e sem conexão de saída. No primeiro início a
+      extensão assina um novo certificado do servidor, então um celular que tinha aceitado o
+      certificado antigo pergunta mais uma vez, ou para de perguntar depois de instalar o
+      certificado do celular. A página de instalação responde enquanto o servidor roda. O Live
+      recusa instalar por cima de uma pasta de extensão existente: remova o RC Setlist nas
+      configurações de extensões do Live antes; a pasta de dados fica.
     </p>
     <div class="source">
       Rendered from <code>docs\pt-BR\NOTAS-DA-VERSAO-1.1.0.md</code> on 2026-11-07.

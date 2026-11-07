@@ -16,10 +16,11 @@
 
 [Landing page and screenshots](https://ntworm.github.io/rc-setlist/)
 
-RC Setlist is an extension for Ableton Live 12 that runs the setlist of a show
-from the Arrangement. It reads the Arrangement locators of a Live Set and shows
-them in the browser: a setlist for the operator (Stage Control) and a read-only
-display for the band (Performance). The timing comes from Live.
+RC Setlist is an extension for Ableton Live 12 that runs a show from the
+Arrangement. Mark each song and section with a locator in Live, and RC Setlist
+turns them into a setlist in the browser. The operator starts songs and jumps
+between sections from a laptop or tablet; the band sees the current section, the
+next song and the lyrics on their phones.
 
 > **Network safety:** RC Setlist serves browser controls on your local network.
 > Use it only on a trusted LAN, keep the controller URL and token private, and
@@ -32,19 +33,17 @@ display for the band (Performance). The timing comes from Live.
 - RC Bridge, the bundled Remote Script (a fork of
   [AbletonOSC](https://github.com/ideoforms/AbletonOSC)), selected as a Live
   Control Surface for transport and Live Object Model operations.
-- Node.js 24.16.0 or newer in the Node 24 LTS line, only when developing from
-  source. End users install the `.ablx` and do not need Node.js.
 
 Windows is the validated release platform. macOS support remains experimental
 until it is exercised on real macOS hardware.
 
 ## Install
 
-1. Install RC Bridge: run the kit's `Install-RC-Bridge.cmd` (Windows) or
+1. Download `RC-Setlist-1.1.0.ablx` and the installation kit from the
+   [1.1.0 release](https://github.com/ntworm/rc-setlist/releases/tag/v1.1.0).
+2. Install RC Bridge from the kit: run `Install-RC-Bridge.cmd` (Windows) or
    `Install RC Bridge.command` (macOS), then choose RCBridge as a Control
    Surface in Live.
-2. Download `RC-Setlist-1.1.0.ablx` and the installation kit from the
-   [1.1.0 release](https://github.com/ntworm/rc-setlist/releases/tag/v1.1.0).
 3. If RC Setlist is already installed, remove it in Live's extension settings
    (Live refuses to install over an existing extension folder; your data folder
    stays). Then open the `.ablx` and approve the installation in Live.
@@ -55,8 +54,9 @@ until it is exercised on real macOS hardware.
 6. Press **EN** or **PT** at the top right of the panel to choose English or
    Brazilian Portuguese.
 
-Data in the `RC-Setlist-1.0.0.ablx` layout runs without migration. To move data
-from the 0.x layout (`Ableton-RC-Setlist-0.4.x`–`0.7.0`), run the kit's
+Data in the [`RC-Setlist-1.0.0.ablx`](https://github.com/ntworm/rc-setlist/blob/main/docs/RELEASE-NOTES-1.0.0.md) layout runs
+without migration. To move data from the 0.x layout
+(`Ableton-RC-Setlist-0.4.x`–`0.7.0`), run the kit's
 `Migrate-RC-Setlist-Data.cmd` (Windows) or `Migrate RC Setlist Data.command`
 (macOS) once before opening Live; the script copies profiles, project setlists
 and preferences into the 1.x layout and leaves the old folder untouched.
@@ -130,25 +130,15 @@ Full details in the [1.1.0 release notes](https://github.com/ntworm/rc-setlist/b
 
 ## Documentation
 
-- [Documentation index](https://github.com/ntworm/rc-setlist/blob/main/docs/README.md)
 - [Getting started](https://github.com/ntworm/rc-setlist/blob/main/docs/GETTING-STARTED.md)
 - [Installation](https://github.com/ntworm/rc-setlist/blob/main/docs/INSTALL.md)
 - [User guide](https://github.com/ntworm/rc-setlist/blob/main/docs/USER-GUIDE.md)
-- [What is new in 1.1.0](https://github.com/ntworm/rc-setlist/blob/main/docs/RELEASE-NOTES-1.1.0.md)
-- [What is new in 1.0.0](https://github.com/ntworm/rc-setlist/blob/main/docs/RELEASE-NOTES-1.0.0.md)
 - [Troubleshooting](https://github.com/ntworm/rc-setlist/blob/main/docs/TROUBLESHOOTING.md)
 - [Frequently asked questions](https://github.com/ntworm/rc-setlist/blob/main/docs/FAQ.md)
-- [Tester guide](https://github.com/ntworm/rc-setlist/blob/main/docs/TESTER-GUIDE.md)
-- [Develop from source](https://github.com/ntworm/rc-setlist/blob/main/docs/DEVELOPMENT.md)
-- [Contracts](https://github.com/ntworm/rc-setlist/blob/main/docs/CONTRACTS.md)
-- [Release history](https://github.com/ntworm/rc-setlist/blob/main/docs/HISTORY.md)
-- [Theme contract](https://github.com/ntworm/rc-setlist/blob/main/docs/THEME_CONTRACT.md)
-- [Code of conduct](https://github.com/ntworm/rc-setlist/blob/main/CODE_OF_CONDUCT.md)
+- [What is new in 1.1.0](https://github.com/ntworm/rc-setlist/blob/main/docs/RELEASE-NOTES-1.1.0.md)
 - [Privacy](https://github.com/ntworm/rc-setlist/blob/main/PRIVACY.md)
 - [Security](https://github.com/ntworm/rc-setlist/blob/main/SECURITY.md)
-- [Support](https://github.com/ntworm/rc-setlist/blob/main/SUPPORT.md)
-- [Contributing](https://github.com/ntworm/rc-setlist/blob/main/CONTRIBUTING.md)
-- [Third-party notices](https://github.com/ntworm/rc-setlist/blob/main/THIRD_PARTY_NOTICES.md)
+- [All other documents](https://github.com/ntworm/rc-setlist/blob/main/docs/README.md)
 
 ## Development
 
@@ -164,6 +154,8 @@ through the public dependency gate.
 The Ableton SDK and CLI are not redistributed in this source repository.
 Authorized developers can configure a complete build using
 [vendor/README.md](https://github.com/ntworm/rc-setlist/blob/main/vendor/README.md) and [docs/DEVELOPMENT.md](https://github.com/ntworm/rc-setlist/blob/main/docs/DEVELOPMENT.md).
+Building from source needs Node.js 24.16.0 or newer, in the Node 24 LTS line;
+end users install the `.ablx` and do not need Node.js.
 
 The installation kit is built with `npm run package:kit`. It writes
 `release-candidates/RC-Setlist-1.1.0-Installation-Kit.zip` with the `.ablx`,
@@ -186,61 +178,39 @@ independent project and is not affiliated with or endorsed by Ableton AG.
 
 <!-- https://github.com/ntworm/rc-setlist/blob/main/docs/GETTING-STARTED.md -->
 
-# Getting started with RC Setlist 1.0
+# Getting started with RC Setlist
 
-This guide takes you from a fresh Live install to a running setlist in
-under 15 minutes. If anything here disagrees with what you see on
-screen, open an issue with the `docs/wrong` label.
+This guide walks through the first show: enable the extension, build a setlist
+from Live locators and control it from a phone. Install RC Setlist and RC
+Bridge first (see [INSTALL.md](https://github.com/ntworm/rc-setlist/blob/main/docs/INSTALL.md)). If anything here disagrees with
+what you see on screen, open an issue with the `docs/wrong` label.
 
-- [1. Install](#1-install)
-- [2. Open Live and enable RC Setlist](#2-open-live-and-enable-rc-setlist)
-- [3. First setlist in three locators](#3-first-setlist-in-three-locators)
-- [4. Open the panel](#4-open-the-panel)
-- [5. Pair the stage phone](#5-pair-the-stage-phone)
+- [Enable the extension](#enable-the-extension)
+- [Build a setlist from locators](#build-a-setlist-from-locators)
+- [Read the panel](#read-the-panel)
+- [Connect the phone](#connect-the-phone)
 - [Next steps](#next-steps)
 
-## 1. Install
-
-You need:
-
-- Ableton Live 12.4.5 Suite (Beta) or newer, with Extensions enabled.
-- macOS 13+ (release path) or Windows 11 23H2+ (release path). Linux is
-  not supported by the host; the bridge is Python and runs anywhere
-  Live does.
-- A modern phone browser (Safari 17+, Chrome 121+) for the stage
-  control.
-
-Open the kit you downloaded from the
-[release page](https://github.com/ntworm/rc-setlist/releases/latest) and
-double-click the installer for your platform. The installer copies RC
-Bridge into Live's User Library and prints the final URL of the local
-panel.
-
-If you prefer to do it by hand, follow
-[INSTALL.md](https://github.com/ntworm/rc-setlist/blob/main/docs/INSTALL.md). The 1.0 install is one RC Bridge folder plus
-the `.ablx` extension; nothing else needs to be on disk.
-
-## 2. Open Live and enable RC Setlist
+## Enable the extension
 
 1. Launch Ableton Live.
-2. Open Live's **Preferences → Extensions** and confirm `RC Setlist`
-   appears in the list with status **Enabled**.
+2. Open Live's **Preferences → Extensions** and confirm `RC Setlist` appears in
+   the list with status **Enabled**.
 3. **Extensions → RC Setlist → Open panel** opens the host panel.
-4. The panel shows the local URL, the controller token as a QR code,
-   and the auto-detected LAN IP.
+4. The panel shows the local URL, the controller token as a QR code, and the
+   auto-detected LAN IP.
 
-The URL is `https://<lan-ip>:4444/`; the QR embeds the same URL with the
-token in the query string. Treat the QR like a password — anyone who
-scans it can stop the transport.
+The URL is `https://<lan-ip>:4444/`; the QR embeds the same URL with the token
+in the query string. Treat the QR like a password: anyone who scans it can stop
+the transport.
 
-## 3. First setlist in three locators
+## Build a setlist from locators
 
-Live uses **locators** (cue points in the Arrangement). Each one
-carries the song title plus optional tags inside `[ ]` brackets. RC
-Setlist parses them into songs and sections.
+Live uses **locators** (cue points in the Arrangement). Each one carries the
+song title plus optional tags inside `[ ]` brackets. RC Setlist parses them
+into songs and sections.
 
-Start a new Live Set, set the tempo to 120 BPM, and add three
-locators:
+Start a new Live Set, set the tempo to 120 BPM, and add three locators:
 
 | Beat | Name               | Notes            |
 | ---- | ------------------ | ---------------- |
@@ -256,44 +226,43 @@ Open the panel and confirm you see:
 
 If the panel shows nothing, check the logs panel for a malformed locator.
 
-## 4. Open the panel
+## Read the panel
 
-The operator works from the panel: it shows the current song, the running timer,
-the next locator, and the controls to play, stop, jump and edit. Pressing
-**Space** toggles play/stop; **N** and **P** jump to the next and previous
-locator; **J** opens a small dialog to type a marker name and jump to it.
+The Live panel is the window RC Setlist opens inside Live. The operator works
+in the Stage Control page in the browser: it shows the current song, the
+running timer, the next locator, and the controls to play, stop, jump and edit.
 
-The full reference is in
-[USER-GUIDE.md](https://github.com/ntworm/rc-setlist/blob/main/docs/USER-GUIDE.md#panel-controls).
+The full reference is in [USER-GUIDE.md](https://github.com/ntworm/rc-setlist/blob/main/docs/USER-GUIDE.md#the-live-panel).
 
-## 5. Pair the stage phone
+## Connect the phone
 
 1. On the stage phone, scan the QR from the panel.
-2. The phone opens the Stage Control page at the same URL with the
-   token already in the query string.
-3. Tap **Confirm controller** to register the phone as a controller
-   for this session.
+2. The phone opens the Stage Control page at the same URL with the token
+   already in the query string.
+3. Tap **Confirm controller** to register the phone as a controller for this
+   session.
 
-The phone now shows the next song, the section index, the running
-timer, and the lyrics. There is no separate pairing app; the only
-piece of state the phone needs is the URL.
+The phone shows the next song, the section index, the running timer, and the
+lyrics. It needs a modern browser (Safari 17+, Chrome 121+).
 
-If the phone loses the connection, the panel re-renders and the URL
+The Performance view at `https://<host-ip>:4444/performance` is read-only and
+shows the show state to the band.
+
+There is no separate pairing app; the only piece of state the phone needs is
+the URL. If the phone loses the connection, the panel re-renders and the URL
 stays valid until you restart Live.
 
 ## Next steps
 
-- [USER-GUIDE.md](https://github.com/ntworm/rc-setlist/blob/main/docs/USER-GUIDE.md) — full panel + Stage Control
-  reference.
-- [CONTRACTS.md](https://github.com/ntworm/rc-setlist/blob/main/docs/CONTRACTS.md) — the public contract (HTTP, WS,
-  locator grammar). Read this if you want to write your own
-  controller.
-- [THEME_CONTRACT.md](https://github.com/ntworm/rc-setlist/blob/main/docs/THEME_CONTRACT.md) — palette and typography if
-  you want a custom skin for Stage Control.
-- [TESTER-GUIDE.md](https://github.com/ntworm/rc-setlist/blob/main/docs/TESTER-GUIDE.md) — what to check on a release
-  candidate before you ship it to the band.
-- [DEVELOPMENT.md](https://github.com/ntworm/rc-setlist/blob/main/docs/DEVELOPMENT.md) — how to run the source tests and
-  build the extension locally.
+- [USER-GUIDE.md](https://github.com/ntworm/rc-setlist/blob/main/docs/USER-GUIDE.md): full panel + Stage Control reference.
+- [CONTRACTS.md](https://github.com/ntworm/rc-setlist/blob/main/docs/CONTRACTS.md): the public contract (HTTP, WS, locator
+  grammar). Read this if you want to write your own controller.
+- [THEME_CONTRACT.md](https://github.com/ntworm/rc-setlist/blob/main/docs/THEME_CONTRACT.md): palette and typography if you want
+  a custom skin for Stage Control.
+- [TESTER-GUIDE.md](https://github.com/ntworm/rc-setlist/blob/main/docs/TESTER-GUIDE.md): what to check on a release candidate
+  before you ship it to the band.
+- [DEVELOPMENT.md](https://github.com/ntworm/rc-setlist/blob/main/docs/DEVELOPMENT.md): how to run the source tests and build the
+  extension locally.
 
 <!-- https://github.com/ntworm/rc-setlist/blob/main/docs/INSTALL.md -->
 
@@ -302,53 +271,54 @@ stays valid until you restart Live.
 ## Requirements
 
 - Ableton Live 12.4.5+ Suite (Beta) with Extensions support.
-- RC Bridge selected as a Control Surface in Live. It ships with the extension
-  and the installation kit; step 1 below installs it. (A stock
-  [AbletonOSC](https://github.com/ideoforms/AbletonOSC) also works.)
 - Windows for the validated release path. macOS is experimental.
+- RC Bridge selected as a Control Surface in Live; the section below installs
+  it. A stock [AbletonOSC](https://github.com/ideoforms/AbletonOSC) also works.
 
-Node.js 24.16.0 is required only for source development, not for installing the
+Node.js 24.16.0 is required for source development, not for installing the
 release package.
 
-## 1. Install RC Bridge
+After the installation, follow [Getting started](https://github.com/ntworm/rc-setlist/blob/main/docs/GETTING-STARTED.md) for the
+first show.
 
-RC Bridge is the Live Remote Script that RC Setlist talks to. It is a
-fork of the MIT-licensed [AbletonOSC](https://github.com/ideoforms/AbletonOSC)
-that answers each client on its own port, so it never fights another RC
-extension for a reply port and runs beside a stock AbletonOSC if you have one.
-Nothing to download: it is inside the extension and inside the installation kit.
+## Install RC Bridge
 
-Pick one of the two ways to put it in Live's User Library:
+RC Bridge is the Live Remote Script that RC Setlist talks to. It is a fork of
+the MIT-licensed [AbletonOSC](https://github.com/ideoforms/AbletonOSC) that
+answers each client on its own port, so it never fights another RC extension
+for a reply port and runs beside a stock AbletonOSC. It is inside the extension
+and inside the installation kit, so there is nothing to download.
 
-- **From the kit** — in the `RC-Bridge` folder, double-click
+Put the script in Live's User Library in one of two ways:
+
+- **From the kit**: in the `RC-Bridge` folder, double-click
   `Install-RC-Bridge.cmd` (Windows) or `Install RC Bridge.command` (macOS;
   right-click › Open the first time). It copies the script and prints the last
   step.
-- **By hand** — copy the `RCBridge` folder from the kit into
-  - Windows: `%USERPROFILE%\Documents\Ableton\User Library\Remote Scripts\RCBridge`
-  - macOS: `~/Music/Ableton/User Library/Remote Scripts/RCBridge`
+- **By hand**: copy the `RCBridge` folder from the kit into
+  `%USERPROFILE%\Documents\Ableton\User Library\Remote Scripts\RCBridge` on
+  Windows or `~/Music/Ableton/User Library/Remote Scripts/RCBridge` on macOS.
 
-Then the one step Live cannot do for you: open
-**Settings/Preferences > Link, Tempo & MIDI** and choose **RCBridge** as a
-Control Surface. Input and Output can stay `None`. If Live was already open
-when the script was copied, close and reopen it once so it sees the new folder.
+Then open **Settings/Preferences > Link, Tempo & MIDI** and choose **RCBridge**
+as a Control Surface. Input and Output can stay `None`. If Live was already
+open when the script was copied, close and reopen it once so it sees the new
+folder.
 
 Use `User Library/Remote Scripts/`, not Live's hidden `User Remote Scripts`
-preferences folder (that one is for `UserConfiguration.txt`). Confirm that
+preferences folder, which holds `UserConfiguration.txt`. Confirm that
 `RCBridge/__init__.py` exists directly at that location, without another
 nested `RCBridge` folder.
 
-If you already use AbletonOSC for other tools, keep it. RC Bridge listens on
-port 11020; AbletonOSC keeps 11000. RC Setlist looks for RC Bridge first and
-falls back to AbletonOSC when it is not there, so both work — RC Bridge is the
-one that also works next to RC Surface. The panel's OSC line says which one is
-in use (`via RC Bridge 1.0.0 on port 11020`). The extension itself cannot
-copy the script for you: Live runs extensions in a sandbox that cannot write
-to your User Library.
+RC Bridge listens on port 11020 and AbletonOSC keeps 11000. RC Setlist looks
+for RC Bridge first and falls back to AbletonOSC when it is not there, so both
+work; RC Bridge is the one that also works next to RC Surface. The panel's OSC
+line says which one is in use (`via RC Bridge 1.0.0 on port 11020`). The
+extension itself cannot copy the script for you: Live runs extensions in a
+sandbox that cannot write to your User Library.
 
-## 2. Install RC Setlist
+## Install the extension
 
-1. Download `RC-Setlist-1.0.0.ablx` from the
+1. Download `RC-Setlist-1.1.0.ablx` from the
    [latest GitHub release](https://github.com/ntworm/rc-setlist/releases/latest).
 2. Open the `.ablx` and follow the Ableton Live installation prompt.
 3. Restart Live if the extension does not appear immediately.
@@ -360,60 +330,49 @@ Stage Control or Performance view. The choice is remembered locally.
 
 Do not install SDK or CLI archives as an end user.
 
-## 3. Start the local server
+## Start the local server
 
 1. In the RC Setlist panel, choose **Start Server**.
 2. Confirm the panel reports a local URL and QR code.
 3. On the host computer, open `https://localhost:4444/setlist`.
-4. On a phone/tablet, use the LAN URL or QR code shown by the panel.
+4. On a phone or tablet, use the LAN URL or the QR code shown by the panel.
 
-First connection: until the certificate of this computer is installed, your
-browser shows `ERR_CERT_AUTHORITY_INVALID`. RC Setlist creates a certificate
-authority for this computer, valid only for localhost and private network
-addresses, and signs its server certificate with it. To stop the warning on a
-phone, scan the **Phone certificate** QR in the Live panel: it opens a plain
-page on port `4445` with the file and the steps for Android and iPhone. Until
-then, continue only when the address exactly matches the IP shown in the Live
-panel and you are on a trusted LAN.
-
-## 4. Open the two views
-
-- Operator workspace: `https://<host-ip>:4444/setlist`
-- Stage display: `https://<host-ip>:4444/performance`
-
-## Updating from 0.x (Ableton RC Setlist 0.4.x–0.7.0)
-
-The 0.x builds were named **Ableton RC Setlist**; since 1.0 the name is
-**RC Setlist**. The rename follows Ableton's brand guidelines. Your profiles,
-project-setlists, token and preferences live in a folder whose name is derived
-from the manifest name, so they must move.
-
-Run the kit's `Migrate-RC-Setlist-Data.cmd` (Windows) or
-`Migrate RC Setlist Data.command` (macOS) **once, before opening Live** with
-1.0. It copies your old `ntworm.ableton-rc-setlist` data into the new
-`ntworm.rc-setlist` folder without touching the old one and never overwrites
-a file that already exists at the destination.
-
-The kit's `RC-Bridge/Install-RC-Bridge.ps1` (Windows) or
-`RC-Bridge/Install RC Bridge.command` (macOS) automatically removes any
-`Ableton-RC-Setlist-*.ablx` that was previously installed in your User Library.
-No separate uninstall step is needed. If you ran the installer before upgrading
-to 1.0, use the included `uninstall-pre-1.0-extensions.ps1` as a manual
-fallback (see [TROUBLESHOOTING.md](https://github.com/ntworm/rc-setlist/blob/main/docs/TROUBLESHOOTING.md)).
+RC Setlist creates a certificate authority for this computer, valid only for
+localhost and private network addresses, and signs its server certificate with
+it. Until the certificate of this computer is installed on the device, the
+browser shows `ERR_CERT_AUTHORITY_INVALID`. Scan the **Phone certificate** QR
+in the Live panel: it opens a plain page on port `4445` with the file and the
+steps for Android and iPhone. Until then, continue only when the address
+exactly matches the IP shown in the Live panel and you are on a trusted LAN.
 
 The controller URL contains a token. Treat it like a local password and do not
 post screenshots containing the full URL.
 
-## 5. Verify the first session
+## Open the views
 
-1. Load a Live Set with fictional test locators from [the example](https://github.com/ntworm/rc-setlist/blob/main/examples/README.md).
-2. In the RC Setlist panel, choose **Check OSC** and confirm received traffic.
-3. Confirm songs/sections appear in `/setlist`.
-4. Open `/performance` and verify the active song follows Live's playhead.
-5. Try Play/Stop and a guarded Previous/Next hold from the controller view.
-6. Close and reopen Live to verify your selected profile and auto-start choice.
+- Stage Control, for the operator: `https://<host-ip>:4444/setlist`
+- Performance, the read-only display for the band: `https://<host-ip>:4444/performance`
 
-For the complete matrix, use [TESTER-GUIDE.md](https://github.com/ntworm/rc-setlist/blob/main/docs/TESTER-GUIDE.md).
+## Migrate data from a 0.x build
+
+Data from a 0.x build lives in the `ntworm.ableton-rc-setlist` folder, where
+the profiles, project-setlists, token and preferences are stored; the current
+extension uses `ntworm.rc-setlist`.
+
+Run the kit's `Migrate-RC-Setlist-Data.cmd` (Windows) or
+`Migrate RC Setlist Data.command` (macOS) **once, before opening Live**. It
+copies your old data into the new folder without touching the old one and
+never overwrites a file that already exists at the destination.
+
+The kit's `RC-Bridge/Install-RC-Bridge.ps1` (Windows) or
+`RC-Bridge/Install RC Bridge.command` (macOS) removes any
+`Ableton-RC-Setlist-*.ablx` that was previously installed in your User
+Library. No separate uninstall step is needed. If you installed the extension
+from a 0.x build, use the included `uninstall-pre-1.0-extensions.ps1` as a
+manual fallback (see [TROUBLESHOOTING.md](https://github.com/ntworm/rc-setlist/blob/main/docs/TROUBLESHOOTING.md)).
+
+In Live, remove the old **Ableton RC Setlist** entry from **Settings >
+Extensions** so the two extensions do not coexist on the same machine.
 
 ## Update
 
@@ -436,24 +395,29 @@ RC Setlist storage target.
 
 # RC Setlist user guide
 
-RC Setlist converts Ableton Live Arrangement locators into a setlist and stage
+RC Setlist converts Ableton Live Arrangement locators into a setlist and a stage
 display. Read [INSTALL.md](https://github.com/ntworm/rc-setlist/blob/main/docs/INSTALL.md) before this guide.
 
 ## Interface language
 
 The interface starts in English. In the Live panel, press **EN** or **PT** at the
-top right to select **English** or **Português (Brasil)**; in Stage Control and
-in the Performance view, use the language menu of the page. The choice is stored
-locally. Song names, section names and lyric/chord content are show data and are
+top right to choose **English** or **Português (Brasil)**. In Stage Control and
+in the Performance view, use the language menu of the page. The choice is
+stored locally.
+
+Song names, section names and lyric or chord content are show data. They are
 never translated.
 
 In Stage Control, change the language only while Live is stopped and the panel
-is unlocked. The selector is disabled during playback or while the safety lock
-is active so the show surface cannot be reconfigured accidentally.
+is unlocked. The selector is disabled during playback and while the safety
+lock is active.
 
 ## Locator grammar
 
-A song locator has a title. A section uses `Song > Section` or the relative syntax `> Section` (which attaches to the preceding song). Standalone action tags like `[stop]` and relative automation locators like `> [stop]` belong to the chronologically preceding song.
+A song locator has a title. A section uses `Song > Section` or the relative
+syntax `> Section`, which attaches to the preceding song. Standalone action tags
+such as `[stop]` and relative automation locators such as `> [stop]` belong to
+the chronologically preceding song.
 
 ```text
 Song A [bpm 122] [click]
@@ -464,20 +428,25 @@ Song A [bpm 122] [click]
 Technical cue [ignore]
 ```
 
-| Tag                       | Effect                                                                                                                                                                               |
-| ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `[loop]`                  | Loop the current section until disabled.                                                                                                                                             |
-| `[loop Nx]`               | Loop the section N times.                                                                                                                                                            |
-| `[stop]`                  | Stop when the locator is reached.                                                                                                                                                    |
-| `[next]`                  | Hand playback to the next song the moment this marker is reached. Written on a section it still leaves the song — it does not advance to the next section.                           |
-| `[bpm N]`                 | Set the target BPM.                                                                                                                                                                  |
-| `[click]` / `[click off]` | Enable or disable Live's metronome.                                                                                                                                                  |
-| `[skip]`                  | Skip this section/song: hand playback to the next section (or song) the moment this marker is reached.                                                                               |
-| `[jump NAME]`             | Hand playback to the marker called NAME the moment this marker is reached — a section of this song, a song, or `Song > Section`. Names are matched with tags stripped, case ignored. |
-| `[hidden]`                | Keep an automation anchor out of the visible setlist.                                                                                                                                |
-| `[ignore]`                | Technical marker that hides the locator and takes precedence over any action tags.                                                                                                   |
+- `[loop]`: Loop the current section until disabled.
+- `[loop Nx]`: Loop the section N times.
+- `[stop]`: Stop when the locator is reached.
+- `[next]`: Hand playback to the next song the moment this marker is reached.
+  Written on a section it still leaves the song; it does not advance to the
+  next section.
+- `[bpm N]`: Set the target BPM.
+- `[click]` / `[click off]`: Enable or disable Live's metronome.
+- `[skip]`: Skip this section/song: hand playback to the next section (or song)
+  the moment this marker is reached.
+- `[jump NAME]`: Hand playback to the marker called NAME the moment this marker
+  is reached: a section of this song, a song, or `Song > Section`. Names are
+  matched with tags stripped, case ignored.
+- `[hidden]`: Keep an automation anchor out of the visible setlist.
+- `[ignore]`: Technical marker that hides the locator and takes precedence over
+  any action tags.
 
-Tags are case-insensitive and removed from the display name. The `[ignore]` tag takes precedence over automation tags, hiding the marker and ignoring any action tags on that locator without creating songs, sections, or automations.
+Tags are case-insensitive and are removed from the display name. A locator
+marked `[ignore]` creates no song, section or automation.
 
 ### Chaining songs with `[next]`
 
@@ -492,96 +461,101 @@ Song A [bpm 122]
 Song B [bpm 96]
 ```
 
-When the playhead reaches `> End`, RC Setlist moves it to `Song B`'s locator
-straight away — not on the next bar line. Live's own locator jumps are
-quantized to the global quantization, which for a marker followed by a one-bar
-gap would have landed exactly where `Song B` was starting anyway; that is why
-this transition is not a Live cue jump. The hand-over happens about a tenth of
-a second after the marker is crossed (the position is polled every 100 ms and
-AbletonOSC processes commands every 100 ms), never before it, and the next
-song always starts from its first beat. `[skip]` hands over the same way.
+When the playhead reaches `> End`, RC Setlist moves it to the locator of
+`Song B` straight away, not on the next bar line. Live's own locator jumps wait
+for the global quantization, so this hand-over is not a Live cue jump. The move
+happens about a tenth of a second after the marker is crossed, never before it:
+the position is polled every 100 ms and AbletonOSC processes commands every
+100 ms. The next song always starts from its first beat. `[skip]` hands over the
+same way.
 
-`[jump NAME]` is the same hand-over aimed anywhere: `> Verse 2 [jump Chorus]`
-goes to this song's chorus, `> Coda [jump Song B]` to another song's start,
-`> Solo [jump Song B > Bridge]` to a section of another song. A bare name is
-looked up in this song's sections first, then among song titles, then among
-every section in arrangement order; a name that matches nothing does nothing.
+`[jump NAME]` is the same hand-over aimed anywhere. `> Verse 2 [jump Chorus]`
+goes to the chorus of this song, `> Coda [jump Song B]` to the start of another
+song, and `> Solo [jump Song B > Bridge]` to a section of another song. A bare
+name is looked up in the sections of this song first, then among song titles,
+then among every section in arrangement order. A name that matches nothing does
+nothing.
 
-Because the playhead is moved directly, Live's start marker stays where it was.
-Play in RC Setlist resumes from wherever you stopped, so this only shows if you
-press Stop twice in Live, which returns to the start marker.
+Because the playhead is moved directly, Live's start marker stays where it
+was. Play in RC Setlist resumes from wherever you stopped, so this only shows
+if you press Stop twice in Live, which returns to the start marker.
 
 ## Editing a marker
 
 Double-click a song row or a section chip in Stage Control to open the marker
-editor. Every tag is a control there — you never type a `[tag]` by hand, and you
-cannot delete one with a stray keystroke.
+editor. Every tag is a control there. You never type a `[tag]` by hand, and a
+stray keystroke cannot delete one.
 
 A **song** carries its name, its colour, its notes, its starting tempo, and the
-`[stop]`, `[next]` and `[skip]` behaviours. Notes are one line for the stage —
-key, tuning, who counts in — shown under the title on the card and on the
-performance display; like the colour they are stored beside your setlist and
-never written into the Live project. It also lists its sections; click one to edit
-it, and the arrow at the top of the panel brings you back to the song.
+`[stop]`, `[next]` and `[skip]` behaviours. It also lists its sections: click
+one to edit it, and the arrow at the top of the panel brings you back to the
+song.
 
-A **section** carries its name, its tempo, its loop, its click, the same
-three behaviours, and a jump target (the marker `[jump NAME]` goes to). Loop and click are stored on the section, not on the song.
+A **section** carries its name, its tempo, its loop, its click, the same three
+behaviours, and a jump target (the marker `[jump NAME]` goes to). Loop and click
+are stored on the section, not on the song.
 
-Three things the editor guarantees:
+The editor guarantees three things:
 
-- **A tag the panel does not show is never deleted.** Anything RC Setlist does
-  not recognise, and anything it recognises but does not offer for that kind of
+- A tag the panel does not show is never deleted. Anything RC Setlist does not
+  recognise, and anything it recognises but does not offer for that kind of
   marker, is carried through the save untouched.
-- **A section keeps the prefix it already had.** Live accepts both `> Verse` and
+- A section keeps the prefix it already had. Live accepts both `> Verse` and
   `Song A > Verse`; whichever spelling your set uses is preserved.
-- **Saving without changing anything writes nothing.** Tags are compared by
+- Saving without changing anything writes nothing. Tags are compared by
   meaning, so reordering them is not a change.
 
 Editing is refused while the transport is playing. Renaming a locator means
 deleting it and creating it again, and Live can only create a cue point where
-the playhead stands — with playback running, the new marker would land wherever
+the playhead stands. With playback running, the new marker would land wherever
 the playhead had reached. Stop the transport first.
 
-RC Setlist keeps the colour data. It is stored beside your setlist and never
-written into the Live project, and it follows the song through renames and
-moves. The eight tones are desaturated: on the card the colour identifies the
-song, and the vivid hues are used only to show state.
+### Colours and notes
+
+Notes are one line for the stage (key, tuning, who counts in), shown under the
+title on the card and on the performance display. Colours and notes are stored
+beside your setlist and are never written into the Live project. The colour
+follows the song through renames and moves.
+
+The eight tones are desaturated. On the card the colour identifies the song,
+and the vivid hues are used only to show state.
 
 ## Profiles
 
 Profiles belong to the current Live Set. A saved `.als` may contain multiple
-setlists for alternate show orders, rehearsals or lineups. The active setlist selector
-and **Manage Setlists** button are located at the top of Stage Control.
-Manage Setlists does not show profiles from another Ableton project. Opening another Live Set
-switches to that Set's separate profile registry.
+setlists for alternate show orders, rehearsals or lineups. The active setlist
+selector and the **Manage setlists** button are at the top of Stage Control.
+**Manage setlists** does not show profiles from another Ableton project.
+Opening another Live Set switches to that Set's separate profile registry.
 
 Within the current Live Set, profiles separate setlist order, lyrics, exports
 and related state. From Stage Control you can create, select and rename
 profiles, move an inactive profile to recoverable trash, and restore it later
-with the same UUID and data. Deletion is not a permanent erase.
+with the same UUID and data.
 
-Profile changes are controller-only and the transport must be stopped. The active
-profile and the only remaining profile cannot be deleted. To move another profile
-to trash, type its displayed name exactly in the confirmation field.
+Profile changes come from the controller only, and the transport must be stopped.
+The active profile and the only remaining profile cannot be deleted. To move
+another profile to trash, type its displayed name exactly in the confirmation
+field.
 
-Older global profile storage is retained as a local backup but is not mixed into
-Manage Setlists. An exact legacy folder for the saved Live Set is migrated
-without deleting its source.
+A profile folder left by an earlier build is kept as a local backup and is not
+mixed into **Manage setlists**. A legacy folder that matches the saved Live
+Set exactly is migrated, and its source is not deleted.
 
 ## Setlist duration
 
 Stage Control shows the song duration on each song card. The header shows the
-total setlist duration. A song runs from its song locator to the next song locator,
-so any transition gap is included. The final song ends at Live's Arrangement end;
-the total runs from the first song locator to that same end and also includes
-transitions. An em dash means Live has not supplied a valid final Arrangement boundary yet.
+total setlist duration. A song runs from its song locator to the next song
+locator, so any transition gap is included. The final song ends at Live's
+Arrangement end. The total runs from the first song locator to that same end
+and also includes the transitions. An em dash means Live has not supplied a
+valid final Arrangement boundary yet.
 
-### Duration methodology and stage stability
+### Fixed durations
 
-Durations are fixed schedule figures established at set load and do not fluctuate
-when Live's transport knob moves or playback starts. The readouts keep the same
-values for the crew and the band, instead of changing with momentary tempo
-adjustments.
+Durations are fixed schedule figures established at set load. They do not
+change when Live's transport knob moves or when playback starts, so the crew
+and the band read the same values.
 
 ### Arrangement tempo automation limitation
 
@@ -595,82 +569,88 @@ and what RC Setlist does instead, is in
 
 ### Obtaining exact durations (`[bpm N]`)
 
-To calculate exact piecewise song and set durations, declare the tempo explicitly
-in the locator name using `[bpm N]` (e.g. `Song A [bpm 122]` or `> Chorus [bpm 135]`).
+To calculate exact piecewise song and set durations, declare the tempo
+explicitly in the locator name using `[bpm N]`, for example `Song A [bpm 122]`
+or `> Chorus [bpm 135]`.
 
-- **Declared confidence**: When at least one `[bpm]` tag is present, RC Setlist
-  calculates exact piecewise durations for tagged songs and sections, carrying
-  tempo forward across untagged boundaries.
-- **Estimated confidence (`EST.`)**: When no locator declares a `[bpm]` tag,
-  RC Setlist falls back to Live's initial session tempo, marks the duration
-  confidence as estimated, and displays an `EST.` badge beside the total time
-  and HUD timecards.
+- With at least one `[bpm]` tag present, RC Setlist calculates exact piecewise
+  durations for tagged songs and sections, carrying the tempo forward across
+  untagged boundaries. The duration confidence is declared.
+- With no `[bpm]` tag on any locator, RC Setlist falls back to Live's initial
+  session tempo and marks the duration confidence as estimated, with an `EST.`
+  badge beside the total time and the HUD timecards.
 
-### Empirical measurement example
+### Measurement example
 
-In a measured 21-song production set with tempo automations spanning 93 to 166 BPM:
+In a measured 21-song production set with tempo automations spanning 93 to 166
+BPM:
 
-- **Exact piecewise duration**: **78:41** (4,721 seconds).
-- **Single-tempo fallback at 99 BPM**: 95:40 — **a 16:59 (+21.6%) distortion**.
-- **Single-tempo fallback at 136 BPM**: 69:38 — **a 9:03 (-11.5%) distortion**.
+| Measurement                      | Duration              | Difference from the exact total |
+| -------------------------------- | --------------------- | ------------------------------- |
+| Exact piecewise duration         | 78:41 (4,721 seconds) | —                               |
+| Single-tempo fallback at 99 BPM  | 95:40                 | 16:59 (+21.6%)                  |
+| Single-tempo fallback at 136 BPM | 69:38                 | 9:03 (-11.5%)                   |
 
-Declaring `[bpm N]` tags on song locators resolves the 16:59 discrepancy, restores
-the exact 78:41 total, and clears the `EST.` warning badge.
+Declaring `[bpm N]` on the song locators removes the 16:59 discrepancy and
+brings the total back to 78:41.
 
 ## The Live panel
 
 The Live panel is the window the extension opens inside Live. Its tab bar
-carries three tabs — **Main**, **Setlists** and **Network** — and the **EN** and
+carries three tabs (**Main**, **Setlists** and **Network**) and the **EN** and
 **PT** buttons at the top right, which change the language of the panel.
 
 ### Main
 
-The Main tab shows one QR code in the middle. It is the QR of the Stage Control
-by default; the button beside it swaps it for the Performance Display, in the
-same place. Under it, the active setlist, the number of songs, the show time
-and the number of setlists. Below the numbers, the songs of the active setlist
-with their colours.
+The **Main** tab shows one QR code in the middle. It is the QR of the Stage
+Control by default. The button beside it swaps it for the **Performance
+Display**, in the same place. Below it are the active setlist, the number of songs, the show time
+and the number of setlists. Under the numbers are the songs of the active
+setlist with their colours.
 
 In the Stage Control, the number of a song and its whole name jump to the song.
 On a touch screen a jump is a hold, so a stray tap never moves the show.
 
 ### Setlists and packages
 
-The Setlists tab lists the setlists of the current Live Set. You can activate
+The **Setlists** tab lists the setlists of the current Live Set. You can activate
 one, rename it, delete it and create a new one. The delete asks once, in the
-row, and a deleted setlist stays in the **Deleted** list, ready to be restored.
-All of this works while the transport is stopped.
+row, and a deleted setlist stays in the **Deleted setlists** list, ready to be
+restored. All of this works while the transport is stopped.
 
-**Export all** writes one `.rcsetlist` file with every setlist of the Live
-Set — order, song colours and notes, lyrics — into the `packages` folder of the
+**Export all** writes one `.rcsetlist` file with every setlist of the Live Set
+(order, song colours and notes, lyrics) into the `packages` folder of the
 extension data. On Windows that folder is
 `%LOCALAPPDATA%\Ableton\Extensions Data\ntworm.rc-setlist\packages`. **Import**
 picks one package of that folder and adds its setlists beside the ones you
-already have; a name that is taken gets a `(2)`, and a failure half way undoes
+already have. A name that is taken gets a `(2)`, and a failure half way undoes
 everything. The **Copy path** button copies the path of the folder.
 
 ### Network
 
-The Network tab keeps the address of the computer, the addresses detected on
+The **Network** tab keeps the address of the computer, the addresses detected on
 the network, the protocol, the port and the certificate port. It also keeps the
 **Certificate** card, with the QR that a phone reads to install the certificate
 once, and the **Second computer** card, with the address, the **Generate code**
 button and the **Pair** and **Unpair** buttons.
 
-## Operator workspace
+## Stage Control
 
 Open `/setlist` from the tokenized controller URL shown in the Live panel.
 
 - Drag songs to change their displayed order.
 - Use Play and Stop for immediate transport actions. Play resumes where the
-  transport stopped; after you jump to a song or section while stopped (or
-  click in Live's Arrangement), Play starts from there instead.
+  transport stopped. After you jump to a song or section while stopped, or
+  click in Live's Arrangement, Play starts from there instead.
 - Previous and Next require a deliberate 500 ms hold.
-- Select transport quantization; the jump scheduler applies the requested value
+- Select transport quantization. The jump scheduler applies the requested value
   immediately and reconciles it with a native Live reply when one is available.
 - Use the lyrics dialog to create, time and edit lyric lines.
-- Export the current tracklist as UTF-8 CSV (saves a copy in the active profile's `exports/` folder and downloads to your browser's Downloads folder).
+- Export the current tracklist as UTF-8 CSV.
 - Use fullscreen for a compact stage workstation.
+
+The interface keeps the last valid state visible during brief reconnects. A
+reconnect notice does not confirm the old state.
 
 ### Jump tempo ordering
 
@@ -678,7 +658,7 @@ Explicit jumps apply the destination BPM around the cue jump. A section BPM
 overrides its song BPM; an untagged section inherits the destination song BPM.
 While stopped, or with quantization at None, RC Setlist uses an SDK-first tempo
 write and then sends the cue jump. While playing with quantization on, the cue
-jump is handed to Live at once — Live lands it on its next grid line — and the
+jump is handed to Live at once. Live lands it on its next grid line, and the
 tempo is written when that landing is observed. These are sequential
 operations, not atomic operations, so they cannot guarantee sample-accurate
 timing. Native Arrangement tempo automation at the destination is recommended
@@ -686,21 +666,23 @@ for sample-accurate transitions.
 
 ### One-bar count-in
 
-`COUNT-IN 1 BAR` visually counts one bar on the Play button before Play is sent, when Play
-is requested while the transport is stopped. Live's playhead does not move, Live's
-transport is not touched until the count ends, and Live's metronome is not touched.
-Live's built-in "Count-In" menu only applies to recording, not to playback.
+`COUNT-IN 1 BAR` visually counts one bar on the Play button before Play is
+sent, when Play is requested while the transport is stopped.
+Live's playhead does not move, Live's transport is not touched until the count
+ends, and Live's metronome is not touched. Live's built-in "Count-In" menu
+only applies to recording, not to playback.
 
-By default, the count is visual only. The browser click is optional and can be turned on
-per device by setting `rc-setlist.count-in-audio` to `true` in the browser's `localStorage`
-(e.g., via the developer console for a notebook feeding an in-ear monitor). This is off by
-default so the operator's phone does not beep through its speaker on stage.
+By default, the count is visual only. The browser click is optional and can be
+turned on per device by setting `rc-setlist.count-in-audio` to `true` in the
+browser's `localStorage`, for example through the developer console on a
+notebook feeding an in-ear monitor. This is off by default so the operator's
+phone does not beep through its speaker on stage.
 
-The count runs at the tempo **the setlist declares** for that point — the last
-`[bpm]` at or before the playhead — and only falls back to Live's current tempo
+The count runs at the tempo **the setlist declares** for that point (the last
+`[bpm]` at or before the playhead) and only falls back to Live's current tempo
 when the set declares nothing. This matters at a song boundary: Live is still
-sitting at the previous song's tempo, so counting at that would count the wrong
-speed for the song about to start.
+sitting at the previous song's tempo, so counting at that would count the
+wrong speed for the song about to start.
 
 Play is sent shortly before the last beat so the transport arrives on the
 downbeat rather than after it. Pressing Play again during the count starts
@@ -710,9 +692,6 @@ This rehearsal control does not enter Record and does not arm tracks. It also
 does not change live jump quantization. When Live is already playing, Play and
 song/section jumps keep their existing behavior, including the current
 quantization.
-
-The UI keeps the last valid state visible during brief reconnects. A reconnect
-notice does not mean the old state is newly confirmed.
 
 ## Two computers
 
@@ -739,15 +718,14 @@ and receives the transport commands the operator gives on the main one.
    certificate the second computer answered with, and opens the link to it.
    The card then says whether the second computer is answering.
 
-The pairing and the link use port `4444` on the second computer, the same
-port a phone opens, so its firewall has to let that port in.
+The pairing and the link use port `4444` on the second computer, the same port
+a phone opens, so its firewall has to let that port in.
 
 **Unpair** forgets the credential and closes the link. When the stored pairing
 cannot be removed, the panel says so and the second computer stays paired,
-because a pairing left on disk would come back on the next start. A
-certificate that changed is reported as such: the link refuses to talk to a
-computer that presents another certificate, and the row asks for a new
-pairing.
+because a pairing left on disk would come back on the next start. A certificate
+that changed is reported as such: the link refuses to talk to a computer that
+presents another certificate, and the row asks for a new pairing.
 
 ### Both computers on the same session
 
@@ -755,19 +733,19 @@ pairing.
   Arrangement and read the same markers.
 - Live's **Start Stop Sync** must be **off**. RC Setlist relays the transport
   itself; leaving the native sync on would drive the transport twice.
-- The markers must match. A jump travels as the beat it lands on, so the
-  second computer lands on the same place only when both read the same
-  markers. When they do not, the dot says so.
+- The markers must match. A jump travels as the beat it lands on, so the second
+  computer lands on the same place only when both read the same markers. When
+  they do not, the dot says so.
 
 ### The dot in the Stage Control header
 
 The Stage Control page shows a second dot beside the connection dot:
 
-- **green** — the second computer is connected and both read the same markers.
-- **amber** — it is connected, but the markers are different.
-- **red** — it is not answering, or its certificate changed and it has to be
+- **green**: the second computer is connected and both read the same markers.
+- **amber**: it is connected, but the markers are different.
+- **red**: it is not answering, or its certificate changed and it has to be
   paired again.
-- **no dot** — there is no second computer paired, and nothing is sent
+- **no dot**: there is no second computer paired, and nothing is sent
   anywhere.
 
 ### What reaches the second computer
@@ -788,17 +766,18 @@ computer's setlist. Pairing is for a second machine running Live, not for a
 phone. macOS is supported as the second computer on an experimental basis;
 Windows is the validated platform.
 
-## Performance view
+## Performance
 
 Open `/performance` for a high-contrast, mostly read-only display. It shows the
-active/next song and section, timecode, bar/beat, BPM/click state and lyric context.
+active/next song and section, timecode, bar/beat, BPM/click state and lyric
+context.
 
 The Stage Control view can show a conditional tempo-difference warning when a
 locator declares an expected BPM and Live reports another value. The warning is
 hidden during normal operation and is not part of the Performance display.
 
-Press `F` or use the fullscreen button. When supported, Screen Wake Lock is held
-while stage fullscreen is active and released when you leave it.
+Press `F` or use the fullscreen button. When supported, Screen Wake Lock is
+held while stage fullscreen is active and released when you leave it.
 
 ## Lyrics
 
@@ -811,29 +790,30 @@ RC Setlist accepts timed LRC lines:
 [00:04.50] Second line
 ```
 
-The song selector at the top of the lyrics dialog applies to Create, Sync and
-Edit and opens on the current Arrangement song. Existing lyrics for that song
-load automatically. You can paste lines, advance through them while audio plays,
-edit timestamps and save. Inspecting another song in the dialog does not replace
-the synchronized line for the song currently shown in Stage Control. The text is
-stored in the active profile. Plain text is also accepted for sequential display.
+The song selector at the top of the lyrics dialog applies to **Create**,
+**Sync** and **Edit**, and opens on the current Arrangement song. Existing
+lyrics for that song load automatically. You can paste lines, advance through
+them while audio plays, edit timestamps and save. Inspecting another song in
+the dialog does not replace the synchronized line for the song currently shown
+in Stage Control. The text is stored in the active profile. Plain text is also
+accepted for sequential display.
 
 ## Setlist ordering and CSV
 
 Custom order is presentation state; it does not move locators inside the Live
 Set. CSV export includes one row per visible song with the active `setlist`,
 `start_beat`, declared BPM, numeric and readable duration, `sections_count`,
-named `sections`, locator `automations` and `lyric_lines`. It intentionally does
-not invent musical key, per-song signature, play counts or last-played history.
-The file uses semicolon separators with UTF-8 BOM for spreadsheet compatibility,
+named `sections`, locator `automations` and `lyric_lines`. It does not add a
+musical key, a per-song signature, play counts or a last-played history. The
+file uses semicolon separators with UTF-8 BOM for spreadsheet compatibility,
 is saved in the active profile directory under `exports/` and is sent to your
 browser's Downloads.
 
 ## Auto-start
 
-The panel can remember whether the local server should start with the extension.
-Leave auto-start disabled on machines where the network service should only run
-during rehearsals/shows.
+The panel can remember whether the local server should start with the
+extension. Leave auto-start disabled on machines where the network service
+should only run during rehearsals and shows.
 
 ## Safe show practice
 
@@ -849,40 +829,41 @@ Stage Control and Performance links use HTTPS.
 ## Tempo automation drawn in Live
 
 If your Arrangement has its own tempo automation, keep **Set Live tempo on jump**
-switched **off** in the Live panel. It ships off, and this is why.
+switched **off** in the Live panel. The setting ships off.
 
 An explicit jump can write the destination tempo into Live before it moves the
-playhead. Writing `song.tempo` overrides Live's tempo automation: the arrangement
-stops following its own envelope until you press **Re-Enable Automation** in the
-transport bar. One jump mid-show would flatten the tempo for the rest of the set.
+playhead. Writing `song.tempo` overrides Live's tempo automation: the
+arrangement stops following its own envelope until you press **Re-Enable
+Automation** in the transport bar. One jump mid-show would hold that tempo for
+the rest of the set.
 
-RC Setlist also watches for this on its own. When the tempo Live reports differs
-from the `[bpm N]` tag declared at that point in the setlist, the extension
-concludes that something other than the setlist owns the tempo and refuses to
-write it, even if the setting is on.
+RC Setlist watches for this on its own. When the tempo Live reports differs from
+the `[bpm N]` tag declared at that point in the setlist, the extension concludes
+that something other than the setlist owns the tempo and refuses to write it,
+even if the setting is on.
 
-A `[bpm N]` tag means "measure the duration with this". It does not mean "impose
-this on Live". Tagging your songs is safe with tempo automation, and it is what
-turns an estimated set duration into an exact one.
+A `[bpm N]` tag tells RC Setlist how to measure the duration. It does not
+impose that tempo on Live. Tagging your songs is safe with tempo automation,
+and it is what turns an estimated set duration into an exact one.
 
-Turn the setting on only when the tags are your source of truth for tempo and the
-Arrangement has no tempo automation.
+Turn the setting on only when the tags are your source of truth for tempo and
+the Arrangement has no tempo automation.
 
 ## How RC Setlist recognises your songs
 
-**The Ableton locator is the only source of a song's identity. RC Setlist does
-not add its own data to your Live project.** It recognises a song by name and
-position, in that order.
+**The Ableton locator is the only source of a song's identity.** RC Setlist
+recognises a song by name and position, in that order.
 
-- Rename a song and it stays the same song — the position did not move.
-- Drag it somewhere else and it stays the same song — the name did not change.
+- Rename a song and it stays the same song: the position did not move.
+- Drag it somewhere else and it stays the same song: the name did not change.
 - Change both at once and it is treated as a new song.
 
-Anything RC Setlist stores outside the Live project follows that identity. If you
-delete a locator by accident and recreate it, RC Setlist restores the data it
-stored.
+Anything RC Setlist stores outside the Live project follows that identity.
+Delete a locator by accident and recreate it, and RC Setlist restores the data
+it stored.
 
-The full reasoning is in [docs/architecture/song-identity.md](https://github.com/ntworm/rc-setlist/blob/main/docs/architecture/song-identity.md).
+The full reasoning is in
+[docs/architecture/song-identity.md](https://github.com/ntworm/rc-setlist/blob/main/docs/architecture/song-identity.md).
 
 <!-- https://github.com/ntworm/rc-setlist/blob/main/docs/FAQ.md -->
 
@@ -892,7 +873,8 @@ The full reasoning is in [docs/architecture/song-identity.md](https://github.com
 
 It is source-available under PolyForm Noncommercial 1.0.0. Noncommercial use,
 modification and redistribution are allowed under the license; commercial use
-is not allowed. PolyForm Noncommercial is not an OSI-approved open-source license.
+is not allowed. PolyForm Noncommercial is not an OSI-approved open-source
+license.
 
 ## Does an end user need Node.js?
 
@@ -900,14 +882,15 @@ No. Install the release `.ablx`. Node.js 24.16.0 is for source development.
 
 ## What is RC Bridge, and do I still need AbletonOSC?
 
-RC Bridge is the Live Remote Script that RC Setlist talks to for
-transport and Live Object Model operations. It is a fork of the MIT-licensed
-AbletonOSC (<https://github.com/ideoforms/AbletonOSC>) that answers each client
-on its own port, so it never fights another RC extension for a reply port and
-runs beside a stock AbletonOSC. It ships inside the extension and inside the
-installation kit; the kit's installer (`Install-RC-Bridge.cmd` /
-`Install RC Bridge.command`) copies it into Live's User Library. You do not need AbletonOSC — but if you already
-have it, RC Setlist still works with it.
+RC Bridge is the Live Remote Script that RC Setlist talks to for transport and
+Live Object Model operations. It is a fork of the MIT-licensed AbletonOSC
+(<https://github.com/ideoforms/AbletonOSC>) that answers each client on its
+own port, so it never fights another RC extension for a reply port and runs
+beside a stock AbletonOSC. It ships inside the extension and inside the
+installation kit, and the kit's installer (`Install-RC-Bridge.cmd` /
+`Install RC Bridge.command`) copies it into Live's User Library. You do not
+need AbletonOSC; if you already have it, RC Setlist still works with it. See
+[Install RC Bridge](https://github.com/ntworm/rc-setlist/blob/main/docs/INSTALL.md#install-rc-bridge).
 
 ## Why does the browser show a certificate warning?
 
@@ -915,8 +898,9 @@ Until the certificate of this computer is installed on the device, the browser
 shows `ERR_CERT_AUTHORITY_INVALID`. RC Setlist signs its server certificate
 with a certificate authority of its own, valid only for localhost and private
 network addresses. Scan the **Phone certificate** QR in the Live panel once to
-install it and the warning goes away. Until then, continue only when the address
-exactly matches the IP shown in the Live panel and you are on a trusted LAN.
+install it. Until then, continue only when the address exactly matches the IP
+shown in the Live panel and you are on a trusted LAN. The steps are in [Start
+the local server](https://github.com/ntworm/rc-setlist/blob/main/docs/INSTALL.md#start-the-local-server).
 
 ## Where are lyrics stored?
 
@@ -936,63 +920,68 @@ real-device test matrix exists.
 ## Can I put RC Setlist on the public internet?
 
 No. It is designed for a trusted local network. Use a professionally configured
-private tunnel if remote access is unavoidable; never expose port `4444` directly.
+private tunnel if remote access is unavoidable; never expose port `4444`
+directly.
 
 ## Can I sell RC Setlist or a modified version?
 
-Not under PolyForm Noncommercial 1.0.0. Read [the license](https://github.com/ntworm/rc-setlist/blob/main/LICENSE); seek your
-own legal advice for a specific use.
+Not under this license. Read [the license](https://github.com/ntworm/rc-setlist/blob/main/LICENSE); seek your own legal
+advice for a specific use.
 
 ## Why is my setlist total duration different from what I expected?
 
-If your Ableton Live arrangement contains tempo automations (songs at different BPMs) drawn directly on the master track timeline without bracketed `[bpm N]` locator tags, the extension cannot inspect the automation curve. The Live Object Model and Extensions SDK do not expose arrangement tempo breakpoints remotely.
+If your Ableton Live arrangement contains tempo automations (songs at different
+BPMs) drawn directly on the master track timeline without bracketed `[bpm N]`
+locator tags, the extension cannot inspect the automation curve. The Live Object
+Model and Extensions SDK do not expose arrangement tempo breakpoints remotely.
 
-Without tags, RC Setlist calculates duration using Live's current tempo as a uniform estimate and displays an `EST.` badge. In a 21-song set with tempos varying between 93 and 166 BPM, single-tempo estimation caused a 16:59 discrepancy (95:40 vs actual 78:41).
+Without tags, RC Setlist calculates duration using Live's current tempo as a
+uniform estimate and displays an `EST.` badge. In a 21-song set with tempos
+varying between 93 and 166 BPM, single-tempo estimation caused a 16:59
+discrepancy (95:40 vs actual 78:41).
 
-To obtain exact timings, add `[bpm N]` to each song's locator name (e.g. `Song Title [bpm 120]`). RC Setlist will immediately switch from estimated to declared confidence, calculate exact piecewise durations, and remove the `EST.` badge.
+To obtain exact timings, add `[bpm N]` to each song's locator name (e.g. `Song
+Title [bpm 120]`). RC Setlist will immediately switch from estimated to
+declared confidence, calculate exact piecewise durations, and remove the `EST.`
+badge.
 
 ## Why don't I hear the count-in?
 
-By default, the 1-bar count-in is visual only (showing `1 2 3 4` on the Play button in the
-browser) so that the operator's phone does not beep through its speaker on stage. If you
-want to hear the click, enable it per device by setting `rc-setlist.count-in-audio` to `true`
-in the browser's `localStorage` (e.g., via the developer console on a notebook feeding an
-in-ear monitor). Live's built-in "Count-In" menu does not apply to playback, only to recording.
+By default, the 1-bar count-in is visual only (showing `1 2 3 4` on the Play
+button in the browser) so that the operator's phone does not beep through its
+speaker on stage. If you want to hear the click, enable it per device by
+setting `rc-setlist.count-in-audio` to `true` in the browser's `localStorage`
+(e.g., via the developer console on a notebook feeding an in-ear monitor).
+Live's built-in "Count-In" menu does not apply to playback, only to recording.
 
 ## How do I upgrade from 0.x?
 
-The product was renamed from **Ableton RC Setlist** to **RC Setlist** in 1.0.
-Run the kit's `Migrate-RC-Setlist-Data.cmd` (Windows) or
-`Migrate RC Setlist Data.command` (macOS) **once, before opening Live** with
-1.0. It copies your old profiles, project-setlists, token and preferences into
-the new data folder without touching the old one and never overwrites an
-existing file. Then, in Live, open **Settings > Extensions** and remove the
-old **Ableton RC Setlist** entry so the two extensions do not coexist on the
-same machine. Skipping the migration or leaving both extensions installed
-makes your old profiles invisible to the new extension.
+Run the kit's migration script once, before you open Live, and remove the old
+**Ableton RC Setlist** entry from **Settings > Extensions** so the two
+extensions do not coexist. The full steps are in [Migrate data from a 0.x
+build](https://github.com/ntworm/rc-setlist/blob/main/docs/INSTALL.md#migrate-data-from-a-0-x-build).
 
-## Tempo automation drawn in Live
+## Tempo automation
 
 If your Arrangement has its own tempo automation, keep **Set Live tempo on jump**
-switched **off** in the Live panel. The default is off, and the next paragraph
-explains why.
+switched **off** in the Live panel. The default is off.
 
 An explicit jump can write the destination tempo into Live before it moves the
-playhead. Writing `song.tempo` overrides Live's tempo automation: the arrangement
-stops following its own envelope until you press **Re-Enable Automation** in the
-transport bar. One jump mid-show would flatten the tempo for the rest of the set.
+playhead. Writing `song.tempo` overrides Live's tempo automation: the
+arrangement stops following its own envelope until you press **Re-Enable
+Automation** in the transport bar. One jump mid-show would flatten the tempo
+for the rest of the set.
 
-RC Setlist also watches for this on its own. When the tempo Live reports differs
-from the `[bpm N]` tag declared at that point in the setlist, the extension
-concludes that something other than the setlist owns the tempo and refuses to
-write it, even if the setting is on.
+RC Setlist also watches for this on its own. When the tempo Live reports
+differs from the `[bpm N]` tag declared at that point in the setlist, the
+extension concludes that something other than the setlist owns the tempo and
+refuses to write it, even if the setting is on.
 
-A `[bpm N]` tag means "measure the duration with this". It does not mean "impose
-this on Live". Tagging your songs is safe with tempo automation, and it is what
-turns an estimated set duration into an exact one.
+A `[bpm N]` tag declares the tempo used to measure the duration. RC Setlist
+does not impose that tempo on Live.
 
-Turn the setting on only when the tags are your source of truth for tempo and the
-Arrangement has no tempo automation.
+Turn the setting on only when the tags are your source of truth for tempo and
+the Arrangement has no tempo automation.
 
 <!-- https://github.com/ntworm/rc-setlist/blob/main/docs/TROUBLESHOOTING.md -->
 
@@ -1054,18 +1043,18 @@ Arrangement has no tempo automation.
 ## Controls are read-only
 
 Open the controller URL or scan the controller QR code from the panel. The token
-is required for transport/write actions. Do not share it publicly.
+is required for transport and write actions. Do not share it publicly.
 
-If songs, lyrics and timecode update but every transport or navigation action
-fails, confirm you are running 0.3.0 or newer. In earlier builds, outgoing OSC
-commands could fail to encode in Ableton's embedded runtime.
+Transport and navigation actions need RC Setlist 0.3.0 or newer. When songs,
+lyrics and timecode update but every transport or navigation action fails,
+choose **Check OSC** in the panel and read the OSC section above.
 
 ## First start reports a profile persistence error
 
-Install 0.3.0 or newer. In earlier builds the first profile write could succeed
-and the extension could then fail, because it called a runtime API that was not
-available. If the error remains after the upgrade, capture a sanitized
-`ExtensionHost.txt` excerpt and open a bug report without deleting profile data.
+The first profile write needs RC Setlist 0.3.0 or newer.
+
+If the error remains, capture a sanitized `ExtensionHost.txt` excerpt and open
+a bug report without deleting profile data.
 
 ## Lyrics do not match the song
 
@@ -1074,19 +1063,12 @@ available. If the error remains after the upgrade, capture a sanitized
 - Remove locator tags from the lyric song name.
 - Re-save from the built-in editor and refresh the state.
 
-When upgrading from an earlier **RC SETLIST** or **Ableton Setlist Bridge** build,
-restart the server once on the current version. RC Setlist imports missing
-lyrics and custom order from the known previous extension-data folders. It does
-not delete the old folders or overwrite files already present in the new profile.
+Restart the server once. RC Setlist imports missing lyrics and custom order
+from the known previous extension-data folders. It does not delete the old
+folders or overwrite files already present in the new profile.
 
-When upgrading from the 0.x **Ableton RC Setlist** build (0.4.x–0.7.0), run the
-kit's `Migrate-RC-Setlist-Data.cmd` (Windows) or
-`Migrate RC Setlist Data.command` (macOS) **once before opening Live** with
-1.0. It copies profiles, project-setlists, token and preferences into the new
-data folder without touching the old one. In Live, remove the old
-**Ableton RC Setlist** entry from **Settings > Extensions** so the two
-extensions do not coexist on the same machine. Skipping either step leaves the
-old profiles invisible to the new extension.
+Data from a 0.x build lives in another folder. See [Migrate data from a 0.x
+build](https://github.com/ntworm/rc-setlist/blob/main/docs/INSTALL.md#migrate-data-from-a-0-x-build).
 
 ## Another extension uses OSC port 11001
 
@@ -1144,96 +1126,97 @@ and real setlist/lyrics content. See [SUPPORT.md](https://github.com/ntworm/rc-s
 
 <!-- https://github.com/ntworm/rc-setlist/blob/main/docs/RELEASE-NOTES-1.1.0.md -->
 
-# Release notes — RC Setlist 1.1.0
+# RC Setlist 1.1.0 release notes
 
 **Release date:** 2026-11-06
 **Supported version line:** `1.1.x`
 **Also available in Portuguese:** [`pt-BR/NOTAS-DA-VERSAO-1.1.0.md`](https://github.com/ntworm/rc-setlist/blob/main/docs/pt-BR/NOTAS-DA-VERSAO-1.1.0.md)
 
-Changes in 1.1.0, with the new Live panel first.
+## New features
 
-## Highlights
-
-- **Live panel.** Three tabs: Main, Setlists, Network. Main shows one QR code,
-  Stage Control by default, and a button that switches it to the Performance
-  view; below it, the active setlist, song count, show time and song list.
-- **Setlist management in the panel.** Activate, rename, delete, create and
-  restore setlists while the transport is stopped. A delete is confirmed in
-  the row and can be undone from the Deleted list.
-- **Setlist packages.** _Export all_ writes the setlists of the Live Set
-  (order, song colours and notes, lyrics) to one `.rcsetlist` file. _Import_
-  adds the setlists of a package to the existing ones; a duplicate name gets a
-  number, and a failed import is rolled back. Files are kept in the `packages`
-  folder of the extension data, because Live allows an extension to write only
-  there; the panel shows the path.
-- **Second computer.** Pair a second computer running Live with a six-digit
-  code. Play, Stop, jumps, click, quantization, count-in, refresh and panic are
-  sent to it; setlist and marker editing stay on the main computer. A second
-  status dot in the Stage Control header is green when the link is up and the
-  markers match, amber when the markers differ, red when it does not answer.
-- **Collapsible song list.** The three-dot button next to a song collapses its
-  sections; _Fold all / Unfold all_ acts on the whole list. Hold the song name
-  or number to jump; drag the grip on the right edge of the card to reorder.
+- **Live panel.** A new Live panel has three tabs: **Main**, **Setlists** and
+  **Network**. **Main** shows one QR code, the Stage Control page by default
+  and a button that swaps it for the Performance page; below it, the active
+  setlist, the song count, the show time and the song list.
+- **Setlist management.** The **Setlists** tab activates, renames, deletes,
+  creates and restores setlists while the transport is stopped. A delete is
+  confirmed in the row and can be undone from the **Deleted setlists** list.
+- **Setlist packages.** **Export all** in the **Setlists** tab writes every
+  setlist of the Live Set (order, song colours and notes, lyrics) to one
+  `.rcsetlist` file, and **Import** adds the setlists of a package to the ones
+  already there: a repeated name gets a number, and a failed import is rolled
+  back. The files stay in the `packages` folder of the extension data, because
+  Live lets an extension write only there, and the panel shows the path.
+- **Second computer.** The **Network** tab pairs a second computer running
+  Live with a six-digit code. A second status dot in the Stage Control header
+  is green when the link is up and the markers match, amber when the markers
+  differ and red when the computer does not answer.
+- **Collapsible song list.** The three-dot button next to a song folds its
+  sections, and **Fold all / Unfold all** acts on the whole list. Hold the
+  song name or its number to jump; drag the grip on the right edge of the
+  card to reorder.
 - **Local certificate.** The extension creates a certificate authority for
   this computer, valid for localhost and private network addresses. The
-  Network tab shows a QR code for an install page on port `4445`; with the
+  **Network** tab shows a QR code for an install page on port `4445`; with the
   certificate installed, the browser opens the pages without a warning.
 - **Network address.** The QR code uses the address of the default route
   instead of the first private address, so a second network interface
   (lighting, audio) does not replace the Wi-Fi address.
-- **Fixes.** The top bar stays on one row in both languages; reordering works
-  on Windows; saving works when Live refuses `fsync`; pairing is
-  bound to the key of the second computer, so an address change keeps the
-  link.
 
-## How to use it
+## Fixes
+
+- The top bar stays on one row in both languages.
+- Reordering works on Windows.
+- Saving works when Live refuses `fsync`.
+- The pairing is bound to the key of the second computer, so an address change
+  keeps the link.
+
+## Pairing a second computer
 
 1. On the **second computer**, start the RC Setlist server and open the Live
    panel. Go to the **Network** tab and press **Show** in the **Second
    computer** card. Press **Generate code** and read the six digits.
-2. On the **main computer**, open the Live panel, go to the **Network** tab
-   and press **Show** in the **Second computer** card. Type the second
-   computer's address and the code, and press **Pair**.
-3. Put both computers on the same session: Ableton **Link** on, Live's
-   **Start Stop Sync** off. The relay does the transport; the native sync
-   would do it twice.
+2. On the **main computer**, open the Live panel, go to the **Network** tab and
+   press **Show** in the **Second computer** card. Type the second computer's
+   address and the code, and press **Pair**.
+3. Put both computers on the same session: Ableton **Link** on, Live's **Start
+   Stop Sync** off. RC Setlist relays the transport; the native sync would
+   drive it twice.
 
 A phone that opens the Stage Control page is a controller of the main
-computer: it joins the main session and sees the main setlist. Pairing is
-for a second machine running Live. macOS is supported on an experimental
-basis; Windows is the validated platform.
+computer: it joins the main session and sees the main setlist. Pairing is for
+a second machine running Live. macOS is supported on an experimental basis;
+Windows is the validated platform.
 
 ## What reaches the second computer
 
 **Play**, **Stop**, **jump**, **metronome**, **quantization**, **count-in**,
 **refresh** and **panic** are sent to the paired computer. Setlist editing,
-marker editing, colours, notes, lyrics, profiles, ordering and the CSV
-export stay on the main computer.
+marker editing, colours, notes, lyrics, profiles, ordering and the CSV export
+stay on the main computer.
 
-## Also in this release
+## Other changes
 
-- On a song card, only the song name and number start a jump; the time,
-  notes, badges, three-dot button and grip do not. On a touch screen a jump is
-  a 500 ms hold.
-- The _Fold all / Unfold all_ state is stored on the device, per setlist.
-- Pairing a computer with itself is refused, and the panel states when the
-  code has to be generated on the second computer.
-- PANIC cancels a running count-in.
+- On a song card, only the song name and its number start a jump; the time,
+  the notes, the badges, the three-dot button and the grip do not. On a touch
+  screen a jump is a 500 ms hold.
+- The **Fold all / Unfold all** state is stored on the device, per setlist.
+- Pairing a computer with itself is refused, and the panel says when the code
+  has to be generated on the second computer.
+- **panic** cancels a running count-in.
 
 ## Contracts
 
-`docs/CONTRACTS.md` (and `docs/pt-BR/CONTRATOS.md`) now describe the
-pairing route, the peer credential, the `jump_time` frame and the
-`peerStatus` field of the state frame.
+`docs/CONTRACTS.md` (and `docs/pt-BR/CONTRATOS.md`) describe the pairing
+route, the peer credential, the `jump_time` frame and the `peerStatus` field
+of the state frame.
 
 ## Upgrading from 1.0
 
-Nothing to migrate. The pairing is per install and nothing is written
-unless the operator pairs a second computer: no second dot and no outgoing
-connection until then. Two things are new on the first start: the
-extension creates its certificate authority in its data folder and signs a
-new server certificate with it, so a phone that accepted the old
-certificate asks once more (or stops asking after the phone certificate is
-installed), and the install page answers on port 4445 while the server
-runs. Live refuses to install over an existing extension folder: remove RC
-Setlist in Live's extension settings first; the data folder stays.
+Nothing to migrate. The pairing is per install and nothing is written unless
+the operator pairs a second computer: no second dot and no outgoing connection
+until then. On the first start the extension signs a new server certificate,
+so a phone that accepted the old certificate asks once more, or stops asking
+after the phone certificate is installed. The install page answers while the
+server runs. Live refuses to install over an existing extension folder:
+remove RC Setlist in Live's extension settings first; the data folder stays.
