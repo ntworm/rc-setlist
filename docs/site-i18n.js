@@ -26,50 +26,42 @@
     'nav.docs': 'Docs',
 
     'about.lede':
-      'Lê os localizadores do Arrangement de um Live Set e mostra no navegador um setlist para quem opera e uma tela só de leitura para a banda. O tempo vem do Live.',
+      'Extensão para o Ableton Live 12 que roda um show a partir do Arrangement. Marque cada música e cada seção com um locator no Live, e o RC Setlist os transforma em um setlist no navegador. Quem opera inicia músicas e salta entre seções de um notebook ou tablet; a banda vê a seção atual, a próxima música e a letra nos próprios celulares.',
 
-    'about.tagline':
-      'Setlist, letra sincronizada e tela de palco para o Ableton Live 12 — grátis para uso não comercial.',
     'about.spec1': 'Live 12.4.5+ Suite (Beta)',
-    'about.spec2': 'RC Bridge incluído',
-    'about.spec3': 'Qualquer navegador da sua rede',
-    'about.spec4': 'Sem conta · sem telemetria',
+    'about.spec2': 'Windows (macOS experimental)',
+    'about.spec3': 'Qualquer navegador na mesma rede',
+    'about.spec4': 'Grátis para uso não comercial',
     'about.download': 'Baixar .ablx',
     'about.docs': 'Ler a documentação',
     'about.new': 'O que há de novo na 1.1.0',
     'about.source': 'Código-fonte',
-    'about.release':
-      'Versão 1.1.0&nbsp;· source-available sob a PolyForm Noncommercial 1.0.0&nbsp;· inglês e português (Brasil) no mesmo pacote',
+    'about.release': 'Código-fonte disponível&nbsp;· Versão 1.1.0',
     'about.figCap': 'As duas telas',
-    'about.figMeta': 'Prints reais · dados fictícios de demonstração',
     'about.figAlt':
       'Controle de palco: setlist de cinco músicas com seções e tags, a música 3 destacada como ativa, estado do show, quantização, click e transporte.',
 
     'new.title': 'Novo na 1.1.0',
-    'new.why':
-      'Painel do Live com gestão e pacotes de repertórios, sincronização com um segundo computador, lista de músicas recolhível, certificado local e escolha do endereço de rede.',
     'new.lTitle': 'Painel do Live',
     'new.lBody':
-      'Três abas: Principal, Repertórios, Rede. A Principal mostra um QR, do Controle de palco por padrão, e um botão que troca para a tela Performance; abaixo, o repertório ativo, o número de músicas, o tempo de show e a lista de músicas.',
+      'Três abas: Principal, Repertórios, Rede. Um QR code, o repertório ativo e a lista de músicas.',
     'new.pkTitle': 'Pacotes de repertórios',
     'new.pkBody':
-      'Exportar todos grava os repertórios do Live Set (ordem, cores e notas das músicas, letras) num arquivo .rcsetlist. Importar acrescenta os repertórios de um pacote aos existentes; um nome repetido ganha um número. Os arquivos ficam na pasta packages dos dados da extensão.',
+      'Exportar grava os repertórios do Live Set num arquivo .rcsetlist; Importar acrescenta um pacote.',
     'new.pTitle': 'Segundo computador',
     'new.pBody':
-      'Pareie um segundo computador com o Live usando um código de seis dígitos. Play, Stop, saltos, click, quantização, contagem e pânico são enviados a ele. Um segundo ponto de estado no topo do Controle de palco mostra o estado do link.',
+      'Pareie um segundo computador com o Live por um código de seis dígitos; os comandos de transporte vão para ele.',
     'new.fTitle': 'Lista de músicas recolhível',
     'new.fBody':
-      'O botão de três pontos ao lado de uma música recolhe as seções dela; Recolher todas e Abrir todas agem na lista inteira. Segure o nome ou o número da música para saltar; arraste a alça na borda direita do card para reordenar.',
+      'O botão de três pontos recolhe as seções de uma música; segure o nome ou o número para saltar.',
     'new.cTitle': 'Certificado local',
     'new.cBody':
-      'A extensão cria uma autoridade certificadora para este computador, válida para localhost e endereços privados da rede. Instalada uma vez num celular ou computador, ela remove o aviso do navegador. A aba Rede mostra um QR para a página de instalação.',
+      'A extensão cria uma autoridade certificadora válida para localhost e endereços privados.',
     'new.nTitle': 'Endereço de rede',
     'new.nBody':
-      'O QR usa o endereço da rota padrão, não o primeiro endereço privado, então uma segunda interface de rede (luz, áudio) não substitui o endereço do Wi-Fi.',
-    'new.note':
-      'Para atualizar: remova o RC Setlist nas configurações de extensões do Live e instale a 1.1.0. A pasta de dados é mantida. Lista completa: <a href="./pt-BR/NOTAS-DA-VERSAO-1.1.0.html">notas da versão</a>.',
+      'O QR usa o endereço da rota padrão, então uma segunda interface não substitui o endereço do Wi-Fi.',
 
-    'chain.title': 'Cadeia de sinal <span class="tail">— o Live é a referência de tempo</span>',
+    'chain.title': 'Cadeia de sinal',
     'chain.why':
       'O Live toca; o RC Setlist lê a posição e pede os saltos; os navegadores só mostram o que o Live confirmou.',
     'chain.node0': 'Arrangement · locators · transporte · andamento',
@@ -94,11 +86,10 @@
     'chain.lanTag': 'SÓ REDE LOCAL',
     'chain.lan': 'Mantenha o link do controlador privado e nunca exponha a porta 4444 na internet.',
 
-    'loc.title': 'Locators <span class="tail">— do Arrangement ao palco</span>',
+    'loc.title': 'Locators',
     'loc.why':
       'Dê nome aos locators uma vez só. Músicas, seções e tags saem direto do Arrangement.',
     'loc.figCap': 'O que você digita no Live, o que o operador vê',
-    'loc.figMeta': 'Ilustração desta página',
     'loc.inLive': 'Locators do Arrangement',
     'loc.end': 'Fim do Arrangement · compasso 81',
     'loc.reads': 'O RC Setlist lê',
@@ -163,7 +154,7 @@
     'views.s7d': 'Grade dos saltos, click do Live, contagem de um compasso e botão de atualizar.',
     'views.s8': 'Transporte',
     'views.s8d':
-      'Música ou seção anterior e próxima, Play e Stop. Tudo, menos o Play, pede para segurar o botão — veja 5.0.',
+      'Música ou seção anterior e próxima, Play e Stop. Tudo, menos o Play, pede para segurar o botão — veja Segurança no palco.',
     'views.s9': 'Topo',
     'views.s9d':
       'Idioma, bloqueio do painel, ferramentas de letra e exportação, tela cheia, conexão.',

@@ -507,21 +507,14 @@
         z-index: 1;
       }
 
-      /* ================= numbered section rail ================= */
+      /* ================= sections ================= */
       .sec {
         display: grid;
-        grid-template-columns: 76px minmax(0, 1fr);
+        grid-template-columns: minmax(0, 1fr);
         border-top: 1px solid var(--rule);
       }
       .sec:first-of-type {
         border-top: 0;
-      }
-      .sec > .n {
-        padding: 46px 12px 0 0;
-        color: var(--accent);
-        font-size: 20px;
-        line-height: 28px;
-        font-weight: 600;
       }
       .sec > .c {
         padding: 44px 0 56px;
@@ -551,10 +544,6 @@
       }
       .duo h3:first-child {
         margin-top: 0;
-      }
-      h3 .num {
-        color: var(--accent-ink);
-        margin-right: 0.3em;
       }
       h4,
       .h4 {
@@ -621,14 +610,6 @@
         background: var(--accent);
         color: var(--bg);
         padding: 0.06em 0.14em 0.04em;
-      }
-      .tagline {
-        margin: -14px 0 18px;
-        font-size: 13px;
-        line-height: 1.5;
-        font-weight: 600;
-        color: var(--accent);
-        max-width: 56ch;
       }
       .lede {
         font-size: 15px;
@@ -1759,12 +1740,6 @@
         }
       }
       @media (max-width: 760px) {
-        .sec {
-          grid-template-columns: minmax(0, 1fr);
-        }
-        .sec > .n {
-          color: var(--accent-ink);
-        }
         .mast .grow {
           padding: 0;
           border-left: 0;
@@ -1783,11 +1758,6 @@
         .hero-duo > figure:last-child {
           width: 62%;
           margin: 0 auto;
-        }
-        .sec > .n {
-          padding: 34px 0 0;
-          font-size: 14px;
-          line-height: 20px;
         }
         .sec > .c {
           padding-top: 8px;
@@ -2040,13 +2010,13 @@
         </header>
         <nav class="nav" aria-label="Sections" data-i18n-aria="top.navAria">
           <a href="#about" data-i18n="nav.about">About</a>
-          <a href="#new" data-i18n="nav.new">New in 1.1</a>
           <a href="#chain" data-i18n="nav.chain">Chain</a>
           <a href="#locators" data-i18n="nav.locators">Locators</a>
           <a href="#views" data-i18n="nav.views">Two views</a>
           <a href="#safety" data-i18n="nav.safety">Safety</a>
           <a href="#install" data-i18n="nav.install">Install</a>
           <a href="#trouble" data-i18n="nav.trouble">When it fails</a>
+          <a href="#new" data-i18n="nav.new">New in 1.1</a>
           <a href="#docs" data-i18n="nav.docs">Docs</a>
         </nav>
       </div>
@@ -2054,22 +2024,19 @@
       <main id="main">
         <!-- ===================== 1.0 WHAT IT IS ===================== -->
         <section class="sec" id="about" aria-labelledby="about-title">
-          <div class="n">1.0</div>
           <div class="c">
             <h1 id="about-title"><span class="rc">RC</span> Setlist</h1>
-            <p class="tagline" data-i18n="about.tagline">
-              Setlist, synced lyrics and stage display for Ableton Live 12 — free for noncommercial
-              use.
-            </p>
             <p class="lede" data-i18n="about.lede">
-              Reads the Arrangement locators of a Live Set and shows them in the browser: a setlist
-              for the operator and a read-only display for the band. Timing comes from Live.
+              Extension for Ableton Live 12 that runs a show from the Arrangement. Mark each song
+              and section with a locator in Live, and RC Setlist turns them into a setlist in the
+              browser. The operator starts songs and jumps between sections from a laptop or tablet;
+              the band sees the current section, the next song and the lyrics on their phones.
             </p>
             <ul class="spec">
               <li data-i18n="about.spec1">Live 12.4.5+ Suite (Beta)</li>
-              <li data-i18n="about.spec2">RC Bridge included</li>
-              <li data-i18n="about.spec3">Any browser on your network</li>
-              <li data-i18n="about.spec4">No account · no telemetry</li>
+              <li data-i18n="about.spec2">Windows (macOS experimental)</li>
+              <li data-i18n="about.spec3">Any browser on the same network</li>
+              <li data-i18n="about.spec4">Free for noncommercial use</li>
             </ul>
             <div class="acts">
               <a
@@ -2104,17 +2071,13 @@
               >
             </div>
             <p class="release" data-i18n-html="about.release">
-              Release 1.1.0&nbsp;· source-available under PolyForm Noncommercial 1.0.0&nbsp;·
-              English and Português (Brasil) in the same package
+              Source-available&nbsp;· Release 1.1.0
             </p>
 
             <figure class="fig hero-visual">
               <figcaption class="fig-bar">
                 <span class="id">Fig. 1</span>
                 <span class="cap" data-i18n="about.figCap">The two views</span>
-                <span class="meta" data-i18n="about.figMeta"
-                  >Real captures · neutral demo data</span
-                >
               </figcaption>
               <div class="fig-body hero-duo">
                 <figure>
@@ -2152,114 +2115,10 @@
           </div>
         </section>
 
-        <!-- ===================== 1.1 NEW IN 1.1.0 ===================== -->
-        <section class="sec" id="new" aria-labelledby="new-title">
-          <div class="n">1.1</div>
-          <div class="c">
-            <h2 id="new-title" data-i18n-html="new.title">New in 1.1.0</h2>
-            <p class="why" data-i18n="new.why">
-              Live panel with setlist management and packages, second-computer sync, collapsible
-              song list, local certificate and network address selection.
-            </p>
-            <div class="cards c2">
-              <div class="card">
-                <span class="ic"
-                  ><svg aria-hidden="true"><use href="#g-session" /></svg
-                ></span>
-                <div>
-                  <h3 data-i18n="new.lTitle">Live panel</h3>
-                  <p data-i18n="new.lBody">
-                    Three tabs: Main, Setlists, Network. Main shows one QR code, Stage Control by
-                    default, and a button that switches it to the Performance view; below it, the
-                    active setlist, song count, show time and song list.
-                  </p>
-                </div>
-              </div>
-              <div class="card">
-                <span class="ic"
-                  ><svg aria-hidden="true"><use href="#g-law" /></svg
-                ></span>
-                <div>
-                  <h3 data-i18n="new.pkTitle">Setlist packages</h3>
-                  <p data-i18n="new.pkBody">
-                    Export all writes the setlists of the Live Set (order, song colours and notes,
-                    lyrics) to one .rcsetlist file. Import adds the setlists of a package to the
-                    existing ones; a duplicate name gets a number. Files are kept in the packages
-                    folder of the extension data.
-                  </p>
-                </div>
-              </div>
-              <div class="card">
-                <span class="ic"
-                  ><svg aria-hidden="true"><use href="#g-live" /></svg
-                ></span>
-                <div>
-                  <h3 data-i18n="new.pTitle">Second computer</h3>
-                  <p data-i18n="new.pBody">
-                    Pair a second computer running Live with a six-digit code. Play, Stop, jumps,
-                    click, quantization, count-in and panic are sent to it. A second status dot in
-                    the Stage Control header shows the state of the link.
-                  </p>
-                </div>
-              </div>
-              <div class="card">
-                <span class="ic"
-                  ><svg aria-hidden="true"><use href="#g-song" /></svg
-                ></span>
-                <div>
-                  <h3 data-i18n="new.fTitle">Collapsible song list</h3>
-                  <p data-i18n="new.fBody">
-                    The three-dot button next to a song collapses its sections; Fold all and Unfold
-                    all act on the whole list. Hold the song name or number to jump; drag the grip
-                    on the right edge of the card to reorder.
-                  </p>
-                </div>
-              </div>
-              <div class="card">
-                <span class="ic"
-                  ><svg aria-hidden="true"><use href="#g-phone" /></svg
-                ></span>
-                <div>
-                  <h3 data-i18n="new.cTitle">Local certificate</h3>
-                  <p data-i18n="new.cBody">
-                    The extension creates a certificate authority for this computer, valid for
-                    localhost and private network addresses. Installed once on a phone or computer,
-                    it removes the browser warning. The Network tab shows a QR code for the install
-                    page.
-                  </p>
-                </div>
-              </div>
-              <div class="card">
-                <span class="ic"
-                  ><svg aria-hidden="true"><use href="#g-net" /></svg
-                ></span>
-                <div>
-                  <h3 data-i18n="new.nTitle">Network address</h3>
-                  <p data-i18n="new.nBody">
-                    The QR code uses the address of the default route instead of the first private
-                    address, so a second network interface (lighting, audio) does not replace the
-                    Wi-Fi address.
-                  </p>
-                </div>
-              </div>
-            </div>
-            <p class="note" data-i18n-html="new.note">
-              To update: remove RC Setlist in Live's extension settings and install 1.1.0. The data
-              folder is kept. Full list of changes:
-              <a href="https://github.com/ntworm/rc-setlist/blob/main/docs/RELEASE-NOTES-1.1.0.md"
-                >release notes</a
-              >.
-            </p>
-          </div>
-        </section>
-
         <!-- ===================== 2.0 SIGNAL CHAIN ===================== -->
         <section class="sec" id="chain" aria-labelledby="chain-title">
-          <div class="n">2.0</div>
           <div class="c">
-            <h2 id="chain-title" data-i18n-html="chain.title">
-              Signal chain <span class="tail">— Live is the time source</span>
-            </h2>
+            <h2 id="chain-title" data-i18n-html="chain.title">Signal chain</h2>
             <p class="why" data-i18n="chain.why">
               Live plays; RC Setlist reads its position and asks it to move; the browsers show only
               what Live confirmed.
@@ -2303,10 +2162,7 @@
                 </div>
               </div>
               <div>
-                <h3>
-                  <span class="num">2.1</span>
-                  <span data-i18n="chain.needTitle">What you need</span>
-                </h3>
+                <h3><span data-i18n="chain.needTitle">What you need</span></h3>
                 <div class="scroll">
                   <table class="stack">
                     <thead>
@@ -2357,11 +2213,8 @@
 
         <!-- ===================== 3.0 LOCATORS ===================== -->
         <section class="sec" id="locators" aria-labelledby="locators-title">
-          <div class="n">3.0</div>
           <div class="c">
-            <h2 id="locators-title" data-i18n-html="loc.title">
-              Locators <span class="tail">— from Arrangement to stage</span>
-            </h2>
+            <h2 id="locators-title" data-i18n-html="loc.title">Locators</h2>
             <p class="why" data-i18n="loc.why">
               Name the locators once. Songs, sections and tags come straight from the Arrangement.
             </p>
@@ -2372,7 +2225,6 @@
                 <span class="cap" data-i18n="loc.figCap"
                   >What you type in Live, what the operator sees</span
                 >
-                <span class="meta" data-i18n="loc.figMeta">Drawn for this sheet</span>
               </figcaption>
               <div class="fig-body">
                 <p class="h4" data-i18n="loc.inLive">In Live — Arrangement locators</p>
@@ -2491,7 +2343,7 @@
               </div>
             </figure>
 
-            <h3><span class="num">3.1</span> <span data-i18n="loc.tagsTitle">Tag grammar</span></h3>
+            <h3><span data-i18n="loc.tagsTitle">Tag grammar</span></h3>
             <div class="scroll">
               <table class="stack tags">
                 <thead>
@@ -2591,7 +2443,7 @@
               each tag is a control.
             </p>
 
-            <h3><span class="num">3.2</span> <span data-i18n="loc.durTitle">Set duration</span></h3>
+            <h3><span data-i18n="loc.durTitle">Set duration</span></h3>
             <figure class="fig">
               <figcaption class="fig-bar">
                 <span class="id">Fig. 3</span>
@@ -2643,7 +2495,6 @@
 
         <!-- ===================== 4.0 TWO VIEWS ===================== -->
         <section class="sec" id="views" aria-labelledby="views-title">
-          <div class="n">4.0</div>
           <div class="c">
             <h2 id="views-title" data-i18n-html="views.title">Two views</h2>
             <p class="why" data-i18n="views.why">
@@ -2785,7 +2636,7 @@
                             <td data-i18n="views.s8">Transport</td>
                             <td data-i18n="views.s8d">
                               Previous and next song or section, Play, Stop. Everything but Play is
-                              held — see 5.0.
+                              held — see Stage safety.
                             </td>
                           </tr>
                           <tr>
@@ -3009,7 +2860,6 @@
 
         <!-- ===================== 5.0 STAGE SAFETY ===================== -->
         <section class="sec" id="safety" aria-labelledby="safety-title">
-          <div class="n">5.0</div>
           <div class="c">
             <h2 id="safety-title" data-i18n-html="safety.title">Stage safety</h2>
             <p class="why" data-i18n="safety.why">
@@ -3148,7 +2998,6 @@
 
         <!-- ===================== 6.0 INSTALL ===================== -->
         <section class="sec" id="install" aria-labelledby="install-title">
-          <div class="n">6.0</div>
           <div class="c">
             <h2 id="install-title" data-i18n-html="install.title">Installation</h2>
             <div class="install">
@@ -3258,12 +3107,9 @@
 
         <!-- ===================== 7.0 WHEN IT FAILS ===================== -->
         <section class="sec" id="trouble" aria-labelledby="trouble-title">
-          <div class="n">7.0</div>
           <div class="c">
             <h2 id="trouble-title" data-i18n="trouble.title">When it does not work</h2>
-            <h3>
-              <span class="num">7.1</span> <span data-i18n="trouble.tsTitle">Troubleshooting</span>
-            </h3>
+            <h3><span data-i18n="trouble.tsTitle">Troubleshooting</span></h3>
             <div class="cards c2">
               <div class="card">
                 <span class="ic"
@@ -3338,10 +3184,7 @@
               </div>
             </div>
 
-            <h3 id="faq">
-              <span class="num">7.2</span>
-              <span data-i18n="trouble.faqTitle">Frequently asked</span>
-            </h3>
+            <h3 id="faq"><span data-i18n="trouble.faqTitle">Frequently asked</span></h3>
             <div class="cards c3">
               <div class="card">
                 <span class="ic"
@@ -3449,9 +3292,89 @@
           </div>
         </section>
 
+        <!-- ===================== 1.1 NEW IN 1.1.0 ===================== -->
+        <section class="sec" id="new" aria-labelledby="new-title">
+          <div class="c">
+            <h2 id="new-title" data-i18n-html="new.title">New in 1.1.0</h2>
+            <div class="cards c2">
+              <div class="card">
+                <span class="ic"
+                  ><svg aria-hidden="true"><use href="#g-session" /></svg
+                ></span>
+                <div>
+                  <h3 data-i18n="new.lTitle">Live panel</h3>
+                  <p data-i18n="new.lBody">
+                    Three tabs: Main, Setlists, Network. One QR code, the active setlist and the
+                    song list.
+                  </p>
+                </div>
+              </div>
+              <div class="card">
+                <span class="ic"
+                  ><svg aria-hidden="true"><use href="#g-law" /></svg
+                ></span>
+                <div>
+                  <h3 data-i18n="new.pkTitle">Setlist packages</h3>
+                  <p data-i18n="new.pkBody">
+                    Export writes the setlists of the Live Set to one .rcsetlist file; Import
+                    adds a package.
+                  </p>
+                </div>
+              </div>
+              <div class="card">
+                <span class="ic"
+                  ><svg aria-hidden="true"><use href="#g-live" /></svg
+                ></span>
+                <div>
+                  <h3 data-i18n="new.pTitle">Second computer</h3>
+                  <p data-i18n="new.pBody">
+                    Pair a second computer running Live with a six-digit code; transport commands
+                    go to it.
+                  </p>
+                </div>
+              </div>
+              <div class="card">
+                <span class="ic"
+                  ><svg aria-hidden="true"><use href="#g-song" /></svg
+                ></span>
+                <div>
+                  <h3 data-i18n="new.fTitle">Collapsible song list</h3>
+                  <p data-i18n="new.fBody">
+                    The three-dot button folds a song's sections; hold the song name or number to
+                    jump.
+                  </p>
+                </div>
+              </div>
+              <div class="card">
+                <span class="ic"
+                  ><svg aria-hidden="true"><use href="#g-phone" /></svg
+                ></span>
+                <div>
+                  <h3 data-i18n="new.cTitle">Local certificate</h3>
+                  <p data-i18n="new.cBody">
+                    The extension creates a certificate authority valid for localhost and private
+                    addresses.
+                  </p>
+                </div>
+              </div>
+              <div class="card">
+                <span class="ic"
+                  ><svg aria-hidden="true"><use href="#g-net" /></svg
+                ></span>
+                <div>
+                  <h3 data-i18n="new.nTitle">Network address</h3>
+                  <p data-i18n="new.nBody">
+                    The QR code uses the default route address, so a second interface does not
+                    replace the Wi-Fi address.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
         <!-- ===================== 8.0 DOCS ===================== -->
         <section class="sec" id="docs" aria-labelledby="docs-title">
-          <div class="n">8.0</div>
           <div class="c">
             <h2 id="docs-title" data-i18n="docs.title">Reference documents</h2>
             <div class="docs">
