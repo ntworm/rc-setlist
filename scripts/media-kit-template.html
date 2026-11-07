@@ -3,28 +3,33 @@
   <head>
     <meta charset="utf-8" />
     <style>
+      /* RC Setlist media kit — a sibling of the RC Surface card.
+         Same grammar: a rule on top, a column of words, the real interface
+         in a device of its true proportion, a caption, a rule at the foot.
+         Its own voice: Martian Mono set bold, and the setlist itself as the
+         motif — a numbered running order with the song that is playing
+         marked. Flat carbon, hairlines, one orange. */
+      @font-face {
+        font-family: 'Martian Mono';
+        font-weight: 100 800;
+        font-stretch: 75% 112.5%;
+        src: url('{{FONT_DATA_URI}}') format('woff2');
+      }
       * {
         box-sizing: border-box;
+        margin: 0;
       }
       html,
       body {
-        margin: 0;
-        background: #050506;
-        color: #f5f1e8;
-        font-family: Inter, Arial, sans-serif;
+        background: #121212;
       }
       .artboard {
         position: relative;
         overflow: hidden;
-        background: #0b0b0d;
-        isolation: isolate;
-      }
-      .artboard::before {
-        content: '';
-        position: absolute;
-        inset: 0;
-        z-index: -1;
-        background: radial-gradient(circle at 82% 5%, rgba(255, 107, 26, 0.25), transparent 40%);
+        background: #121212;
+        color: #c9c7c3;
+        font-family: 'Martian Mono', ui-monospace, monospace;
+        font-variation-settings: 'wdth' 87.5;
       }
       .landscape {
         width: 1200px;
@@ -38,320 +43,390 @@
         width: 1200px;
         height: 675px;
       }
-      .eyebrow {
-        color: #ff9a52;
-        font:
-          800 16px/1.2 Consolas,
-          monospace;
-        letter-spacing: 0.14em;
-        text-transform: uppercase;
-      }
-      .mark {
-        display: inline-grid;
-        place-items: center;
-        width: 52px;
-        height: 52px;
-        border-radius: 12px;
-        background: #ffa133;
-        color: #160b05;
-        font-weight: 950;
-      }
-      .brand {
+      .head,
+      .foot {
+        position: absolute;
+        left: 56px;
+        right: 56px;
         display: flex;
-        align-items: center;
-        gap: 14px;
-        font-size: 23px;
-        font-weight: 900;
+        justify-content: space-between;
+        font-size: 13px;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: #8b8984;
+      }
+      .head {
+        top: 38px;
+        padding-bottom: 14px;
+        border-bottom: 1px solid #333;
+      }
+      .foot {
+        bottom: 32px;
+        padding-top: 14px;
+        border-top: 1px solid #333;
+      }
+      .head b,
+      .foot b {
+        color: #ffa133;
+        font-weight: 700;
+      }
+      .copy {
+        position: absolute;
+        left: 56px;
+        width: 360px;
+      }
+      .kick {
+        font-size: 12px;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        color: #6b6964;
+        margin-bottom: 16px;
       }
       h1 {
-        margin: 24px 0 14px;
-        font-size: 70px;
-        line-height: 0.91;
-        letter-spacing: -0.065em;
+        font-weight: 800;
+        font-size: 34px;
+        line-height: 1.12;
+        letter-spacing: -0.015em;
+        color: #efede9;
+        font-variation-settings: 'wdth' 100;
       }
-      h1 span,
-      .accent {
+      h1 span {
         color: #ffa133;
       }
-      .sub {
-        max-width: 560px;
-        color: #cbc6be;
-        font-size: 22px;
-        line-height: 1.35;
+      .lede {
+        margin-top: 16px;
+        font-size: 14px;
+        line-height: 1.55;
+        color: #8b8984;
       }
-      .meta {
-        color: #ffb07d;
-        font:
-          800 14px/1.2 Consolas,
-          monospace;
-        letter-spacing: 0.11em;
-        text-transform: uppercase;
+      /* The running order: the setlist as the motif of the brand. */
+      .order {
+        margin-top: 20px;
+        border-top: 1px solid #333;
+        list-style: none;
+        padding: 0;
+        font-size: 13px;
       }
-      .product-copy {
+      .order li {
+        display: grid;
+        grid-template-columns: 34px 1fr auto;
+        padding: 8px 0;
+        border-bottom: 1px solid #262626;
+        color: #8b8984;
+      }
+      .order li i {
+        font-style: normal;
+        color: #5c5b59;
+      }
+      .order li.now {
+        color: #efede9;
+        font-weight: 700;
+      }
+      .order li.now i,
+      .order li.now em {
+        color: #ffa133;
+      }
+      .order em {
+        font-style: normal;
+      }
+      /* A device: the real page, true proportion, a bezel and a hairline. */
+      .tablet,
+      .phone {
         position: absolute;
-        left: 58px;
-        top: 54px;
-        width: 500px;
+        background: #050505;
+        border: 1px solid #3a3a3a;
+        box-shadow:
+          0 0 0 7px #1b1b1b,
+          0 0 0 8px #333;
       }
-      .capture {
-        position: absolute;
-        overflow: hidden;
-        border: 1px solid #3a3c44;
-        border-radius: 14px;
-        background: #08090b;
-        box-shadow: 0 28px 70px rgba(0, 0, 0, 0.55);
+      .tablet {
+        border-radius: 26px;
+        padding: 14px;
       }
-      .capture img {
+      .tablet img {
         display: block;
         width: 100%;
-        height: 100%;
-        object-fit: cover;
-        object-position: top left;
+        height: auto;
+        border-radius: 12px;
       }
-      .product-landscape .performance {
-        right: -25px;
-        top: 78px;
-        width: 620px;
-        height: 349px;
-        transform: rotate(1.5deg);
+      .phone {
+        border-radius: 30px;
+        padding: 10px;
       }
-      .product-landscape .operator {
-        right: 90px;
-        bottom: 42px;
-        width: 530px;
-        height: 298px;
-        transform: rotate(-1deg);
-      }
-      .product-landscape .meta {
-        position: absolute;
-        left: 58px;
-        bottom: 50px;
-      }
-      .product-square {
-        padding: 62px;
-      }
-      .product-square h1 {
-        max-width: 880px;
-        font-size: 94px;
-      }
-      .product-square .sub {
-        max-width: 860px;
-        font-size: 27px;
-      }
-      .product-square .performance {
-        left: 70px;
-        bottom: 86px;
-        width: 800px;
-        height: 450px;
-        transform: rotate(-1deg);
-      }
-      .product-square .operator {
-        right: 56px;
-        bottom: 54px;
-        width: 650px;
-        height: 366px;
-        transform: rotate(1.4deg);
-      }
-      .product-square .meta {
-        position: absolute;
-        left: 70px;
-        bottom: 30px;
-      }
-      .product-discord .product-copy {
-        width: 470px;
-        top: 48px;
-      }
-      .product-discord h1 {
-        font-size: 66px;
-      }
-      .product-discord .performance {
-        right: -35px;
-        top: 62px;
-        width: 690px;
-        height: 388px;
-        transform: rotate(1.2deg);
-      }
-      .product-discord .operator {
-        right: 70px;
-        bottom: 44px;
-        width: 570px;
-        height: 321px;
-        transform: rotate(-1deg);
-      }
-      .product-discord .meta {
-        position: absolute;
-        left: 58px;
-        bottom: 52px;
-      }
-      .workflow-board {
-        padding: 52px 58px;
-      }
-      .workflow-board h1 {
-        max-width: 850px;
-        font-size: 68px;
-      }
-      .workflow-grid {
-        display: grid;
-        grid-template-columns: 1fr 54px 1fr 54px 1fr;
-        align-items: stretch;
-        margin-top: 35px;
-      }
-      .workflow-card {
-        min-height: 250px;
-        padding: 25px;
-        border: 1px solid #393a42;
-        border-radius: 14px;
-        background: #111217;
-      }
-      .workflow-card strong {
+      .phone img {
         display: block;
-        margin: 13px 0 16px;
-        font-size: 28px;
+        width: 100%;
+        height: auto;
+        border-radius: 20px;
       }
-      .workflow-card pre,
-      .workflow-card p {
+      .cap {
+        position: absolute;
+        font-size: 11px;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: #6b6964;
+      }
+      .cap b {
+        color: #c9c7c3;
+        font-weight: 700;
+      }
+
+      /* 1200 x 627 */
+      .card-landscape .copy {
+        top: 106px;
+      }
+      .card-landscape .tablet {
+        left: 544px;
+        top: 104px;
+        width: 600px;
+      }
+      .card-landscape .cap {
+        left: 544px;
+        top: 543px;
+      }
+
+      /* 1200 x 1200 */
+      .card-square .copy {
+        top: 116px;
+        width: 520px;
+      }
+      .card-square h1 {
+        font-size: 46px;
+      }
+      .card-square .tablet {
+        left: 56px;
+        top: 470px;
+        width: 820px;
+      }
+      .card-square .phone {
+        left: 912px;
+        top: 470px;
+        width: 232px;
+      }
+      .card-square .cap {
+        left: 56px;
+        top: 1036px;
+      }
+      .card-square .order {
+        position: absolute;
+        left: 640px;
+        top: 116px;
+        width: 504px;
         margin: 0;
-        color: #c7c3bc;
-        font-family: Consolas, monospace;
-        line-height: 1.55;
+      }
+
+      /* 1200 x 675 */
+      .card-discord .copy {
+        top: 112px;
+      }
+      .card-discord .tablet {
+        left: 494px;
+        top: 112px;
+        width: 650px;
+      }
+      .card-discord .cap {
+        left: 494px;
+        top: 562px;
+      }
+
+      /* Workflow: the three steps as a running order */
+      .card-workflow .copy {
+        top: 112px;
+        width: 620px;
+      }
+      .steps {
+        position: absolute;
+        left: 56px;
+        right: 56px;
+        top: 300px;
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        border-top: 1px solid #333;
+      }
+      .steps article {
+        padding: 22px 26px 0 0;
+      }
+      .steps article + article {
+        padding-left: 26px;
+        border-left: 1px solid #262626;
+      }
+      .steps .n {
+        font-size: 40px;
+        font-weight: 800;
+        color: #ffa133;
+        font-variation-settings: 'wdth' 100;
+      }
+      .steps strong {
+        display: block;
+        margin-top: 10px;
+        font-size: 18px;
+        color: #efede9;
+        font-weight: 700;
+      }
+      .steps p,
+      .steps pre {
+        margin-top: 10px;
+        font-family: inherit;
+        font-size: 13px;
+        line-height: 1.6;
+        color: #8b8984;
         white-space: pre-wrap;
       }
-      .workflow-card pre {
-        font-size: 15px;
+      .steps pre {
+        color: #c9c7c3;
       }
-      .workflow-card p {
-        font-size: 18px;
+
+      /* Stage: the display and the phone on the mic stand */
+      .card-stage .copy {
+        top: 112px;
+        width: 330px;
       }
-      .arrow {
-        display: grid;
-        place-items: center;
-        color: #ffa133;
-        font-size: 34px;
-        font-weight: 950;
+      .card-stage .tablet {
+        left: 420px;
+        top: 112px;
+        width: 540px;
       }
-      .workflow-board .meta {
-        position: absolute;
-        right: 58px;
-        top: 60px;
+      .card-stage .phone {
+        left: 994px;
+        top: 112px;
+        width: 150px;
       }
-      .editorial-board {
-        padding: 52px 58px;
-        background: linear-gradient(155deg, #08090b 20%, #211108 72%, #09090b);
-      }
-      .editorial-board h1 {
-        max-width: 420px;
-        font-size: 58px;
-      }
-      .editorial-board .sub {
-        max-width: 400px;
-        font-size: 20px;
-      }
-      .editorial-board .performance {
-        right: 25px;
-        top: 72px;
-        width: 650px;
-        height: 366px;
-        transform: perspective(900px) rotateY(-8deg) rotateZ(1.8deg);
-      }
-      .editorial-board .operator {
-        right: 35px;
-        bottom: 36px;
-        width: 560px;
-        height: 315px;
-        transform: perspective(900px) rotateY(-6deg) rotateZ(-1.4deg);
-      }
-      .editorial-board .floor {
-        position: absolute;
-        right: -100px;
-        bottom: -150px;
-        width: 900px;
-        height: 300px;
-        background: radial-gradient(ellipse, rgba(255, 107, 26, 0.17), transparent 65%);
-        transform: rotate(-8deg);
-      }
-      .editorial-board .meta {
-        position: absolute;
-        left: 58px;
-        bottom: 52px;
+      .card-stage .cap {
+        left: 420px;
+        top: 500px;
       }
     </style>
   </head>
   <body>
-    <section id="product-truth-linkedin" class="artboard landscape product-landscape">
-      <div class="product-copy">
-        <div class="brand"><span class="mark">RC</span>RC Setlist</div>
-        <h1>Your Live Set.<br /><span>Ready for the stage.</span></h1>
-        <p class="sub">
-          Setlist, guarded transport and synchronized lyrics — straight from Arrangement locators.
+    <section id="product-truth-linkedin" class="artboard landscape card-landscape">
+      <div class="head">
+        <span><b>RC Setlist</b> · v1.1.0</span
+        ><span>Source-available · Ableton Live extension</span>
+      </div>
+      <div class="copy">
+        <div class="kick">Locators → stage</div>
+        <h1>Your Live Set,<br /><span>ready for the stage.</span></h1>
+        <p class="lede">
+          The running order, the section, the click and the lyrics, read from Arrangement locators.
+        </p>
+        <ol class="order">
+          <li><i>01</i><em>Song 01</em><span>2:08</span></li>
+          <li><i>02</i><em>Song 02</em><span>2:08</span></li>
+          <li class="now"><i>03</i><em>Song 03 · now</em><span>2:08</span></li>
+          <li><i>04</i><em>Song 04</em><span>2:08</span></li>
+        </ol>
+      </div>
+      <div class="tablet"><img src="{{STAGE_CLOSEUP_DATA_URI}}" alt="" /></div>
+      <div class="cap"><b>Stage Control</b> · the real page on a tablet, 900 × 592</div>
+      <div class="foot">
+        <span><b>ntworm.github.io/rc-setlist</b></span
+        ><span>Independent · not affiliated with Ableton AG</span>
+      </div>
+    </section>
+
+    <section id="product-truth-square" class="artboard square card-square">
+      <div class="head">
+        <span><b>RC Setlist</b> · v1.1.0</span
+        ><span>Source-available · Ableton Live extension</span>
+      </div>
+      <div class="copy">
+        <div class="kick">Locators → stage</div>
+        <h1>Your Live Set,<br /><span>ready for the stage.</span></h1>
+        <p class="lede">
+          The running order, the section, the click and the lyrics, read from Arrangement locators.
         </p>
       </div>
-      <div class="capture performance"><img src="{{PERFORMANCE_DATA_URI}}" alt="" /></div>
-      <div class="capture operator"><img src="{{STAGE_CONTROL_DATA_URI}}" alt="" /></div>
-      <div class="meta">PRODUCT TRUTH · v1.1.0 · LOCAL FIRST</div>
-    </section>
-
-    <section id="product-truth-square" class="artboard square product-square">
-      <div class="brand"><span class="mark">RC</span>RC Setlist</div>
-      <h1>Your Live Set.<br /><span>Ready for the stage.</span></h1>
-      <p class="sub">
-        The real interface: songs and sections, guarded controls, show state and synchronized
-        lyrics.
-      </p>
-      <div class="capture performance"><img src="{{PERFORMANCE_DATA_URI}}" alt="" /></div>
-      <div class="capture operator"><img src="{{STAGE_CONTROL_DATA_URI}}" alt="" /></div>
-      <div class="meta">ONE .ABLX · NO ACCOUNT · NO TELEMETRY · v1.1.0</div>
-    </section>
-
-    <section id="product-truth-discord" class="artboard discord product-discord">
-      <div class="product-copy">
-        <div class="brand"><span class="mark">RC</span>RC Setlist</div>
-        <h1>From locator<br /><span>to stage.</span></h1>
-        <p class="sub">
-          Run the set, follow every section and keep lyrics or chords visible in the browser.
-        </p>
+      <ol class="order">
+        <li><i>01</i><em>Song 01</em><span>2:08</span></li>
+        <li><i>02</i><em>Song 02</em><span>2:08</span></li>
+        <li class="now"><i>03</i><em>Song 03 · now</em><span>2:08</span></li>
+        <li><i>04</i><em>Song 04</em><span>2:08</span></li>
+        <li><i>05</i><em>Song 05</em><span>2:08</span></li>
+      </ol>
+      <div class="tablet"><img src="{{STAGE_CLOSEUP_DATA_URI}}" alt="" /></div>
+      <div class="phone"><img src="{{PHONE_DATA_URI}}" alt="" /></div>
+      <div class="cap"><b>Stage Control</b> on a tablet · <b>Performance</b> on the mic stand</div>
+      <div class="foot">
+        <span><b>ntworm.github.io/rc-setlist</b></span
+        ><span>One .ablx · no account · no telemetry</span>
       </div>
-      <div class="capture performance"><img src="{{PERFORMANCE_DATA_URI}}" alt="" /></div>
-      <div class="capture operator"><img src="{{STAGE_CONTROL_DATA_URI}}" alt="" /></div>
-      <div class="meta">UTILITY · WORKFLOW · ABLETON LIVE EXTENSION</div>
     </section>
 
-    <section id="workflow" class="artboard discord workflow-board">
-      <div class="eyebrow">Workflow · three steps</div>
-      <h1>From locator<br /><span>to performance.</span></h1>
-      <div class="meta">RC SETLIST · v1.1.0</div>
-      <div class="workflow-grid">
-        <article class="workflow-card">
-          <div class="eyebrow">01 · Live</div>
+    <section id="product-truth-discord" class="artboard discord card-discord">
+      <div class="head">
+        <span><b>RC Setlist</b> · v1.1.0</span
+        ><span>Source-available · Ableton Live extension</span>
+      </div>
+      <div class="copy">
+        <div class="kick">The stage screen</div>
+        <h1>The band reads<br /><span>the same show.</span></h1>
+        <p class="lede">
+          Song, section, timecode, bar, BPM and the lyric line, large enough to read from the stage.
+        </p>
+        <ol class="order">
+          <li class="now"><i>03</i><em>Chorus · loop 2x</em><span>124</span></li>
+          <li><i>04</i><em>Bridge · next</em><span>124</span></li>
+        </ol>
+      </div>
+      <div class="tablet"><img src="{{PERFORMANCE_CLOSEUP_DATA_URI}}" alt="" /></div>
+      <div class="cap"><b>Performance</b> · the real page, 900 × 592</div>
+      <div class="foot">
+        <span><b>ntworm.github.io/rc-setlist</b></span
+        ><span>Independent · not affiliated with Ableton AG</span>
+      </div>
+    </section>
+
+    <section id="workflow" class="artboard discord card-workflow">
+      <div class="head">
+        <span><b>RC Setlist</b> · v1.1.0</span><span>Workflow · three steps</span>
+      </div>
+      <div class="copy">
+        <div class="kick">Workflow · three steps</div>
+        <h1>From locator<br /><span>to performance.</span></h1>
+      </div>
+      <div class="steps">
+        <article>
+          <div class="n">01</div>
           <strong>Map the Arrangement</strong>
           <pre>
 SONG 03 [bpm 124] [click]
 SONG 03 &gt; CHORUS [loop 2x]</pre>
         </article>
-        <div class="arrow">→</div>
-        <article class="workflow-card">
-          <div class="eyebrow">02 · Operate</div>
+        <article>
+          <div class="n">02</div>
           <strong>Run the set</strong>
           <p>Songs, sections, quantization, click, refresh and guarded transport.</p>
         </article>
-        <div class="arrow">→</div>
-        <article class="workflow-card">
-          <div class="eyebrow">03 · Stage</div>
+        <article>
+          <div class="n">03</div>
           <strong>Read the show</strong>
           <p>Current and next state, timecode, bar/beat, BPM/click and synchronized lyrics.</p>
         </article>
       </div>
+      <div class="foot">
+        <span><b>ntworm.github.io/rc-setlist</b></span
+        ><span>Local first · browser based · no cloud</span>
+      </div>
     </section>
 
-    <section id="stage-editorial" class="artboard discord editorial-board">
-      <div class="eyebrow">Stage editorial</div>
-      <h1>Control the show.<br /><span>Not the screen.</span></h1>
-      <p class="sub">
-        One Live Set, two real interfaces: one to operate and one to keep the stage readable.
-      </p>
-      <div class="floor"></div>
-      <div class="capture performance"><img src="{{PERFORMANCE_DATA_URI}}" alt="" /></div>
-      <div class="capture operator"><img src="{{STAGE_CONTROL_DATA_URI}}" alt="" /></div>
-      <div class="meta">LOCAL FIRST · BROWSER BASED · NO CLOUD</div>
+    <section id="stage-editorial" class="artboard discord card-stage">
+      <div class="head">
+        <span><b>RC Setlist</b> · v1.1.0</span><span>Stage editorial</span>
+      </div>
+      <div class="copy">
+        <div class="kick">Two real interfaces</div>
+        <h1>Control the show.<br /><span>Not the screen.</span></h1>
+        <p class="lede">
+          One Live Set, two real interfaces: one to operate and one to keep the stage readable.
+        </p>
+      </div>
+      <div class="tablet"><img src="{{PERFORMANCE_CLOSEUP_DATA_URI}}" alt="" /></div>
+      <div class="phone"><img src="{{PHONE_DATA_URI}}" alt="" /></div>
+      <div class="cap"><b>Performance</b> · on stage and on the mic stand</div>
+      <div class="foot">
+        <span><b>ntworm.github.io/rc-setlist</b></span
+        ><span>Local first · browser based · no cloud</span>
+      </div>
     </section>
   </body>
 </html>

@@ -1,5 +1,6 @@
 import { createHash } from 'node:crypto';
 import { spawn } from 'node:child_process';
+import os from 'node:os';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -150,11 +151,78 @@ function localizeTemplate(template, locale) {
             'Um Live Set, duas interfaces reais: uma para operar e outra para manter o palco legível.',
           ],
           ['LOCAL FIRST · BROWSER BASED · NO CLOUD', 'LOCAL PRIMEIRO · NO NAVEGADOR · SEM NUVEM'],
+          ['Ableton Live extension', 'Extensão para Ableton Live'],
+          [
+            'Source-available · Ableton Live extension',
+            'Código disponível · Extensão para Ableton Live',
+          ],
+          ['Locators → stage', 'Localizadores → palco'],
+          [
+            'Your Live Set,<br><span>ready for the stage.</span>',
+            'Seu Live Set,<br><span>pronto para o palco.</span>',
+          ],
+          [
+            'The running order, the section, the click and the lyrics, read from Arrangement locators.',
+            'A ordem do show, a seção, o click e as letras, lidos dos localizadores do Arrangement.',
+          ],
+          ['Song 03 · now', 'Song 03 · agora'],
+          [
+            '<b>Stage Control</b> · the real page on a tablet, 900 × 592',
+            '<b>Controle de palco</b> · a página real num tablet, 900 × 592',
+          ],
+          [
+            'Independent · not affiliated with Ableton AG',
+            'Independente · sem vínculo com a Ableton AG',
+          ],
+          [
+            '<b>Stage Control</b> on a tablet · <b>Performance</b> on the mic stand',
+            '<b>Controle de palco</b> no tablet · <b>Performance</b> no pedestal do microfone',
+          ],
+          ['One .ablx · no account · no telemetry', 'Um .ablx · sem conta · sem telemetria'],
+          ['The stage screen', 'A tela do palco'],
+          [
+            'The band reads<br><span>the same show.</span>',
+            'A banda lê<br><span>o mesmo show.</span>',
+          ],
+          [
+            'Song, section, timecode, bar, BPM and the lyric line, large enough to read from the stage.',
+            'Música, seção, timecode, compasso, BPM e a linha da letra, grandes para ler do palco.',
+          ],
+          ['Chorus · loop 2x', 'Chorus · loop 2x'],
+          ['Bridge · next', 'Bridge · próxima'],
+          [
+            '<b>Performance</b> · the real page, 900 × 592',
+            '<b>Performance</b> · a página real, 900 × 592',
+          ],
+          ['Local first · browser based · no cloud', 'Local primeiro · no navegador · sem nuvem'],
+          ['Two real interfaces', 'Duas interfaces reais'],
+          [
+            '<b>Performance</b> · on stage and on the mic stand',
+            '<b>Performance</b> · no palco e no pedestal do microfone',
+          ],
+          [
+            '<b>Stage Control</b> · Performance Display',
+            '<b>Controle de palco</b> · Performance Display',
+          ],
+          [
+            '<b>Performance Display</b> · the stage screen',
+            '<b>Performance Display</b> · a tela do palco',
+          ],
+          [
+            '<b>Performance Display</b> · on stage and on the mic stand',
+            '<b>Performance Display</b> · no palco e no pedestal do microfone',
+          ],
         ])
       : new Map();
   // Prettier writes the line breaks of the template as <br />; the
   // translations are keyed on <br>.
-  let localized = template
+  // Prettier also wraps long sentences; the translations are keyed on one
+  // line, so runs of whitespace collapse everywhere except inside <pre>.
+  const collapsed = template
+    .split(/(<pre>[\s\S]*?<\/pre>)/)
+    .map((part) => (part.startsWith('<pre>') ? part : part.replace(/\s*\n\s*/g, ' ')))
+    .join('');
+  let localized = collapsed
     .replaceAll('<br />', '<br>')
     .replace('<html lang="en">', `<html lang="${locale}">`);
   for (const [source, target] of replacements) localized = localized.replaceAll(source, target);
@@ -230,6 +298,29 @@ try {
       },
     );
 
+    // The compositions show the interface at its own size: a 900 x 592
+    // capture at twice the density, cropped in the frame, so the type of the
+    // product stays legible instead of shrinking with the whole screen.
+    const closeUps = await fs.mkdtemp(path.join(os.tmpdir(), 'rc-setlist-media-'));
+    await captureInterface(browser, 'setlist', path.join(closeUps, 'stage.png'), locale, {
+      viewport: { width: 900, height: 592 },
+      deviceScaleFactor: 2,
+    });
+    await captureInterface(browser, 'performance', path.join(closeUps, 'performance.png'), locale, {
+      viewport: { width: 900, height: 592 },
+      deviceScaleFactor: 2,
+    });
+    const stageCloseUp = (await fs.readFile(path.join(closeUps, 'stage.png'))).toString('base64');
+    const performanceCloseUp = (await fs.readFile(path.join(closeUps, 'performance.png'))).toString(
+      'base64',
+    );
+    await fs.rm(closeUps, { recursive: true, force: true });
+    const phoneData = (await fs.readFile(path.join(localeDir, 'performance-phone.png'))).toString(
+      'base64',
+    );
+    const fontData = (
+      await fs.readFile(path.join(root, 'static', 'fonts', 'MartianMono-latin.woff2'))
+    ).toString('base64');
     const performanceData = (await fs.readFile(path.join(localeDir, 'performance.png'))).toString(
       'base64',
     );
@@ -238,7 +329,11 @@ try {
     ).toString('base64');
     const template = localizeTemplate(rawTemplate, locale)
       .replaceAll('{{PERFORMANCE_DATA_URI}}', `data:image/png;base64,${performanceData}`)
-      .replaceAll('{{STAGE_CONTROL_DATA_URI}}', `data:image/png;base64,${stageControlData}`);
+      .replaceAll('{{STAGE_CONTROL_DATA_URI}}', `data:image/png;base64,${stageControlData}`)
+      .replaceAll('{{PHONE_DATA_URI}}', `data:image/png;base64,${phoneData}`)
+      .replaceAll('{{STAGE_CLOSEUP_DATA_URI}}', `data:image/png;base64,${stageCloseUp}`)
+      .replaceAll('{{PERFORMANCE_CLOSEUP_DATA_URI}}', `data:image/png;base64,${performanceCloseUp}`)
+      .replaceAll('{{FONT_DATA_URI}}', `data:font/woff2;base64,${fontData}`);
     for (const output of outputs.filter(
       (item) => !['performance', 'stage-control', 'performance-phone'].includes(item.id),
     )) {
