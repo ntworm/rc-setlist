@@ -33,7 +33,9 @@ free for noncommercial use and source-available.
 > Use it only on a trusted LAN, keep the controller URL/token private, and never
 > expose port `4444` directly to the public internet. See [SECURITY.md](https://github.com/ntworm/rc-setlist/blob/main/SECURITY.md).
 
-## New in 1.1.0
+## What is new in 1.1.0
+
+Full details in the [1.1.0 release notes](https://github.com/ntworm/rc-setlist/blob/main/docs/RELEASE-NOTES-1.1.0.md).
 
 - **Live panel.** Three tabs: Main, Setlists, Network. Main shows one QR code,
   Stage Control by default, and a button that switches it to the Performance
@@ -62,10 +64,10 @@ free for noncommercial use and source-available.
 - **Network address.** The QR code uses the address of the default route
   instead of the first private address, so a second network interface
   (lighting, audio) does not replace the Wi-Fi address.
-- **Fixes.** The top bar stays on one row in both languages; reordering works
-  on Windows; saving works when Live refuses `fsync`; pairing is
-  bound to the key of the second computer, so an address change keeps the
-  link.
+- **Fixes.** The top bar fits on one row in both languages;
+  reordering works on Windows; saving works when Live refuses `fsync`;
+  pairing is bound to the key of the second computer, so an address change
+  keeps the link.
 
 ## Highlights
 
@@ -82,12 +84,11 @@ free for noncommercial use and source-available.
 - English and Brazilian Portuguese interfaces in the same `.ablx`.
 - No account, cloud sync, analytics or telemetry.
 - Keyboard Mapping for assigning transport and view actions to Numpad or alpha keys.
-- A second computer that follows the show: pair it from the Live panel and
-  the transport commands travel to it over a pinned link.
-- A Live panel with three tabs, Main, Setlists and Network, where the QR code,
-  the setlists and the second computer live together.
-- Setlist packages: every setlist of a Live Set in one file, ready to import
-  again.
+- Second computer: pair it from the Live panel and the transport commands are
+  sent to it over a pinned link.
+- Live panel with three tabs, Main, Setlists and Network: the QR code, the
+  setlists and the second computer.
+- Setlist packages: every setlist of a Live Set in one file, to import again.
 
 ## Requirements
 
@@ -99,16 +100,16 @@ free for noncommercial use and source-available.
   source. End users install the `.ablx` and do not need Node.js.
 
 Windows is the validated release platform. macOS support remains experimental
-until this release is exercised on real macOS hardware.
+until it is exercised on real macOS hardware.
 
 ## Quick start
 
 1. Install RC Bridge: run the kit's `Install-RC-Bridge.cmd` / `Install RC Bridge.command`, then choose RCBridge as a Control Surface in Live.
 2. Download `RC-Setlist-1.1.0.ablx` and the installation kit from the
    [1.1.0 release](https://github.com/ntworm/rc-setlist/releases/tag/v1.1.0).
-3. Coming from 1.0, remove RC Setlist in Live's extension settings first
+3. If RC Setlist is already installed, remove it in Live's extension settings
    (Live refuses to install over an existing extension folder; your data
-   folder stays). Then open the `.ablx` and approve installation in Live.
+   folder stays). Then open the `.ablx` and approve the installation in Live.
 4. In Live, open **Extensions > RC Setlist** and start the server.
 5. Use the panel URL or QR code to open `/setlist` or `/performance`.
 6. To stop the certificate warning, scan the **Certificate** QR in the panel
@@ -116,15 +117,15 @@ until this release is exercised on real macOS hardware.
 7. Press **EN** or **PT** at the top right of the panel to choose English or
    **Português (Brasil)**.
 
-Users upgrading from 0.x (`Ableton-RC-Setlist-0.4.x`–`0.7.0`) run the kit's
-`Migrate-RC-Setlist-Data.cmd` (Windows) or `Migrate RC Setlist Data.command`
-(macOS) once before opening Live with 1.0. The script copies profiles,
-project-setlists and preferences into the new layout without touching the old
-one. Users coming from 1.0 (`RC-Setlist-1.0.0.ablx`) have nothing to migrate.
-On the first start, 1.1.0 signs a new server certificate with the
-certificate authority of this computer, so a browser that accepted the old
-certificate asks once more, or stops asking once the phone certificate is
-installed.
+If your data is in the 0.x layout (`Ableton-RC-Setlist-0.4.x`–`0.7.0`), run
+the kit's `Migrate-RC-Setlist-Data.cmd` (Windows) or
+`Migrate RC Setlist Data.command` (macOS) once before opening Live.
+The script copies profiles, project-setlists and preferences into the new
+layout without touching the old one. If your data is in the `1.0` layout
+(`RC-Setlist-1.0.0.ablx`), there is nothing to migrate. On the first start,
+the extension signs a new server certificate with the certificate authority
+of this computer, so a browser that accepted a previous certificate asks
+once more, or stops asking once the phone certificate is installed.
 Full instructions are in [docs/INSTALL.md](https://github.com/ntworm/rc-setlist/blob/main/docs/INSTALL.md).
 
 ## Locator format
@@ -152,9 +153,9 @@ Ableton Live + RC Bridge (bundled fork of AbletonOSC)
           └── /performance   stage display
 ```
 
-The extension is local-first. The SDK-facing files sit at the edge; parser,
-state, transport policy, persistence and browser clients are testable through
-the public dependency gate.
+The extension is local-first. The SDK-facing files are at the boundary; the
+parser, state, transport policy, persistence and browser clients are testable
+through the public dependency gate.
 
 ## Development
 
@@ -270,16 +271,14 @@ Open the panel and confirm you see:
 - `Verse` listed as a section under INTRO
 - `SONG 2` listed as a separate song with BPM 100
 
-If the panel shows nothing, check the logs panel; a malformed
-locator is the most common cause.
+If the panel shows nothing, check the logs panel for a malformed locator.
 
 ## 4. Open the panel
 
-The panel is the operator's primary interface. It shows the current
-song, the running timer, the next locator, and the controls to play,
-stop, jump and edit. Pressing **Space** toggles play/stop; **N** and
-**P** jump to the next and previous locator; **J** opens a small
-dialog to type a marker name and jump to it.
+The operator works from the panel: it shows the current song, the running timer,
+the next locator, and the controls to play, stop, jump and edit. Pressing
+**Space** toggles play/stop; **N** and **P** jump to the next and previous
+locator; **J** opens a small dialog to type a marker name and jump to it.
 
 The full reference is in
 [USER-GUIDE.md](https://github.com/ntworm/rc-setlist/blob/main/docs/USER-GUIDE.md#panel-controls).
@@ -401,9 +400,10 @@ panel and you are on a trusted LAN.
 
 ## Updating from 0.x (Ableton RC Setlist 0.4.x–0.7.0)
 
-The product name changed to **RC Setlist** in 1.0 following Ableton's brand
-guidelines. Your profiles, project-setlists, token and preferences live in a
-folder whose name is derived from the manifest name, so they must move.
+The 0.x builds were named **Ableton RC Setlist**; since 1.0 the name is
+**RC Setlist**. The rename follows Ableton's brand guidelines. Your profiles,
+project-setlists, token and preferences live in a folder whose name is derived
+from the manifest name, so they must move.
 
 Run the kit's `Migrate-RC-Setlist-Data.cmd` (Windows) or
 `Migrate RC Setlist Data.command` (macOS) **once, before opening Live** with
@@ -436,7 +436,7 @@ For the complete matrix, use [TESTER-GUIDE.md](https://github.com/ntworm/rc-setl
 
 Install the newer `.ablx` through Live. Keep a backup of important lyrics and
 exports before replacing a pre-release build. Profile data is stored separately
-from the application package and should remain available after an update.
+from the application package, so it stays available after an update.
 
 ## Uninstall
 
@@ -542,8 +542,7 @@ never written into the Live project. It also lists its sections; click one to ed
 it, and the arrow at the top of the panel brings you back to the song.
 
 A **section** carries its name, its tempo, its loop, its click, the same
-three behaviours, and a jump target (the marker `[jump NAME]` goes to). Loop and click live here rather than on the song because that
-is where the music is structured.
+three behaviours, and a jump target (the marker `[jump NAME]` goes to). Loop and click are stored on the section, not on the song.
 
 Three things the editor guarantees:
 
@@ -560,10 +559,10 @@ deleting it and creating it again, and Live can only create a cue point where
 the playhead stands — with playback running, the new marker would land wherever
 the playhead had reached. Stop the transport first.
 
-Colour is RC Setlist's own memory. It is stored beside your setlist and never
+RC Setlist keeps the colour data. It is stored beside your setlist and never
 written into the Live project, and it follows the song through renames and
-moves. The eight tones are deliberately desaturated: on the card, colour is
-identity, and the vivid hues are reserved for state.
+moves. The eight tones are desaturated: on the card the colour identifies the
+song, and the vivid hues are used only to show state.
 
 ## Profiles
 
@@ -597,9 +596,9 @@ transitions. An em dash means Live has not supplied a valid final Arrangement bo
 ### Duration methodology and stage stability
 
 Durations are fixed schedule figures established at set load and do not fluctuate
-when Live's transport knob moves or playback starts. In a live stage environment,
-timing readouts must remain predictable targets for the crew and band rather than
-shifting with instantaneous tempo adjustments.
+when Live's transport knob moves or playback starts. The readouts keep the same
+values for the crew and the band, instead of changing with momentary tempo
+adjustments.
 
 ### Arrangement tempo automation limitation
 
@@ -825,8 +824,8 @@ Use original, licensed or otherwise authorized text only.
 RC Setlist accepts timed LRC lines:
 
 ```text
-[00:00.00] The room wakes under amber light
-[00:04.50] A quiet pulse becomes our guide
+[00:00.00] First line
+[00:04.50] Second line
 ```
 
 The song selector at the top of the lyrics dialog applies to Create, Sync and
@@ -861,8 +860,8 @@ during rehearsals/shows.
 - Do not change profiles, network or AbletonOSC installation during a show.
 - Verify the active profile and transport lock before enabling control.
 
-This release reads Arrangement locators. Session View support is deferred. The
-local Stage Control and Performance links continue to use HTTPS.
+RC Setlist reads Arrangement locators. Session View is not supported. The local
+Stage Control and Performance links use HTTPS.
 
 ## Tempo automation drawn in Live
 
@@ -888,16 +887,17 @@ Arrangement has no tempo automation.
 
 ## How RC Setlist recognises your songs
 
-**The Ableton locator is the source of truth. RC Setlist never writes anything
-hidden into your project.** It recognises a song by name and position, in that
-order.
+**The Ableton locator is the only source of a song's identity. RC Setlist does
+not add its own data to your Live project.** It recognises a song by name and
+position, in that order.
 
 - Rename a song and it stays the same song — the position did not move.
 - Drag it somewhere else and it stays the same song — the name did not change.
 - Change both at once and it is treated as a new song.
 
-Anything RC Setlist keeps on the side follows that identity. Delete a locator by
-accident and recreate it, and what it remembered comes back.
+Anything RC Setlist stores outside the Live project follows that identity. If you
+delete a locator by accident and recreate it, RC Setlist restores the data it
+stored.
 
 The full reasoning is in [docs/architecture/song-identity.md](https://github.com/ntworm/rc-setlist/blob/main/docs/architecture/song-identity.md).
 
@@ -947,8 +947,8 @@ fictional text; RC Setlist does not provide commercial lyrics.
 
 ## Does macOS work?
 
-The code is designed to be portable, but 0.5.0 marks macOS experimental until a
-complete real-device matrix is recorded.
+macOS is experimental: the release is validated on Windows only, until a full
+real-device test matrix exists.
 
 ## Can I put RC Setlist on the public internet?
 
@@ -965,6 +965,8 @@ own legal advice for a specific use.
 If your Ableton Live arrangement contains tempo automations (songs at different BPMs) drawn directly on the master track timeline without bracketed `[bpm N]` locator tags, the extension cannot inspect the automation curve. The Live Object Model and Extensions SDK do not expose arrangement tempo breakpoints remotely.
 
 Without tags, RC Setlist calculates duration using Live's current tempo as a uniform estimate and displays an `EST.` badge. In a 21-song set with tempos varying between 93 and 166 BPM, single-tempo estimation caused a 16:59 discrepancy (95:40 vs actual 78:41).
+
+To obtain exact timings, add `[bpm N]` to each song's locator name (e.g. `Song Title [bpm 120]`). RC Setlist will immediately switch from estimated to declared confidence, calculate exact piecewise durations, and remove the `EST.` badge.
 
 ## Why don't I hear the count-in?
 
@@ -986,12 +988,11 @@ old **Ableton RC Setlist** entry so the two extensions do not coexist on the
 same machine. Skipping the migration or leaving both extensions installed
 makes your old profiles invisible to the new extension.
 
-To obtain exact timings, add `[bpm N]` to each song's locator name (e.g. `Song Title [bpm 120]`). RC Setlist will immediately switch from estimated to declared confidence, calculate exact piecewise durations, and remove the `EST.` badge.
-
 ## Tempo automation drawn in Live
 
 If your Arrangement has its own tempo automation, keep **Set Live tempo on jump**
-switched **off** in the Live panel. It ships off, and this is why.
+switched **off** in the Live panel. The default is off, and the next paragraph
+explains why.
 
 An explicit jump can write the destination tempo into Live before it moves the
 playhead. Writing `song.tempo` overrides Live's tempo automation: the arrangement
@@ -1046,7 +1047,7 @@ Arrangement has no tempo automation.
 - The extension decides which script to use when the server starts. If you
   installed and selected RC Bridge with the server already running, press
   **Restart** in the panel.
-- Play/Stop and the moving playhead are the clearest end-to-end OSC checks.
+- Play/Stop and the moving playhead test the whole OSC path at once.
 
 ## No songs appear
 
@@ -1073,14 +1074,14 @@ Open the controller URL or scan the controller QR code from the panel. The token
 is required for transport/write actions. Do not share it publicly.
 
 If songs, lyrics and timecode update but every transport or navigation action
-fails, confirm you are running 0.3.0 or newer. Earlier release candidates could
-fail while encoding outgoing OSC commands in Ableton's embedded runtime.
+fails, confirm you are running 0.3.0 or newer. In earlier builds, outgoing OSC
+commands could fail to encode in Ableton's embedded runtime.
 
 ## First start reports a profile persistence error
 
-Install 0.3.0 or newer. Earlier release candidates could write the initial
-profile and then fail because an unavailable runtime API was used after the
-write. If the error remains on a current build, capture a sanitized
+Install 0.3.0 or newer. In earlier builds the first profile write could succeed
+and the extension could then fail, because it called a runtime API that was not
+available. If the error remains after the upgrade, capture a sanitized
 `ExtensionHost.txt` excerpt and open a bug report without deleting profile data.
 
 ## Lyrics do not match the song
@@ -1130,13 +1131,13 @@ keep automatic start enabled for only one OSC-dependent RC extension.
 
 ## Setlists from another Live Set appear
 
-Current builds save every profile operation immediately inside the current Live
-Set scope. They do not show the global profile list from older builds, and a new
-unsaved Live Set never imports another temporary session automatically.
+RC Setlist saves every profile operation immediately inside the current Live
+Set scope. The global profile list is not shown, and a new unsaved Live Set does
+not import another temporary session automatically.
 
-Legacy global data is preserved as a backup and is not deleted. Only the former
-per-project folder that exactly matches the current saved Live Set is imported
-automatically.
+Global data from earlier versions is kept as a backup and is not deleted. Only
+the per-project folder that exactly matches the current saved Live Set is
+imported automatically.
 
 If project metadata arrives after startup, or you use **Save As** without
 changing the Song handle, the temporary project scope may be promoted to the
@@ -1145,11 +1146,12 @@ session and profile scope. Profiles created during that delay, including
 `Second Setlist`, are copied without deleting the temporary source.
 
 After switching Live Sets, restart RC Setlist before attaching the intended
-saved `.als`. The temporary scope created during a handle change is durable for
-manual recovery, but its profiles are blocked from automatic migration. Other
-historical temporary folders are also left untouched for manual recovery. For an
-unidentified Set, missing lyrics are recovered only when one legacy custom order
-matches the complete current song list; ambiguous matches are left untouched.
+saved `.als`. The temporary folder created when the Song handle changes is kept
+for manual recovery, but its profiles are not migrated automatically. Other
+temporary folders from earlier sessions are also kept for manual recovery. For
+an unidentified Set, missing lyrics are recovered only when one custom order
+from an earlier version matches the complete current song list; ambiguous
+matches are left untouched.
 
 ## What to include in a bug report
 
@@ -1213,15 +1215,15 @@ Changes in 1.1.0, with the new Live panel first.
    **Start Stop Sync** off. The relay does the transport; the native sync
    would do it twice.
 
-A phone that opens the Stage Control page is still a controller of the main
-computer — it joins the main session and sees the main setlist. Pairing is
-for a second machine running Live. macOS is supported here on an
-experimental basis; Windows is the validated platform.
+A phone that opens the Stage Control page is a controller of the main
+computer: it joins the main session and sees the main setlist. Pairing is
+for a second machine running Live. macOS is supported on an experimental
+basis; Windows is the validated platform.
 
 ## What reaches the second computer
 
 **Play**, **Stop**, **jump**, **metronome**, **quantization**, **count-in**,
-**refresh** and **panic** travel to the paired computer. Setlist editing,
+**refresh** and **panic** are sent to the paired computer. Setlist editing,
 marker editing, colours, notes, lyrics, profiles, ordering and the CSV
 export stay on the main computer.
 

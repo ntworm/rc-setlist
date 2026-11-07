@@ -33,7 +33,7 @@
 - A extensão decide com qual script falar quando o servidor inicia. Se você
   instalou e selecionou o RC Bridge com o servidor já rodando, aperte
   **Reiniciar** no painel.
-- Play/Stop e o playhead em movimento são os testes OSC ponta a ponta mais claros.
+- Play/Stop e o playhead em movimento testam o caminho OSC inteiro de uma vez.
 
 ## Nenhuma música aparece
 
@@ -60,14 +60,15 @@ Abra a URL de controle ou leia o QR code de controle no painel. O token é
 obrigatório para transporte e escrita. Não o compartilhe publicamente.
 
 Se músicas, letras e timecode atualizam, mas transporte e navegação falham,
-confirme que você usa 0.3.0 ou superior. Versões anteriores podiam falhar ao
-codificar comandos OSC no runtime embutido do Ableton.
+confirme que você usa 0.3.0 ou superior. Em versões anteriores, os comandos OSC
+de saída podiam falhar ao ser codificados no runtime embutido do Ableton.
 
 ## O primeiro início mostra erro de persistência do perfil
 
-Instale 0.3.0 ou superior. Versões anteriores podiam gravar o perfil inicial e
-falhar logo depois por usar uma API indisponível. Se o erro continuar, capture
-um trecho sanitizado de `ExtensionHost.txt` sem apagar os dados do perfil.
+Instale 0.3.0 ou superior. Em versões anteriores, a gravação do perfil inicial
+podia ser concluída e a extensão falhar logo depois, porque usava uma API de
+runtime indisponível. Se o erro continuar depois de atualizar, capture um
+trecho sanitizado de `ExtensionHost.txt` sem apagar os dados do perfil.
 
 ## As letras não correspondem à música
 
@@ -117,8 +118,8 @@ extensão RC que dependa de OSC.
 
 ## Aparecem setlists de outro Live Set
 
-As versões atuais guardam vários setlists somente dentro do escopo do Live Set
-atual. A lista global de perfis de versões antigas não aparece no projeto aberto.
+O RC Setlist guarda vários setlists somente dentro do escopo do Live Set atual.
+A lista global de perfis não aparece no projeto aberto.
 Se o projeto foi trocado enquanto uma versão antiga estava rodando, reinicie o
 servidor do RC Setlist depois de abrir o `.als` correto.
 

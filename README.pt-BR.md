@@ -19,7 +19,9 @@ O **RC Setlist** é uma extensão de setlist, letra sincronizada e tela de palco
 > **Segurança de rede:** O RC Setlist serve as páginas de controle na sua rede local.
 > Utilize apenas em redes locais (LAN/Wi-Fi) confiáveis, mantenha a URL e o token do controlador privados, e nunca exponha a porta `4444` diretamente na internet pública. Consulte [SECURITY.md](SECURITY.md).
 
-## Novo na 1.1.0
+## O que há de novo na 1.1.0
+
+Detalhes em [notas da versão 1.1.0](docs/pt-BR/NOTAS-DA-VERSAO-1.1.0.md).
 
 - **Painel do Live.** Três abas: Principal, Repertórios, Rede. A Principal
   mostra um QR, do Controle de palco por padrão, e um botão que troca para a
@@ -51,9 +53,9 @@ O **RC Setlist** é uma extensão de setlist, letra sincronizada e tela de palco
 - **Endereço de rede.** O QR usa o endereço da rota padrão, não o primeiro
   endereço privado, então uma segunda interface de rede (luz, áudio) não
   substitui o endereço do Wi-Fi.
-- **Correções.** A barra do topo fica numa linha nos dois idiomas; reordenar
-  funciona no Windows; salvar funciona quando o Live recusa `fsync`; o
-  pareamento fica preso à chave do segundo computador, então uma mudança de
+- **Correções.** A barra do topo fica numa linha nos dois idiomas;
+  reordenar funciona no Windows; salvar funciona quando o Live recusa `fsync`;
+  o pareamento fica preso à chave do segundo computador, então uma mudança de
   endereço mantém o link.
 
 ## Destaques
@@ -69,9 +71,12 @@ O **RC Setlist** é uma extensão de setlist, letra sincronizada e tela de palco
 - Interfaces completas em inglês e português do Brasil empacotadas no mesmo `.ablx`.
 - Sem necessidade de contas, sincronização em nuvem, analytics ou telemetria.
 - Mapeamento de teclado (Keyboard Mapping) para disparar transporte e navegação pelo teclado numérico ou alfanumérico.
-- Um segundo computador que segue o show: pareie-o pelo painel do Live e os comandos de transporte viajam para ele por um link com o certificado preso.
-- Um painel do Live com três abas, Principal, Repertórios e Rede, onde o QR, os repertórios e o segundo computador ficam juntos.
-- Pacotes de repertórios: todos os repertórios de um Live Set em um arquivo, prontos para importar de novo.
+- Segundo computador: pareie-o pelo painel do Live e os comandos de transporte
+  são enviados para ele por um link com o certificado preso.
+- Painel do Live com três abas, Principal, Repertórios e Rede: o QR, os
+  repertórios e o segundo computador.
+- Pacotes de repertórios: todos os repertórios de um Live Set em um arquivo,
+  para importar depois.
 
 ## Requisitos
 
@@ -86,17 +91,17 @@ O Windows é a plataforma de lançamento validada. O suporte a macOS permanece e
 1. Instale o RC Bridge: execute o `Install-RC-Bridge.cmd` (Windows) ou `Install RC Bridge.command` (macOS) do kit de instalação, e selecione RCBridge como Control Surface nas preferências do Live.
 2. Baixe o `RC-Setlist-1.1.0.ablx` e o kit de instalação na
    [versão 1.1.0](https://github.com/ntworm/rc-setlist/releases/tag/v1.1.0).
-3. Vindo da 1.0, remova antes o RC Setlist nas configurações de extensões do
-   Live (o Live não instala por cima de uma pasta de extensão que já existe;
-   a pasta de dados fica). Depois dê dois cliques no `.ablx` e aprove a
-   instalação no Ableton Live.
+3. Se o RC Setlist já estiver instalado, remova-o nas configurações de
+   extensões do Live (o Live não instala por cima de uma pasta de extensão que
+   já existe; a pasta de dados fica). Depois dê dois cliques no `.ablx` e
+   aprove a instalação no Ableton Live.
 4. No Live, acesse **Extensions > RC Setlist** e inicie o servidor.
 5. Acesse a URL do painel ou escaneie o código QR com o tablet ou celular para abrir `/setlist` ou `/performance`.
-6. Para o aviso de certificado sumir, escaneie uma vez o QR **Certificado** no
-   painel e siga os passos daquela página.
+6. Para remover o aviso de certificado, escaneie uma vez o QR **Certificado**
+   no painel e siga os passos daquela página.
 7. Aperte **EN** ou **PT** no alto do painel para escolher **Português (Brasil)**.
 
-Usuários atualizando de versões antigas 0.x (`Ableton-RC-Setlist-0.4.x` a `0.7.0`) devem executar o script de migração `Migrate-RC-Setlist-Data.cmd` (Windows) ou `Migrate RC Setlist Data.command` (macOS) uma única vez antes de abrir o Live com a versão 1.0. O script copia perfis, setlists do projeto e preferências para a nova estrutura sem alterar a pasta anterior. Quem vem da 1.0 (`RC-Setlist-1.0.0.ablx`) não tem nada a migrar. Na primeira partida, a 1.1.0 assina um novo certificado do servidor com a autoridade certificadora deste computador, então um navegador que tinha aceitado o certificado antigo pergunta mais uma vez, ou para de perguntar depois que o certificado do celular está instalado. Instruções completas em [docs/pt-BR/INSTALL.md](docs/pt-BR/INSTALL.md).
+Quem ainda usa o layout 0.x (`Ableton-RC-Setlist-0.4.x` a `0.7.0`) deve executar o script de migração `Migrate-RC-Setlist-Data.cmd` (Windows) ou `Migrate RC Setlist Data.command` (macOS) uma única vez antes de abrir o Live. O script copia perfis, setlists do projeto e preferências para a nova estrutura sem alterar a pasta anterior. Quem já usa o layout 1.0 (`RC-Setlist-1.0.0.ablx`) não tem nada a migrar. Na primeira partida, a extensão assina um novo certificado do servidor com a autoridade certificadora deste computador, então um navegador que tinha aceitado um certificado anterior pergunta mais uma vez, ou para de perguntar depois que o certificado do celular está instalado. Instruções completas em [docs/pt-BR/INSTALL.md](docs/pt-BR/INSTALL.md).
 
 ## Formato dos locators
 
@@ -122,7 +127,7 @@ Ableton Live + RC Bridge (fork empacotado do AbletonOSC)
           └── /performance   tela de visualização para o músico/palco
 ```
 
-A extensão funciona de forma local (local-first). Os arquivos de integração com a SDK ficam na borda do sistema; parser, estado, lógica de transporte, persistência e clientes web podem ser testados de forma independente.
+A extensão funciona de forma local (local-first). Os arquivos de integração com a SDK ficam no limite do sistema; o parser, o estado, a lógica de transporte, a persistência e os clientes web podem ser testados de forma independente.
 
 ## Pacote de Instalação para Envio (Kit)
 

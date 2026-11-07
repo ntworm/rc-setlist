@@ -172,7 +172,7 @@
       <strong>Reiniciar</strong> no painel.
     </p>
     <ul>
-      <li>Play/Stop e o playhead em movimento são os testes OSC ponta a ponta mais claros.</li>
+      <li>Play/Stop e o playhead em movimento testam o caminho OSC inteiro de uma vez.</li>
     </ul>
     <h2 id="nenhuma-m-sica-aparece">Nenhuma música aparece</h2>
     <ul>
@@ -206,15 +206,16 @@
     </p>
     <p>
       Se músicas, letras e timecode atualizam, mas transporte e navegação falham, confirme que você
-      usa 0.3.0 ou superior. Versões anteriores podiam falhar ao codificar comandos OSC no runtime
-      embutido do Ableton.
+      usa 0.3.0 ou superior. Em versões anteriores, os comandos OSC de saída podiam falhar ao ser
+      codificados no runtime embutido do Ableton.
     </p>
     <h2 id="o-primeiro-in-cio-mostra-erro-de-persist-ncia-do-perfil">
       O primeiro início mostra erro de persistência do perfil
     </h2>
     <p>
-      Instale 0.3.0 ou superior. Versões anteriores podiam gravar o perfil inicial e falhar logo
-      depois por usar uma API indisponível. Se o erro continuar, capture um trecho sanitizado de
+      Instale 0.3.0 ou superior. Em versões anteriores, a gravação do perfil inicial podia ser
+      concluída e a extensão falhar logo depois, porque usava uma API de runtime indisponível. Se o
+      erro continuar depois de atualizar, capture um trecho sanitizado de
       <code>ExtensionHost.txt</code> sem apagar os dados do perfil.
     </p>
     <h2 id="as-letras-n-o-correspondem-m-sica">As letras não correspondem à música</h2>
@@ -268,10 +269,9 @@
     </p>
     <h2 id="aparecem-setlists-de-outro-live-set">Aparecem setlists de outro Live Set</h2>
     <p>
-      As versões atuais guardam vários setlists somente dentro do escopo do Live Set atual. A lista
-      global de perfis de versões antigas não aparece no projeto aberto. Se o projeto foi trocado
-      enquanto uma versão antiga estava rodando, reinicie o servidor do RC Setlist depois de abrir o
-      <code>.als</code> correto.
+      O RC Setlist guarda vários setlists somente dentro do escopo do Live Set atual. A lista global
+      de perfis não aparece no projeto aberto. Se o projeto foi trocado enquanto uma versão antiga
+      estava rodando, reinicie o servidor do RC Setlist depois de abrir o <code>.als</code> correto.
     </p>
     <p>
       Os dados globais antigos continuam preservados como backup. Somente a antiga pasta por projeto

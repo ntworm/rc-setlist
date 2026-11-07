@@ -151,8 +151,8 @@
     </p>
     <h2 id="does-macos-work">Does macOS work?</h2>
     <p>
-      The code is designed to be portable, but 0.5.0 marks macOS experimental until a complete
-      real-device matrix is recorded.
+      macOS is experimental: the release is validated on Windows only, until a full real-device test
+      matrix exists.
     </p>
     <h2 id="can-i-put-rc-setlist-on-the-public-internet">
       Can I put RC Setlist on the public internet?
@@ -182,6 +182,12 @@
       estimate and displays an <code>EST.</code> badge. In a 21-song set with tempos varying between
       93 and 166 BPM, single-tempo estimation caused a 16:59 discrepancy (95:40 vs actual 78:41).
     </p>
+    <p>
+      To obtain exact timings, add <code>[bpm N]</code> to each song&#39;s locator name (e.g.
+      <code>Song Title [bpm 120]</code>). RC Setlist will immediately switch from estimated to
+      declared confidence, calculate exact piecewise durations, and remove the
+      <code>EST.</code> badge.
+    </p>
     <h2 id="why-don-t-i-hear-the-count-in">Why don&#39;t I hear the count-in?</h2>
     <p>
       By default, the 1-bar count-in is visual only (showing <code>1 2 3 4</code> on the Play button
@@ -206,17 +212,11 @@
       machine. Skipping the migration or leaving both extensions installed makes your old profiles
       invisible to the new extension.
     </p>
-    <p>
-      To obtain exact timings, add <code>[bpm N]</code> to each song&#39;s locator name (e.g.
-      <code>Song Title [bpm 120]</code>). RC Setlist will immediately switch from estimated to
-      declared confidence, calculate exact piecewise durations, and remove the
-      <code>EST.</code> badge.
-    </p>
     <h2 id="tempo-automation-drawn-in-live">Tempo automation drawn in Live</h2>
     <p>
       If your Arrangement has its own tempo automation, keep
-      <strong>Set Live tempo on jump</strong> switched <strong>off</strong> in the Live panel. It
-      ships off, and this is why.
+      <strong>Set Live tempo on jump</strong> switched <strong>off</strong> in the Live panel. The
+      default is off, and the next paragraph explains why.
     </p>
     <p>
       An explicit jump can write the destination tempo into Live before it moves the playhead.

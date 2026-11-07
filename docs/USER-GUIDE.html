@@ -207,7 +207,7 @@ Song B [bpm 96]</code></pre>
     <p>
       A <strong>section</strong> carries its name, its tempo, its loop, its click, the same three
       behaviours, and a jump target (the marker <code>[jump NAME]</code> goes to). Loop and click
-      live here rather than on the song because that is where the music is structured.
+      are stored on the section, not on the song.
     </p>
     <p>Three things the editor guarantees:</p>
     <ul>
@@ -239,10 +239,10 @@ Song B [bpm 96]</code></pre>
       transport first.
     </p>
     <p>
-      Colour is RC Setlist&#39;s own memory. It is stored beside your setlist and never written into
-      the Live project, and it follows the song through renames and moves. The eight tones are
-      deliberately desaturated: on the card, colour is identity, and the vivid hues are reserved for
-      state.
+      RC Setlist keeps the colour data. It is stored beside your setlist and never written into the
+      Live project, and it follows the song through renames and moves. The eight tones are
+      desaturated: on the card the colour identifies the song, and the vivid hues are used only to
+      show state.
     </p>
     <h2 id="profiles">Profiles</h2>
     <p>
@@ -279,9 +279,8 @@ Song B [bpm 96]</code></pre>
     <h3 id="duration-methodology-and-stage-stability">Duration methodology and stage stability</h3>
     <p>
       Durations are fixed schedule figures established at set load and do not fluctuate when
-      Live&#39;s transport knob moves or playback starts. In a live stage environment, timing
-      readouts must remain predictable targets for the crew and band rather than shifting with
-      instantaneous tempo adjustments.
+      Live&#39;s transport knob moves or playback starts. The readouts keep the same values for the
+      crew and the band, instead of changing with momentary tempo adjustments.
     </p>
     <h3 id="arrangement-tempo-automation-limitation">Arrangement tempo automation limitation</h3>
     <p>
@@ -558,8 +557,8 @@ Song B [bpm 96]</code></pre>
     <h2 id="lyrics">Lyrics</h2>
     <p>Use original, licensed or otherwise authorized text only.</p>
     <p>RC Setlist accepts timed LRC lines:</p>
-    <pre><code class="lang-text">[00:00.00] The room wakes under amber light
-[00:04.50] A quiet pulse becomes our guide</code></pre>
+    <pre><code class="lang-text">[00:00.00] First line
+[00:04.50] Second line</code></pre>
     <p>
       The song selector at the top of the lyrics dialog applies to Create, Sync and Edit and opens
       on the current Arrangement song. Existing lyrics for that song load automatically. You can
@@ -594,8 +593,8 @@ Song B [bpm 96]</code></pre>
       <li>Verify the active profile and transport lock before enabling control.</li>
     </ul>
     <p>
-      This release reads Arrangement locators. Session View support is deferred. The local Stage
-      Control and Performance links continue to use HTTPS.
+      RC Setlist reads Arrangement locators. Session View is not supported. The local Stage Control
+      and Performance links use HTTPS.
     </p>
     <h2 id="tempo-automation-drawn-in-live">Tempo automation drawn in Live</h2>
     <p>
@@ -627,8 +626,8 @@ Song B [bpm 96]</code></pre>
     <h2 id="how-rc-setlist-recognises-your-songs">How RC Setlist recognises your songs</h2>
     <p>
       <strong
-        >The Ableton locator is the source of truth. RC Setlist never writes anything hidden into
-        your project.</strong
+        >The Ableton locator is the only source of a song&#39;s identity. RC Setlist does not add
+        its own data to your Live project.</strong
       >
       It recognises a song by name and position, in that order.
     </p>
@@ -638,8 +637,8 @@ Song B [bpm 96]</code></pre>
       <li>Change both at once and it is treated as a new song.</li>
     </ul>
     <p>
-      Anything RC Setlist keeps on the side follows that identity. Delete a locator by accident and
-      recreate it, and what it remembered comes back.
+      Anything RC Setlist stores outside the Live project follows that identity. If you delete a
+      locator by accident and recreate it, RC Setlist restores the data it stored.
     </p>
     <p>
       The full reasoning is in

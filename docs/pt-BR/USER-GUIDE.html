@@ -204,8 +204,7 @@ Música B [bpm 96]</code></pre>
     </p>
     <p>
       Uma <strong>seção</strong> carrega nome, andamento, loop, click e os mesmos três
-      comportamentos. Loop e click ficam aqui, e não na música, porque é aqui que a música está
-      estruturada.
+      comportamentos. Loop e click ficam guardados na seção, e não na música.
     </p>
     <p>Três garantias do editor:</p>
     <ul>
@@ -237,8 +236,8 @@ Música B [bpm 96]</code></pre>
     <p>
       A atribuição de cor é gerenciada pelo próprio RC Setlist. Ela fica guardada junto ao seu
       setlist, nunca é escrita no projeto do Live, e acompanha a música quando você a renomeia ou a
-      move. Os oito tons são dessaturados de propósito: no card, a cor define a identidade da faixa,
-      e as cores vivas ficam reservadas para indicar estados operacionais.
+      move. Os oito tons são dessaturados: no card a cor identifica a música, e as cores vivas são
+      usadas só para indicar estados operacionais.
     </p>
     <h2 id="perfis">Perfis</h2>
     <p>
@@ -278,9 +277,9 @@ Música B [bpm 96]</code></pre>
     </h3>
     <p>
       As durações são referências fixas de cronograma estabelecidas no carregamento do set e não
-      oscilam quando o knob de tempo do Live é girado ou quando a reprodução começa. No palco, os
-      tempos previstos precisam permanecer estáveis para a equipe e a banda, em vez de variarem com
-      ajustes momentâneos de andamento.
+      oscilam quando o knob de tempo do Live é girado ou quando a reprodução começa. Os tempos
+      previstos mantêm o mesmo valor para a equipe e a banda, em vez de mudar com ajustes
+      momentâneos de andamento.
     </p>
     <h3 id="limita-o-de-automa-o-de-tempo-do-arrangement">
       Limitação de automação de tempo do Arrangement
@@ -568,8 +567,8 @@ Música B [bpm 96]</code></pre>
     <h2 id="letras">Letras</h2>
     <p>Use somente texto original, licenciado ou autorizado.</p>
     <p>O RC Setlist aceita linhas LRC sincronizadas:</p>
-    <pre><code class="lang-text">[00:00.00] A sala desperta sob uma luz âmbar
-[00:04.50] Um pulso silencioso vira nosso guia</code></pre>
+    <pre><code class="lang-text">[00:00.00] Primeira linha
+[00:04.50] Segunda linha</code></pre>
     <p>
       Na janela de letras você pode colar linhas, avançar por elas durante o áudio, editar
       timestamps e salvar. O texto fica no perfil ativo. Texto simples também é aceito para exibição
@@ -600,8 +599,8 @@ Música B [bpm 96]</code></pre>
       <li>Confira perfil ativo e trava de transporte antes de liberar o controle.</li>
     </ul>
     <p>
-      Esta versão lê locators do Arrangement. O suporte ao Session View foi adiado. Os links locais
-      do Controle de Palco e da Performance continuam usando HTTPS.
+      O RC Setlist lê locators do Arrangement. O Session View não é suportado. Os links locais do
+      Controle de Palco e da Performance usam HTTPS.
     </p>
     <h2 id="automa-o-de-tempo-desenhada-no-live">Automação de tempo desenhada no Live</h2>
     <p>
@@ -617,7 +616,7 @@ Música B [bpm 96]</code></pre>
       condições fixaria um andamento estático para o restante do show.
     </p>
     <p>
-      O RC Setlist monitora isso ativamente: quando o andamento reportado pelo Live diverge da tag
+      O RC Setlist monitora isso: quando o andamento reportado pelo Live diverge da tag
       <code>[bpm N]</code> declarada para aquele trecho, a extensão identifica que o andamento é
       controlado pelo arranjo e suspende a escrita de tempo, mesmo que a opção esteja ligada no
       painel.
@@ -626,7 +625,7 @@ Música B [bpm 96]</code></pre>
       A inclusão da tag <code>[bpm N]</code> funciona como &quot;calcule a duração usando esta
       referência&quot;, e não como imposição obrigatória de andamento ao Live. Declarar o BPM das
       músicas é totalmente seguro em projetos com automação de andamento e é o que converte uma
-      estimativa de duração em um cálculo 100% exato.
+      estimativa de duração em uma duração exata.
     </p>
     <p>
       Ligue essa opção apenas quando as tags forem a fonte primária de andamento do seu show e o
@@ -637,8 +636,8 @@ Música B [bpm 96]</code></pre>
     </h2>
     <p>
       <strong
-        >O locator do Ableton é a referência de tudo. O RC Setlist nunca grava dados ocultos no seu
-        projeto.</strong
+        >O locator do Ableton é a única fonte da identidade da música. O RC Setlist não acrescenta
+        dados próprios ao seu projeto do Live.</strong
       >
       Ele identifica uma música por nome e posição, nessa ordem:
     </p>

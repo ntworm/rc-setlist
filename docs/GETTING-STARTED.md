@@ -66,16 +66,14 @@ Open the panel and confirm you see:
 - `Verse` listed as a section under INTRO
 - `SONG 2` listed as a separate song with BPM 100
 
-If the panel shows nothing, check the logs panel; a malformed
-locator is the most common cause.
+If the panel shows nothing, check the logs panel for a malformed locator.
 
 ## 4. Open the panel
 
-The panel is the operator's primary interface. It shows the current
-song, the running timer, the next locator, and the controls to play,
-stop, jump and edit. Pressing **Space** toggles play/stop; **N** and
-**P** jump to the next and previous locator; **J** opens a small
-dialog to type a marker name and jump to it.
+The operator works from the panel: it shows the current song, the running timer,
+the next locator, and the controls to play, stop, jump and edit. Pressing
+**Space** toggles play/stop; **N** and **P** jump to the next and previous
+locator; **J** opens a small dialog to type a marker name and jump to it.
 
 The full reference is in
 [USER-GUIDE.md](USER-GUIDE.md#panel-controls).

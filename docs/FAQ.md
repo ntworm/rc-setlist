@@ -42,8 +42,8 @@ fictional text; RC Setlist does not provide commercial lyrics.
 
 ## Does macOS work?
 
-The code is designed to be portable, but 0.5.0 marks macOS experimental until a
-complete real-device matrix is recorded.
+macOS is experimental: the release is validated on Windows only, until a full
+real-device test matrix exists.
 
 ## Can I put RC Setlist on the public internet?
 
@@ -60,6 +60,8 @@ own legal advice for a specific use.
 If your Ableton Live arrangement contains tempo automations (songs at different BPMs) drawn directly on the master track timeline without bracketed `[bpm N]` locator tags, the extension cannot inspect the automation curve. The Live Object Model and Extensions SDK do not expose arrangement tempo breakpoints remotely.
 
 Without tags, RC Setlist calculates duration using Live's current tempo as a uniform estimate and displays an `EST.` badge. In a 21-song set with tempos varying between 93 and 166 BPM, single-tempo estimation caused a 16:59 discrepancy (95:40 vs actual 78:41).
+
+To obtain exact timings, add `[bpm N]` to each song's locator name (e.g. `Song Title [bpm 120]`). RC Setlist will immediately switch from estimated to declared confidence, calculate exact piecewise durations, and remove the `EST.` badge.
 
 ## Why don't I hear the count-in?
 
@@ -81,12 +83,11 @@ old **Ableton RC Setlist** entry so the two extensions do not coexist on the
 same machine. Skipping the migration or leaving both extensions installed
 makes your old profiles invisible to the new extension.
 
-To obtain exact timings, add `[bpm N]` to each song's locator name (e.g. `Song Title [bpm 120]`). RC Setlist will immediately switch from estimated to declared confidence, calculate exact piecewise durations, and remove the `EST.` badge.
-
 ## Tempo automation drawn in Live
 
 If your Arrangement has its own tempo automation, keep **Set Live tempo on jump**
-switched **off** in the Live panel. It ships off, and this is why.
+switched **off** in the Live panel. The default is off, and the next paragraph
+explains why.
 
 An explicit jump can write the destination tempo into Live before it moves the
 playhead. Writing `song.tempo` overrides Live's tempo automation: the arrangement

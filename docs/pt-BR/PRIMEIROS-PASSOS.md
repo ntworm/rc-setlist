@@ -67,16 +67,14 @@ Abra o painel e confirme que você vê:
 - `Verso` listada como seção da INTRO
 - `MÚSICA 2` listada como música separada com BPM 100
 
-Se o painel não mostrar nada, confira o painel de logs; um locator
-malformado é a causa mais comum.
+Se o painel não mostrar nada, confira no painel de logs se há locator malformado.
 
 ## 4. Abrir o painel
 
-O painel é a interface principal do operador. Mostra a música atual,
-o cronômetro, o próximo locator e os controles de play, stop, jump e
-edição. **Espaço** alterna play/stop; **N** e **P** pulam para o
-próximo e o anterior locator; **J** abre um diálogo para digitar o
-nome de um marker e pular para ele.
+O operador trabalha pelo painel: ele mostra a música atual, o cronômetro, o
+próximo locator e os controles de play, stop, jump e edição. **Espaço**
+alterna play/stop; **N** e **P** pulam para o próximo e o anterior locator;
+**J** abre um diálogo para digitar o nome de um marker e pular para ele.
 
 A referência completa está em
 [USER-GUIDE.md](USER-GUIDE.md#controles-do-painel).

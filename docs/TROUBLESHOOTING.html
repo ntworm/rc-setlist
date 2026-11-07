@@ -169,7 +169,7 @@
       <strong>Restart</strong> in the panel.
     </p>
     <ul>
-      <li>Play/Stop and the moving playhead are the clearest end-to-end OSC checks.</li>
+      <li>Play/Stop and the moving playhead test the whole OSC path at once.</li>
     </ul>
     <h2 id="no-songs-appear">No songs appear</h2>
     <ul>
@@ -202,17 +202,17 @@
     </p>
     <p>
       If songs, lyrics and timecode update but every transport or navigation action fails, confirm
-      you are running 0.3.0 or newer. Earlier release candidates could fail while encoding outgoing
-      OSC commands in Ableton&#39;s embedded runtime.
+      you are running 0.3.0 or newer. In earlier builds, outgoing OSC commands could fail to encode
+      in Ableton&#39;s embedded runtime.
     </p>
     <h2 id="first-start-reports-a-profile-persistence-error">
       First start reports a profile persistence error
     </h2>
     <p>
-      Install 0.3.0 or newer. Earlier release candidates could write the initial profile and then
-      fail because an unavailable runtime API was used after the write. If the error remains on a
-      current build, capture a sanitized <code>ExtensionHost.txt</code> excerpt and open a bug
-      report without deleting profile data.
+      Install 0.3.0 or newer. In earlier builds the first profile write could succeed and the
+      extension could then fail, because it called a runtime API that was not available. If the
+      error remains after the upgrade, capture a sanitized <code>ExtensionHost.txt</code> excerpt
+      and open a bug report without deleting profile data.
     </p>
     <h2 id="lyrics-do-not-match-the-song">Lyrics do not match the song</h2>
     <ul>
@@ -266,12 +266,12 @@
     </p>
     <h2 id="setlists-from-another-live-set-appear">Setlists from another Live Set appear</h2>
     <p>
-      Current builds save every profile operation immediately inside the current Live Set scope.
-      They do not show the global profile list from older builds, and a new unsaved Live Set never
-      imports another temporary session automatically.
+      RC Setlist saves every profile operation immediately inside the current Live Set scope. The
+      global profile list is not shown, and a new unsaved Live Set does not import another temporary
+      session automatically.
     </p>
     <p>
-      Legacy global data is preserved as a backup and is not deleted. Only the former per-project
+      Global data from earlier versions is kept as a backup and is not deleted. Only the per-project
       folder that exactly matches the current saved Live Set is imported automatically.
     </p>
     <p>
@@ -283,11 +283,11 @@
     </p>
     <p>
       After switching Live Sets, restart RC Setlist before attaching the intended saved
-      <code>.als</code>. The temporary scope created during a handle change is durable for manual
-      recovery, but its profiles are blocked from automatic migration. Other historical temporary
-      folders are also left untouched for manual recovery. For an unidentified Set, missing lyrics
-      are recovered only when one legacy custom order matches the complete current song list;
-      ambiguous matches are left untouched.
+      <code>.als</code>. The temporary folder created when the Song handle changes is kept for
+      manual recovery, but its profiles are not migrated automatically. Other temporary folders from
+      earlier sessions are also kept for manual recovery. For an unidentified Set, missing lyrics
+      are recovered only when one custom order from an earlier version matches the complete current
+      song list; ambiguous matches are left untouched.
     </p>
     <h2 id="what-to-include-in-a-bug-report">What to include in a bug report</h2>
     <p>

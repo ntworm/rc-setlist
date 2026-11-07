@@ -9,7 +9,7 @@
   const ptBR = {
     'meta.title': 'RC Setlist — extensão de setlist e letra para Ableton Live',
     'meta.description':
-      'Extensão de setlist para Ableton Live 12, grátis para uso não comercial: os locators do Arrangement viram o setlist de quem opera e a tela de palco da banda, com letra sincronizada, no celular ou tablet.',
+      'Extensão de setlist para Ableton Live 12, grátis para uso não comercial: o RC Setlist lê os locators do Arrangement de um Live Set e mostra um setlist para quem opera e uma tela de palco com letra sincronizada para a banda, no celular ou tablet.',
 
     skip: 'Pular para o conteúdo',
     'top.req': 'Live 12.4.5+ Suite',
@@ -67,9 +67,9 @@
     'new.nBody':
       'O QR usa o endereço da rota padrão, não o primeiro endereço privado, então uma segunda interface de rede (luz, áudio) não substitui o endereço do Wi-Fi.',
     'new.note':
-      'Atualizando da 1.0: remova o RC Setlist nas configurações de extensões do Live e instale a 1.1.0. A pasta de dados é mantida. Lista completa: <a href="./pt-BR/NOTAS-DA-VERSAO-1.1.0.html">notas da versão</a>.',
+      'Para atualizar: remova o RC Setlist nas configurações de extensões do Live e instale a 1.1.0. A pasta de dados é mantida. Lista completa: <a href="./pt-BR/NOTAS-DA-VERSAO-1.1.0.html">notas da versão</a>.',
 
-    'chain.title': 'Cadeia de sinal <span class="tail">— quem manda no tempo é o Live</span>',
+    'chain.title': 'Cadeia de sinal <span class="tail">— o Live é a referência de tempo</span>',
     'chain.why':
       'O Live toca; o RC Setlist lê a posição e pede os saltos; os navegadores só mostram o que o Live confirmou.',
     'chain.node0': 'Arrangement · locators · transporte · andamento',
@@ -83,7 +83,8 @@
     'chain.thWhere': 'Onde',
     'chain.thRole': 'Função',
     'chain.liveWhere': 'O computador',
-    'chain.liveRole': 'Roda a extensão. O Arrangement é a referência de tudo.',
+    'chain.liveRole':
+      'Roda a extensão. O Arrangement é a referência de andamento, posição e seções.',
     'chain.bridgeWhere': 'No Live, como Control Surface',
     'chain.bridgeRole':
       'Transporte, saltos e posição da música. Vem no kit; um AbletonOSC comum também funciona.',
@@ -95,7 +96,7 @@
 
     'loc.title': 'Locators <span class="tail">— do Arrangement ao palco</span>',
     'loc.why':
-      'Dê nome aos locators uma vez só. Músicas, seções e tags saem direto do Arrangement, e nada escondido é gravado no seu projeto.',
+      'Dê nome aos locators uma vez só. Músicas, seções e tags saem direto do Arrangement.',
     'loc.figCap': 'O que você digita no Live, o que o operador vê',
     'loc.figMeta': 'Ilustração desta página',
     'loc.inLive': 'Locators do Arrangement',
@@ -131,7 +132,7 @@
     'loc.durC': 'Sem tags · Live em 136 BPM',
     'loc.durCsub': '9:03 a menos',
     'loc.durFoot':
-      'Nenhuma extensão consegue ler a automação de andamento sem tocar a música. Use [bpm] e o aviso EST. some.',
+      'A extensão não consegue ler a automação de andamento sem tocar a música. Use [bpm] e o aviso EST. some.',
 
     'views.title': 'Duas telas',
     'views.why':
@@ -250,7 +251,7 @@
     'install.pOsc': 'Live conectado',
     'install.figFoot': 'Ilustração · os QR codes não funcionam',
     'install.note':
-      'Vem da 0.x? Rode uma vez o script de migração do kit antes de abrir o Live com a 1.0 — veja o <a href="./pt-BR/INSTALL.html">guia de instalação</a>. O Windows está validado; o macOS é experimental nesta versão.',
+      'Se você usava uma versão 0.x: rode uma vez o script de migração do kit, antes de abrir o Live — veja o <a href="./pt-BR/INSTALL.html">guia de instalação</a>. O Windows é suportado e testado; o suporte a macOS é experimental.',
 
     'trouble.title': 'Quando não funciona',
     'trouble.tsTitle': 'Solução de problemas',
@@ -284,7 +285,7 @@
     'faq.dd':
       'Por padrão ela é só visual. Um notebook ligado no in-ear pode ativar o som, um aparelho por vez.',
     'faq.e': 'Session View?',
-    'faq.ed': 'Ainda não. Esta versão lê os locators do Arrangement.',
+    'faq.ed': 'Não. O RC Setlist lê os locators do Arrangement. A Session View não é suportada.',
     'faq.f': 'Posso usar comercialmente?',
     'faq.fd':
       'Não. Use, altere e compartilhe para fins não comerciais, sob a PolyForm Noncommercial 1.0.0.',

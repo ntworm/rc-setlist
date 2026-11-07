@@ -84,9 +84,10 @@ panel and you are on a trusted LAN.
 
 ## Updating from 0.x (Ableton RC Setlist 0.4.x–0.7.0)
 
-The product name changed to **RC Setlist** in 1.0 following Ableton's brand
-guidelines. Your profiles, project-setlists, token and preferences live in a
-folder whose name is derived from the manifest name, so they must move.
+The 0.x builds were named **Ableton RC Setlist**; since 1.0 the name is
+**RC Setlist**. The rename follows Ableton's brand guidelines. Your profiles,
+project-setlists, token and preferences live in a folder whose name is derived
+from the manifest name, so they must move.
 
 Run the kit's `Migrate-RC-Setlist-Data.cmd` (Windows) or
 `Migrate RC Setlist Data.command` (macOS) **once, before opening Live** with
@@ -119,7 +120,7 @@ For the complete matrix, use [TESTER-GUIDE.md](TESTER-GUIDE.md).
 
 Install the newer `.ablx` through Live. Keep a backup of important lyrics and
 exports before replacing a pre-release build. Profile data is stored separately
-from the application package and should remain available after an update.
+from the application package, so it stays available after an update.
 
 ## Uninstall
 

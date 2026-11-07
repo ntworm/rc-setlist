@@ -52,15 +52,15 @@ Changes in 1.1.0, with the new Live panel first.
    **Start Stop Sync** off. The relay does the transport; the native sync
    would do it twice.
 
-A phone that opens the Stage Control page is still a controller of the main
-computer — it joins the main session and sees the main setlist. Pairing is
-for a second machine running Live. macOS is supported here on an
-experimental basis; Windows is the validated platform.
+A phone that opens the Stage Control page is a controller of the main
+computer: it joins the main session and sees the main setlist. Pairing is
+for a second machine running Live. macOS is supported on an experimental
+basis; Windows is the validated platform.
 
 ## What reaches the second computer
 
 **Play**, **Stop**, **jump**, **metronome**, **quantization**, **count-in**,
-**refresh** and **panic** travel to the paired computer. Setlist editing,
+**refresh** and **panic** are sent to the paired computer. Setlist editing,
 marker editing, colours, notes, lyrics, profiles, ordering and the CSV
 export stay on the main computer.
 

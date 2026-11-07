@@ -25,7 +25,9 @@ free for noncommercial use and source-available.
 > Use it only on a trusted LAN, keep the controller URL/token private, and never
 > expose port `4444` directly to the public internet. See [SECURITY.md](SECURITY.md).
 
-## New in 1.1.0
+## What is new in 1.1.0
+
+Full details in the [1.1.0 release notes](docs/RELEASE-NOTES-1.1.0.md).
 
 - **Live panel.** Three tabs: Main, Setlists, Network. Main shows one QR code,
   Stage Control by default, and a button that switches it to the Performance
@@ -54,10 +56,10 @@ free for noncommercial use and source-available.
 - **Network address.** The QR code uses the address of the default route
   instead of the first private address, so a second network interface
   (lighting, audio) does not replace the Wi-Fi address.
-- **Fixes.** The top bar stays on one row in both languages; reordering works
-  on Windows; saving works when Live refuses `fsync`; pairing is
-  bound to the key of the second computer, so an address change keeps the
-  link.
+- **Fixes.** The top bar fits on one row in both languages;
+  reordering works on Windows; saving works when Live refuses `fsync`;
+  pairing is bound to the key of the second computer, so an address change
+  keeps the link.
 
 ## Highlights
 
@@ -74,12 +76,11 @@ free for noncommercial use and source-available.
 - English and Brazilian Portuguese interfaces in the same `.ablx`.
 - No account, cloud sync, analytics or telemetry.
 - Keyboard Mapping for assigning transport and view actions to Numpad or alpha keys.
-- A second computer that follows the show: pair it from the Live panel and
-  the transport commands travel to it over a pinned link.
-- A Live panel with three tabs, Main, Setlists and Network, where the QR code,
-  the setlists and the second computer live together.
-- Setlist packages: every setlist of a Live Set in one file, ready to import
-  again.
+- Second computer: pair it from the Live panel and the transport commands are
+  sent to it over a pinned link.
+- Live panel with three tabs, Main, Setlists and Network: the QR code, the
+  setlists and the second computer.
+- Setlist packages: every setlist of a Live Set in one file, to import again.
 
 ## Requirements
 
@@ -91,16 +92,16 @@ free for noncommercial use and source-available.
   source. End users install the `.ablx` and do not need Node.js.
 
 Windows is the validated release platform. macOS support remains experimental
-until this release is exercised on real macOS hardware.
+until it is exercised on real macOS hardware.
 
 ## Quick start
 
 1. Install RC Bridge: run the kit's `Install-RC-Bridge.cmd` / `Install RC Bridge.command`, then choose RCBridge as a Control Surface in Live.
 2. Download `RC-Setlist-1.1.0.ablx` and the installation kit from the
    [1.1.0 release](https://github.com/ntworm/rc-setlist/releases/tag/v1.1.0).
-3. Coming from 1.0, remove RC Setlist in Live's extension settings first
+3. If RC Setlist is already installed, remove it in Live's extension settings
    (Live refuses to install over an existing extension folder; your data
-   folder stays). Then open the `.ablx` and approve installation in Live.
+   folder stays). Then open the `.ablx` and approve the installation in Live.
 4. In Live, open **Extensions > RC Setlist** and start the server.
 5. Use the panel URL or QR code to open `/setlist` or `/performance`.
 6. To stop the certificate warning, scan the **Certificate** QR in the panel
@@ -108,15 +109,15 @@ until this release is exercised on real macOS hardware.
 7. Press **EN** or **PT** at the top right of the panel to choose English or
    **Português (Brasil)**.
 
-Users upgrading from 0.x (`Ableton-RC-Setlist-0.4.x`–`0.7.0`) run the kit's
-`Migrate-RC-Setlist-Data.cmd` (Windows) or `Migrate RC Setlist Data.command`
-(macOS) once before opening Live with 1.0. The script copies profiles,
-project-setlists and preferences into the new layout without touching the old
-one. Users coming from 1.0 (`RC-Setlist-1.0.0.ablx`) have nothing to migrate.
-On the first start, 1.1.0 signs a new server certificate with the
-certificate authority of this computer, so a browser that accepted the old
-certificate asks once more, or stops asking once the phone certificate is
-installed.
+If your data is in the 0.x layout (`Ableton-RC-Setlist-0.4.x`–`0.7.0`), run
+the kit's `Migrate-RC-Setlist-Data.cmd` (Windows) or
+`Migrate RC Setlist Data.command` (macOS) once before opening Live.
+The script copies profiles, project-setlists and preferences into the new
+layout without touching the old one. If your data is in the `1.0` layout
+(`RC-Setlist-1.0.0.ablx`), there is nothing to migrate. On the first start,
+the extension signs a new server certificate with the certificate authority
+of this computer, so a browser that accepted a previous certificate asks
+once more, or stops asking once the phone certificate is installed.
 Full instructions are in [docs/INSTALL.md](docs/INSTALL.md).
 
 ## Locator format
@@ -144,9 +145,9 @@ Ableton Live + RC Bridge (bundled fork of AbletonOSC)
           └── /performance   stage display
 ```
 
-The extension is local-first. The SDK-facing files sit at the edge; parser,
-state, transport policy, persistence and browser clients are testable through
-the public dependency gate.
+The extension is local-first. The SDK-facing files are at the boundary; the
+parser, state, transport policy, persistence and browser clients are testable
+through the public dependency gate.
 
 ## Development
 

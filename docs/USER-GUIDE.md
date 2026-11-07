@@ -89,8 +89,7 @@ never written into the Live project. It also lists its sections; click one to ed
 it, and the arrow at the top of the panel brings you back to the song.
 
 A **section** carries its name, its tempo, its loop, its click, the same
-three behaviours, and a jump target (the marker `[jump NAME]` goes to). Loop and click live here rather than on the song because that
-is where the music is structured.
+three behaviours, and a jump target (the marker `[jump NAME]` goes to). Loop and click are stored on the section, not on the song.
 
 Three things the editor guarantees:
 
@@ -107,10 +106,10 @@ deleting it and creating it again, and Live can only create a cue point where
 the playhead stands — with playback running, the new marker would land wherever
 the playhead had reached. Stop the transport first.
 
-Colour is RC Setlist's own memory. It is stored beside your setlist and never
+RC Setlist keeps the colour data. It is stored beside your setlist and never
 written into the Live project, and it follows the song through renames and
-moves. The eight tones are deliberately desaturated: on the card, colour is
-identity, and the vivid hues are reserved for state.
+moves. The eight tones are desaturated: on the card the colour identifies the
+song, and the vivid hues are used only to show state.
 
 ## Profiles
 
@@ -144,9 +143,9 @@ transitions. An em dash means Live has not supplied a valid final Arrangement bo
 ### Duration methodology and stage stability
 
 Durations are fixed schedule figures established at set load and do not fluctuate
-when Live's transport knob moves or playback starts. In a live stage environment,
-timing readouts must remain predictable targets for the crew and band rather than
-shifting with instantaneous tempo adjustments.
+when Live's transport knob moves or playback starts. The readouts keep the same
+values for the crew and the band, instead of changing with momentary tempo
+adjustments.
 
 ### Arrangement tempo automation limitation
 
@@ -372,8 +371,8 @@ Use original, licensed or otherwise authorized text only.
 RC Setlist accepts timed LRC lines:
 
 ```text
-[00:00.00] The room wakes under amber light
-[00:04.50] A quiet pulse becomes our guide
+[00:00.00] First line
+[00:04.50] Second line
 ```
 
 The song selector at the top of the lyrics dialog applies to Create, Sync and
@@ -408,8 +407,8 @@ during rehearsals/shows.
 - Do not change profiles, network or AbletonOSC installation during a show.
 - Verify the active profile and transport lock before enabling control.
 
-This release reads Arrangement locators. Session View support is deferred. The
-local Stage Control and Performance links continue to use HTTPS.
+RC Setlist reads Arrangement locators. Session View is not supported. The local
+Stage Control and Performance links use HTTPS.
 
 ## Tempo automation drawn in Live
 
@@ -435,15 +434,16 @@ Arrangement has no tempo automation.
 
 ## How RC Setlist recognises your songs
 
-**The Ableton locator is the source of truth. RC Setlist never writes anything
-hidden into your project.** It recognises a song by name and position, in that
-order.
+**The Ableton locator is the only source of a song's identity. RC Setlist does
+not add its own data to your Live project.** It recognises a song by name and
+position, in that order.
 
 - Rename a song and it stays the same song — the position did not move.
 - Drag it somewhere else and it stays the same song — the name did not change.
 - Change both at once and it is treated as a new song.
 
-Anything RC Setlist keeps on the side follows that identity. Delete a locator by
-accident and recreate it, and what it remembered comes back.
+Anything RC Setlist stores outside the Live project follows that identity. If you
+delete a locator by accident and recreate it, RC Setlist restores the data it
+stored.
 
 The full reasoning is in [docs/architecture/song-identity.md](architecture/song-identity.md).

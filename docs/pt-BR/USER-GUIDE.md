@@ -87,8 +87,7 @@ projeto do Live. Ela também lista suas seções: clique em uma para
 editá-la, e a seta no topo do painel traz você de volta para a música.
 
 Uma **seção** carrega nome, andamento, loop, click e os mesmos três
-comportamentos. Loop e click ficam aqui, e não na música, porque é aqui que a
-música está estruturada.
+comportamentos. Loop e click ficam guardados na seção, e não na música.
 
 Três garantias do editor:
 
@@ -107,8 +106,8 @@ tivesse chegado no momento. Pare o transporte antes de editar.
 
 A atribuição de cor é gerenciada pelo próprio RC Setlist. Ela fica guardada junto ao seu setlist,
 nunca é escrita no projeto do Live, e acompanha a música quando você a renomeia
-ou a move. Os oito tons são dessaturados de propósito: no card, a cor define a
-identidade da faixa, e as cores vivas ficam reservadas para indicar estados operacionais.
+ou a move. Os oito tons são dessaturados: no card a cor identifica a música, e
+as cores vivas são usadas só para indicar estados operacionais.
 
 ## Perfis
 
@@ -146,8 +145,8 @@ indica que o Live ainda não forneceu um limite final válido do Arrangement.
 
 As durações são referências fixas de cronograma estabelecidas no carregamento do set
 e não oscilam quando o knob de tempo do Live é girado ou quando a reprodução começa.
-No palco, os tempos previstos precisam permanecer estáveis para a equipe e a banda,
-em vez de variarem com ajustes momentâneos de andamento.
+Os tempos previstos mantêm o mesmo valor para a equipe e a banda, em vez de mudar
+com ajustes momentâneos de andamento.
 
 ### Limitação de automação de tempo do Arrangement
 
@@ -372,8 +371,8 @@ Use somente texto original, licenciado ou autorizado.
 O RC Setlist aceita linhas LRC sincronizadas:
 
 ```text
-[00:00.00] A sala desperta sob uma luz âmbar
-[00:04.50] Um pulso silencioso vira nosso guia
+[00:00.00] Primeira linha
+[00:04.50] Segunda linha
 ```
 
 Na janela de letras você pode colar linhas, avançar por elas durante o áudio,
@@ -404,8 +403,8 @@ opção desligada quando o serviço de rede só deva rodar em ensaios ou shows.
 - Não troque perfil, rede ou instalação do AbletonOSC durante o show.
 - Confira perfil ativo e trava de transporte antes de liberar o controle.
 
-Esta versão lê locators do Arrangement. O suporte ao Session View foi adiado.
-Os links locais do Controle de Palco e da Performance continuam usando HTTPS.
+O RC Setlist lê locators do Arrangement. O Session View não é suportado.
+Os links locais do Controle de Palco e da Performance usam HTTPS.
 
 ## Automação de tempo desenhada no Live
 
@@ -413,15 +412,17 @@ Se o seu Arrangement tem automação de andamento desenhada na faixa master, man
 
 Um salto explícito pode aplicar o andamento de destino ao Live antes de mover o cursor. Escrever `song.tempo` sobrepõe a automação de andamento nativa do Live: o arranjo para de seguir o envelope desenhado até que você clique no botão **Re-Enable Automation** na barra de transporte. Executar um salto nessas condições fixaria um andamento estático para o restante do show.
 
-O RC Setlist monitora isso ativamente: quando o andamento reportado pelo Live diverge da tag `[bpm N]` declarada para aquele trecho, a extensão identifica que o andamento é controlado pelo arranjo e suspende a escrita de tempo, mesmo que a opção esteja ligada no painel.
+O RC Setlist monitora isso: quando o andamento reportado pelo Live diverge da tag `[bpm N]` declarada para aquele trecho, a extensão identifica que o andamento é controlado pelo arranjo e suspende a escrita de tempo, mesmo que a opção esteja ligada no painel.
 
-A inclusão da tag `[bpm N]` funciona como "calcule a duração usando esta referência", e não como imposição obrigatória de andamento ao Live. Declarar o BPM das músicas é totalmente seguro em projetos com automação de andamento e é o que converte uma estimativa de duração em um cálculo 100% exato.
+A inclusão da tag `[bpm N]` funciona como "calcule a duração usando esta referência", e não como imposição obrigatória de andamento ao Live. Declarar o BPM das músicas é totalmente seguro em projetos com automação de andamento e é o que converte uma estimativa de duração em uma duração exata.
 
 Ligue essa opção apenas quando as tags forem a fonte primária de andamento do seu show e o Arrangement não contiver envelopes de automação de tempo.
 
 ## Como o RC Setlist reconhece as suas músicas
 
-**O locator do Ableton é a referência de tudo. O RC Setlist nunca grava dados ocultos no seu projeto.** Ele identifica uma música por nome e posição, nessa ordem:
+**O locator do Ableton é a única fonte da identidade da música. O RC Setlist não
+acrescenta dados próprios ao seu projeto do Live.** Ele identifica uma música por
+nome e posição, nessa ordem:
 
 - Renomeie uma música e ela continua a mesma — a posição não mudou.
 - Mova o marcador para outro compasso e ela continua a mesma — o nome não mudou.

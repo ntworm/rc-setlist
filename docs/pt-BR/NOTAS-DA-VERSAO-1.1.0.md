@@ -55,18 +55,17 @@ Mudanças da 1.1.0, começando pelo painel do Live novo.
    **Start Stop Sync** do Live desligado. O relay cuida do transporte; a
    sincronização nativa cuidaria dele duas vezes.
 
-Um celular que abre a página do Controle de Palco continua sendo um
-controlador do computador principal — ele entra na sessão do principal e vê
-o setlist do principal. O pareamento serve para uma segunda máquina rodando
-Live. O macOS é suportado aqui de forma experimental; o Windows é a
-plataforma validada.
+Um celular que abre a página do Controle de Palco é um controlador do
+computador principal: ele entra na sessão do principal e vê o setlist do
+principal. O pareamento serve para uma segunda máquina rodando Live. O macOS
+é suportado de forma experimental; o Windows é a plataforma validada.
 
 ## O que chega ao segundo computador
 
 **Play**, **Stop**, **salto**, **metrônomo**, **quantização**, **contagem**,
-**refresh** e **pânico** viajam para o computador pareado. Edição do setlist,
-edição de marcadores, cores, notas, letras, perfis, ordenação e a exportação
-CSV ficam no computador principal.
+**refresh** e **pânico** são enviados para o computador pareado. Edição do
+setlist, edição de marcadores, cores, notas, letras, perfis, ordenação e a
+exportação CSV ficam no computador principal.
 
 ## Também nesta versão
 

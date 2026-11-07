@@ -85,9 +85,10 @@ mostrado no painel do Live e a rede local for confiável.
 
 ## Atualizando de 0.x (Ableton RC Setlist 0.4.x–0.7.0)
 
-O nome do produto mudou para **RC Setlist** na 1.0 seguindo as diretrizes
-de marca da Ableton. Seus perfis, project-setlists, token e preferências
-ficam numa pasta cujo nome vem do manifest, então precisam mudar.
+As versões 0.x se chamavam **Ableton RC Setlist**; desde a 1.0 o nome é
+**RC Setlist**. A mudança segue as diretrizes de marca da Ableton. Seus perfis,
+project-setlists, token e preferências ficam numa pasta cujo nome vem do
+manifest, então precisam mudar.
 
 Rode o `Migrate-RC-Setlist-Data.cmd` (Windows) ou
 `Migrate RC Setlist Data.command` (macOS) do kit **uma vez, antes de abrir
@@ -119,7 +120,7 @@ publique capturas mostrando o endereço completo.
 
 Instale o `.ablx` mais recente pelo Live. Faça backup de letras e exportações
 importantes antes de substituir uma versão de pré-lançamento. Os dados de perfil
-ficam separados do pacote e devem continuar disponíveis após a atualização.
+ficam separados do pacote, então continuam disponíveis após a atualização.
 
 ## Desinstalação
 

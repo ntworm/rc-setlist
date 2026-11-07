@@ -8,7 +8,7 @@
     <title>RC Setlist — setlist &amp; lyrics extension for Ableton Live</title>
     <meta
       name="description"
-      content="Setlist extension for Ableton Live 12, free for noncommercial use: Arrangement locators become the operator's setlist and the band's stage display, with synced lyrics, on any phone or tablet."
+      content="Setlist extension for Ableton Live 12, free for noncommercial use: RC Setlist reads the Arrangement locators of a Live Set and shows a setlist for the operator and a stage display with synced lyrics for the band, on any phone or tablet."
     />
     <link rel="canonical" href="https://ntworm.github.io/rc-setlist/" />
     <link rel="alternate" hreflang="en" href="https://ntworm.github.io/rc-setlist/" />
@@ -29,7 +29,7 @@
     />
     <meta
       property="og:description"
-      content="Arrangement locators become a setlist to run the show and a stage display with synced lyrics for the band. Ableton Live 12.4.5+ Suite, local network, free for noncommercial use."
+      content="RC Setlist reads the Arrangement locators of a Live Set and shows a setlist for the operator and a stage display with synced lyrics for the band. Ableton Live 12.4.5+ Suite, local network, free for noncommercial use."
     />
     <meta property="og:url" content="https://ntworm.github.io/rc-setlist/" />
     <meta property="og:image" content="https://ntworm.github.io/rc-setlist/og-image.png" />
@@ -62,7 +62,7 @@
             "@id": "https://ntworm.github.io/rc-setlist/#webpage",
             "url": "https://ntworm.github.io/rc-setlist/",
             "name": "RC Setlist — setlist & lyrics extension for Ableton Live",
-            "description": "Setlist extension for Ableton Live 12, free for noncommercial use: Arrangement locators become the operator's setlist and the band's stage display, with synced lyrics, on any phone or tablet.",
+            "description": "Setlist extension for Ableton Live 12, free for noncommercial use: RC Setlist reads the Arrangement locators of a Live Set and shows a setlist for the operator and a stage display with synced lyrics for the band, on any phone or tablet.",
             "inLanguage": "en",
             "isPartOf": { "@id": "https://ntworm.github.io/rc-setlist/#website" },
             "about": { "@id": "https://ntworm.github.io/rc-setlist/#software" },
@@ -81,7 +81,7 @@
             "@id": "https://ntworm.github.io/rc-setlist/#software",
             "name": "RC Setlist",
             "alternateName": ["RC Setlist for Ableton Live", "rc-setlist"],
-            "description": "Setlist extension for Ableton Live 12, free for noncommercial use: Arrangement locators become the operator's setlist and the band's stage display, with synced lyrics, on any phone or tablet.",
+            "description": "Setlist extension for Ableton Live 12, free for noncommercial use: RC Setlist reads the Arrangement locators of a Live Set and shows a setlist for the operator and a stage display with synced lyrics for the band, on any phone or tablet.",
             "url": "https://ntworm.github.io/rc-setlist/",
             "applicationCategory": "MultimediaApplication",
             "applicationSubCategory": "Ableton Live extension",
@@ -219,7 +219,7 @@
                 "name": "Session View?",
                 "acceptedAnswer": {
                   "@type": "Answer",
-                  "text": "Not yet. This release reads Arrangement locators."
+                  "text": "No. RC Setlist reads Arrangement locators. Session View is not supported."
                 }
               },
               {
@@ -2244,8 +2244,8 @@
               </div>
             </div>
             <p class="note" data-i18n-html="new.note">
-              Upgrading from 1.0: remove RC Setlist in Live's extension settings, then install
-              1.1.0. The data folder is kept. Full list of changes:
+              To update: remove RC Setlist in Live's extension settings and install 1.1.0. The data
+              folder is kept. Full list of changes:
               <a href="https://github.com/ntworm/rc-setlist/blob/main/docs/RELEASE-NOTES-1.1.0.md"
                 >release notes</a
               >.
@@ -2258,7 +2258,7 @@
           <div class="n">2.0</div>
           <div class="c">
             <h2 id="chain-title" data-i18n-html="chain.title">
-              Signal chain <span class="tail">— Live owns the time</span>
+              Signal chain <span class="tail">— Live is the time source</span>
             </h2>
             <p class="why" data-i18n="chain.why">
               Live plays; RC Setlist reads its position and asks it to move; the browsers show only
@@ -2321,7 +2321,8 @@
                         <td class="k">Live 12.4.5+ Suite (Beta)</td>
                         <td data-i18n="chain.liveWhere">The computer</td>
                         <td data-i18n="chain.liveRole">
-                          Hosts the extension. The Arrangement is the source of truth.
+                          Hosts the extension. The Arrangement is the reference for tempo, position
+                          and sections.
                         </td>
                       </tr>
                       <tr>
@@ -2362,8 +2363,7 @@
               Locators <span class="tail">— from Arrangement to stage</span>
             </h2>
             <p class="why" data-i18n="loc.why">
-              Name the locators once. Songs, sections and tags come straight from the Arrangement,
-              and nothing hidden is written into your project.
+              Name the locators once. Songs, sections and tags come straight from the Arrangement.
             </p>
 
             <figure class="fig">
@@ -2634,8 +2634,8 @@
                 </div>
               </div>
               <div class="fig-foot" data-i18n="loc.durFoot">
-                No extension can read tempo automation without playing it. Declare [bpm] and the
-                EST. badge goes away.
+                The extension cannot read tempo automation without playing the song. Declare [bpm]
+                and the EST. badge goes away.
               </div>
             </figure>
           </div>
@@ -2991,8 +2991,8 @@
                             role="region"
                             aria-label="LRC example"
                             data-i18n-aria="views.lrcAria"
-                          ><span>[00:00.00]</span> The room wakes under amber light
-<span>[00:04.50]</span> A quiet pulse becomes our guide</pre>
+                          ><span>[00:00.00]</span> Line 1
+<span>[00:04.50]</span> Line 2</pre>
                           <p class="note" data-i18n="views.lrcNote">
                             Paste, time them while the song plays, edit and save. They are stored in
                             the active profile, outside the Live Set. Plain text works too.
@@ -3247,11 +3247,11 @@
               </figure>
             </div>
             <p class="note" data-i18n-html="install.note">
-              Coming from 0.x? Run the kit's migration script once, before opening Live with 1.0 —
+              If you used a 0.x version: run the kit's migration script once, before opening Live —
               see the
               <a href="https://github.com/ntworm/rc-setlist/blob/main/docs/INSTALL.md"
                 >installation guide</a
-              >. Windows is validated; macOS is experimental in this release.
+              >. Windows is supported and tested; macOS support is experimental.
             </p>
           </div>
         </section>
@@ -3428,7 +3428,9 @@
                 ></span>
                 <div>
                   <h4 data-i18n="faq.e">Session View?</h4>
-                  <p data-i18n="faq.ed">Not yet. This release reads Arrangement locators.</p>
+                  <p data-i18n="faq.ed">
+                    No. RC Setlist reads Arrangement locators. Session View is not supported.
+                  </p>
                 </div>
               </div>
               <div class="card">

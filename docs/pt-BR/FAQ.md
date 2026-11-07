@@ -44,8 +44,8 @@ demonstração usam texto fictício; o RC Setlist não fornece letras comerciais
 
 ## O macOS funciona?
 
-O código foi projetado para ser portátil, mas a versão 0.5.0 mantém o macOS como
-experimental até existir uma matriz completa em hardware real.
+O macOS é experimental: a release é validada apenas no Windows, até existir uma
+matriz completa em hardware real.
 
 ## Posso expor o RC Setlist na internet?
 
@@ -88,8 +88,8 @@ antigos ficarem invisíveis para a extensão nova.
 ## Automação de tempo desenhada no Live
 
 Se o seu Arrangement tem automação de tempo própria, mantenha **Definir o tempo do
-Live ao pular** **desligado** no painel do Live. Ele já vem desligado, e o motivo
-é este.
+Live ao pular** **desligado** no painel do Live. O padrão é desligado, e o
+próximo parágrafo explica o motivo.
 
 Um pulo explícito pode escrever o tempo de destino no Live antes de mover o
 playhead. Escrever `song.tempo` sobrepõe a automação de tempo do Live: o arranjo
