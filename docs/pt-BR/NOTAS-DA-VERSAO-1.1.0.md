@@ -34,12 +34,12 @@ Mudanças da 1.1.0, começando pelo painel do Live novo.
 - **Certificado local.** A extensão cria uma autoridade certificadora para este
   computador, válida para localhost e endereços privados da rede. A aba Rede
   mostra um QR para uma página de instalação na porta `4445`; com o
-  certificado instalado num aparelho, o navegador deixa de avisar.
+  certificado instalado, o navegador abre as páginas sem aviso.
 - **Endereço de rede.** O QR usa o endereço da rota padrão, não o primeiro
   endereço privado, então uma segunda interface de rede (luz, áudio) não
   substitui o endereço do Wi-Fi.
 - **Correções.** A barra do topo fica numa linha nos dois idiomas; reordenar
-  funciona no Windows; salvar não falha mais quando o Live recusa `fsync`; o
+  funciona no Windows; salvar funciona quando o Live recusa `fsync`; o
   pareamento fica preso à chave do segundo computador, então uma mudança de
   endereço mantém o link.
 

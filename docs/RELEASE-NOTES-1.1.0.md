@@ -30,13 +30,13 @@ Changes in 1.1.0, with the new Live panel first.
   or number to jump; drag the grip on the right edge of the card to reorder.
 - **Local certificate.** The extension creates a certificate authority for
   this computer, valid for localhost and private network addresses. The
-  Network tab shows a QR code for an install page on port `4445`; once the
-  certificate is installed on a device, the browser no longer warns.
+  Network tab shows a QR code for an install page on port `4445`; with the
+  certificate installed, the browser opens the pages without a warning.
 - **Network address.** The QR code uses the address of the default route
   instead of the first private address, so a second network interface
   (lighting, audio) does not replace the Wi-Fi address.
 - **Fixes.** The top bar stays on one row in both languages; reordering works
-  on Windows; saving no longer fails when Live refuses `fsync`; pairing is
+  on Windows; saving works when Live refuses `fsync`; pairing is
   bound to the key of the second computer, so an address change keeps the
   link.
 
