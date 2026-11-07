@@ -159,6 +159,12 @@ async function qrFrame(page, frame) {
   });
 }
 
+// A QR frame once its code is drawn: the panel draws it asynchronously.
+async function drawnQr(page, frame) {
+  await expect.poll(async () => (await qrFrame(page, frame)).source).not.toBe('');
+  return qrFrame(page, frame);
+}
+
 // The row of a setlist of the project.
 function setlistRow(page, name) {
   return page.locator('#setlistProfiles .setlist-row').filter({ hasText: name });
@@ -259,10 +265,8 @@ test('another address changes the links and every code', async ({ page }) => {
   await expect(page.locator('#certDetails')).toBeVisible();
   await expect(page.locator('#certUrl')).toHaveText('http://192.168.1.50:4445/ca');
 
-  const stageBefore = await qrFrame(page, '#qrSetlist');
-  const certBefore = await qrFrame(page, '#qrCert');
-  expect(stageBefore.source).not.toBe('');
-  expect(certBefore.source).not.toBe('');
+  const stageBefore = await drawnQr(page, '#qrSetlist');
+  const certBefore = await drawnQr(page, '#qrCert');
 
   await page.locator('#networkAddressSelect').selectOption('192.168.0.10');
 
@@ -272,12 +276,14 @@ test('another address changes the links and every code', async ({ page }) => {
   await expect(page.locator('#certUrl')).toHaveText('http://192.168.0.10:4445/ca');
   await expect(page.locator('#networkPrimaryIp')).toHaveText('192.168.0.10');
 
-  const stageAfter = await qrFrame(page, '#qrSetlist');
-  const certAfter = await qrFrame(page, '#qrCert');
-  expect(stageAfter.source).not.toBe('');
-  expect(certAfter.source).not.toBe('');
-  expect(stageAfter.source).not.toBe(stageBefore.source);
-  expect(certAfter.source).not.toBe(certBefore.source);
+  // The codes are drawn after the change, so wait for each one to differ.
+  for (const [frame, before] of [
+    ['#qrSetlist', stageBefore],
+    ['#qrCert', certBefore],
+  ]) {
+    await expect.poll(async () => (await qrFrame(page, frame)).source).not.toBe(before.source);
+    expect((await qrFrame(page, frame)).source).not.toBe('');
+  }
 
   const envelopes = await sentEnvelopes(page);
   expect(envelopes).toHaveLength(1);
