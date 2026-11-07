@@ -56,18 +56,18 @@
 ## Controls are read-only
 
 Open the controller URL or scan the controller QR code from the panel. The token
-is required for transport/write actions. Do not share it publicly.
+is required for transport and write actions. Do not share it publicly.
 
-If songs, lyrics and timecode update but every transport or navigation action
-fails, confirm you are running 0.3.0 or newer. In earlier builds, outgoing OSC
-commands could fail to encode in Ableton's embedded runtime.
+Transport and navigation actions need RC Setlist 0.3.0 or newer. When songs,
+lyrics and timecode update but every transport or navigation action fails,
+choose **Check OSC** in the panel and read the OSC section above.
 
 ## First start reports a profile persistence error
 
-Install 0.3.0 or newer. In earlier builds the first profile write could succeed
-and the extension could then fail, because it called a runtime API that was not
-available. If the error remains after the upgrade, capture a sanitized
-`ExtensionHost.txt` excerpt and open a bug report without deleting profile data.
+The first profile write needs RC Setlist 0.3.0 or newer.
+
+If the error remains, capture a sanitized `ExtensionHost.txt` excerpt and open
+a bug report without deleting profile data.
 
 ## Lyrics do not match the song
 
@@ -76,19 +76,12 @@ available. If the error remains after the upgrade, capture a sanitized
 - Remove locator tags from the lyric song name.
 - Re-save from the built-in editor and refresh the state.
 
-When upgrading from an earlier **RC SETLIST** or **Ableton Setlist Bridge** build,
-restart the server once on the current version. RC Setlist imports missing
-lyrics and custom order from the known previous extension-data folders. It does
-not delete the old folders or overwrite files already present in the new profile.
+Restart the server once. RC Setlist imports missing lyrics and custom order
+from the known previous extension-data folders. It does not delete the old
+folders or overwrite files already present in the new profile.
 
-When upgrading from the 0.x **Ableton RC Setlist** build (0.4.x–0.7.0), run the
-kit's `Migrate-RC-Setlist-Data.cmd` (Windows) or
-`Migrate RC Setlist Data.command` (macOS) **once before opening Live** with
-1.0. It copies profiles, project-setlists, token and preferences into the new
-data folder without touching the old one. In Live, remove the old
-**Ableton RC Setlist** entry from **Settings > Extensions** so the two
-extensions do not coexist on the same machine. Skipping either step leaves the
-old profiles invisible to the new extension.
+Data from a 0.x build lives in another folder. See [Migrate data from a 0.x
+build](INSTALL.md#migrate-data-from-a-0-x-build).
 
 ## Another extension uses OSC port 11001
 
