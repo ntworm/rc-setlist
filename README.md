@@ -8,10 +8,11 @@
 
 [Landing page and screenshots](https://ntworm.github.io/rc-setlist/)
 
-RC Setlist is an extension for Ableton Live 12 that runs the setlist of a show
-from the Arrangement. It reads the Arrangement locators of a Live Set and shows
-them in the browser: a setlist for the operator (Stage Control) and a read-only
-display for the band (Performance). The timing comes from Live.
+RC Setlist is an extension for Ableton Live 12 that runs a show from the
+Arrangement. Mark each song and section with a locator in Live, and RC Setlist
+turns them into a setlist in the browser. The operator starts songs and jumps
+between sections from a laptop or tablet; the band sees the current section, the
+next song and the lyrics on their phones.
 
 > **Network safety:** RC Setlist serves browser controls on your local network.
 > Use it only on a trusted LAN, keep the controller URL and token private, and
@@ -24,19 +25,17 @@ display for the band (Performance). The timing comes from Live.
 - RC Bridge, the bundled Remote Script (a fork of
   [AbletonOSC](https://github.com/ideoforms/AbletonOSC)), selected as a Live
   Control Surface for transport and Live Object Model operations.
-- Node.js 24.16.0 or newer in the Node 24 LTS line, only when developing from
-  source. End users install the `.ablx` and do not need Node.js.
 
 Windows is the validated release platform. macOS support remains experimental
 until it is exercised on real macOS hardware.
 
 ## Install
 
-1. Install RC Bridge: run the kit's `Install-RC-Bridge.cmd` (Windows) or
+1. Download `RC-Setlist-1.1.0.ablx` and the installation kit from the
+   [1.1.0 release](https://github.com/ntworm/rc-setlist/releases/tag/v1.1.0).
+2. Install RC Bridge from the kit: run `Install-RC-Bridge.cmd` (Windows) or
    `Install RC Bridge.command` (macOS), then choose RCBridge as a Control
    Surface in Live.
-2. Download `RC-Setlist-1.1.0.ablx` and the installation kit from the
-   [1.1.0 release](https://github.com/ntworm/rc-setlist/releases/tag/v1.1.0).
 3. If RC Setlist is already installed, remove it in Live's extension settings
    (Live refuses to install over an existing extension folder; your data folder
    stays). Then open the `.ablx` and approve the installation in Live.
@@ -47,8 +46,9 @@ until it is exercised on real macOS hardware.
 6. Press **EN** or **PT** at the top right of the panel to choose English or
    Brazilian Portuguese.
 
-Data in the `RC-Setlist-1.0.0.ablx` layout runs without migration. To move data
-from the 0.x layout (`Ableton-RC-Setlist-0.4.x`–`0.7.0`), run the kit's
+Data in the [`RC-Setlist-1.0.0.ablx`](docs/RELEASE-NOTES-1.0.0.md) layout runs
+without migration. To move data from the 0.x layout
+(`Ableton-RC-Setlist-0.4.x`–`0.7.0`), run the kit's
 `Migrate-RC-Setlist-Data.cmd` (Windows) or `Migrate RC Setlist Data.command`
 (macOS) once before opening Live; the script copies profiles, project setlists
 and preferences into the 1.x layout and leaves the old folder untouched.
@@ -122,25 +122,15 @@ Full details in the [1.1.0 release notes](docs/RELEASE-NOTES-1.1.0.md).
 
 ## Documentation
 
-- [Documentation index](docs/README.md)
 - [Getting started](docs/GETTING-STARTED.md)
 - [Installation](docs/INSTALL.md)
 - [User guide](docs/USER-GUIDE.md)
-- [What is new in 1.1.0](docs/RELEASE-NOTES-1.1.0.md)
-- [What is new in 1.0.0](docs/RELEASE-NOTES-1.0.0.md)
 - [Troubleshooting](docs/TROUBLESHOOTING.md)
 - [Frequently asked questions](docs/FAQ.md)
-- [Tester guide](docs/TESTER-GUIDE.md)
-- [Develop from source](docs/DEVELOPMENT.md)
-- [Contracts](docs/CONTRACTS.md)
-- [Release history](docs/HISTORY.md)
-- [Theme contract](docs/THEME_CONTRACT.md)
-- [Code of conduct](CODE_OF_CONDUCT.md)
+- [What is new in 1.1.0](docs/RELEASE-NOTES-1.1.0.md)
 - [Privacy](PRIVACY.md)
 - [Security](SECURITY.md)
-- [Support](SUPPORT.md)
-- [Contributing](CONTRIBUTING.md)
-- [Third-party notices](THIRD_PARTY_NOTICES.md)
+- [All other documents](docs/README.md)
 
 ## Development
 
@@ -156,6 +146,8 @@ through the public dependency gate.
 The Ableton SDK and CLI are not redistributed in this source repository.
 Authorized developers can configure a complete build using
 [vendor/README.md](vendor/README.md) and [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md).
+Building from source needs Node.js 24.16.0 or newer, in the Node 24 LTS line;
+end users install the `.ablx` and do not need Node.js.
 
 The installation kit is built with `npm run package:kit`. It writes
 `release-candidates/RC-Setlist-1.1.0-Installation-Kit.zip` with the `.ablx`,

@@ -74,12 +74,12 @@ stays valid until you restart Live.
 
 ## Next steps
 
-- [USER-GUIDE.md](USER-GUIDE.md) — full panel + Stage Control reference.
-- [CONTRACTS.md](CONTRACTS.md) — the public contract (HTTP, WS, locator
+- [USER-GUIDE.md](USER-GUIDE.md): full panel + Stage Control reference.
+- [CONTRACTS.md](CONTRACTS.md): the public contract (HTTP, WS, locator
   grammar). Read this if you want to write your own controller.
-- [THEME_CONTRACT.md](THEME_CONTRACT.md) — palette and typography if you want
+- [THEME_CONTRACT.md](THEME_CONTRACT.md): palette and typography if you want
   a custom skin for Stage Control.
-- [TESTER-GUIDE.md](TESTER-GUIDE.md) — what to check on a release candidate
+- [TESTER-GUIDE.md](TESTER-GUIDE.md): what to check on a release candidate
   before you ship it to the band.
-- [DEVELOPMENT.md](DEVELOPMENT.md) — how to run the source tests and build the
+- [DEVELOPMENT.md](DEVELOPMENT.md): how to run the source tests and build the
   extension locally.

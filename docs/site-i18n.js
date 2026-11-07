@@ -12,6 +12,7 @@
       'Extensão de setlist para Ableton Live 12, grátis para uso não comercial: o RC Setlist lê os locators do Arrangement de um Live Set e mostra um setlist para quem opera e uma tela de palco com letra sincronizada para a banda, no celular ou tablet.',
 
     skip: 'Pular para o conteúdo',
+    'top.ver': 'Versão 1.1.0',
     'top.req': 'Live 12.4.5+ Suite',
     'top.language': 'Idioma',
     'top.navAria': 'Seções',
@@ -26,7 +27,7 @@
     'nav.docs': 'Docs',
 
     'about.lede':
-      'Extensão para o Ableton Live 12 que roda um show a partir do Arrangement. Marque cada música e cada seção com um locator no Live, e o RC Setlist os transforma em um setlist no navegador. Quem opera inicia músicas e salta entre seções de um notebook ou tablet; a banda vê a seção atual, a próxima música e a letra nos próprios celulares.',
+      'O RC Setlist é uma extensão para o Ableton Live 12 que roda um show a partir do Arrangement. Marque cada música e cada seção com um locator no Live, e o RC Setlist os transforma em um setlist no navegador. Quem opera inicia músicas e salta entre seções de um notebook ou tablet; a banda vê a seção atual, a próxima música e a letra nos próprios celulares.',
 
     'about.spec1': 'Live 12.4.5+ Suite (Beta)',
     'about.spec2': 'Windows (macOS experimental)',
@@ -36,7 +37,6 @@
     'about.docs': 'Ler a documentação',
     'about.new': 'O que há de novo na 1.1.0',
     'about.source': 'Código-fonte',
-    'about.release': 'Código-fonte disponível&nbsp;· Versão 1.1.0',
     'about.figCap': 'As duas telas',
     'about.figAlt':
       'Controle de palco: setlist de cinco músicas com seções e tags, a música 3 destacada como ativa, estado do show, quantização, click e transporte.',
@@ -63,7 +63,7 @@
 
     'chain.title': 'Cadeia de sinal',
     'chain.why':
-      'O Live toca; o RC Setlist lê a posição e pede os saltos; os navegadores só mostram o que o Live confirmou.',
+      'O RC Setlist lê a posição da música no Live, pede para o Live avançar e mostra só o que o Live confirmou.',
     'chain.node0': 'Arrangement · locators · transporte · andamento',
     'chain.node1': 'Parser · agendador de saltos · perfis · letras',
     'chain.node2': 'Controle de palco · operador',
@@ -86,14 +86,13 @@
     'chain.lanTag': 'SÓ REDE LOCAL',
     'chain.lan': 'Mantenha o link do controlador privado e nunca exponha a porta 4444 na internet.',
 
-    'loc.title': 'Locators',
-    'loc.why':
-      'Dê nome aos locators uma vez só. Músicas, seções e tags saem direto do Arrangement.',
+    'loc.title': 'Locators — do Arrangement ao palco',
+    'loc.why': 'Músicas, seções e tags saem dos locators que você escreve no Arrangement.',
     'loc.figCap': 'O que você digita no Live, o que o operador vê',
     'loc.inLive': 'Locators do Arrangement',
     'loc.end': 'Fim do Arrangement · compasso 81',
     'loc.reads': 'O RC Setlist lê',
-    'loc.inStage': 'No Controle de palco — os cards que ele mostra',
+    'loc.inStage': 'No Controle de palco: os cards que ele mostra',
     'loc.songs': 'Músicas no projeto',
     'loc.total': 'Duração total',
     'loc.figFoot':
@@ -111,6 +110,7 @@
     'loc.tJump': 'Salta para uma música ou seção pelo nome.',
     'loc.tHidden': 'Esconde do setlist um locator usado só para automação.',
     'loc.tIgnore': 'Locator técnico: fica oculto e as tags dele não fazem nada.',
+    'loc.tNone': 'Nenhum',
     'loc.tagsNote':
       'Tanto faz maiúscula ou minúscula, e as tags não aparecem no nome exibido. Fora [hidden] e [ignore], você nem precisa digitá-las: dê dois cliques numa música ou seção no Controle de palco e cada tag vira um controle.',
     'loc.durTitle': 'Duração do set',
@@ -132,7 +132,7 @@
     'views.tabStage': 'Controle de palco',
     'views.tabPerf': 'Performance',
     'views.tabPhone': 'Performance · celular',
-    'views.stageCap': 'Controle de palco — /setlist, para quem opera',
+    'views.stageCap': 'Controle de palco: /setlist, para quem opera',
     'views.stageAlt': 'Controle de palco com regiões numeradas.',
     'views.thRegion': 'Área',
     'views.thWhat': 'O que faz',
@@ -154,11 +154,11 @@
     'views.s7d': 'Grade dos saltos, click do Live, contagem de um compasso e botão de atualizar.',
     'views.s8': 'Transporte',
     'views.s8d':
-      'Música ou seção anterior e próxima, Play e Stop. Tudo, menos o Play, pede para segurar o botão — veja Segurança no palco.',
+      'Música ou seção anterior e próxima, Play e Stop. Tudo, menos o Play, pede para segurar o botão. Veja Segurança no palco.',
     'views.s9': 'Topo',
     'views.s9d':
       'Idioma, bloqueio do painel, ferramentas de letra e exportação, tela cheia, conexão.',
-    'views.perfCap': 'Performance — /performance, para a banda',
+    'views.perfCap': 'Performance: /performance, para a banda',
     'views.perfAlt': 'Tela Performance com regiões numeradas.',
     'views.p1': 'Música atual',
     'views.p1d': 'Título, tags e a próxima música.',
@@ -171,7 +171,7 @@
     'views.p5': 'Compasso · tempo',
     'views.p5d': 'Onde o Live está, em compassos e tempos.',
     'views.p6': 'BPM · click',
-    'views.p6d': 'O andamento e se o click está ligado — escrito na tela, não só pela cor.',
+    'views.p6d': 'O andamento e se o click está ligado (escrito na tela, não só pela cor).',
     'views.p7': 'Conexão · tela cheia',
     'views.p7d': 'Estado da conexão; em tela cheia, a tela não apaga (quando o navegador permite).',
     'views.phoneCap': 'Performance no celular, na vertical',
@@ -193,7 +193,7 @@
     'safety.title': 'Segurança no palco',
     'safety.why':
       'Os controles que mudam a reprodução agem depois de 500 ms segurados, não num toque. Não há janelas de confirmação.',
-    'safety.figCap': 'Segurar para enviar — próxima música, seção anterior, Stop',
+    'safety.figCap': 'Segurar para enviar: próxima música, seção anterior, Stop',
     'safety.figMeta': 'De 0 a 800 ms',
     'safety.holdAria':
       'Toque rápido: nada é enviado. Segurar por 500 milissegundos: o comando é enviado. Arrastar o dedo para fora antes dos 500 milissegundos: cancela.',
@@ -242,7 +242,7 @@
     'install.pOsc': 'Live conectado',
     'install.figFoot': 'Ilustração · os QR codes não funcionam',
     'install.note':
-      'Se você usava uma versão 0.x: rode uma vez o script de migração do kit, antes de abrir o Live — veja o <a href="./pt-BR/INSTALL.html">guia de instalação</a>. O Windows é suportado e testado; o suporte a macOS é experimental.',
+      'Se você usava uma versão 0.x: rode uma vez o script de migração do kit, antes de abrir o Live. Veja o <a href="./pt-BR/INSTALL.html">guia de instalação</a>. O Windows é suportado e testado; o suporte a macOS é experimental.',
 
     'trouble.title': 'Quando não funciona',
     'trouble.tsTitle': 'Solução de problemas',
@@ -251,7 +251,7 @@
       'Confira o Live 12.4.5+ Suite (Beta). Abra o .ablx de novo, reinicie o Live, procure em Extensions.',
     'trouble.b': 'O RCBridge não está na lista',
     'trouble.bd':
-      'O lugar dele é <code>User Library/Remote Scripts/RCBridge</code> — o instalador do kit põe lá. Reinicie o Live uma vez.',
+      'O lugar dele é <code>User Library/Remote Scripts/RCBridge</code>: o instalador do kit põe lá. Reinicie o Live uma vez.',
     'trouble.c': 'O cursor não anda',
     'trouble.cd':
       'Aperte Verificar OSC no painel; a linha de OSC diz qual script responde. Depois de instalar o RC Bridge, aperte Reiniciar.',
@@ -299,6 +299,7 @@
     'docs.security': 'Segurança · privacidade',
 
     'foot.made': 'Feito por <b>Gabriel Worm</b>',
+    'foot.license': 'Código-fonte disponível sob a PolyForm Noncommercial 1.0.0',
     'foot.credits': 'Créditos e licenças',
     'foot.legal':
       'RC Setlist é um projeto independente, sem afiliação ou endosso da Ableton AG. Ableton e Live são marcas da Ableton AG.',

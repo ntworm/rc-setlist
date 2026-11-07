@@ -18,17 +18,17 @@ primeiro show.
 
 O RC Bridge é o Remote Script do Live com que o RC Setlist conversa. É um fork
 do [AbletonOSC](https://github.com/ideoforms/AbletonOSC), licenciado sob MIT,
-que responde a cada cliente na porta dele — assim nunca disputa a porta de
+que responde a cada cliente na porta dele: assim nunca disputa a porta de
 resposta com outra extensão RC e convive com um AbletonOSC comum. Ele está
 dentro da extensão e dentro do kit, então não há nada para baixar.
 
 Coloque o script na User Library do Live de duas maneiras:
 
-- **Pelo kit** — na pasta `RC-Bridge`, clique duas vezes em
+- **Pelo kit**: na pasta `RC-Bridge`, clique duas vezes em
   `Install-RC-Bridge.cmd` (Windows) ou `Install RC Bridge.command` (macOS; na
   primeira vez, botão direito › Abrir). Ele copia o script e mostra o último
   passo.
-- **À mão** — copie a pasta `RCBridge` do kit para
+- **À mão**: copie a pasta `RCBridge` do kit para
   `%USERPROFILE%\Documents\Ableton\User Library\Remote Scripts\RCBridge` no
   Windows ou `~/Music/Ableton/User Library/Remote Scripts/RCBridge` no macOS.
 

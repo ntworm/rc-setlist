@@ -33,21 +33,21 @@ Song A [bpm 122] [click]
 Technical cue [ignore]
 ```
 
-- `[loop]` — Loop the current section until disabled.
-- `[loop Nx]` — Loop the section N times.
-- `[stop]` — Stop when the locator is reached.
-- `[next]` — Hand playback to the next song the moment this marker is reached.
-  Written on a section it still leaves the song — it does not advance to the
+- `[loop]`: Loop the current section until disabled.
+- `[loop Nx]`: Loop the section N times.
+- `[stop]`: Stop when the locator is reached.
+- `[next]`: Hand playback to the next song the moment this marker is reached.
+  Written on a section it still leaves the song; it does not advance to the
   next section.
-- `[bpm N]` — Set the target BPM.
-- `[click]` / `[click off]` — Enable or disable Live's metronome.
-- `[skip]` — Skip this section/song: hand playback to the next section (or song)
+- `[bpm N]`: Set the target BPM.
+- `[click]` / `[click off]`: Enable or disable Live's metronome.
+- `[skip]`: Skip this section/song: hand playback to the next section (or song)
   the moment this marker is reached.
-- `[jump NAME]` — Hand playback to the marker called NAME the moment this marker
-  is reached — a section of this song, a song, or `Song > Section`. Names are
+- `[jump NAME]`: Hand playback to the marker called NAME the moment this marker
+  is reached: a section of this song, a song, or `Song > Section`. Names are
   matched with tags stripped, case ignored.
-- `[hidden]` — Keep an automation anchor out of the visible setlist.
-- `[ignore]` — Technical marker that hides the locator and takes precedence over
+- `[hidden]`: Keep an automation anchor out of the visible setlist.
+- `[ignore]`: Technical marker that hides the locator and takes precedence over
   any action tags.
 
 Tags are case-insensitive and are removed from the display name. A locator
@@ -117,7 +117,7 @@ the playhead had reached. Stop the transport first.
 
 ### Colours and notes
 
-Notes are one line for the stage — key, tuning, who counts in — shown under the
+Notes are one line for the stage (key, tuning, who counts in), shown under the
 title on the card and on the performance display. Colours and notes are stored
 beside your setlist and are never written into the Live project. The colour
 follows the song through renames and moves.
@@ -202,7 +202,7 @@ brings the total back to 78:41.
 ## The Live panel
 
 The Live panel is the window the extension opens inside Live. Its tab bar
-carries three tabs — **Main**, **Setlists** and **Network** — and the **EN** and
+carries three tabs (**Main**, **Setlists** and **Network**) and the **EN** and
 **PT** buttons at the top right, which change the language of the panel.
 
 ### Main
@@ -223,8 +223,8 @@ one, rename it, delete it and create a new one. The delete asks once, in the
 row, and a deleted setlist stays in the **Deleted setlists** list, ready to be
 restored. All of this works while the transport is stopped.
 
-**Export all** writes one `.rcsetlist` file with every setlist of the Live Set —
-order, song colours and notes, lyrics — into the `packages` folder of the
+**Export all** writes one `.rcsetlist` file with every setlist of the Live Set
+(order, song colours and notes, lyrics) into the `packages` folder of the
 extension data. On Windows that folder is
 `%LOCALAPPDATA%\Ableton\Extensions Data\ntworm.rc-setlist\packages`. **Import**
 picks one package of that folder and adds its setlists beside the ones you
@@ -263,7 +263,7 @@ Explicit jumps apply the destination BPM around the cue jump. A section BPM
 overrides its song BPM; an untagged section inherits the destination song BPM.
 While stopped, or with quantization at None, RC Setlist uses an SDK-first tempo
 write and then sends the cue jump. While playing with quantization on, the cue
-jump is handed to Live at once — Live lands it on its next grid line — and the
+jump is handed to Live at once. Live lands it on its next grid line, and the
 tempo is written when that landing is observed. These are sequential
 operations, not atomic operations, so they cannot guarantee sample-accurate
 timing. Native Arrangement tempo automation at the destination is recommended
@@ -283,8 +283,8 @@ browser's `localStorage`, for example through the developer console on a
 notebook feeding an in-ear monitor. This is off by default so the operator's
 phone does not beep through its speaker on stage.
 
-The count runs at the tempo **the setlist declares** for that point — the last
-`[bpm]` at or before the playhead — and only falls back to Live's current tempo
+The count runs at the tempo **the setlist declares** for that point (the last
+`[bpm]` at or before the playhead) and only falls back to Live's current tempo
 when the set declares nothing. This matters at a song boundary: Live is still
 sitting at the previous song's tempo, so counting at that would count the
 wrong speed for the song about to start.
@@ -346,11 +346,11 @@ presents another certificate, and the row asks for a new pairing.
 
 The Stage Control page shows a second dot beside the connection dot:
 
-- **green** — the second computer is connected and both read the same markers.
-- **amber** — it is connected, but the markers are different.
-- **red** — it is not answering, or its certificate changed and it has to be
+- **green**: the second computer is connected and both read the same markers.
+- **amber**: it is connected, but the markers are different.
+- **red**: it is not answering, or its certificate changed and it has to be
   paired again.
-- **no dot** — there is no second computer paired, and nothing is sent
+- **no dot**: there is no second computer paired, and nothing is sent
   anywhere.
 
 ### What reaches the second computer

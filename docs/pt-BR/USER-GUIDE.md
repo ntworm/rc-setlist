@@ -33,22 +33,22 @@ Música A [bpm 122] [click]
 Marcador Técnico [ignore]
 ```
 
-- `[loop]` — Repete a seção atual em loop contínuo até ser desativado.
-- `[loop Nx]` — Repete a seção exatamente N vezes.
-- `[stop]` — Interrompe a reprodução quando o locator é alcançado.
-- `[next]` — Salta a reprodução para a próxima música no instante em que este
+- `[loop]`: Repete a seção atual em loop contínuo até ser desativado.
+- `[loop Nx]`: Repete a seção exatamente N vezes.
+- `[stop]`: Interrompe a reprodução quando o locator é alcançado.
+- `[next]`: Salta a reprodução para a próxima música no instante em que este
   marcador é alcançado. Em uma seção, encerra a música atual a partir dali,
   sem avançar para as seções seguintes.
-- `[bpm N]` — Define o andamento (BPM) esperado.
-- `[click]` / `[click off]` — Ativa ou desativa o metrônomo nativo do Live.
-- `[skip]` — Avança para a próxima seção, ou para a próxima música, no instante
+- `[bpm N]`: Define o andamento (BPM) esperado.
+- `[click]` / `[click off]`: Ativa ou desativa o metrônomo nativo do Live.
+- `[skip]`: Avança para a próxima seção, ou para a próxima música, no instante
   em que este marcador é alcançado.
-- `[jump NOME]` — Salta a reprodução para o marcador indicado em NOME no
-  instante em que este marcador é alcançado — uma seção desta música, uma
+- `[jump NOME]`: Salta a reprodução para o marcador indicado em NOME no
+  instante em que este marcador é alcançado: uma seção desta música, uma
   música, ou `Música > Seção`. Nomes são comparados sem as tags e sem
   diferenciar maiúsculas/minúsculas.
-- `[hidden]` — Oculta uma âncora de automação do setlist visível.
-- `[ignore]` — Marcador técnico que oculta o locator e tem precedência sobre
+- `[hidden]`: Oculta uma âncora de automação do setlist visível.
+- `[ignore]`: Marcador técnico que oculta o locator e tem precedência sobre
   qualquer tag de ação.
 
 As tags não diferenciam maiúsculas de minúsculas e não aparecem no nome
@@ -120,7 +120,7 @@ que o playhead tivesse chegado. Pare o transporte antes de editar.
 
 ### Cores e notas
 
-As notas são uma linha para o palco — tom, afinação, quem começa — mostrada
+As notas são uma linha para o palco (tom, afinação, quem começa), mostrada
 abaixo do título no card e na tela de performance. Cores e notas ficam guardadas
 ao lado do seu setlist e nunca são escritas no projeto do Live. A cor acompanha
 a música quando você a renomeia ou a move.
@@ -206,7 +206,7 @@ A declaração de tags `[bpm N]` nos locators de música elimina a discrepância
 ## O painel do Live
 
 O painel do Live é a janela que a extensão abre dentro do Live. A barra de abas
-traz três abas — **Principal**, **Repertórios** e **Rede** — e os botões **EN** e
+traz três abas (**Principal**, **Repertórios** e **Rede**) e os botões **EN** e
 **PT** no alto à direita, que mudam o idioma do painel.
 
 ### Principal
@@ -230,7 +230,7 @@ o repertório apagado fica na lista **Setlists excluídos**, pronto para ser
 restaurado. Tudo isso funciona com o transporte parado.
 
 **Exportar todos** grava um arquivo `.rcsetlist` com todos os repertórios do
-Live Set — ordem, cores e notas das músicas, letras — na pasta `packages` dos
+Live Set (ordem, cores e notas das músicas, letras) na pasta `packages` dos
 dados da extensão. No Windows, essa pasta é
 `%LOCALAPPDATA%\Ableton\Extensions Data\ntworm.rc-setlist\packages`.
 **Importar** escolhe um pacote dessa pasta e acrescenta os repertórios dele ao
@@ -270,7 +270,7 @@ Saltos explícitos aplicam o BPM de destino em torno do salto de cue. O BPM da s
 substitui o BPM da música; uma seção sem BPM herda o BPM da música de destino.
 Com o transporte parado, ou com a quantização em None, o RC Setlist usa uma escrita
 de tempo SDK-first e depois envia o salto de cue. Tocando com quantização, o salto
-de cue é entregue ao Live na hora — o Live o executa na próxima linha da grade — e o
+de cue é entregue ao Live na hora. O Live o executa na próxima linha da grade, e o
 tempo é escrito quando essa chegada é observada. As operações são sequenciais,
 não atômicas, portanto não garantem precisão de amostra.
 A automação de tempo nativa no Arrangement no destino é recomendada para
@@ -290,8 +290,8 @@ ser ligado por aparelho definindo `rc-setlist.count-in-audio` como `true` no
 alimenta um retorno de ouvido). Isso vem desligado por padrão para que o celular
 do operador não apite pelo alto-falante no palco.
 
-A contagem roda no tempo que **o setlist declara** para aquele ponto — o último
-`[bpm]` em ou antes do playhead — e só recorre ao tempo atual do Live quando o
+A contagem roda no tempo que **o setlist declara** para aquele ponto (o último
+`[bpm]` em ou antes do playhead) e só recorre ao tempo atual do Live quando o
 set não declara nada. Isso importa na virada de música: o Live ainda está no
 tempo da música anterior, então contar por ele seria contar na velocidade errada
 para a música que vai começar.
@@ -355,12 +355,12 @@ apresenta outro certificado, e a linha pede um pareamento novo.
 A página do Controle de palco mostra um segundo ponto ao lado do ponto de
 conexão:
 
-- **verde** — o segundo computador está conectado e os dois leem os mesmos
+- **verde**: o segundo computador está conectado e os dois leem os mesmos
   marcadores.
-- **amarelo** — está conectado, mas os marcadores são diferentes.
-- **vermelho** — não está respondendo, ou o certificado mudou e ele precisa
+- **amarelo**: está conectado, mas os marcadores são diferentes.
+- **vermelho**: não está respondendo, ou o certificado mudou e ele precisa
   ser pareado de novo.
-- **sem ponto** — não há segundo computador pareado, e nada é enviado para
+- **sem ponto**: não há segundo computador pareado, e nada é enviado para
   lugar nenhum.
 
 ### O que chega ao segundo computador

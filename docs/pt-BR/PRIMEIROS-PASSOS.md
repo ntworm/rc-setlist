@@ -77,13 +77,13 @@ válida até você reiniciar o Live.
 
 ## Mais documentos
 
-- [USER-GUIDE.md](USER-GUIDE.md) — referência completa do painel e do Controle
+- [USER-GUIDE.md](USER-GUIDE.md): referência completa do painel e do Controle
   de Palco.
-- [CONTRATOS.md](CONTRATOS.md) — o contrato público (HTTP, WS, gramática de
+- [CONTRATOS.md](CONTRATOS.md): o contrato público (HTTP, WS, gramática de
   locators). Leia se quiser escrever seu próprio controller.
-- [THEME_CONTRACT.md](../THEME_CONTRACT.md) — paleta e tipografia se você quer
+- [THEME_CONTRACT.md](../THEME_CONTRACT.md): paleta e tipografia se você quer
   uma skin custom para o Controle de Palco.
-- [TESTER-GUIDE.md](../TESTER-GUIDE.md) — o que conferir num release candidate
+- [TESTER-GUIDE.md](../TESTER-GUIDE.md): o que conferir num release candidate
   antes de mandar pra banda.
-- [DEVELOPMENT.md](../DEVELOPMENT.md) — como rodar os testes e buildar a
+- [DEVELOPMENT.md](../DEVELOPMENT.md): como rodar os testes e buildar a
   extensão localmente.

@@ -17,7 +17,7 @@ desenvolvimento.
 O RC Bridge é o Remote Script do Live com que o RC Setlist conversa para
 transporte e operações do Live Object Model. É um fork do AbletonOSC
 (<https://github.com/ideoforms/AbletonOSC>, MIT) que responde a cada cliente na
-porta dele — assim nunca disputa a porta de resposta com outra extensão RC e
+porta dele: assim nunca disputa a porta de resposta com outra extensão RC e
 convive com um AbletonOSC comum. Ele vem dentro da extensão e dentro do kit de
 instalação, e o instalador do kit (`Install-RC-Bridge.cmd` /
 `Install RC Bridge.command`) copia para a User Library do Live. Você não

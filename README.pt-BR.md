@@ -8,10 +8,11 @@
 
 [Página do RC Setlist e capturas de tela](https://ntworm.github.io/rc-setlist/pt-BR/)
 
-O **RC Setlist** é uma extensão para o Ableton Live 12 que roda o setlist de um
-show a partir do Arrangement. Ela lê os locators do Arrangement de um Live Set e
-mostra no navegador um setlist para quem opera (Controle de palco) e uma tela
-só de leitura para a banda (Performance). O tempo vem do Live.
+O RC Setlist é uma extensão para o Ableton Live 12 que roda um show a partir do
+Arrangement. Marque cada música e cada seção com um locator no Live, e o RC
+Setlist os transforma em um setlist no navegador. Quem opera inicia músicas e
+salta entre seções de um notebook ou tablet; a banda vê a seção atual, a
+próxima música e a letra nos próprios celulares.
 
 > **Segurança de rede:** O RC Setlist serve as páginas de controle na sua rede local.
 > Utilize apenas em redes locais (LAN/Wi-Fi) confiáveis, mantenha a URL e o token do controlador privados, e nunca exponha a porta `4444` diretamente na internet pública. Consulte [SECURITY.md](SECURITY.md).
@@ -22,20 +23,17 @@ só de leitura para a banda (Performance). O tempo vem do Live.
 - RC Bridge, o Remote Script incluído (um fork do
   [AbletonOSC](https://github.com/ideoforms/AbletonOSC)), selecionado como
   Control Surface no Live para transporte e operações no Live Object Model.
-- Node.js 24.16.0 ou superior (linha Node 24 LTS), necessário apenas para
-  desenvolvimento a partir do código-fonte. Usuários finais apenas instalam o
-  `.ablx` e não necessitam do Node.js.
 
 O Windows é a plataforma de lançamento validada. O suporte a macOS permanece
 experimental até ser validado em hardware Apple físico dedicado.
 
 ## Instalação
 
-1. Instale o RC Bridge: execute o `Install-RC-Bridge.cmd` (Windows) ou
-   `Install RC Bridge.command` (macOS) do kit de instalação e selecione RCBridge
-   como Control Surface no Live.
-2. Baixe o `RC-Setlist-1.1.0.ablx` e o kit de instalação na
+1. Baixe o `RC-Setlist-1.1.0.ablx` e o kit de instalação na
    [versão 1.1.0](https://github.com/ntworm/rc-setlist/releases/tag/v1.1.0).
+2. Instale o RC Bridge a partir do kit: execute o `Install-RC-Bridge.cmd`
+   (Windows) ou `Install RC Bridge.command` (macOS) e selecione RCBridge como
+   Control Surface no Live.
 3. Se o RC Setlist já estiver instalado, remova-o nas configurações de
    extensões do Live (o Live não instala por cima de uma pasta de extensão que
    já existe; a pasta de dados fica). Depois dê dois cliques no `.ablx` e
@@ -47,8 +45,9 @@ experimental até ser validado em hardware Apple físico dedicado.
 6. Aperte **EN** ou **PT** no alto do painel para escolher inglês ou português
    do Brasil.
 
-Quem usa o layout `RC-Setlist-1.0.0.ablx` não tem nada a migrar. Para mover
-os dados do layout 0.x (`Ableton-RC-Setlist-0.4.x` a `0.7.0`), execute o
+Quem usa o layout [`RC-Setlist-1.0.0.ablx`](docs/pt-BR/NOTAS-DA-VERSAO-1.0.0.md)
+não tem nada a migrar. Para mover os dados do layout 0.x
+(`Ableton-RC-Setlist-0.4.x` a `0.7.0`), execute o
 `Migrate-RC-Setlist-Data.cmd` (Windows) ou `Migrate RC Setlist Data.command`
 (macOS) do kit de instalação uma única vez antes de abrir o Live; o script
 copia perfis, setlists do projeto e preferências para o layout 1.x e não altera
@@ -127,25 +126,15 @@ Detalhes em [notas da versão 1.1.0](docs/pt-BR/NOTAS-DA-VERSAO-1.1.0.md).
 
 ## Documentação
 
-- [Índice da documentação](docs/pt-BR/README.md)
 - [Primeiros passos](docs/pt-BR/PRIMEIROS-PASSOS.md)
 - [Guia de instalação](docs/pt-BR/INSTALL.md)
 - [Guia do usuário](docs/pt-BR/USER-GUIDE.md)
-- [O que há de novo na versão 1.1.0](docs/pt-BR/NOTAS-DA-VERSAO-1.1.0.md)
-- [O que há de novo na versão 1.0.0](docs/pt-BR/NOTAS-DA-VERSAO-1.0.0.md)
 - [Solução de problemas](docs/pt-BR/TROUBLESHOOTING.md)
 - [Perguntas frequentes (FAQ)](docs/pt-BR/FAQ.md)
-- [Guia completo de testes (em inglês)](docs/TESTER-GUIDE.md)
-- [Desenvolvimento a partir do código-fonte (em inglês)](docs/DEVELOPMENT.md)
-- [Contratos públicos da API](docs/pt-BR/CONTRATOS.md)
-- [Histórico de versões](docs/HISTORY.md)
-- [Contrato de temas](docs/THEME_CONTRACT.md)
-- [Conduta](CODE_OF_CONDUCT.md)
+- [O que há de novo na versão 1.1.0](docs/pt-BR/NOTAS-DA-VERSAO-1.1.0.md)
 - [Privacidade](PRIVACY.md)
 - [Segurança](SECURITY.md)
-- [Suporte](SUPPORT.md)
-- [Contribuição](CONTRIBUTING.md)
-- [Avisos de terceiros](THIRD_PARTY_NOTICES.md)
+- [Todos os outros documentos](docs/pt-BR/README.md)
 
 ## Desenvolvimento
 
@@ -161,6 +150,8 @@ persistência e os clientes web podem ser testados de forma independente.
 O SDK e CLI do Ableton não são redistribuídos neste repositório público.
 Desenvolvedores autorizados podem configurar a compilação completa seguindo
 [vendor/README.md](vendor/README.md) e [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md).
+Compilar a partir do código-fonte exige Node.js 24.16.0 ou superior, na linha
+Node 24 LTS; quem instala o `.ablx` não precisa do Node.js.
 
 O kit de instalação é gerado por `npm run package:kit`. O comando produz o
 arquivo `release-candidates/RC-Setlist-1.1.0-Installation-Kit.zip` com o

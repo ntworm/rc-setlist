@@ -23,11 +23,11 @@ and inside the installation kit, so there is nothing to download.
 
 Put the script in Live's User Library in one of two ways:
 
-- **From the kit** — in the `RC-Bridge` folder, double-click
+- **From the kit**: in the `RC-Bridge` folder, double-click
   `Install-RC-Bridge.cmd` (Windows) or `Install RC Bridge.command` (macOS;
   right-click › Open the first time). It copies the script and prints the last
   step.
-- **By hand** — copy the `RCBridge` folder from the kit into
+- **By hand**: copy the `RCBridge` folder from the kit into
   `%USERPROFILE%\Documents\Ableton\User Library\Remote Scripts\RCBridge` on
   Windows or `~/Music/Ableton/User Library/Remote Scripts/RCBridge` on macOS.
 

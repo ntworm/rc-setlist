@@ -1997,7 +1997,7 @@
       <div class="stick">
         <header class="mast">
           <span class="brand">RC Setlist</span>
-          <span class="ver">v1.1.0</span>
+          <span class="ver" data-i18n="top.ver">Release 1.1.0</span>
           <span class="req" data-i18n="top.req">Live 12.4.5+ Suite</span>
           <span class="grow"></span>
           <label class="lang">
@@ -2027,10 +2027,11 @@
           <div class="c">
             <h1 id="about-title"><span class="rc">RC</span> Setlist</h1>
             <p class="lede" data-i18n="about.lede">
-              Extension for Ableton Live 12 that runs a show from the Arrangement. Mark each song
-              and section with a locator in Live, and RC Setlist turns them into a setlist in the
-              browser. The operator starts songs and jumps between sections from a laptop or tablet;
-              the band sees the current section, the next song and the lyrics on their phones.
+              RC Setlist is an extension for Ableton Live 12 that runs a show from the Arrangement.
+              Mark each song and section with a locator in Live, and RC Setlist turns them into a
+              setlist in the browser. The operator starts songs and jumps between sections from a
+              laptop or tablet; the band sees the current section, the next song and the lyrics on
+              their phones.
             </p>
             <ul class="spec">
               <li data-i18n="about.spec1">Live 12.4.5+ Suite (Beta)</li>
@@ -2070,9 +2071,6 @@
                 >Source</a
               >
             </div>
-            <p class="release" data-i18n-html="about.release">
-              Source-available&nbsp;· Release 1.1.0
-            </p>
 
             <figure class="fig hero-visual">
               <figcaption class="fig-bar">
@@ -2120,8 +2118,8 @@
           <div class="c">
             <h2 id="chain-title" data-i18n-html="chain.title">Signal chain</h2>
             <p class="why" data-i18n="chain.why">
-              Live plays; RC Setlist reads its position and asks it to move; the browsers show only
-              what Live confirmed.
+              RC Setlist reads the song position from Live, asks Live to move and shows only what
+              Live confirmed.
             </p>
             <div class="duo">
               <div>
@@ -2214,9 +2212,11 @@
         <!-- ===================== 3.0 LOCATORS ===================== -->
         <section class="sec" id="locators" aria-labelledby="locators-title">
           <div class="c">
-            <h2 id="locators-title" data-i18n-html="loc.title">Locators</h2>
+            <h2 id="locators-title" data-i18n-html="loc.title">
+              Locators — from Arrangement to stage
+            </h2>
             <p class="why" data-i18n="loc.why">
-              Name the locators once. Songs, sections and tags come straight from the Arrangement.
+              Songs, sections and tags come from the locators you write in the Arrangement.
             </p>
 
             <figure class="fig">
@@ -2227,7 +2227,7 @@
                 >
               </figcaption>
               <div class="fig-body">
-                <p class="h4" data-i18n="loc.inLive">In Live — Arrangement locators</p>
+                <p class="h4" data-i18n="loc.inLive">In Live: Arrangement locators</p>
                 <p class="arr-hint" data-i18n="loc.scrollHint">
                   Swipe the drawing sideways to see the whole set.
                 </p>
@@ -2279,7 +2279,7 @@
                   <i>▼</i> <span data-i18n="loc.reads">RC Setlist reads</span>
                 </div>
 
-                <p class="h4" data-i18n="loc.inStage">In Stage Control — the cards it draws</p>
+                <p class="h4" data-i18n="loc.inStage">In Stage Control: the cards it draws</p>
                 <div class="list" style="margin-top: 10px">
                   <div class="list-head">
                     <span data-i18n="loc.songs">Songs in project</span>
@@ -2425,14 +2425,14 @@
                   <tr>
                     <td class="k"><code>[hidden]</code></td>
                     <td data-i18n="loc.tHidden">Keeps an automation anchor off the setlist.</td>
-                    <td class="none">—</td>
+                    <td class="none" data-i18n="loc.tNone">None</td>
                   </tr>
                   <tr>
                     <td class="k"><code>[ignore]</code></td>
                     <td data-i18n="loc.tIgnore">
                       A technical marker: hidden, and its tags do nothing.
                     </td>
-                    <td class="none">—</td>
+                    <td class="none" data-i18n="loc.tNone">None</td>
                   </tr>
                 </tbody>
               </table>
@@ -2520,7 +2520,7 @@
                     <figcaption class="fig-bar">
                       <span class="id">Fig. 4</span>
                       <span class="cap" data-i18n="views.stageCap"
-                        >Stage Control — /setlist, for the operator</span
+                        >Stage Control: /setlist, for the operator</span
                       >
                       <span class="meta">1600 × 900</span>
                     </figcaption>
@@ -2636,7 +2636,7 @@
                             <td data-i18n="views.s8">Transport</td>
                             <td data-i18n="views.s8d">
                               Previous and next song or section, Play, Stop. Everything but Play is
-                              held — see Stage safety.
+                              held. See Stage safety.
                             </td>
                           </tr>
                           <tr>
@@ -2658,7 +2658,7 @@
                     <figcaption class="fig-bar">
                       <span class="id">Fig. 5</span>
                       <span class="cap" data-i18n="views.perfCap"
-                        >Performance — /performance, for the band</span
+                        >Performance: /performance, for the band</span
                       >
                       <span class="meta">1920 × 1080</span>
                     </figcaption>
@@ -2744,7 +2744,7 @@
                             <td><span class="key">6</span></td>
                             <td data-i18n="views.p6">BPM · click</td>
                             <td data-i18n="views.p6d">
-                              Tempo, and whether the metronome is on — in words, not only colour.
+                              Tempo, and whether the metronome is on (in words, not only colour).
                             </td>
                           </tr>
                           <tr>
@@ -2871,7 +2871,7 @@
               <figcaption class="fig-bar">
                 <span class="id">Fig. 7</span>
                 <span class="cap" data-i18n="safety.figCap"
-                  >The hold gate — next song, previous section, stop</span
+                  >The hold gate: next song, previous section, stop</span
                 >
                 <span class="meta" data-i18n="safety.figMeta">0 to 800 ms</span>
               </figcaption>
@@ -3096,8 +3096,8 @@
               </figure>
             </div>
             <p class="note" data-i18n-html="install.note">
-              If you used a 0.x version: run the kit's migration script once, before opening Live —
-              see the
+              If you used a 0.x version: run the kit's migration script once, before opening Live.
+              See the
               <a href="https://github.com/ntworm/rc-setlist/blob/main/docs/INSTALL.md"
                 >installation guide</a
               >. Windows is supported and tested; macOS support is experimental.
@@ -3130,7 +3130,7 @@
                 <div>
                   <h4 data-i18n="trouble.b">RCBridge is not in the list</h4>
                   <p data-i18n-html="trouble.bd">
-                    It belongs in <code>User Library/Remote Scripts/RCBridge</code> — the kit's
+                    It belongs in <code>User Library/Remote Scripts/RCBridge</code>: the kit's
                     installer puts it there. Restart Live once.
                   </p>
                 </div>
@@ -3446,7 +3446,7 @@
       <footer class="colophon">
         <div class="line">
           <span data-i18n-html="foot.made">Made by <b>Gabriel Worm</b></span>
-          <span>PolyForm Noncommercial 1.0.0</span>
+          <span data-i18n="foot.license">Source-available under PolyForm Noncommercial 1.0.0</span>
           <a href="https://github.com/ntworm/rc-setlist/blob/main/NOTICE" data-i18n="foot.credits"
             >Credits and licences</a
           >
