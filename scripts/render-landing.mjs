@@ -126,9 +126,9 @@ const FEATURES = {
 };
 
 const IMAGE_ALT = {
-  en: 'RC Setlist Stage Control running a five-song setlist from Ableton Live locators.',
+  en: 'RC Setlist 1.1.0: Stage Control on a tablet, reading songs and sections from Ableton Live locators.',
   'pt-BR':
-    'Controle de palco do RC Setlist rodando um setlist de cinco músicas a partir dos locators do Ableton Live.',
+    'RC Setlist 1.1.0: Stage Control num tablet, lendo músicas e seções dos locators do Ableton Live.',
 };
 
 function structuredData({ locale, url, title, description, faq }) {

@@ -71,7 +71,6 @@ docs/media/pt-BR/stage-control.png
 docs/media/pt-BR/stage-editorial.png
 docs/media/pt-BR/workflow.png
 docs/og-image.png
-docs/og-image.svg
 docs/pt-BR/
 docs/site-i18n.js
 docs/sitemap.xml

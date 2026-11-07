@@ -8,7 +8,6 @@ const docs = path.join(root, 'docs');
 const outputs = [
   { source: 'favicon.svg', target: 'favicon-32.png', width: 32, height: 32 },
   { source: 'favicon.svg', target: 'apple-touch-icon.png', width: 180, height: 180 },
-  { source: 'og-image.svg', target: 'og-image.png', width: 1200, height: 630 },
 ];
 
 // The page is loaded with setContent, so nothing relative resolves: the landing's
