@@ -43,9 +43,9 @@ section below for anyone crossing over from the public 0.5.1 line.
 
 ### RC Bridge (bundled Live control surface)
 
-The Remote Script the extension talks to now ships inside the extension
+The Remote Script the extension talks to is bundled inside the extension
 and the installation kit, as a fork of the MIT-licensed AbletonOSC
-(upstream `0ca6821`). Nobody downloads AbletonOSC by hand any more:
+(upstream `0ca6821`). Manual download of AbletonOSC is unnecessary:
 the kit has `Install-RC-Bridge.cmd` (Windows) and
 `Install RC Bridge.command` (macOS) that copy it into Live's User
 Library and print the one remaining step. Selecting **RCBridge**
@@ -88,8 +88,8 @@ Live project.
 
 ### Count-In rethought (0.6.1)
 
-The count-in used to rewind Live's playhead one bar and start the
-transport there. That bar is real arrangement time belonging to the
+The count-in operates via Web Audio without rewinding Live's playhead,
+preventing audio playback from the preceding song.
 previous song, so the count was heard at the previous song's tempo and
 its audio played too. Making the count audible also meant switching
 Live's metronome on, which overrode a click the operator had

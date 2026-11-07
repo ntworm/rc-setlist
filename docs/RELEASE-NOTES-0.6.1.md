@@ -7,11 +7,9 @@ things that only show on a phone in a dark room.
 
 ## What's New
 
-- **The count-in is sounded in the browser.** It used to rewind Live's playhead
-  one bar and start the transport there — real arrangement time belonging to
-  the previous song, so the count ran at that song's tempo and its audio played.
-  Making it audible also meant switching Live's metronome on, overriding a click
-  you had deliberately turned off. The count is now browser audio at the tempo
+- **The count-in is sounded in the browser.** The count-in operates via Web Audio
+  without moving Live's playhead into previous arrangement time.
+  The count is browser audio at the tempo
   the setlist declares for the playhead. Live starts on the beat it was sitting
   on, and its transport and metronome are never touched to produce it. Play is
   sent shortly before the last beat so the transport arrives on the downbeat;

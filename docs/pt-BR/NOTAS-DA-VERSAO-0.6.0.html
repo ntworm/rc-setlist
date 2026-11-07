@@ -158,7 +158,7 @@
     </ul>
     <p>
       Condensed para as letras cantadas, que cabe cerca de 45% mais palavras por linha no celular
-      sem descer do piso de 12px. Acentos e cedilhas não são mais cortados.
+      sem descer do piso de 12px. Acentos e cedilhas são exibidos sem corte.
     </p>
     <ul>
       <li>
@@ -182,7 +182,10 @@
     </p>
     <h2 id="corre-es">Correções</h2>
     <ul>
-      <li><strong>A duração do show não depende mais do que estava tocando.</strong> Um campo</li>
+      <li>
+        <strong>A duração do show é calculada independentemente do estado da reprodução.</strong> Um
+        campo
+      </li>
     </ul>
     <p>
       capturado devolvia o tempo ao vivo para a duração da própria música, então um set com
@@ -191,13 +194,11 @@
       trecho a trecho numa única linha do tempo cronológica para o setlist inteiro.
     </p>
     <ul>
-      <li>
-        <strong>Renomear um localizador não arrisca mais perdê-lo.</strong> A renomeação acontece no
-      </li>
+      <li><strong>A renomeação de localizador opera no local.</strong> A renomeação acontece no</li>
     </ul>
     <p>
-      lugar, em vez de apagar o cue point e criar um substituto, e a lista de cues do próprio Live é
-      relida em vez de confiar na palavra da ponte.
+      lugar sem apagar o cue point, e a lista de cues do próprio Live é relida em vez de confiar na
+      palavra da ponte.
     </p>
     <ul>
       <li>
@@ -205,10 +206,7 @@
         <code>&gt; Verso</code>
       </li>
     </ul>
-    <p>
-      quanto <code>Música &gt; Verso</code>; o editor reescrevia a primeira forma na segunda e
-      renomeava toda seção em que encostava.
-    </p>
+    <p>quanto <code>Música &gt; Verso</code>; o editor preserva a forma original.</p>
     <ul>
       <li><strong>A edição é recusada com o transporte tocando</strong>, em qualquer modo. A</li>
     </ul>
@@ -234,10 +232,10 @@
     <p>o que acontece no palco sem deixar marca nenhuma no card.</p>
     <ul>
       <li>
-        <strong>O play não vira mais um símbolo de pause</strong>, que dava a impressão de que
+        <strong>O play mantém o símbolo de reprodução durante a execução</strong>, sem alternar para
+        um símbolo de pause.
       </li>
     </ul>
-    <p>clicar de novo pausaria.</p>
     <p>
       _Para detalhes completos sobre a migração a partir da 0.5.x, consulte o
       <a href="INSTALL.html">Guia de Instalação</a>._

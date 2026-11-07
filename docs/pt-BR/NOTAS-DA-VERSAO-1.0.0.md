@@ -266,7 +266,7 @@ testes órfãos foram removidos limpamente.
 
 ### Renomeado para "RC Setlist"
 
-O nome do produto não inclui mais "Ableton" (diretrizes de marca da
+O nome do produto omite "Ableton" (diretrizes de marca da
 Ableton). Dados antigos da 0.x ficam em
 `<Extensions Data>/ntworm.ableton-rc-setlist`; o kit migra para
 `<Extensions Data>/ntworm.rc-setlist` e a entrada antiga da extensão no

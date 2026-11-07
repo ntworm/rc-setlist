@@ -1,4 +1,4 @@
-﻿# Notas da versão RC Setlist 0.4.1
+# Notas da versão RC Setlist 0.4.1
 
 [English](../RELEASE-NOTES-0.4.1.md)
 
@@ -13,7 +13,7 @@ o fluxo existente baseado no Arrangement.
   recuperável e restaurar vários setlists do Live Set atual. Setlists de outros
   projetos ficam ocultos.
 - A área de letras agora tem um seletor de música compartilhado acima de Criar,
-  Sincronizar e Editar. Abrir o editor não substitui mais as letras sincronizadas
+  Sincronizar e Editar. Abrir o editor preserva as letras sincronizadas
   na tela do show, e edições não salvas sobrevivem ao fechamento do diálogo.
 - O painel do Live ganhou um diagnóstico compacto da conexão com AbletonOSC,
   sem ocupar a interface com textos longos de instalação.
@@ -26,7 +26,7 @@ o fluxo existente baseado no Arrangement.
   quando outra extensão RC ocupa a porta fixa de resposta do AbletonOSC.
 - Duração Total, posição de reprodução e confirmação de salto usam um fallback
   MCP serializado, sem acumular requisições atrasadas.
-- O valor de compasso em Barras/Batidas/Semicolcheias não pisca mais para trás
+- O valor de compasso em Barras/Batidas/Semicolcheias avança monotonicamente
   nas viradas normais, mas saltos, loops, parar/iniciar e reconexões continuam
   atualizando imediatamente.
 - O rename de setlist no celular mantém o foco e o teclado durante atualizações.

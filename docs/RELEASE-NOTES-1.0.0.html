@@ -192,10 +192,9 @@
     <h2 id="since-0-5-1">Since 0.5.1</h2>
     <h3 id="rc-bridge-bundled-live-control-surface">RC Bridge (bundled Live control surface)</h3>
     <p>
-      The Remote Script the extension talks to now ships inside the extension and the installation
-      kit, as a fork of the MIT-licensed AbletonOSC (upstream <code>0ca6821</code>). Nobody
-      downloads AbletonOSC by hand any more: the kit has
-      <code>Install-RC-Bridge.cmd</code> (Windows) and
+      The Remote Script the extension talks to is bundled inside the extension and the installation
+      kit, as a fork of the MIT-licensed AbletonOSC (upstream <code>0ca6821</code>). Manual download
+      of AbletonOSC is unnecessary: the kit has <code>Install-RC-Bridge.cmd</code> (Windows) and
       <code>Install RC Bridge.command</code> (macOS) that copy it into Live&#39;s User Library and
       print the one remaining step. Selecting <strong>RCBridge</strong> under Settings › Link, Tempo
       &amp; MIDI › Control Surface stays the user&#39;s step, because Live offers no way to do it
@@ -234,15 +233,15 @@
     </p>
     <h3 id="count-in-rethought-0-6-1">Count-In rethought (0.6.1)</h3>
     <p>
-      The count-in used to rewind Live&#39;s playhead one bar and start the transport there. That
-      bar is real arrangement time belonging to the previous song, so the count was heard at the
-      previous song&#39;s tempo and its audio played too. Making the count audible also meant
-      switching Live&#39;s metronome on, which overrode a click the operator had deliberately turned
-      off. The count was moved to the browser at the tempo the setlist declares for the playhead,
-      Live starts on the beat it was already sitting on, and its transport and metronome are never
-      touched to produce it. Play is sent shortly before the last beat so the transport arrives on
-      the downbeat; pressing Play again during the count starts immediately, and Stop cancels it.
-      The &quot;count-in shortened&quot; warning is gone with the rewind that caused it.
+      The count-in operates via Web Audio without rewinding Live&#39;s playhead, preventing audio
+      playback from the preceding song. previous song, so the count was heard at the previous
+      song&#39;s tempo and its audio played too. Making the count audible also meant switching
+      Live&#39;s metronome on, which overrode a click the operator had deliberately turned off. The
+      count was moved to the browser at the tempo the setlist declares for the playhead, Live starts
+      on the beat it was already sitting on, and its transport and metronome are never touched to
+      produce it. Play is sent shortly before the last beat so the transport arrives on the
+      downbeat; pressing Play again during the count starts immediately, and Stop cancels it. The
+      &quot;count-in shortened&quot; warning is gone with the rewind that caused it.
     </p>
     <p>
       <strong>1.0.0: browser click off by default.</strong> The browser audio count is now turned

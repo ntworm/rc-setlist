@@ -118,12 +118,11 @@
     </p>
     <h2 id="o-que-h-de-novo">O que há de novo</h2>
     <ul>
-      <li><strong>O RC Bridge vem dentro da extensão.</strong> Até agora, o Control Surface com</li>
+      <li><strong>RC Bridge integrado à extensão.</strong> O Control Surface com o qual</li>
     </ul>
     <p>
-      quem a extensão conversa era um download à parte — o AbletonOSC, buscado e instalado à mão na
-      User Library do Live. Agora ele vem como RC Bridge, um fork do AbletonOSC (licença MIT), e o
-      kit de instalação copia para você: <code>Install-RC-Bridge.cmd</code> no Windows,
+      a extensão se comunica é distribuído como RC Bridge, um fork do AbletonOSC (licença MIT), e o
+      kit de instalação o copia: <code>Install-RC-Bridge.cmd</code> no Windows,
       <code>Install RC Bridge.command</code> no macOS. Selecionar <strong>RCBridge</strong> em
       Settings › Link, Tempo &amp; MIDI › Control Surface continua sendo o seu passo, porque o Live
       não oferece como fazer isso por você — e a cópia também não pode acontecer de dentro do Live:
@@ -138,7 +137,7 @@
       Bridge primeiro e recorre a um AbletonOSC comum quando ele não está presente; a linha OSC do
       painel diz com qual deles está falando (<code>via RC Bridge 1.0.0 na porta 11020</code>). O
       fork também responde <code>last_event_time</code>, que o upstream nunca respondeu, então a
-      duração total do show não precisa mais da ponte MCP.
+      duração total do show é lida diretamente sem a ponte MCP.
     </p>
     <ul>
       <li>**<code>[jump NAME]</code> — um marcador que entrega a reprodução a um alvo</li>

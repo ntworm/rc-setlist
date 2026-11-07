@@ -6,10 +6,9 @@ notas em cada música.
 
 ## O que há de novo
 
-- **O RC Bridge vem dentro da extensão.** Até agora, o Control Surface com
-  quem a extensão conversa era um download à parte — o AbletonOSC, buscado e
-  instalado à mão na User Library do Live. Agora ele vem como RC Bridge, um
-  fork do AbletonOSC (licença MIT), e o kit de instalação copia para você:
+- **RC Bridge integrado à extensão.** O Control Surface com o qual
+  a extensão se comunica é distribuído como RC Bridge, um fork do
+  AbletonOSC (licença MIT), e o kit de instalação o copia:
   `Install-RC-Bridge.cmd` no Windows, `Install RC Bridge.command` no macOS.
   Selecionar **RCBridge** em Settings › Link, Tempo & MIDI › Control Surface
   continua sendo o seu passo, porque o Live não oferece como fazer isso por
@@ -28,7 +27,7 @@ notas em cada música.
   AbletonOSC comum quando ele não está presente; a linha OSC do painel diz
   com qual deles está falando (`via RC Bridge 1.0.0 na porta 11020`). O fork
   também responde `last_event_time`, que o upstream nunca respondeu, então a
-  duração total do show não precisa mais da ponte MCP.
+  duração total do show é lida diretamente sem a ponte MCP.
 - **`[jump NAME]` — um marcador que entrega a reprodução a um alvo
   _nomeado_.** Uma seção da mesma música, uma música, ou a forma
   `Song > Section`. Os nomes casam com as tags removidas e ignorando

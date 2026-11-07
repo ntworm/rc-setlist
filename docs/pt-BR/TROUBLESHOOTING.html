@@ -108,7 +108,7 @@
   </head>
   <body>
     <div class="crumbs"><a href="./">RC Setlist</a> · <a href="./README.html">Documentação</a></div>
-    <p>﻿# Solução de problemas</p>
+    <h1 id="solu-o-de-problemas">Solução de problemas</h1>
     <h2 id="o-rc-setlist-n-o-aparece-no-live">O RC Setlist não aparece no Live</h2>
     <ul>
       <li>Confirme o Ableton Live 12.4.5+ Suite (Beta).</li>
@@ -269,20 +269,31 @@
     </p>
     <h2 id="aparecem-setlists-de-outro-live-set">Aparecem setlists de outro Live Set</h2>
     <p>
-      O RC Setlist guarda vários setlists somente dentro do escopo do Live Set atual. A lista global
-      de perfis não aparece no projeto aberto. Se o projeto foi trocado enquanto uma versão antiga
-      estava rodando, reinicie o servidor do RC Setlist depois de abrir o <code>.als</code> correto.
+      O RC Setlist salva cada operação de perfil imediatamente dentro do escopo do Live Set atual. A
+      lista global de perfis não é exibida, e um Live Set novo e não salvo não importa outra sessão
+      temporária automaticamente.
     </p>
     <p>
-      Os dados globais antigos continuam preservados como backup. Somente a antiga pasta por projeto
-      que corresponde exatamente ao Live Set salvo atual é importada automaticamente.
+      Dados globais de versões anteriores são mantidos como backup e não são apagados. Apenas a
+      pasta por projeto que corresponde exatamente ao Live Set salvo atual é importada
+      automaticamente.
     </p>
     <p>
-      Se os metadados do projeto chegarem depois da inicialização, o escopo temporário do projeto é
-      promovido ao escopo do <code>.als</code> salvo. Perfis criados durante a espera, inclusive
-      <code>Second Setlist</code>, são copiados sem apagar a origem temporária. Em um Set não
-      identificado, letras ausentes só são recuperadas quando uma única ordem personalizada antiga
-      corresponde à lista completa de músicas atual; resultados ambíguos permanecem intactos.
+      Se os metadados do projeto chegarem após a inicialização, ou se for usado
+      <strong>Salvar Como</strong> sem alterar o identificador do Set, o escopo temporário do
+      projeto pode ser promovido ao escopo do <code>.als</code> salvo apenas quando esses metadados
+      postergados ainda corresponderem à mesma sessão do Live e ao mesmo escopo de perfil. Perfis
+      criados durante essa espera, incluindo <code>Second Setlist</code>, são copiados sem apagar a
+      origem temporária.
+    </p>
+    <p>
+      Após alternar entre Live Sets, reinicie o RC Setlist antes de anexar o <code>.als</code> salvo
+      pretendido. A pasta temporária criada quando o identificador do Set muda é mantida para
+      recuperação manual, mas seus perfis não são migrados automaticamente. Outras pastas
+      temporárias de sessões anteriores também são mantidas para recuperação manual. Para um Set não
+      identificado, letras ausentes só são recuperadas quando uma ordem personalizada de versão
+      anterior corresponder à lista completa de músicas atual; correspondências ambíguas permanecem
+      intactas.
     </p>
     <h2 id="o-que-incluir-em-um-bug-report">O que incluir em um bug report</h2>
     <p>
