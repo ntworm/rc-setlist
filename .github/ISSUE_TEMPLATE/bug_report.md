@@ -1,6 +1,6 @@
 ---
 name: Bug report
-about: Report a reproducible RC SETLIST problem
+about: Report a reproducible RC Setlist problem
 title: '[bug] '
 labels: bug
 assignees: ''
@@ -12,7 +12,7 @@ Describe the problem without including private setlist or lyric content.
 
 ## Environment
 
-- RC SETLIST version:
+- RC Setlist version:
 - Ableton Live version and edition:
 - Operating system:
 - Browser/controller device:

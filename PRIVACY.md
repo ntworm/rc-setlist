@@ -17,9 +17,10 @@ Removing the extension does not automatically remove that storage. See
 
 The host serves the operator and performance pages on TCP port `4444` and uses
 WebSockets for live state. Communication with RC Bridge (the bundled Remote
-Script, a fork of AbletonOSC) stays on the host through UDP. Browser clients receive setlist state, timing, lyrics and status needed for
-the interface. A controller token protects write-capable WebSocket actions;
-keep controller URLs private.
+Script, a fork of AbletonOSC) stays on the host through UDP. Browser clients
+receive setlist state, timing, lyrics and status needed for the interface. A
+controller token protects write-capable WebSocket actions; keep controller URLs
+private.
 
 ## Certificates
 

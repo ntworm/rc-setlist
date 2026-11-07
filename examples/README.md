@@ -28,7 +28,7 @@ Last Light > Verse
 Last Light > Outro [stop]
 ```
 
-Supported examples include `[loop]`, `[loop 2x]`, `[bpm 122]`, `[click]`,
+Supported tags include `[loop]`, `[loop 2x]`, `[bpm 122]`, `[click]`,
 `[click off]`, `[next]`, `[stop]`, `[skip]` and `[hidden]`.
 
 For timed lyrics, import the matching files from `demo-setlist/` through the

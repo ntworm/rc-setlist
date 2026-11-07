@@ -4,6 +4,7 @@
 - [English documentation](../README.md)
 - [Primeiros passos](PRIMEIROS-PASSOS.md)
 - [Instalação](INSTALL.md)
+- [O que há de novo na versão 1.1.0](NOTAS-DA-VERSAO-1.1.0.md)
 - [O que há de novo na versão 1.0.0](NOTAS-DA-VERSAO-1.0.0.md)
 - [Como usar o RC Setlist](USER-GUIDE.md)
 - [Solução de problemas](TROUBLESHOOTING.md)

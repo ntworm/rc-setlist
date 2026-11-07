@@ -4,7 +4,7 @@ Issues and focused pull requests are welcome. By submitting code or
 documentation, you agree that your contribution may be distributed under the
 project's [PolyForm Noncommercial 1.0.0](LICENSE) terms.
 
-## Before opening work
+## Before a pull request
 
 1. Search existing issues.
 2. Open an issue for behavioral changes or large refactors.

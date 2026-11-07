@@ -14,81 +14,17 @@
 
 **English** · [Português (Brasil)](https://github.com/ntworm/rc-setlist/blob/main/README.pt-BR.md)
 
-> **[Landing page and screenshots](https://ntworm.github.io/rc-setlist/)**
+[Landing page and screenshots](https://ntworm.github.io/rc-setlist/)
 
-**RC Setlist** is a setlist, synchronized-lyrics and stage-display extension for
-**Ableton Live 12**. It turns Arrangement locators into a setlist the operator
-runs from a laptop or tablet (Stage Control) and a read-only stage display for
-the band on any phone (Performance), with synchronized lyrics, tempo and click
-feedback, and guarded transport controls for rehearsals and live shows. It is
-free for noncommercial use and source-available.
-
-[Landing page](https://ntworm.github.io/rc-setlist/) ·
-[Installation](https://github.com/ntworm/rc-setlist/blob/main/docs/INSTALL.md) ·
-[User guide](https://github.com/ntworm/rc-setlist/blob/main/docs/USER-GUIDE.md) ·
-[Português (Brasil)](https://github.com/ntworm/rc-setlist/blob/main/README.pt-BR.md) ·
-[Latest release](https://github.com/ntworm/rc-setlist/releases/latest)
+RC Setlist is an extension for Ableton Live 12 that runs the setlist of a show
+from the Arrangement. It reads the Arrangement locators of a Live Set and shows
+them in the browser: a setlist for the operator (Stage Control) and a read-only
+display for the band (Performance). The timing comes from Live.
 
 > **Network safety:** RC Setlist serves browser controls on your local network.
-> Use it only on a trusted LAN, keep the controller URL/token private, and never
-> expose port `4444` directly to the public internet. See [SECURITY.md](https://github.com/ntworm/rc-setlist/blob/main/SECURITY.md).
-
-## What is new in 1.1.0
-
-Full details in the [1.1.0 release notes](https://github.com/ntworm/rc-setlist/blob/main/docs/RELEASE-NOTES-1.1.0.md).
-
-- **Live panel.** Three tabs: Main, Setlists, Network. Main shows one QR code,
-  Stage Control by default, and a button that switches it to the Performance
-  view; below it, the active setlist, song count, show time and song list.
-- **Setlist management in the panel.** Activate, rename, delete, create and
-  restore setlists while the transport is stopped. A delete is confirmed in
-  the row and can be undone from the Deleted list.
-- **Setlist packages.** _Export all_ writes the setlists of the Live Set
-  (order, song colours and notes, lyrics) to one `.rcsetlist` file. _Import_
-  adds the setlists of a package to the existing ones; a duplicate name gets a
-  number, and a failed import is rolled back. Files are kept in the `packages`
-  folder of the extension data, because Live allows an extension to write only
-  there; the panel shows the path.
-- **Second computer.** Pair a second computer running Live with a six-digit
-  code. Play, Stop, jumps, click, quantization, count-in, refresh and panic are
-  sent to it; setlist and marker editing stay on the main computer. A second
-  status dot in the Stage Control header is green when the link is up and the
-  markers match, amber when the markers differ, red when it does not answer.
-- **Collapsible song list.** The three-dot button next to a song collapses its
-  sections; _Fold all / Unfold all_ acts on the whole list. Hold the song name
-  or number to jump; drag the grip on the right edge of the card to reorder.
-- **Local certificate.** The extension creates a certificate authority for
-  this computer, valid for localhost and private network addresses. The
-  Network tab shows a QR code for an install page on port `4445`; with the
-  certificate installed, the browser opens the pages without a warning.
-- **Network address.** The QR code uses the address of the default route
-  instead of the first private address, so a second network interface
-  (lighting, audio) does not replace the Wi-Fi address.
-- **Fixes.** The top bar fits on one row in both languages;
-  reordering works on Windows; saving works when Live refuses `fsync`;
-  pairing is bound to the key of the second computer, so an address change
-  keeps the link.
-
-## Highlights
-
-- Locator-driven songs and sections with `[loop]`, `[loop Nx]`, `[stop]`,
-  `[next]`, `[bpm N]`, `[click]`, `[click off]`, `[skip]` and `[hidden]` tags.
-- Setlist and performance views for desktop, notebook, tablet and phone.
-- Synchronized `.lrc` lyrics plus an in-browser timing and editing workflow.
-- Guarded transport, quantization feedback and counted-loop handling.
-- Per-profile ordering, lyrics and CSV export stored locally.
-- Multiple saved setlists scoped to the current Ableton Live Set, with
-  recoverable delete/restore.
-- Song durations and total setlist duration calculated from the Arrangement.
-- Fullscreen stage mode with Screen Wake Lock when the browser supports it.
-- English and Brazilian Portuguese interfaces in the same `.ablx`.
-- No account, cloud sync, analytics or telemetry.
-- Keyboard Mapping for assigning transport and view actions to Numpad or alpha keys.
-- Second computer: pair it from the Live panel and the transport commands are
-  sent to it over a pinned link.
-- Live panel with three tabs, Main, Setlists and Network: the QR code, the
-  setlists and the second computer.
-- Setlist packages: every setlist of a Live Set in one file, to import again.
+> Use it only on a trusted LAN, keep the controller URL and token private, and
+> never expose port `4444` directly to the public internet. See
+> [SECURITY.md](https://github.com/ntworm/rc-setlist/blob/main/SECURITY.md).
 
 ## Requirements
 
@@ -96,51 +32,41 @@ Full details in the [1.1.0 release notes](https://github.com/ntworm/rc-setlist/b
 - RC Bridge, the bundled Remote Script (a fork of
   [AbletonOSC](https://github.com/ideoforms/AbletonOSC)), selected as a Live
   Control Surface for transport and Live Object Model operations.
-- Node.js 24.16.0 or newer in the Node 24 LTS line only when developing from
+- Node.js 24.16.0 or newer in the Node 24 LTS line, only when developing from
   source. End users install the `.ablx` and do not need Node.js.
 
 Windows is the validated release platform. macOS support remains experimental
 until it is exercised on real macOS hardware.
 
-## Quick start
+## Install
 
-1. Install RC Bridge: run the kit's `Install-RC-Bridge.cmd` / `Install RC Bridge.command`, then choose RCBridge as a Control Surface in Live.
+1. Install RC Bridge: run the kit's `Install-RC-Bridge.cmd` (Windows) or
+   `Install RC Bridge.command` (macOS), then choose RCBridge as a Control
+   Surface in Live.
 2. Download `RC-Setlist-1.1.0.ablx` and the installation kit from the
    [1.1.0 release](https://github.com/ntworm/rc-setlist/releases/tag/v1.1.0).
 3. If RC Setlist is already installed, remove it in Live's extension settings
-   (Live refuses to install over an existing extension folder; your data
-   folder stays). Then open the `.ablx` and approve the installation in Live.
-4. In Live, open **Extensions > RC Setlist** and start the server.
-5. Use the panel URL or QR code to open `/setlist` or `/performance`.
-6. To stop the certificate warning, scan the **Certificate** QR in the panel
+   (Live refuses to install over an existing extension folder; your data folder
+   stays). Then open the `.ablx` and approve the installation in Live.
+4. In Live, open **Extensions > RC Setlist** and start the server. Open the
+   panel URL or the QR code to reach `/setlist` or `/performance`.
+5. To remove the certificate warning, scan the **Certificate** QR in the panel
    once and follow the steps on that page.
-7. Press **EN** or **PT** at the top right of the panel to choose English or
-   **Português (Brasil)**.
+6. Press **EN** or **PT** at the top right of the panel to choose English or
+   Brazilian Portuguese.
 
-If your data is in the 0.x layout (`Ableton-RC-Setlist-0.4.x`–`0.7.0`), run
-the kit's `Migrate-RC-Setlist-Data.cmd` (Windows) or
-`Migrate RC Setlist Data.command` (macOS) once before opening Live.
-The script copies profiles, project-setlists and preferences into the new
-layout without touching the old one. If your data is in the `1.0` layout
-(`RC-Setlist-1.0.0.ablx`), there is nothing to migrate. On the first start,
-the extension signs a new server certificate with the certificate authority
-of this computer, so a browser that accepted a previous certificate asks
-once more, or stops asking once the phone certificate is installed.
+Data in the `RC-Setlist-1.0.0.ablx` layout runs without migration. To move data
+from the 0.x layout (`Ableton-RC-Setlist-0.4.x`–`0.7.0`), run the kit's
+`Migrate-RC-Setlist-Data.cmd` (Windows) or `Migrate RC Setlist Data.command`
+(macOS) once before opening Live; the script copies profiles, project setlists
+and preferences into the 1.x layout and leaves the old folder untouched.
+
 Full instructions are in [docs/INSTALL.md](https://github.com/ntworm/rc-setlist/blob/main/docs/INSTALL.md).
 
-## Locator format
+## How it works
 
-```text
-Neon Signal [bpm 122] [click]
-Neon Signal > Intro
-Neon Signal > Chorus [loop 2x]
-Neon Signal > Outro [stop]
-```
-
-All examples in this repository are fictional. See [examples/README.md](https://github.com/ntworm/rc-setlist/blob/main/examples/README.md)
-for a complete demonstration set.
-
-## Architecture
+RC Bridge, the Remote Script that ships with the extension, is the Live side of
+the link:
 
 ```text
 Ableton Live + RC Bridge (bundled fork of AbletonOSC)
@@ -153,9 +79,76 @@ Ableton Live + RC Bridge (bundled fork of AbletonOSC)
           └── /performance   stage display
 ```
 
-The extension is local-first. The SDK-facing files are at the boundary; the
-parser, state, transport policy, persistence and browser clients are testable
-through the public dependency gate.
+Songs and sections come from the locators. The supported tags are `[loop]`,
+`[loop Nx]`, `[stop]`, `[next]`, `[bpm N]`, `[click]`, `[click off]`, `[skip]`
+and `[hidden]`.
+
+```text
+Neon Signal [bpm 122] [click]
+Neon Signal > Intro
+Neon Signal > Chorus [loop 2x]
+Neon Signal > Outro [stop]
+```
+
+All examples in this repository are fictional. See
+[examples/README.md](https://github.com/ntworm/rc-setlist/blob/main/examples/README.md) for a complete demonstration set.
+
+## Features
+
+- Both pages run in a desktop, notebook, tablet or phone browser on the
+  network.
+- Synchronized `.lrc` lyrics, with the timing and the editing in the browser.
+- Guarded transport with a 500 ms hold on the buttons, quantization feedback
+  and counted-loop handling.
+- Per-profile ordering, lyrics and CSV export, stored locally.
+- Multiple saved setlists scoped to the current Ableton Live Set.
+- Song durations and total setlist duration calculated from the Arrangement.
+- Fullscreen stage mode with Screen Wake Lock when the browser supports it.
+- English and Brazilian Portuguese interfaces in the same `.ablx`.
+- Keyboard Mapping for assigning transport and view actions to Numpad or alpha
+  keys.
+- No account, cloud sync, analytics or telemetry.
+
+## What is new in 1.1.0
+
+Full details in the [1.1.0 release notes](https://github.com/ntworm/rc-setlist/blob/main/docs/RELEASE-NOTES-1.1.0.md).
+
+- **Live panel.** Three tabs, Main, Setlists and Network: the QR code, the
+  active setlist and the second computer.
+- **Setlist management in the panel.** Activate, rename, delete, create and
+  restore setlists while the transport is stopped.
+- **Setlist packages.** Export all the setlists of a Live Set to one
+  `.rcsetlist` file and import them again.
+- **Second computer.** Pair a second computer running Live with a six-digit
+  code; the transport commands are sent to it.
+- **Collapsible song list.** Collapse the sections of a song, fold or unfold the
+  whole list, hold the song name to jump and drag the grip to reorder.
+- **Local certificate.** The extension creates a certificate authority for this
+  computer, valid for localhost and private network addresses, and the Network
+  tab shows a QR code for the install page on port `4445`.
+- **Network address.** The QR code uses the address of the default route.
+
+## Documentation
+
+- [Documentation index](https://github.com/ntworm/rc-setlist/blob/main/docs/README.md)
+- [Getting started](https://github.com/ntworm/rc-setlist/blob/main/docs/GETTING-STARTED.md)
+- [Installation](https://github.com/ntworm/rc-setlist/blob/main/docs/INSTALL.md)
+- [User guide](https://github.com/ntworm/rc-setlist/blob/main/docs/USER-GUIDE.md)
+- [What is new in 1.1.0](https://github.com/ntworm/rc-setlist/blob/main/docs/RELEASE-NOTES-1.1.0.md)
+- [What is new in 1.0.0](https://github.com/ntworm/rc-setlist/blob/main/docs/RELEASE-NOTES-1.0.0.md)
+- [Troubleshooting](https://github.com/ntworm/rc-setlist/blob/main/docs/TROUBLESHOOTING.md)
+- [Frequently asked questions](https://github.com/ntworm/rc-setlist/blob/main/docs/FAQ.md)
+- [Tester guide](https://github.com/ntworm/rc-setlist/blob/main/docs/TESTER-GUIDE.md)
+- [Develop from source](https://github.com/ntworm/rc-setlist/blob/main/docs/DEVELOPMENT.md)
+- [Contracts](https://github.com/ntworm/rc-setlist/blob/main/docs/CONTRACTS.md)
+- [Release history](https://github.com/ntworm/rc-setlist/blob/main/docs/HISTORY.md)
+- [Theme contract](https://github.com/ntworm/rc-setlist/blob/main/docs/THEME_CONTRACT.md)
+- [Code of conduct](https://github.com/ntworm/rc-setlist/blob/main/CODE_OF_CONDUCT.md)
+- [Privacy](https://github.com/ntworm/rc-setlist/blob/main/PRIVACY.md)
+- [Security](https://github.com/ntworm/rc-setlist/blob/main/SECURITY.md)
+- [Support](https://github.com/ntworm/rc-setlist/blob/main/SUPPORT.md)
+- [Contributing](https://github.com/ntworm/rc-setlist/blob/main/CONTRIBUTING.md)
+- [Third-party notices](https://github.com/ntworm/rc-setlist/blob/main/THIRD_PARTY_NOTICES.md)
 
 ## Development
 
@@ -164,29 +157,19 @@ npm ci
 npm run ci:public
 ```
 
+The extension is local-first. The SDK-facing files are at the boundary, and the
+parser, state, transport policy, persistence and browser clients are testable
+through the public dependency gate.
+
 The Ableton SDK and CLI are not redistributed in this source repository.
 Authorized developers can configure a complete build using
 [vendor/README.md](https://github.com/ntworm/rc-setlist/blob/main/vendor/README.md) and [docs/DEVELOPMENT.md](https://github.com/ntworm/rc-setlist/blob/main/docs/DEVELOPMENT.md).
 
-## Documentation
-
-- [Documentation index](https://github.com/ntworm/rc-setlist/blob/main/docs/README.md)
-- [What is new in 1.1.0](https://github.com/ntworm/rc-setlist/blob/main/docs/RELEASE-NOTES-1.1.0.md)
-- [Notas da versão 1.1.0 (pt-BR)](https://github.com/ntworm/rc-setlist/blob/main/docs/pt-BR/NOTAS-DA-VERSAO-1.1.0.md)
-- [What is new in 1.0.0](https://github.com/ntworm/rc-setlist/blob/main/docs/RELEASE-NOTES-1.0.0.md)
-- [Notas da versão 1.0.0 (pt-BR)](https://github.com/ntworm/rc-setlist/blob/main/docs/pt-BR/NOTAS-DA-VERSAO-1.0.0.md)
-- [Installation](https://github.com/ntworm/rc-setlist/blob/main/docs/INSTALL.md)
-- [User guide](https://github.com/ntworm/rc-setlist/blob/main/docs/USER-GUIDE.md)
-- [Português (Brasil)](https://github.com/ntworm/rc-setlist/blob/main/docs/pt-BR/README.md)
-- [Troubleshooting](https://github.com/ntworm/rc-setlist/blob/main/docs/TROUBLESHOOTING.md)
-- [Tester guide](https://github.com/ntworm/rc-setlist/blob/main/docs/TESTER-GUIDE.md)
-- [Development](https://github.com/ntworm/rc-setlist/blob/main/docs/DEVELOPMENT.md)
-- [Contracts](https://github.com/ntworm/rc-setlist/blob/main/docs/CONTRACTS.md)
-- [Privacy](https://github.com/ntworm/rc-setlist/blob/main/PRIVACY.md)
-- [Security](https://github.com/ntworm/rc-setlist/blob/main/SECURITY.md)
-- [Support](https://github.com/ntworm/rc-setlist/blob/main/SUPPORT.md)
-- [Contributing](https://github.com/ntworm/rc-setlist/blob/main/CONTRIBUTING.md)
-- [Third-party notices](https://github.com/ntworm/rc-setlist/blob/main/THIRD_PARTY_NOTICES.md)
+The installation kit is built with `npm run package:kit`. It writes
+`release-candidates/RC-Setlist-1.1.0-Installation-Kit.zip` with the `.ablx`,
+the `START-HERE.html` page, the `README.txt` instructions, the `RC-Bridge/`
+installers, the 0.x migration scripts and the documentation folders `en/` and
+`pt-BR/`.
 
 ## License
 

@@ -9,12 +9,9 @@
 | Private dev builds (`0.7.x` private, etc.) | Unsupported |
 
 Security fixes are provided for the latest published release of the
-`1.0.x` line. Older `1.x` and the `0.x` lineage are unsupported. The
-private `0.7.x` development builds that pre-date the public release are
-not covered by this policy either; users running them must upgrade to
-`1.0.0` to receive security fixes.
+supported line.
 
-## Report privately
+## Private reporting
 
 Do not open a public issue for a vulnerability. Use GitHub's private reporting
 form:

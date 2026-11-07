@@ -1,6 +1,6 @@
 ---
 name: Feature request
-about: Propose an RC SETLIST improvement
+about: Propose an RC Setlist improvement
 title: '[feature] '
 labels: enhancement
 assignees: ''

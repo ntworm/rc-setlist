@@ -1,6 +1,6 @@
 ﻿# Support
 
-Use the following channel for each kind of request:
+Each kind of request has its own channel:
 
 - Installation or usage question: [GitHub Discussions](https://github.com/ntworm/rc-setlist/discussions)
 - Confirmed bug: [bug report](https://github.com/ntworm/rc-setlist/issues/new?template=bug_report.md)
