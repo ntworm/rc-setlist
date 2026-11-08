@@ -159,7 +159,6 @@ async function qrFrame(page, frame) {
   });
 }
 
-// A QR frame once its code is drawn: the panel draws it asynchronously.
 async function drawnQr(page, frame) {
   await expect.poll(async () => (await qrFrame(page, frame)).source).not.toBe('');
   return qrFrame(page, frame);
@@ -276,7 +275,6 @@ test('another address changes the links and every code', async ({ page }) => {
   await expect(page.locator('#certUrl')).toHaveText('http://192.168.0.10:4445/ca');
   await expect(page.locator('#networkPrimaryIp')).toHaveText('192.168.0.10');
 
-  // The codes are drawn after the change, so wait for each one to differ.
   for (const [frame, before] of [
     ['#qrSetlist', stageBefore],
     ['#qrCert', certBefore],
