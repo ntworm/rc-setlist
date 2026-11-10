@@ -40,7 +40,7 @@ until it is exercised on real macOS hardware.
 ## Install
 
 1. Download `RC-Setlist-1.1.0.ablx` and the installation kit from the
-   [1.1.0 release](https://github.com/ntworm/rc-setlist/releases/tag/v1.1.0).
+   [latest release](https://github.com/ntworm/rc-setlist/releases/latest).
 2. Install RC Bridge from the kit: run `Install-RC-Bridge.cmd` (Windows) or
    `Install RC Bridge.command` (macOS), then choose RCBridge as a Control
    Surface in Live.

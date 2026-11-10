@@ -26,7 +26,7 @@ test('landing exposes current metadata, calls to action and legal positioning', 
 
   await expect(page.locator('#download')).toHaveAttribute(
     'href',
-    'https://github.com/ntworm/rc-setlist/releases/tag/v1.1.0',
+    'https://github.com/ntworm/rc-setlist/releases/latest',
   );
   await expect(page.locator('#documentation')).toHaveAttribute(
     'href',

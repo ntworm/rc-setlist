@@ -30,7 +30,7 @@ experimental até ser validado em hardware Apple físico dedicado.
 ## Instalação
 
 1. Baixe o `RC-Setlist-1.1.0.ablx` e o kit de instalação na
-   [versão 1.1.0](https://github.com/ntworm/rc-setlist/releases/tag/v1.1.0).
+   [versão mais recente](https://github.com/ntworm/rc-setlist/releases/latest).
 2. Instale o RC Bridge a partir do kit: execute o `Install-RC-Bridge.cmd`
    (Windows) ou `Install RC Bridge.command` (macOS) e selecione RCBridge como
    Control Surface no Live.

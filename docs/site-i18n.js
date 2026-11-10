@@ -223,7 +223,7 @@
     'install.title': 'Instalação',
     'install.s1': 'Baixe',
     'install.s1d':
-      '<code>RC-Setlist-1.1.0.ablx</code> e o kit de instalação, na <a href="https://github.com/ntworm/rc-setlist/releases/tag/v1.1.0">versão 1.1.0</a>.',
+      '<code>RC-Setlist-1.1.0.ablx</code> e o kit de instalação, na <a href="https://github.com/ntworm/rc-setlist/releases/latest">versão mais recente</a>.',
     'install.s2': 'Instale o RC Bridge',
     'install.s2d':
       'Rode <code>Install-RC-Bridge.cmd</code> (Windows) ou <code>Install RC Bridge.command</code> (macOS), que vêm no kit. No Live, abra <b>Settings › Link, Tempo &amp; MIDI</b> e escolha <b>RCBridge</b> como Control Surface.',
