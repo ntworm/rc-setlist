@@ -58,6 +58,26 @@ test('pre-roll toggle is an explicit local command policy', () => {
   });
 });
 
+test('getStatus returns the saved status of a retained command without its payload', async () => {
+  const { bus } = createBus();
+  try {
+    assert.equal(bus.getStatus('unknown'), null);
+    const command = bus.registerCommand('status-1', 'save_lyrics', { secret: 'x' }, 'client-a');
+    const result = settled(bus, command.commandId);
+    bus.dispatch(command, () => {
+      throw new Error('raw failure');
+    });
+    await result;
+    assert.deepEqual(bus.getStatus('status-1'), {
+      status: 'failed',
+      sourceClientId: 'client-a',
+      reason: 'execution_failed',
+    });
+  } finally {
+    bus.stop();
+  }
+});
+
 test('local commands confirm only after their handler promise resolves', async () => {
   const { bus } = createBus();
   let release;

@@ -20,10 +20,23 @@ export interface EventLogEntry {
   [key: string]: unknown;
 }
 
+/**
+ * File functions the logger writes through; tests replace them.
+ *
+ * `rotate` reports success with `true`; `false` or a thrown error means the
+ * file was not rotated and the logger keeps counting its size.
+ */
+export interface EventLogFileOps {
+  appendFile(filePath: string, data: string): Promise<void>;
+  stat(filePath: string): Promise<{ size: number }>;
+  rotate(): boolean;
+}
+
 export interface EventLoggerOptions {
   maxSizeBytes?: number;
   maxRotationFiles?: number;
   dedupWindowMs?: number;
+  fileOps?: Partial<EventLogFileOps>;
 }
 
 const REDACT_RE = /(?:token|secret|password|key)=(?:[^\s&"']+)/gi;
@@ -76,8 +89,9 @@ export class EventLogger {
 
   private queue: EventLogEntry[] = [];
   private droppedEventsCount = 0;
-  private isFlushing = false;
   private flushPromise: Promise<void> | null = null;
+  private readonly fileOps: EventLogFileOps;
+  private currentSize: number | null = null;
 
   private lastEntryKey: string | null = null;
   private lastEntryTime = 0;
@@ -93,6 +107,12 @@ export class EventLogger {
       fs.mkdirSync(globalStorageDir, { recursive: true });
     }
     this.logPath = path.join(globalStorageDir, 'events.log');
+    this.fileOps = {
+      appendFile: (filePath, data) => fs.promises.appendFile(filePath, data, 'utf8'),
+      stat: (filePath) => fs.promises.stat(filePath),
+      rotate: () => this.rotateFiles(),
+      ...options.fileOps,
+    };
   }
 
   public log(entry: Omit<EventLogEntry, 'timestamp'>): void {
@@ -131,48 +151,76 @@ export class EventLogger {
     };
 
     this.queue.push(fullEntry);
-    this.scheduleFlush();
+    void this.scheduleFlush();
   }
 
-  private scheduleFlush(): void {
-    if (this.isFlushing) return;
-    this.isFlushing = true;
-    this.flushPromise = Promise.resolve().then(() => this.processQueue());
+  /** Starts a flush unless one is in flight; that one picks up new entries. */
+  private scheduleFlush(): Promise<void> {
+    if (!this.flushPromise) {
+      this.flushPromise = Promise.resolve().then(() => this.processQueue());
+    }
+    return this.flushPromise;
   }
 
   private async processQueue(): Promise<void> {
     try {
-      while (this.queue.length > 0) {
-        const item = this.queue.shift();
-        if (!item) break;
-
-        const line = JSON.stringify(item) + '\n';
-        const lineBytes = Buffer.byteLength(line, 'utf8');
-
-        let currentSize = 0;
+      if (this.currentSize === null) {
         try {
-          const stat = fs.statSync(this.logPath);
-          currentSize = stat.size;
+          this.currentSize = (await this.fileOps.stat(this.logPath)).size;
         } catch {
-          // File does not exist yet
+          this.currentSize = 0; // File does not exist yet
         }
-
-        if (currentSize + lineBytes > this.maxSizeBytes) {
-          this.rotateFiles();
-        }
-
-        await fs.promises.appendFile(this.logPath, line, 'utf8');
+      }
+      while (this.queue.length > 0) {
+        await this.writeBatch(this.queue.splice(0));
       }
     } catch (err) {
       log.error('core', 'Failed to write log batch', {
         error: err instanceof Error ? err.message : String(err),
       });
     } finally {
-      this.isFlushing = false;
+      this.flushPromise = null;
     }
   }
 
-  private rotateFiles(): void {
+  /** Writes one appendFile per chunk, rotating where a chunk would pass the limit. */
+  private async writeBatch(batch: EventLogEntry[]): Promise<void> {
+    let chunk = '';
+    let chunkBytes = 0;
+    for (const item of batch) {
+      const line = JSON.stringify(item) + '\n';
+      const lineBytes = Buffer.byteLength(line, 'utf8');
+      if ((this.currentSize ?? 0) + chunkBytes + lineBytes > this.maxSizeBytes) {
+        if (chunk) {
+          await this.appendChunk(chunk, chunkBytes);
+          chunk = '';
+          chunkBytes = 0;
+        }
+        if (this.tryRotate()) this.currentSize = 0;
+      }
+      chunk += line;
+      chunkBytes += lineBytes;
+    }
+    if (chunk) await this.appendChunk(chunk, chunkBytes);
+  }
+
+  private async appendChunk(chunk: string, chunkBytes: number): Promise<void> {
+    await this.fileOps.appendFile(this.logPath, chunk);
+    this.currentSize = (this.currentSize ?? 0) + chunkBytes;
+  }
+
+  private tryRotate(): boolean {
+    try {
+      return this.fileOps.rotate();
+    } catch (err) {
+      log.error('core', 'Log rotation failed', {
+        error: err instanceof Error ? err.message : String(err),
+      });
+      return false;
+    }
+  }
+
+  private rotateFiles(): boolean {
     try {
       const oldestFile = path.join(this.globalStorageDir, `events.log.${this.maxRotationFiles}`);
       if (fs.existsSync(oldestFile)) {
@@ -190,10 +238,12 @@ export class EventLogger {
       if (fs.existsSync(this.logPath)) {
         fs.renameSync(this.logPath, path.join(this.globalStorageDir, 'events.log.1'));
       }
+      return true;
     } catch (err) {
       log.error('core', 'Log rotation failed', {
         error: err instanceof Error ? err.message : String(err),
       });
+      return false;
     }
   }
 
@@ -205,9 +255,10 @@ export class EventLogger {
       }
       this.lastRepeatCount = 0;
     }
-    await this.processQueue();
-    if (this.flushPromise) {
-      await this.flushPromise;
+    // A caller during a flush awaits the flush in flight; a later one may
+    // have started for entries logged meanwhile.
+    while (this.queue.length > 0 || this.flushPromise) {
+      await this.scheduleFlush();
     }
   }
 

@@ -192,18 +192,28 @@ function getOrGenerateToken(): string {
     fs.mkdirSync(bridgeState.globalPersistenceDir, { recursive: true });
   }
   const tokenPath = path.join(bridgeState.globalPersistenceDir, 'token');
+  let existing = '';
   try {
     if (fs.existsSync(tokenPath)) {
-      const tok = fs.readFileSync(tokenPath, 'utf8').trim();
-      if (tok) return tok;
+      existing = fs.readFileSync(tokenPath, 'utf8').trim();
     }
   } catch (err) {
     console.error('[Security] Failed to read token:', err);
   }
+  if (existing) {
+    // A file written before the mode was set keeps working; failing to
+    // tighten it must not replace the token the clients already hold.
+    try {
+      fs.chmodSync(tokenPath, 0o600);
+    } catch (err) {
+      console.error('[Security] Failed to restrict token file mode:', err);
+    }
+    return existing;
+  }
 
   const token = randomBytes(16).toString('hex'); // 32 hex characters
   try {
-    fs.writeFileSync(tokenPath, token, 'utf8');
+    fs.writeFileSync(tokenPath, token, { encoding: 'utf8', mode: 0o600 });
     console.log('[Security] Generated new security token.');
   } catch (err) {
     console.error('[Security] Failed to write token:', err);
@@ -604,8 +614,22 @@ export async function startServer(options: StartServerOptions = {}): Promise<voi
 
       const commandId =
         effectiveMsg.commandId || `legacy-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+      const senderId = ws.clientId || ws.remoteAddress || 'unknown';
       if (bridgeState.commandBus?.isDuplicate(commandId)) {
         console.warn(`[CommandBus] Discarding duplicate command ID: ${commandId}`);
+        // The sender of a retry learns the saved status; nobody else does.
+        const saved = bridgeState.commandBus.getStatus(commandId);
+        if (saved && saved.sourceClientId === senderId) {
+          ws.send(
+            JSON.stringify({
+              type: 'command_status',
+              commandId,
+              status: saved.status,
+              ...(saved.reason ? { reason: saved.reason } : {}),
+              ...(saved.error ? { error: saved.error } : {}),
+            }),
+          );
+        }
         return;
       }
 
@@ -613,7 +637,7 @@ export async function startServer(options: StartServerOptions = {}): Promise<voi
         commandId,
         effectiveMsg.type,
         effectiveMsg,
-        ws.clientId || ws.remoteAddress || 'unknown',
+        senderId,
       );
 
       if (command) {

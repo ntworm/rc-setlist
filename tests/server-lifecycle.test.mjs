@@ -4,8 +4,9 @@ import * as net from 'node:net';
 import * as path from 'node:path';
 import * as fs from 'node:fs';
 import { tmpdir } from 'node:os';
+import { WebSocket } from 'ws';
 import { setExtensionContext, clearExtensionContext } from '../src/context.ts';
-import { startServer, stopServer, isServerRunning } from '../src/index.ts';
+import { startServer, stopServer, isServerRunning, getAuthToken } from '../src/index.ts';
 import { bridgeState } from '../src/runtime/bridge-state.ts';
 import { closeHttpServer, getProjectMetadataRequestToken } from '../src/server-lifecycle.ts';
 
@@ -218,6 +219,93 @@ test('Server Lifecycle: start, stop, port collision handling', async () => {
     await stopServer();
     assert.strictEqual(isServerRunning(), false);
   } finally {
+    clearExtensionContext();
+    // Cleanup the temporary directory
+    try {
+      fs.rmSync(testStorageDir, { recursive: true, force: true });
+    } catch {
+      // swallow: nothing to do here on purpose
+    }
+  }
+});
+
+test(
+  'Server Lifecycle: new token files are readable by their owner only',
+  { skip: process.platform === 'win32' ? 'Windows does not apply POSIX file modes' : false },
+  async () => {
+    const testStorageDir = fs.mkdtempSync(path.join(tmpdir(), 'setlist-test-mode-'));
+    setExtensionContext({ environment: { storageDirectory: testStorageDir } });
+    try {
+      await startServer({
+        port: await getFreePort(),
+        skipOsc: true,
+        skipCerts: true,
+        skipProjectDetector: true,
+      });
+      for (const name of ['token', 'peer-token']) {
+        const mode = fs.statSync(path.join(testStorageDir, name)).mode & 0o777;
+        assert.strictEqual(mode, 0o600, `${name} must be readable by its owner only`);
+      }
+    } finally {
+      await stopServer();
+      clearExtensionContext();
+      fs.rmSync(testStorageDir, { recursive: true, force: true });
+    }
+  },
+);
+
+function nextMessage(ws, predicate) {
+  return new Promise((resolve) => {
+    const handler = (data) => {
+      const msg = JSON.parse(data.toString());
+      if (predicate(msg)) {
+        ws.off('message', handler);
+        resolve(msg);
+      }
+    };
+    ws.on('message', handler);
+  });
+}
+
+test('Server Lifecycle: a settled duplicate commandId answers its sender with the saved status', async () => {
+  const testStorageDir = fs.mkdtempSync(path.join(tmpdir(), 'setlist-test-dup-'));
+  setExtensionContext({ environment: { storageDirectory: testStorageDir } });
+  const port = await getFreePort();
+  let ws;
+  try {
+    await startServer({ port, skipOsc: true, skipCerts: true, skipProjectDetector: true });
+
+    let dispatches = 0;
+    const bus = bridgeState.commandBus;
+    const dispatch = bus.dispatch.bind(bus);
+    bus.dispatch = (...args) => {
+      dispatches++;
+      return dispatch(...args);
+    };
+
+    ws = new WebSocket(`ws://127.0.0.1:${port}/ws?token=${getAuthToken()}`);
+    await new Promise((resolve, reject) => {
+      ws.on('open', resolve);
+      ws.on('error', reject);
+    });
+    const ack = nextMessage(ws, (msg) => msg.type === 'handshake_ack');
+    ws.send(JSON.stringify({ type: 'handshake', clientId: 'dup-client' }));
+    ws.send(JSON.stringify({ type: 'sync_confirm', stateVersion: (await ack).stateVersion }));
+    await new Promise((resolve) => setTimeout(resolve, 50));
+
+    const command = { type: 'set_mode', mode: 'show', commandId: 'dup-settled' };
+    const isStatus = (msg) => msg.type === 'command_status' && msg.commandId === 'dup-settled';
+    const first = nextMessage(ws, isStatus);
+    ws.send(JSON.stringify(command));
+    const broadcast = await first;
+
+    const second = nextMessage(ws, isStatus);
+    ws.send(JSON.stringify(command));
+    assert.deepStrictEqual(await second, broadcast);
+    assert.strictEqual(dispatches, 1, 'the duplicate must not run again');
+  } finally {
+    ws?.close();
+    await stopServer();
     clearExtensionContext();
     // Cleanup the temporary directory
     try {
