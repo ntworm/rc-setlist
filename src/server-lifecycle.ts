@@ -18,6 +18,7 @@ import { getExtensionContext } from './context.js';
 import { SetlistManager } from './core/setlist-manager.js';
 import { JumpScheduler, type PendingJump } from './core/next-downbeat-jump.js';
 import { isStringArray, parseJson } from './util/json.js';
+import { atomicWriteFileSync } from './util/atomic-write.js';
 import { EventLogger } from './core/event-log.js';
 import { CommandBus } from './core/command-bus.js';
 import { OSCClient } from './integration/osc-client.js';
@@ -213,7 +214,8 @@ function getOrGenerateToken(): string {
 
   const token = randomBytes(16).toString('hex'); // 32 hex characters
   try {
-    fs.writeFileSync(tokenPath, token, { encoding: 'utf8', mode: 0o600 });
+    // A replaced file gets the mode too: the rename swaps in a new owner-only file.
+    atomicWriteFileSync(tokenPath, token, { mode: 0o600 });
     console.log('[Security] Generated new security token.');
   } catch (err) {
     console.error('[Security] Failed to write token:', err);

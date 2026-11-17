@@ -23,6 +23,7 @@ import { httpsOptions } from '../server/cert.js';
 import { writePeerConfig, type PeerConfig } from '../preferences.js';
 import { bridgeState } from './bridge-state.js';
 import { log } from '../util/log.js';
+import { atomicWriteFileSync } from '../util/atomic-write.js';
 
 /** How long a pairing code stays usable. */
 const PAIRING_CODE_TTL_MS = 10 * 60 * 1000;
@@ -230,7 +231,8 @@ export function getOrGeneratePeerToken(): string {
   let token = randomBytes(16).toString('hex'); // 32 hex characters
   while (token === bridgeState.authToken) token = randomBytes(16).toString('hex');
   try {
-    fs.writeFileSync(tokenPath, token, { encoding: 'utf8', mode: 0o600 });
+    // A replaced file gets the mode too: the rename swaps in a new owner-only file.
+    atomicWriteFileSync(tokenPath, token, { mode: 0o600 });
   } catch (err) {
     log.error('peer', 'Failed to write the peer token.', {
       error: err instanceof Error ? err.message : String(err),

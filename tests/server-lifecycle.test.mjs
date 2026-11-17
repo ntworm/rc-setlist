@@ -254,6 +254,53 @@ test(
   },
 );
 
+test(
+  'Server Lifecycle: token files replaced over an old readable file end owner-only',
+  { skip: process.platform === 'win32' ? 'Windows does not apply POSIX file modes' : false },
+  async () => {
+    // Empty files are replaced; a peer token equal to the auth token is too.
+    for (const [tokenContent, peerContent] of [
+      ['', ''],
+      ['kept-auth-token', 'kept-auth-token'],
+    ]) {
+      const testStorageDir = fs.mkdtempSync(path.join(tmpdir(), 'setlist-test-replace-'));
+      const tokenFile = path.join(testStorageDir, 'token');
+      const peerFile = path.join(testStorageDir, 'peer-token');
+      for (const [file, content] of [
+        [tokenFile, tokenContent],
+        [peerFile, peerContent],
+      ]) {
+        fs.writeFileSync(file, content);
+        fs.chmodSync(file, 0o644);
+      }
+      setExtensionContext({ environment: { storageDirectory: testStorageDir } });
+      try {
+        await startServer({
+          port: await getFreePort(),
+          skipOsc: true,
+          skipCerts: true,
+          skipProjectDetector: true,
+        });
+        const token = fs.readFileSync(tokenFile, 'utf8').trim();
+        const peer = fs.readFileSync(peerFile, 'utf8').trim();
+        assert.ok(token, 'the auth token is written');
+        if (tokenContent) assert.strictEqual(token, tokenContent, 'an existing auth token is kept');
+        assert.ok(
+          peer && peer !== token,
+          'the peer token is replaced and differs from the auth token',
+        );
+        for (const file of [tokenFile, peerFile]) {
+          assert.strictEqual(fs.statSync(file).mode & 0o777, 0o600, `${file} must be owner-only`);
+        }
+      } finally {
+        await stopServer();
+        clearExtensionContext();
+        fs.rmSync(testStorageDir, { recursive: true, force: true });
+      }
+    }
+  },
+);
+
 function nextMessage(ws, predicate) {
   return new Promise((resolve) => {
     const handler = (data) => {
