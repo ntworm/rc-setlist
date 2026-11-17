@@ -12,6 +12,7 @@ import {
   getActiveProfilePaths,
   profileStatePayload,
   loadLyricsForSong,
+  resetSignatureTimelineForIdentity,
   runPreflightCheck,
 } from './runtime/bridge-state.js';
 import { getExtensionContext } from './context.js';
@@ -707,6 +708,9 @@ export async function startServer(options: StartServerOptions = {}): Promise<voi
           if (requestToken !== getProjectMetadataRequestToken()) return;
           const identity = projectIdentityFromMetadata(metadata);
           if (!identity || identity.key === bridgeState.projectIdentity?.key) return;
+          // The Live Set changed: the time signatures of the set that is no
+          // longer on screen must not survive it.
+          resetSignatureTimelineForIdentity(identity);
           if (bridgeState.profileScopeSwitching) {
             projectRefreshPending = true;
             return;

@@ -1,9 +1,18 @@
 import { test } from 'node:test';
 import assert from 'node:assert';
+import * as fs from 'node:fs';
+import * as os from 'node:os';
+import * as path from 'node:path';
 
 import { parseLocator, parseSetlist, computeCuesFingerprint } from '../src/core/locator-parser.js';
 import { SetlistManager } from '../src/core/setlist-manager.js';
 import { parseLrc, parseTxt } from '../src/core/lyrics-parser.js';
+import { projectIdentityFromMetadata } from '../src/core/project-identity.js';
+import {
+  activateProjectProfileScope,
+  bridgeState,
+  resetSignatureTimelineForIdentity,
+} from '../src/runtime/bridge-state.js';
 
 test('parseLocator: simple song title', () => {
   const r = parseLocator('Neon Signal');
@@ -1939,4 +1948,197 @@ test('parseLocator: a tag in the song half does not turn "Song A [bpm 120] > Cho
   const inTag = parseLocator('Song A > Verse [jump Song B > Bridge]');
   assert.equal(inTag.kind, 'section');
   assert.equal(inTag.section.jumpTarget, 'Song B > Bridge');
+});
+
+// ---------------------------------------------------------------------------
+// The signature timeline: the time signatures of the set, in the order they
+// took effect, so the bar display knows in which grid each stretch of the
+// set is counted.
+// ---------------------------------------------------------------------------
+
+const ROOT = path.resolve(import.meta.dirname, '..');
+
+function deterministicProfileOptions() {
+  let id = 0;
+  let tick = 0;
+  return {
+    randomUUID: () => `00000000-0000-4000-8000-${String(++id).padStart(12, '0')}`,
+    now: () => new Date(Date.UTC(2026, 6, 29, 0, 0, tick++)).toISOString(),
+  };
+}
+
+/** The timeline as "beat:numerator/denominator", one entry per stretch. */
+function timeline(manager) {
+  const segments = manager.getState().signatureTimeline;
+  return segments.map((s) => `${s.fromBeat}:${s.numerator}/${s.denominator}`);
+}
+
+/** 4/4 confirmed, then 3/4 confirmed from the bar line at 128. */
+function managerWithChangedSignature(at = 128) {
+  const manager = new SetlistManager();
+  manager.updateSignature(4, 4);
+  manager.updateSignature(4, 4);
+  manager.updateTransport(at, true, 120);
+  manager.updateSignature(3, 4);
+  manager.updateSignature(3, 4);
+  return manager;
+}
+
+test('the signature timeline opens at beat 0 and a change anchors at the nearest bar line', () => {
+  const manager = new SetlistManager();
+  manager.updateSignature(4, 4);
+  manager.updateSignature(4, 4);
+  assert.deepStrictEqual(manager.getState().signatureTimeline, [
+    { fromBeat: 0, numerator: 4, denominator: 4 },
+  ]);
+
+  manager.updateTransport(128.3, true, 120);
+  manager.updateSignature(3, 4);
+  assert.deepStrictEqual(timeline(manager), ['0:4/4', '128:3/4']);
+
+  // The same pair again: it confirms the stretch instead of anchoring the
+  // new one somewhere else.
+  manager.updateTransport(127.9, true, 120);
+  manager.updateSignature(3, 4);
+  assert.deepStrictEqual(timeline(manager), ['0:4/4', '128:3/4']);
+});
+
+test('a change after a confirmed stretch anchors at the bar line of the confirmed grid', () => {
+  const manager = managerWithChangedSignature();
+  // The 3/4 grid runs 128, 131, ... 179.
+  manager.updateTransport(179.4, true, 120);
+  manager.updateSignature(5, 4);
+  assert.deepStrictEqual(timeline(manager), ['0:4/4', '128:3/4', '179:5/4']);
+});
+
+test('a change that lands on the first bar of the last stretch replaces it', () => {
+  const manager = managerWithChangedSignature();
+  manager.updateTransport(129, true, 120);
+  manager.updateSignature(5, 4);
+  assert.deepStrictEqual(timeline(manager), ['0:4/4', '128:5/4']);
+});
+
+test('a change that lands before the last stretch drops it', () => {
+  const manager = managerWithChangedSignature();
+  manager.updateTransport(62, true, 120);
+  manager.updateSignature(5, 4);
+  assert.deepStrictEqual(timeline(manager), ['0:4/4', '62:5/4']);
+});
+
+test('a position exactly between two bar lines belongs to the next bar', () => {
+  const manager = new SetlistManager();
+  manager.updateSignature(4, 4);
+  manager.updateSignature(4, 4);
+  manager.updateTransport(2, true, 120);
+  manager.updateSignature(3, 4);
+  assert.deepStrictEqual(timeline(manager), ['0:4/4', '4:3/4']);
+});
+
+test('a signature seen only once is replaced in place, at the first anchor', () => {
+  // OSC reports the numerator and the denominator of the set: 6/4 arrives,
+  // then 6/8 while the playhead sits in the second half of a bar.
+  const manager = new SetlistManager();
+  manager.updateSignature(6, 4);
+  manager.updateTransport(4.5, true, 120);
+  manager.updateSignature(6, 8);
+  assert.deepStrictEqual(timeline(manager), ['0:6/8']);
+});
+
+test('the same pair reported again changes nothing once the stretch is confirmed', () => {
+  const manager = new SetlistManager();
+  manager.updateSignature(3, 4);
+  manager.updateSignature(3, 4);
+  const confirmed = timeline(manager);
+  manager.updateSignature(3, 4);
+  assert.deepStrictEqual(timeline(manager), confirmed);
+});
+
+test('the timeline never compares against the pair in force at the playhead', () => {
+  const manager = managerWithChangedSignature(128.3);
+  // Back in the stretch that is still counted in 4/4: the pair Live reports
+  // is the global one, so nothing opens a new stretch.
+  manager.updateTransport(64, true, 120);
+  manager.updateSignature(3, 4);
+  assert.deepStrictEqual(timeline(manager), ['0:4/4', '128:3/4']);
+});
+
+test('a signature Live cannot be playing is ignored', () => {
+  const manager = new SetlistManager();
+  manager.updateSignature(4, 4);
+  manager.updateSignature(4, 4);
+  manager.updateSignature(0, 4);
+  manager.updateSignature(100, 4);
+  manager.updateSignature(4, 3);
+  manager.updateSignature(4, 64);
+  assert.deepStrictEqual(timeline(manager), ['0:4/4']);
+  assert.equal(manager.getState().signatureNumerator, 4);
+  assert.equal(manager.getState().signatureDenominator, 4);
+});
+
+test('a cue reload keeps the signature timeline', () => {
+  const manager = managerWithChangedSignature(128.3);
+  const before = timeline(manager);
+  manager.updateCues([{ name: 'Song A', time: 0 }, { name: 'Song B', time: 64 }]);
+  assert.deepStrictEqual(timeline(manager), before);
+});
+
+test('a new Live Set identity clears the signature timeline', async (t) => {
+  const storageRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'rc-setlist-signature-scope-'));
+  t.after(() => fs.rmSync(storageRoot, { recursive: true, force: true }));
+  const previous = { ...bridgeState };
+  const manager = new SetlistManager();
+  const identity = projectIdentityFromMetadata({ song_name: 'Alpha', file_path: 'C:\\A.als' });
+  Object.assign(bridgeState, {
+    globalPersistenceDir: storageRoot,
+    manager,
+    profileManager: null,
+    projectIdentity: null,
+    projectSessionId: 'session-a',
+  });
+
+  try {
+    manager.updateSignature(4, 4);
+    manager.updateSignature(4, 4);
+    assert.deepStrictEqual(timeline(manager), ['0:4/4']);
+    await activateProjectProfileScope(identity, deterministicProfileOptions());
+    assert.deepStrictEqual(
+      manager.getState().signatureTimeline,
+      [],
+      'the time signatures of the set that was left behind must not survive',
+    );
+
+    // The same Live Set coming back keeps the time signatures it had.
+    manager.updateSignature(4, 4);
+    manager.updateSignature(4, 4);
+    await activateProjectProfileScope(identity, deterministicProfileOptions());
+    assert.deepStrictEqual(timeline(manager), ['0:4/4']);
+  } finally {
+    Object.assign(bridgeState, previous);
+  }
+});
+
+test('the metadata that names a new Live Set clears the signature timeline', () => {
+  const manager = new SetlistManager();
+  const previous = { ...bridgeState };
+  const identity = projectIdentityFromMetadata({ song_name: 'Alpha', file_path: 'C:\\B.als' });
+  Object.assign(bridgeState, { manager, projectIdentity: identity });
+
+  try {
+    manager.updateSignature(3, 4);
+    manager.updateSignature(3, 4);
+    assert.deepStrictEqual(timeline(manager), ['0:3/4']);
+    resetSignatureTimelineForIdentity({ ...identity, key: 'scope-b' });
+    assert.deepStrictEqual(manager.getState().signatureTimeline, []);
+
+    // The same Live Set keeps the time signatures it had.
+    manager.updateSignature(3, 4);
+    manager.updateSignature(3, 4);
+    resetSignatureTimelineForIdentity(identity);
+    assert.deepStrictEqual(timeline(manager), ['0:3/4']);
+  } finally {
+    Object.assign(bridgeState, previous);
+  }
+
+  const lifecycle = fs.readFileSync(path.join(ROOT, 'src/server-lifecycle.ts'), 'utf8');
+  assert.match(lifecycle, /onProjectMetadata:[\s\S]{0,600}?resetSignatureTimelineForIdentity/);
 });
