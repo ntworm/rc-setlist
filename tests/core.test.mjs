@@ -2053,6 +2053,19 @@ test('the same pair reported again changes nothing once the stretch is confirmed
   assert.deepStrictEqual(timeline(manager), confirmed);
 });
 
+test('a report that only confirms a stretch changes nothing the page shows', () => {
+  const manager = new SetlistManager();
+  assert.strictEqual(manager.updateSignature(4, 4), true, 'the first report opens the timeline');
+  const version = manager.getState().stateVersion;
+
+  // The repeat confirms the stretch, but a confirmation is invisible to the
+  // page: it must not look like a change, or every poll turns into a
+  // broadcast.
+  assert.strictEqual(manager.updateSignature(4, 4), false);
+  assert.strictEqual(manager.getState().stateVersion, version, 'the version does not move');
+  assert.deepStrictEqual(timeline(manager), ['0:4/4']);
+});
+
 test('the timeline never compares against the pair in force at the playhead', () => {
   const manager = managerWithChangedSignature(128.3);
   // Back in the stretch that is still counted in 4/4: the pair Live reports

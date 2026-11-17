@@ -519,10 +519,17 @@ export class SetlistManager {
    * The pair is global: it is the signature of the set, not of the bar the
    * playhead sits in. A change of it opens a new stretch of the timeline; a
    * report of the same pair confirms the stretch waiting for it.
+   *
+   * Returns true when the exported state changed: the pair the page shows or
+   * the timeline it counts the bars by. A report that only confirms a
+   * stretch changes nothing the page can see, so it returns false and leaves
+   * the state version alone: the polls that repeat the pair stay quiet.
    */
-  public updateSignature(numerator: number, denominator: number): void {
-    if (!SetlistManager.isUsableSignature(numerator, denominator)) return;
+  public updateSignature(numerator: number, denominator: number): boolean {
+    if (!SetlistManager.isUsableSignature(numerator, denominator)) return false;
     const repeated = this.sameAsReportedPair(numerator, denominator);
+    const stateBefore = this.signatureStateKey();
+
     this.reportedSignature = { numerator, denominator };
     this.signatureNumerator = numerator;
     this.signatureDenominator = denominator;
@@ -531,7 +538,23 @@ export class SetlistManager {
     } else {
       this.openSignatureSegment(numerator, denominator);
     }
+
+    if (stateBefore === this.signatureStateKey()) return false;
     this.stateVersion++;
+    return true;
+  }
+
+  /**
+   * The exported state of the time signature as one key: the pair the page
+   * shows and the timeline it counts the bars by — the three fields of every
+   * stretch and nothing else. The provisional flag is an internal detail of
+   * this class and never leaves it.
+   */
+  private signatureStateKey(): string {
+    const timeline = this.signatureTimeline
+      .map((segment) => `${segment.fromBeat}:${segment.numerator}/${segment.denominator}`)
+      .join(',');
+    return `${this.signatureNumerator}/${this.signatureDenominator}|${timeline}`;
   }
 
   /** The denominators a time signature can have: a power of two. */

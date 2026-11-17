@@ -1,9 +1,12 @@
 import { test } from 'node:test';
 import assert from 'node:assert';
 import dgram from 'node:dgram';
-import { once } from 'node:events';
+import { EventEmitter, once } from 'node:events';
 import { MockOSCServer } from './mocks/mock-osc-server.ts';
 import { OSCClient } from '../src/integration/osc-client.ts';
+import { SetlistManager } from '../src/core/setlist-manager.ts';
+import { registerOscListeners } from '../src/osc/registration.ts';
+import { bridgeState } from '../src/runtime/bridge-state.ts';
 
 test('OSC mock requests an ephemeral port, never the Live command port', async (t) => {
   const requestedPorts = [];
@@ -330,4 +333,97 @@ test('OSC send reports whether a bound socket accepted the packet', async () => 
     if (previousListeners === undefined) delete runtime.abletonOSCListeners;
     else runtime.abletonOSCListeners = previousListeners;
   }
+});
+
+test('a repeated time signature reply is emitted again while a repeated quantization reply is dropped', () => {
+  const client = new OSCClient();
+  const numerators = [];
+  const denominators = [];
+  const quantizations = [];
+  client.on('signature_numerator', (value) => numerators.push(value));
+  client.on('signature_denominator', (value) => denominators.push(value));
+  client.on('clip_trigger_quantization', (value) => quantizations.push(value));
+
+  const reply = (address, value) => ({ oscType: 'message', address, args: [{ value }] });
+
+  // The poll asks every half second and Live answers the same values again.
+  for (let i = 0; i < 2; i++) {
+    client['handleIncoming'](reply('/live/song/get/signature_numerator', 4));
+    client['handleIncoming'](reply('/live/song/get/signature_denominator', 4));
+    client['handleIncoming'](reply('/live/song/get/clip_trigger_quantization', 4));
+  }
+
+  assert.deepStrictEqual(numerators, [4, 4], 'the repeat is what confirms the stretch');
+  assert.deepStrictEqual(denominators, [4, 4]);
+  assert.deepStrictEqual(quantizations, [4], 'the other addresses keep their dedup');
+});
+
+/** The OSC client as the registration sees it: an emitter that records the sends. */
+class FakeOscClient extends EventEmitter {
+  calls = [];
+
+  send(address, args) {
+    this.calls.push(['send', address, args]);
+    return true;
+  }
+  setCurrentSongTime(value) {
+    this.calls.push(['position', value]);
+  }
+}
+
+/** The signature timeline as "beat:numerator/denominator", one per stretch. */
+function timeline(manager) {
+  return manager
+    .getState()
+    .signatureTimeline.map((s) => `${s.fromBeat}:${s.numerator}/${s.denominator}`);
+}
+
+test('the OSC path confirms a time signature stretch instead of replacing it in place', (t) => {
+  const saved = { ...bridgeState };
+  const manager = new SetlistManager();
+  const oscClient = new FakeOscClient();
+  const broadcasts = [];
+  Object.assign(bridgeState, {
+    manager,
+    oscClient,
+    wsServer: { broadcastState: (state) => broadcasts.push(state) },
+    scheduler: null,
+    mcpFallbackSync: null,
+    commandBus: null,
+    songBook: null,
+  });
+  t.after(() => Object.assign(bridgeState, saved));
+
+  registerOscListeners();
+
+  // The poll reports 4/4 and reports it again.
+  oscClient.emit('signature_numerator', 4);
+  oscClient.emit('signature_denominator', 4);
+  oscClient.emit('signature_numerator', 4);
+  oscClient.emit('signature_denominator', 4);
+
+  assert.deepStrictEqual(timeline(manager), ['0:4/4']);
+  const afterFirstPoll = broadcasts.length;
+
+  // The playhead moves into the second half of the set.
+  oscClient.emit('current_song_time', 128.3);
+
+  // Live changes the pair to 3/4 and the poll repeats it.
+  oscClient.emit('signature_numerator', 3);
+  oscClient.emit('signature_denominator', 4);
+  const afterChange = broadcasts.length;
+  oscClient.emit('signature_numerator', 3);
+  oscClient.emit('signature_denominator', 4);
+
+  assert.ok(afterChange > afterFirstPoll, 'the change itself reaches the page');
+  assert.strictEqual(broadcasts.length, afterChange, 'a repeated poll broadcasts nothing');
+  assert.deepStrictEqual(timeline(manager), ['0:4/4', '128:3/4']);
+
+  // The 3/4 stretch is confirmed, so the next change opens a new stretch
+  // instead of replacing it in place.
+  oscClient.emit('current_song_time', 179.4);
+  oscClient.emit('signature_numerator', 5);
+  oscClient.emit('signature_denominator', 4);
+
+  assert.deepStrictEqual(timeline(manager), ['0:4/4', '128:3/4', '179:5/4']);
 });
