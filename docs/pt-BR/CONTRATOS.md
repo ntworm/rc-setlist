@@ -133,8 +133,11 @@ primeiro na ordem exibida — e responde
 O mesmo `immediate` opcional viaja num frame `jump`: ele pede que o salto
 pouse na hora enquanto o transporte toca, em vez de esperar a próxima linha
 da grade. Ele é levado ao computador pareado junto com o salto, para que os
-dois pousem no mesmo instante. Um salto que já está esperando a grade é
-recusado: o Live segura o cue jump e o pousaria depois do salto imediato.
+dois pousem no mesmo instante. Um salto imediato é recusado enquanto um
+salto quantizado ainda espera pela grade: o Live mantém aquele cue jump
+armado, então ele pousaria depois do salto imediato e o desfaria. Um salto
+recusado assim também não é enviado ao computador pareado — um lado saltando
+agora enquanto o outro recusa separaria os dois computadores.
 
 ### 2.3 Reliability Core
 

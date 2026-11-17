@@ -130,9 +130,11 @@ a tie the first in its displayed order — and answers
 The same optional `immediate` travels on a `jump` frame: it asks for the
 jump to land at once while the transport runs, instead of waiting for the
 next grid line. It is carried to the paired computer with the jump, so both
-computers land it at the same moment. A jump that is already waiting for the
-grid is refused: Live holds the cue jump and would land it after the
-immediate one.
+computers land it at the same moment. An immediate jump is refused while a
+quantized jump is still waiting for the grid: Live keeps that cue jump
+armed, so it would land after the immediate one and undo it. A jump refused
+this way is not sent to the paired computer either — one side jumping now
+while the other refuses would part the two computers.
 
 ### 2.3 Reliability Core
 

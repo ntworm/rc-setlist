@@ -21,6 +21,7 @@ import {
 } from '../src/runtime/peer-link.ts';
 import { writePeerConfig } from '../src/preferences.ts';
 import { resolvePeerJump } from '../src/commands/handlers/peer.ts';
+import { executeJumpCommand } from '../src/commands/handlers/transport.ts';
 import {
   MAIN_CUES,
   PEER_TOKEN,
@@ -121,7 +122,10 @@ before(async () => {
   };
   writePeerConfig(linkConfig);
   await startServer({ port: 0, skipOsc: true, skipProjectDetector: true });
-  bridgeState.oscClient = createFakeOsc(oscCalls);
+  const osc = createFakeOsc(oscCalls);
+  // An immediate jump moves the playhead with it; the fake transport must know it.
+  osc.setCurrentSongTime = (value) => oscCalls.push(`setCurrentSongTime:${value}`);
+  bridgeState.oscClient = osc;
   bridgeState.manager.updateCues(MAIN_CUES);
   const connected = await waitFor(() => bridgeState.peerStatus.connected === true, 10000);
   assert.ok(connected, 'the link to the second computer must come up');
@@ -340,6 +344,46 @@ test('an immediate jump travels to the peer with the flag', async () => {
   assert.strictEqual(jump.immediate, true, 'the paired computer lands it at once too');
   const resolved = resolvePeerJump(jump, bridgeState.manager.getState());
   assert.strictEqual(resolved.message?.immediate, true, 'the conversion keeps the flag');
+});
+
+test('an immediate jump this computer refuses does not travel to the peer', async () => {
+  // The relay runs before the command, so the refusal is asked before the
+  // command answers it: the paired computer must not jump now.
+  const controller = await connectSynced(mainPort(), bridgeState.authToken);
+  const was = bridgeState.manager.getState();
+  try {
+    bridgeState.manager.updateTransport(21, true, 120);
+    executeJumpCommand({ songIndex: 1, sectionIndex: null });
+    assert.equal(bridgeState.scheduler.hasPending(), true, 'the jump waits for the grid');
+
+    peerComputer.messages.length = 0;
+    controller.send(
+      JSON.stringify({ type: 'jump', songIndex: 1, immediate: true, commandId: 'jump-refused' }),
+    );
+    await delay(300);
+    assert.strictEqual(
+      peerComputer.messages.some((message) => message.type === 'jump_time'),
+      false,
+      'the paired computer must not jump now while this one refuses',
+    );
+
+    // Without a jump waiting for the grid, the immediate jump travels.
+    bridgeState.scheduler.clearPending();
+    peerComputer.messages.length = 0;
+    controller.send(
+      JSON.stringify({ type: 'jump', songIndex: 1, immediate: true, commandId: 'jump-now' }),
+    );
+    const jump = await waitForMessage(
+      peerComputer.messages,
+      (message) => message.type === 'jump_time',
+    );
+    assert.ok(jump, 'the immediate jump travels when nothing waits for the grid');
+    assert.strictEqual(jump.immediate, true, 'the flag travels with it');
+  } finally {
+    bridgeState.scheduler.clearPending();
+    bridgeState.manager.updateTransport(was.currentSongTime, was.isPlaying, was.tempo);
+    controller.close();
+  }
 });
 
 test('a jump to a section that does not exist does not travel', async () => {

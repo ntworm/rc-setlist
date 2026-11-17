@@ -42,6 +42,29 @@ function applyJumpLoop(songIndex: number, sectionIndex: number | null | undefine
 }
 
 /**
+ * Whether an immediate jump would be refused because a jump is waiting for
+ * the grid.
+ *
+ * Live keeps the cue jump of a waiting jump armed: it would land after the
+ * immediate one and undo it. The rule lives here so the command that refuses
+ * the jump and the relay to the paired computer ask the same question.
+ */
+export function immediateJumpRefused(msg: ClientMessageOf<'jump'>): boolean {
+  if (msg.immediate !== true) return false;
+  const manager = bridgeState.manager;
+  const scheduler = bridgeState.scheduler;
+  if (!manager || !scheduler) return false;
+  const state = manager.getState();
+  if (!state.isPlaying) return false;
+  const quantBeats = getQuantizationBeats(
+    state.clipTriggerQuantization,
+    state.signatureNumerator,
+  );
+  if (quantBeats <= 0) return false;
+  return scheduler.hasPending();
+}
+
+/**
  * ExecuteJumpCommand — implementation detail. Returns how long, in
  * milliseconds, Live is expected to wait for the quantization grid before the
  * jump lands; 0 for an immediate jump.
@@ -78,6 +101,15 @@ export function executeJumpCommand(msg: ClientMessageOf<'jump'>): number {
   const isImmediate = !mgrState.isPlaying || quantBeats === 0;
 
   /*
+   * Live already holds the cue jump of a jump waiting for the grid; it would
+   * land after an immediate one and undo it, so the immediate jump is
+   * refused. The rule lives in one place, so the relay refuses it too.
+   */
+  if (immediateJumpRefused(msg)) {
+    throw new OperatorError('A jump is already waiting for the grid.');
+  }
+
+  /*
    * An immediate jump asked for while the transport runs moves the playhead
    * now, through the same handover the automation uses, instead of the cue
    * jump Live would hold until the next grid line. A stopped transport and a
@@ -85,11 +117,6 @@ export function executeJumpCommand(msg: ClientMessageOf<'jump'>): number {
    * there.
    */
   if (msg.immediate === true && mgrState.isPlaying && quantBeats > 0) {
-    // Live already holds the cue jump of a jump waiting for the grid; it
-    // would land after this one and undo it, so it is refused instead.
-    if (bridgeState.scheduler.hasPending()) {
-      throw new OperatorError('A jump is already waiting for the grid.');
-    }
     applyJumpTargetTempo(msg.songIndex, msg.sectionIndex ?? null);
     handOver(targetTime);
     applyJumpLoop(msg.songIndex, msg.sectionIndex);

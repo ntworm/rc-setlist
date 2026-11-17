@@ -6,7 +6,7 @@ import { JumpScheduler, quantizationPeriodMs } from '../src/core/next-downbeat-j
 import { SetlistManager } from '../src/core/setlist-manager.ts';
 import { CommandBus } from '../src/core/command-bus.ts';
 import { executeCommandAction } from '../src/commands/handlers/index.ts';
-import { executeJumpCommand } from '../src/commands/handlers/transport.ts';
+import { executeJumpCommand, immediateJumpRefused } from '../src/commands/handlers/transport.ts';
 import { handleJumpSchedulerEvent } from '../src/server-lifecycle.ts';
 
 function installHarness(initialQuantization = 0, sdkTempoSetter = null) {
@@ -200,6 +200,33 @@ test('an immediate jump is refused while a jump waits for the grid', () => {
     const now = () => executeJumpCommand({ songIndex: 1, sectionIndex: 0, immediate: true });
     assert.throws(now, /grid/);
     assert.equal(harness.calls.some(([k]) => k === 'current-time'), false, 'nothing moved');
+  } finally {
+    harness.restore();
+  }
+});
+
+test('the refusal of an immediate jump is decided in one place', () => {
+  // The relay to the paired computer asks the same question the command
+  // asks: one rule decides both.
+  const harness = installHarness(4);
+  try {
+    const immediate = { songIndex: 1, sectionIndex: 1, immediate: true };
+    const plain = { songIndex: 1, sectionIndex: 1 };
+    assert.equal(immediateJumpRefused(immediate), false, 'nothing waits for the grid yet');
+
+    // A quantized jump arms the grid, and Live keeps its cue jump.
+    executeJumpCommand({ songIndex: 1, sectionIndex: 1 });
+    assert.equal(bridgeState.scheduler.hasPending(), true, 'the jump waits for the grid');
+    assert.equal(immediateJumpRefused(immediate), true, 'the immediate jump is refused');
+    assert.throws(() => executeJumpCommand(immediate), /waiting for the grid/);
+    assert.equal(immediateJumpRefused(plain), false, 'without the flag, nothing is refused');
+
+    // A stopped transport and a transport with no grid jump at once anyway.
+    harness.manager.updateTransport(20, false, 120);
+    assert.equal(immediateJumpRefused(immediate), false, 'a stopped transport jumps at once');
+    harness.manager.updateTransport(20, true, 120);
+    harness.manager.updateQuantization(0);
+    assert.equal(immediateJumpRefused(immediate), false, 'no grid, nothing to wait for');
   } finally {
     harness.restore();
   }

@@ -39,13 +39,14 @@ import { syncFromSdkContext } from './sync/sdk-sync.js';
 import { syncFromMcpInfo } from './sync/mcp-sync.js';
 import { registerOscListeners } from './osc/registration.js';
 import { executeCommandAction } from './commands/handlers/index.js';
+import { immediateJumpRefused } from './commands/handlers/transport.js';
 import { peerCommandRejection, resolvePeerJump } from './commands/handlers/peer.js';
 import { relayToPeer, startPeerLink, stopPeerLink } from './runtime/peer-link.js';
 import { getOrGeneratePeerToken } from './runtime/pairing.js';
 import { startEventLoopWatch, warnIfSlow } from './runtime/event-loop-watch.js';
 import { readPeerConfig } from './preferences.js';
 import { applyJumpTargetTempo } from './commands/jump-tempo.js';
-import type { ClientMessage } from './types.js';
+import type { ClientMessage, ShowCommand } from './types.js';
 import {
   resolveProjectIdentity,
   projectIdentityFromMetadata,
@@ -277,6 +278,20 @@ export function handleJumpSchedulerEvent(event: {
     songIndex: event.pending.songIndex,
     sectionIndex: event.pending.sectionIndex,
   });
+}
+
+/**
+ * Whether this computer refuses the command, so the paired computer must not
+ * run it either.
+ *
+ * The relay runs before the command does, so the rule is asked before the
+ * command answers it.
+ */
+function refusedByThisComputer(command: ShowCommand<ClientMessage>): boolean {
+  if (command.type !== 'jump') return false;
+  const payload = command.payload;
+  if (payload.type !== 'jump') return false;
+  return immediateJumpRefused(payload);
 }
 
 /**
@@ -663,8 +678,9 @@ export async function startServer(options: StartServerOptions = {}): Promise<voi
           await executeCommandAction(command, ws);
         });
         // The paired computer follows the show. A command that came from a
-        // peer is not forwarded again: the link is one hop, not a loop.
-        if (!isPeerConnection) relayToPeer(command);
+        // peer is not forwarded again: the link is one hop, not a loop. A
+        // jump this computer refuses is not forwarded either.
+        if (!isPeerConnection && !refusedByThisComputer(command)) relayToPeer(command);
       }
     });
 
