@@ -1689,16 +1689,18 @@ function tick() {
       }
     }
 
-    // Bar calculation (Bars.Beats.Sixteenths). Keep the last valid visual
-    // value while disconnected instead of reseeding from stale extrapolation.
-    const num = lastState.signatureNumerator || 4;
+    // Bar calculation (Bars.Beats.Sixteenths) on the bar grid the signature
+    // timeline describes. Keep the last valid visual value while disconnected
+    // instead of reseeding from stale extrapolation.
     if (isSynchronized) {
       const barDisplayBeats = barDisplayStabilizer.update(estimatedBeats, lastState.isPlaying);
-      const bar = Math.floor(barDisplayBeats / num) + 1;
-      const remainingBeats = barDisplayBeats % num;
-      const beat = Math.floor(remainingBeats) + 1;
-      const sixteenths = Math.floor((remainingBeats % 1) * 4) + 1;
-      setTextIfChanged(hudBar, `${bar}.${beat}.${sixteenths}`);
+      const barPosition = SetlistTransportRuntime.barPosition(
+        barDisplayBeats,
+        lastState.signatureTimeline,
+        lastState.signatureNumerator,
+        lastState.signatureDenominator,
+      );
+      setTextIfChanged(hudBar, `${barPosition.bar}.${barPosition.beat}.${barPosition.sixteenth}`);
     }
 
     // Update Lyrics Sync Timer display
@@ -1712,7 +1714,15 @@ function tick() {
       lastFlashBeat = currentIntBeat;
     } else if (currentIntBeat > lastFlashBeat && lastState.isPlaying) {
       lastFlashBeat = currentIntBeat;
-      flashBeat(currentIntBeat % num === 0);
+      // The flash follows the transport, not the stabilized readout: the
+      // downbeat is the first beat of the bar the position is in.
+      const flashPosition = SetlistTransportRuntime.barPosition(
+        estimatedBeats,
+        lastState.signatureTimeline,
+        lastState.signatureNumerator,
+        lastState.signatureDenominator,
+      );
+      flashBeat(flashPosition.beat === 1);
     }
 
     // Update Metronome Button active state class

@@ -39,6 +39,70 @@ test('preRollBarBeats uses numerator and denominator in quarter-note beats', () 
   assert.equal(preRollBarBeats(4, 0), 4);
 });
 
+test('barPosition reads a pure 4/4 set the way the pages used to', () => {
+  const { barPosition } = loadRuntime();
+  const formatBar = (beats) => {
+    const bar = Math.floor(beats / 4) + 1;
+    const remaining = beats % 4;
+    const beat = Math.floor(remaining) + 1;
+    const sixteenth = Math.floor((remaining % 1) * 4) + 1;
+    return `${bar}.${beat}.${sixteenth}`;
+  };
+  const timeline = [{ fromBeat: 0, numerator: 4, denominator: 4 }];
+
+  for (const beats of [0, 0.25, 1.5, 4, 9.5, 84, 123.75]) {
+    const position = barPosition(beats, timeline, 4, 4);
+    assert.equal(`${position.bar}.${position.beat}.${position.sixteenth}`, formatBar(beats));
+  }
+});
+
+test('barPosition adds the bars of the stretches that came before', () => {
+  const { barPosition } = loadRuntime();
+  const timeline = [
+    { fromBeat: 0, numerator: 4, denominator: 4 },
+    { fromBeat: 128, numerator: 3, denominator: 4 },
+  ];
+
+  assert.deepEqual(plain(barPosition(128, timeline, 4, 4)), { bar: 33, beat: 1, sixteenth: 1 });
+  assert.deepEqual(plain(barPosition(131, timeline, 4, 4)), { bar: 34, beat: 1, sixteenth: 1 });
+});
+
+test('barPosition counts the six beats of a 6/8 bar and their sixteenths', () => {
+  const { barPosition } = loadRuntime();
+  const timeline = [{ fromBeat: 0, numerator: 6, denominator: 8 }];
+  const positions = [0, 0.5, 1, 1.5, 2, 2.5].map((beats) => barPosition(beats, timeline, 6, 8));
+
+  assert.deepEqual(plain(positions.map((position) => position.bar)), [1, 1, 1, 1, 1, 1]);
+  assert.deepEqual(plain(positions.map((position) => position.beat)), [1, 2, 3, 4, 5, 6]);
+  assert.deepEqual(plain(positions.map((position) => position.sixteenth)), [1, 1, 1, 1, 1, 1]);
+
+  // The second sixteenth of a 6/8 beat.
+  const secondSixteenth = barPosition(0.75, timeline, 6, 8);
+  assert.equal(secondSixteenth.beat, 2);
+  assert.equal(secondSixteenth.sixteenth, 2);
+
+  // A 6/8 bar is three quarter beats long: the next bar starts there.
+  assert.equal(barPosition(3, timeline, 6, 8).bar, 2);
+});
+
+test('barPosition falls back to the current pair without a timeline', () => {
+  const { barPosition } = loadRuntime();
+
+  assert.deepEqual(plain(barPosition(9.5, null, 4, 4)), { bar: 3, beat: 2, sixteenth: 3 });
+  assert.deepEqual(plain(barPosition(9.5, [], 4, 4)), { bar: 3, beat: 2, sixteenth: 3 });
+  // A 3/4 pair counts three beats per bar.
+  assert.deepEqual(plain(barPosition(4, [], 3, 4)), { bar: 2, beat: 2, sixteenth: 1 });
+});
+
+test('barPosition reads a missing denominator as four', () => {
+  const { barPosition } = loadRuntime();
+
+  const stretch = [{ fromBeat: 0, numerator: 4 }];
+
+  assert.deepEqual(plain(barPosition(9.5, [], 4, undefined)), { bar: 3, beat: 2, sixteenth: 3 });
+  assert.deepEqual(plain(barPosition(9.5, stretch, 4, 4)), { bar: 3, beat: 2, sixteenth: 3 });
+});
+
 test('calculateSetlistProgress reports first-song show and song elapsed time', () => {
   const { calculateSetlistProgress } = loadRuntime();
 

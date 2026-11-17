@@ -387,13 +387,15 @@ function tick() {
       }
     }
 
-    // Bar calculation (Bars.Beats.Sixteenths)
-    const num = lastState.signatureNumerator || 4;
-    const bar = Math.floor(estimatedBeats / num) + 1;
-    const remainingBeats = estimatedBeats % num;
-    const beat = Math.floor(remainingBeats) + 1;
-    const sixteenths = Math.floor((remainingBeats % 1) * 4) + 1;
-    const barText = `${bar}.${beat}.${sixteenths}`;
+    // Bar calculation (Bars.Beats.Sixteenths), on the bar grid the
+    // signature timeline describes.
+    const barPosition = SetlistTransportRuntime.barPosition(
+      estimatedBeats,
+      lastState.signatureTimeline,
+      lastState.signatureNumerator,
+      lastState.signatureDenominator,
+    );
+    const barText = `${barPosition.bar}.${barPosition.beat}.${barPosition.sixteenth}`;
     barcode.textContent = barText;
     // Seven glyphs holds bar 999 in 4/4; only a longer value widens the budget.
     setReadoutGlyphs(barcode, '--glyphs', Math.max(7, barText.length));
@@ -407,7 +409,7 @@ function tick() {
       // Restarting a CSS animation by class needs a forced reflow of the whole
       // document, twice a second at 120 BPM. The Web Animations API restarts on
       // its own and invalidates nothing. Same reasoning as Stage Control.
-      flashBeat(currentIntBeat % num === 0);
+      flashBeat(barPosition.beat === 1);
     }
 
     // Update Metronome Click Card state

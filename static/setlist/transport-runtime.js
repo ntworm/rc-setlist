@@ -3,11 +3,103 @@
 
   const HOLD_MS = 500;
 
+  function usableDenominator(value) {
+    return Number.isFinite(value) && value > 0 ? value : 4;
+  }
+
+  function usableNumerator(value) {
+    return Number.isFinite(value) && value > 0 ? value : 4;
+  }
+
   function preRollBarBeats(signatureNumerator, signatureDenominator) {
     if (!Number.isFinite(signatureNumerator) || signatureNumerator <= 0) return null;
-    const denominator =
-      Number.isFinite(signatureDenominator) && signatureDenominator > 0 ? signatureDenominator : 4;
-    return (signatureNumerator * 4) / denominator;
+    return (signatureNumerator * 4) / usableDenominator(signatureDenominator);
+  }
+
+  /**
+   * The stretches of the timeline that can hold a position. A stretch
+   * without a usable grid is skipped: the display follows Live, and Live
+   * never reports a signature it cannot play.
+   */
+  function usableSegments(timeline) {
+    if (!Array.isArray(timeline)) return [];
+    const stretches = timeline.filter(isUsableSegment);
+    return stretches.sort((a, b) => a.fromBeat - b.fromBeat);
+  }
+
+  function isUsableSegment(segment) {
+    if (!segment || !Number.isFinite(segment.fromBeat)) return false;
+    return Number.isFinite(segment.numerator) && segment.numerator > 0;
+  }
+
+  /**
+   * The stretch that holds the position: the last one that opened at or before it.
+   */
+  function holdingSegmentIndex(segments, beats) {
+    let index = -1;
+    for (let i = 0; i < segments.length; i++) {
+      if (segments[i].fromBeat <= beats) index = i;
+    }
+    return index;
+  }
+
+  /**
+   * The whole bars of a stretch: the ones that fit before the next stretch opens.
+   */
+  function wholeBars(segment, next) {
+    if (!next) return 0;
+    const span = next.fromBeat - segment.fromBeat;
+    if (!(span > 0)) return 0;
+    const barBeats = (segment.numerator * 4) / usableDenominator(segment.denominator);
+    return Math.floor(span / barBeats);
+  }
+
+  /**
+   * The bar, the beat and the sixteenth of a position inside one stretch of
+   * bars, the bars of the earlier stretches included.
+   */
+  function positionInBar(offset, barsBefore, numerator, denominator) {
+    const den = usableDenominator(denominator);
+    const barBeats = (usableNumerator(numerator) * 4) / den;
+    const barsInStretch = Math.floor(offset / barBeats);
+    const offsetInBar = offset - barsInStretch * barBeats;
+    const beatBeats = 4 / den;
+    const beatsInBar = Math.floor(offsetInBar / beatBeats);
+    const offsetInBeat = offsetInBar - beatsInBar * beatBeats;
+    const sixteenthsPerBeat = Math.max(1, 16 / den);
+    return {
+      bar: barsBefore + barsInStretch + 1,
+      beat: beatsInBar + 1,
+      sixteenth: Math.floor((offsetInBeat / beatBeats) * sixteenthsPerBeat) + 1,
+    };
+  }
+
+  /**
+   * The bar, the beat and the sixteenth of a position in the set. The
+   * timeline opens a bar grid at every time signature the set went through:
+   * the whole bars of the grids that came before add up first. A beat is a
+   * `4 / denominator` quarter-note beat long and holds `16 / denominator`
+   * sixteenths, at least one. Without a timeline the current pair of
+   * signature describes the set.
+   */
+  function barPosition(beats, timeline, fallbackNumerator, fallbackDenominator) {
+    const segments = usableSegments(timeline);
+    const position = Number.isFinite(beats) ? beats : 0;
+    const index = holdingSegmentIndex(segments, position);
+    if (index < 0) {
+      return positionInBar(position, 0, fallbackNumerator, fallbackDenominator);
+    }
+    let barsBefore = 0;
+    for (let i = 0; i < index; i++) {
+      barsBefore += wholeBars(segments[i], segments[i + 1]);
+    }
+    const segment = segments[index];
+    return positionInBar(
+      position - segment.fromBeat,
+      barsBefore,
+      segment.numerator,
+      segment.denominator,
+    );
   }
 
   function isKnownDuration(value) {
@@ -873,6 +965,7 @@
   }
 
   globalScope.SetlistTransportRuntime = {
+    barPosition,
     calculateSetlistProgress,
     createBarDisplayStabilizer,
     createJumpConfirmation,
