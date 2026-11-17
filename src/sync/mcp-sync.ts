@@ -49,12 +49,7 @@ export function syncFromMcpInfo(info: SessionInfo): void {
     }
   }
 
-  if (
-    typeof info.signature_numerator === 'number' &&
-    typeof info.signature_denominator === 'number'
-  ) {
-    bridgeState.manager.updateSignature(info.signature_numerator, info.signature_denominator);
-  }
+  const signatureChanged = syncSignature(info);
 
   const state = bridgeState.manager.getState();
   const currentSong = state.songs[state.activeSongIndex];
@@ -62,7 +57,20 @@ export function syncFromMcpInfo(info: SessionInfo): void {
     checkAndBroadcastLyrics(currentSong.title);
   }
 
-  if (bridgeState.manager.getState().stateVersion !== oldVersion) {
+  if (signatureChanged || bridgeState.manager.getState().stateVersion !== oldVersion) {
     broadcastState();
   }
+}
+
+/**
+ * The time signature of the session. It only reaches the page when it
+ * changed what the page shows: a repeat confirms the stretch it opened and
+ * changes nothing, so a poll that repeats the pair adds no broadcast.
+ */
+function syncSignature(info: SessionInfo): boolean {
+  if (!bridgeState.manager) return false;
+  if (typeof info.signature_numerator !== 'number' || typeof info.signature_denominator !== 'number') {
+    return false;
+  }
+  return bridgeState.manager.updateSignature(info.signature_numerator, info.signature_denominator);
 }

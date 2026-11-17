@@ -445,6 +445,18 @@ export interface ProfileScopePromotionAuthorization {
 }
 
 /**
+ * Forget the time signatures of the set that is no longer on screen.
+ *
+ * The signature timeline belongs to one Live Set: when the bridge follows
+ * another project, the bars it describes are the bars of a set nobody is
+ * looking at any more. The same Live Set coming back keeps them.
+ */
+export function resetSignatureTimelineForIdentity(identity: ProjectIdentity): void {
+  if (identity.key === bridgeState.projectIdentity?.key) return;
+  bridgeState.manager?.resetSignatureTimeline();
+}
+
+/**
  * ActivateProjectProfileScope — implementation detail.
  */
 export async function activateProjectProfileScope(
@@ -508,6 +520,9 @@ export async function activateProjectProfileScope(
     throw new Error('Project profile scope promotion was cancelled.');
   }
 
+  // A different Live Set has its own time signatures: the timeline of the
+  // set that is no longer on screen must not survive the change.
+  resetSignatureTimelineForIdentity(identity);
   bridgeState.profileManager = scope.manager;
   bridgeState.projectIdentity = identity;
   bridgeState.manager?.setCustomOrder(nextOrder);

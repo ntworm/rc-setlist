@@ -135,20 +135,21 @@ export function registerOscListeners() {
     if (typeof raw !== 'number') return;
     const val = raw;
     const currentState = bridgeState.manager?.getState();
-    if (currentState) {
-      bridgeState.manager?.updateSignature(val, currentState.signatureDenominator);
-    }
-    broadcastState();
+    if (!currentState) return;
+    // The pair only reaches the page when it changed what the page shows: a
+    // repeat confirms the stretch it opened and changes nothing, so the
+    // half-second poll must not turn into a broadcast every time.
+    const changed = bridgeState.manager?.updateSignature(val, currentState.signatureDenominator);
+    if (changed) broadcastState();
   });
 
   bridgeState.oscClient.on('signature_denominator', (raw: unknown) => {
     if (typeof raw !== 'number') return;
     const val = raw;
     const currentState = bridgeState.manager?.getState();
-    if (currentState) {
-      bridgeState.manager?.updateSignature(currentState.signatureNumerator, val);
-    }
-    broadcastState();
+    if (!currentState) return;
+    const changed = bridgeState.manager?.updateSignature(currentState.signatureNumerator, val);
+    if (changed) broadcastState();
   });
 
   bridgeState.oscClient.on('clip_trigger_quantization', (raw: unknown) => {

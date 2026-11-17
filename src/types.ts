@@ -66,6 +66,14 @@ export interface SetlistState {
   preRollEnabled: boolean;
   signatureNumerator: number;
   signatureDenominator: number;
+  /**
+   * The time signatures of the set, in the order they took effect: each
+   * entry opens a bar grid at `fromBeat`, whose bars are
+   * `numerator * 4 / denominator` quarter beats long. A stretch that has
+   * been reported only once is published all the same: the bar display has
+   * to follow Live as soon as it changes.
+   */
+  signatureTimeline?: { fromBeat: number; numerator: number; denominator: number }[];
   loopIteration?: { current: number; total: number } | null;
   loopActive: boolean;
   loopCount: number | null;

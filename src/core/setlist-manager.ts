@@ -12,6 +12,18 @@ import {
 import { log } from '../util/log.js';
 
 /**
+ * One stretch of the set that was played in one time signature.
+ */
+interface SignatureSegment {
+  /** The beat the stretch starts at; its bars are `numerator * 4 / denominator` beats. */
+  fromBeat: number;
+  numerator: number;
+  denominator: number;
+  /** True while the pair has been reported only once. */
+  provisional: boolean;
+}
+
+/**
  * `next` and `skip` carry the beat the playhead must be moved to. Both hand
  * playback over the moment their marker is crossed, and the executor relocates
  * the playhead there directly rather than asking Live for a cue jump, because
@@ -70,6 +82,17 @@ export class SetlistManager {
   private preRollEnabled: boolean = false;
   private signatureNumerator: number = 4;
   private signatureDenominator: number = 4;
+  /**
+   * The last time signature Live reported, or null while none was reported
+   * yet. Every report is compared against this pair and never against the
+   * pair in force at the playhead: Live reports the signature of the set.
+   */
+  private reportedSignature: { numerator: number; denominator: number } | null = null;
+  /**
+   * The time signatures of the set, in the order they took effect. The last
+   * stretch is provisional until the same pair is reported again.
+   */
+  private signatureTimeline: SignatureSegment[] = [];
   private clipTriggerQuantization: number = 4; // Default to 1 Bar (4)
   private arrangementEndTime: number | null = null;
   private chronologicalSongs: Array<{ song: Song; displayIndex: number }> = [];
@@ -490,9 +513,133 @@ export class SetlistManager {
     this.stateVersion++;
   }
 
-  public updateSignature(numerator: number, denominator: number): void {
+  /**
+   * A time signature report from Live.
+   *
+   * The pair is global: it is the signature of the set, not of the bar the
+   * playhead sits in. A change of it opens a new stretch of the timeline; a
+   * report of the same pair confirms the stretch waiting for it.
+   *
+   * Returns true when the exported state changed: the pair the page shows or
+   * the timeline it counts the bars by. A report that only confirms a
+   * stretch changes nothing the page can see, so it returns false and leaves
+   * the state version alone: the polls that repeat the pair stay quiet.
+   */
+  public updateSignature(numerator: number, denominator: number): boolean {
+    if (!SetlistManager.isUsableSignature(numerator, denominator)) return false;
+    const repeated = this.sameAsReportedPair(numerator, denominator);
+    const stateBefore = this.signatureStateKey();
+
+    this.reportedSignature = { numerator, denominator };
     this.signatureNumerator = numerator;
     this.signatureDenominator = denominator;
+    if (repeated) {
+      this.confirmSignatureSegment();
+    } else {
+      this.openSignatureSegment(numerator, denominator);
+    }
+
+    if (stateBefore === this.signatureStateKey()) return false;
+    this.stateVersion++;
+    return true;
+  }
+
+  /**
+   * The exported state of the time signature as one key: the pair the page
+   * shows and the timeline it counts the bars by — the three fields of every
+   * stretch and nothing else. The provisional flag is an internal detail of
+   * this class and never leaves it.
+   */
+  private signatureStateKey(): string {
+    const timeline = this.signatureTimeline
+      .map((segment) => `${segment.fromBeat}:${segment.numerator}/${segment.denominator}`)
+      .join(',');
+    return `${this.signatureNumerator}/${this.signatureDenominator}|${timeline}`;
+  }
+
+  /** The denominators a time signature can have: a power of two. */
+  private static readonly USABLE_DENOMINATORS = new Set([1, 2, 4, 8, 16, 32]);
+
+  /** A signature Live can be playing: 1 to 99 over a power of two. */
+  private static isUsableSignature(numerator: number, denominator: number): boolean {
+    if (numerator < 1 || numerator > 99) return false;
+    return SetlistManager.USABLE_DENOMINATORS.has(denominator);
+  }
+
+  /** True when this pair is the one Live reported last. */
+  private sameAsReportedPair(numerator: number, denominator: number): boolean {
+    const reported = this.reportedSignature;
+    if (!reported) return false;
+    return reported.numerator === numerator && reported.denominator === denominator;
+  }
+
+  /**
+   * The same pair reported again: the stretch waiting for it is confirmed.
+   * The last stretch always holds the pair reported last: a report either
+   * confirms that stretch or replaces it.
+   */
+  private confirmSignatureSegment(): void {
+    const last = this.signatureTimeline[this.signatureTimeline.length - 1];
+    if (last?.provisional) last.provisional = false;
+  }
+
+  /**
+   * A new time signature: open a stretch of the timeline for it.
+   *
+   * The first stretch starts at beat 0. A stretch that has not been
+   * confirmed yet is replaced in place when another signature arrives: it
+   * was seen once, and one report is not a change of the set. Once the last
+   * stretch is confirmed, the change opens a new stretch at the bar line of
+   * the confirmed grid nearest the playhead.
+   */
+  private openSignatureSegment(numerator: number, denominator: number): void {
+    const last = this.signatureTimeline[this.signatureTimeline.length - 1];
+    if (!last) {
+      this.signatureTimeline = [{ fromBeat: 0, numerator, denominator, provisional: true }];
+      return;
+    }
+    if (last.provisional) {
+      last.numerator = numerator;
+      last.denominator = denominator;
+      return;
+    }
+    const anchor = this.barLineNearest(last, this.currentSongTime);
+    const kept = this.signatureTimeline.filter((segment) => segment.fromBeat <= anchor);
+    const lastKept = kept[kept.length - 1];
+    if (lastKept && lastKept.fromBeat === anchor) {
+      lastKept.numerator = numerator;
+      lastKept.denominator = denominator;
+      lastKept.provisional = true;
+      this.signatureTimeline = kept;
+      return;
+    }
+    kept.push({ fromBeat: anchor, numerator, denominator, provisional: true });
+    this.signatureTimeline = kept;
+  }
+
+  /**
+   * The bar line of a stretch's grid nearest a position. The grid starts at
+   * the stretch's own beat and its bars are `numerator * 4 / denominator`
+   * quarter beats long; a position exactly between two bar lines belongs to
+   * the next one.
+   */
+  private barLineNearest(segment: SignatureSegment, position: number): number {
+    const barBeats = (segment.numerator * 4) / segment.denominator;
+    const bars = Math.floor((position - segment.fromBeat) / barBeats + 0.5 + 1e-9);
+    return Math.max(0, segment.fromBeat + bars * barBeats);
+  }
+
+  /**
+   * Forget the time signatures of the set that is no longer on screen.
+   *
+   * The timeline belongs to one Live Set: when another project is opened,
+   * the bars it describes are the bars of a set nobody is looking at any
+   * more. The next report then opens the first stretch of the new set.
+   */
+  public resetSignatureTimeline(): void {
+    if (this.signatureTimeline.length === 0 && this.reportedSignature === null) return;
+    this.signatureTimeline = [];
+    this.reportedSignature = null;
     this.stateVersion++;
   }
 
@@ -805,6 +952,14 @@ export class SetlistManager {
       preRollEnabled: this.preRollEnabled,
       signatureNumerator: this.signatureNumerator,
       signatureDenominator: this.signatureDenominator,
+      // The time signatures of the set, in the order they took effect. A
+      // stretch that has been reported only once is published all the same:
+      // the bar display has to follow Live as soon as it changes.
+      signatureTimeline: this.signatureTimeline.map((segment) => ({
+        fromBeat: segment.fromBeat,
+        numerator: segment.numerator,
+        denominator: segment.denominator,
+      })),
       loopIteration:
         this.loopActive && this.loopCount !== null && this.loopCount > 0
           ? { current: this.currentLoopIteration, total: this.loopCount }

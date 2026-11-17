@@ -84,6 +84,19 @@ export const RC_BRIDGE_PORT = 11020;
 export const ABLETON_OSC_PORT = 11000;
 
 /**
+ * Addresses whose every reply must reach the listener, even when the value
+ * is the one that came last.
+ *
+ * The time signature is polled, and the poll is what confirms a stretch of
+ * the set: a repeat that is dropped confirms nothing, so every stretch stays
+ * provisional and the next change replaces it in place.
+ */
+const REPLY_REPEATS_MATTER = new Set([
+  '/live/song/get/signature_numerator',
+  '/live/song/get/signature_denominator',
+]);
+
+/**
  * Manages the lifecycle and public surface of OSCClient.
  */
 export class OSCClient extends EventEmitter {
@@ -157,7 +170,7 @@ export class OSCClient extends EventEmitter {
   }
 
   private shouldEmit(address: string, value: unknown, confirmation = false): boolean {
-    if (confirmation) {
+    if (confirmation || REPLY_REPEATS_MATTER.has(address)) {
       this.lastEmitted.set(address, value);
       return true;
     }
