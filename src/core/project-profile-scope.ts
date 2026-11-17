@@ -8,11 +8,11 @@ import {
   isValidUUID,
   profileNameKey,
   isDefaultProfileName,
-  writeJsonAtomic,
   type ProfileSummary,
   type ProfileManagerOptions,
   type ProfilePaths,
 } from './profile-manager.js';
+import { writeJsonAtomic } from './profile/storage.js';
 import { LEGACY_PROFILE_STORAGE_NAMES } from './profile-migration.js';
 import { isPlainObject, isStringArray, parseJson } from '../util/json.js';
 import type { ProjectIdentity } from './project-identity.js';

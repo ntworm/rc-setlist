@@ -70,31 +70,9 @@ export function safeRandomUUID(): string {
   });
 }
 
-/**
- * Writes the json atomic.
- */
-export async function writeJsonAtomic(filePath: string, value: unknown): Promise<void> {
-  const directory = path.dirname(filePath);
-  const tempPath = `${filePath}.${safeRandomUUID()}.tmp`;
-  const backupPath = `${filePath}.bak`;
-  await fs.mkdir(directory, { recursive: true });
-  await fs.writeFile(tempPath, `${JSON.stringify(value, null, 2)}\n`, 'utf8');
-  let hadTarget = false;
-  try {
-    await fs.copyFile(filePath, backupPath);
-    hadTarget = true;
-  } catch (error) {
-    if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error;
-  }
-  try {
-    if (hadTarget) await fs.rm(filePath);
-    await fs.rename(tempPath, filePath);
-  } catch (error) {
-    await fs.rm(tempPath, { force: true }).catch(() => undefined);
-    if (hadTarget) await fs.copyFile(backupPath, filePath).catch(() => undefined);
-    throw error;
-  }
-}
+// One atomic JSON writer for every profile file; re-exported so existing
+// imports from profile-manager keep working.
+export { writeJsonAtomic } from './profile/storage.js';
 
 function validateProfileEntries(input: unknown, deleted: false): ProfileSummary[];
 function validateProfileEntries(input: unknown, deleted: true): DeletedProfileSummary[];

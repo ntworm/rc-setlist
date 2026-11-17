@@ -27,13 +27,18 @@ const WINDOWS_UNSUPPORTED_DIRECTORY_SYNC_CODES = new Set([
   'EINVAL',
 ]);
 
-function isUnsupportedWindowsDirectorySync(error: unknown, platform: NodeJS.Platform): boolean {
+/** Whether a directory sync failed only because this Windows filesystem lacks it. */
+export function isUnsupportedWindowsDirectorySync(
+  error: unknown,
+  platform: NodeJS.Platform,
+): boolean {
   if (platform !== 'win32' || typeof error !== 'object' || error === null) return false;
   const code = 'code' in error ? (error as { code?: unknown }).code : undefined;
   return typeof code === 'string' && WINDOWS_UNSUPPORTED_DIRECTORY_SYNC_CODES.has(code);
 }
 
-function isFsyncDisabledByPermissionModel(error: unknown): boolean {
+/** Whether an fsync failed because Node's Permission Model disables the fsync API. */
+export function isFsyncDisabledByPermissionModel(error: unknown): boolean {
   if (typeof error !== 'object' || error === null) return false;
   return 'code' in error && (error as { code?: unknown }).code === 'ERR_ACCESS_DENIED';
 }

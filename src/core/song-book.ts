@@ -95,6 +95,26 @@ export function parseSongBook(raw: unknown): SongBook {
   return { version: 1, reloadCount, present, tombstoned, data };
 }
 
+const hasEntries = (value: unknown): boolean =>
+  typeof value === 'object' && value !== null && Object.keys(value).length > 0;
+
+/**
+ * Whether parsing `raw` into `book` threw away everything the file held: an
+ * unknown version, or a version 1 file whose entries were all discarded. A
+ * book that kept some of its entries is not a loss.
+ */
+export function songBookDiscardedEverything(raw: unknown, book: SongBook): boolean {
+  if (typeof raw !== 'object' || raw === null) return true;
+  const candidate = raw as Record<string, unknown>;
+  if (candidate.version !== 1) return true;
+  const kept =
+    book.present.length > 0 || book.tombstoned.length > 0 || Object.keys(book.data).length > 0;
+  if (kept) return false;
+  return (
+    hasEntries(candidate.present) || hasEntries(candidate.tombstoned) || hasEntries(candidate.data)
+  );
+}
+
 /**
  * Fold a fresh cue list into the book: reconcile identities, age tombstones,
  * and drop side data whose identity was forgotten for good.

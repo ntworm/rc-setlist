@@ -141,3 +141,26 @@ test('Preferences: UI locale persists only supported languages in SDK storage', 
     }
   }
 });
+
+const PEER = { host: '192.168.0.10', port: 4444, peerToken: 'secret-token', fingerprint: 'ab:cd' };
+
+test(
+  'Preferences: the peer config is owner-only, also when an older file was not',
+  { skip: process.platform === 'win32' ? 'Windows has no POSIX file modes' : false },
+  () => {
+    const testStorageDir = fs.mkdtempSync(path.join(tmpdir(), 'setlist-peer-mode-'));
+    const peerFile = path.join(testStorageDir, 'peer.json');
+    setExtensionContext({ environment: { storageDirectory: testStorageDir } });
+    try {
+      assert.strictEqual(preferences.writePeerConfig(PEER), true);
+      assert.strictEqual(fs.statSync(peerFile).mode & 0o777, 0o600);
+
+      fs.chmodSync(peerFile, 0o644);
+      assert.deepStrictEqual(preferences.readPeerConfig(), PEER);
+      assert.strictEqual(fs.statSync(peerFile).mode & 0o777, 0o600);
+    } finally {
+      clearExtensionContext();
+      fs.rmSync(testStorageDir, { recursive: true, force: true });
+    }
+  },
+);
