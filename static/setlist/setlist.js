@@ -198,6 +198,8 @@ const midiMappingDefaults = {
   stop: null,
   next_song: null,
   prev_song: null,
+  next_song_now: null,
+  prev_song_now: null,
   next_section: null,
   prev_section: null,
   toggle_click: null,
@@ -218,6 +220,8 @@ const keyMappingDefaults = {
   stop: null,
   next_song: null,
   prev_song: null,
+  next_song_now: null,
+  prev_song_now: null,
   next_section: null,
   prev_section: null,
   toggle_click: null,
@@ -706,6 +710,8 @@ const actionLabelKeys = {
   stop: 'midi.stop',
   next_song: 'midi.nextSong',
   prev_song: 'midi.previousSong',
+  next_song_now: 'midi.nextSongNow',
+  prev_song_now: 'midi.previousSongNow',
   next_section: 'midi.nextSection',
   prev_section: 'midi.previousSection',
   toggle_click: 'midi.toggleClick',
@@ -718,6 +724,8 @@ const keyActionLabelKeys = {
   stop: 'keyboard.stop',
   next_song: 'keyboard.nextSong',
   prev_song: 'keyboard.previousSong',
+  next_song_now: 'keyboard.nextSongNow',
+  prev_song_now: 'keyboard.previousSongNow',
   next_section: 'keyboard.nextSection',
   prev_section: 'keyboard.previousSection',
   toggle_click: 'keyboard.toggleClick',
@@ -809,6 +817,14 @@ function executeSetlistAction(action) {
   } else if (action === 'prev_song') {
     const prevIdx = lastState ? lastState.activeSongIndex - 1 : -1;
     if (prevIdx >= 0) jumpTo(prevIdx, null);
+  } else if (action === 'next_song_now') {
+    const nextIdx = lastState ? lastState.activeSongIndex + 1 : -1;
+    if (lastState && nextIdx >= 0 && nextIdx < lastState.songs.length) {
+      jumpTo(nextIdx, null, { immediate: true });
+    }
+  } else if (action === 'prev_song_now') {
+    const prevIdx = lastState ? lastState.activeSongIndex - 1 : -1;
+    if (prevIdx >= 0) jumpTo(prevIdx, null, { immediate: true });
   } else if (action === 'next_section') {
     navigateAdjacent('next');
   } else if (action === 'prev_section') {
@@ -2168,7 +2184,7 @@ const quantizationConfirmation = SetlistTransportRuntime.createQuantizationConfi
   onFailure: () => appendLog(t('feedback.quantizationFailed'), 'warn'),
 });
 
-function jumpTo(songIndex, sectionIndex) {
+function jumpTo(songIndex, sectionIndex, options) {
   if (isLocked) {
     showLockWarning();
     return;
@@ -2193,6 +2209,7 @@ function jumpTo(songIndex, sectionIndex) {
         type: 'jump',
         songIndex,
         sectionIndex,
+        ...(options?.immediate ? { immediate: true } : {}),
       }),
     );
   }
