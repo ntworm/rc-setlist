@@ -10,8 +10,19 @@
 // for the lifecycle itself.
 
 import assert from 'node:assert/strict';
+import { mkdtemp, rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { setTimeout as sleep } from 'node:timers/promises';
-import { test } from 'node:test';
+import { after, test } from 'node:test';
+
+// Runtime files (token, peer-token, profiles/, events.log) land here, not in
+// the repository root.
+const storageDirectory = await mkdtemp(join(tmpdir(), 'rc-setlist-shutdown-'));
+
+after(async () => {
+  await rm(storageDirectory, { recursive: true, force: true });
+});
 
 test('stopServer closes WS, HTTP, timers, listeners; second start is clean', async () => {
   const { startServer, stopServer, isServerRunning, getAuthToken, bridgeState } =
@@ -24,14 +35,14 @@ test('stopServer closes WS, HTTP, timers, listeners; second start is clean', asy
     commands: { registerCommand: () => {} },
     ui: { registerContextMenuAction: () => {}, showModalDialog: async () => {} },
     log: () => {},
-    environment: { storageDirectory: process.cwd() },
+    environment: { storageDirectory },
   };
   setExtensionContext(stubContext);
 
   // Track listeners we add so we can verify the test leaves the world clean.
   const beforeListeners = process.listenerCount('SIGINT');
 
-  await startServer({ skipOsc: true, skipCerts: false, skipProjectDetector: true });
+  await startServer({ port: 0, skipOsc: true, skipCerts: false, skipProjectDetector: true });
   assert.equal(isServerRunning(), true, 'server should be running after start');
 
   const port =
@@ -63,7 +74,7 @@ test('stopServer closes WS, HTTP, timers, listeners; second start is clean', asy
   assert.equal(bridgeState.serverRunning, false);
 
   // A second start cycle works without leaking listeners.
-  await startServer({ skipOsc: true, skipCerts: false, skipProjectDetector: true });
+  await startServer({ port: 0, skipOsc: true, skipCerts: false, skipProjectDetector: true });
   assert.equal(isServerRunning(), true);
   await stopServer();
   const afterListeners = process.listenerCount('SIGINT');

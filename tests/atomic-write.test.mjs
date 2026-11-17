@@ -3,8 +3,63 @@ import * as fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
-import { atomicWriteFile } from '../src/util/atomic-write.ts';
-import { atomicWriteFileWithDependencies } from '../src/util/atomic-write-internal.ts';
+import { atomicWriteFile, atomicWriteFileSync } from '../src/util/atomic-write.ts';
+import {
+  atomicWriteFileWithDependencies,
+  isFsyncDisabledByPermissionModel,
+  isUnsupportedWindowsDirectorySync,
+} from '../src/util/atomic-write-internal.ts';
+
+test('isUnsupportedWindowsDirectorySync accepts only the listed codes on Windows', () => {
+  for (const code of ['EPERM', 'EACCES', 'EISDIR', 'ENOTSUP', 'EINVAL']) {
+    assert.equal(isUnsupportedWindowsDirectorySync({ code }, 'win32'), true, code);
+    assert.equal(isUnsupportedWindowsDirectorySync({ code }, 'linux'), false, code);
+  }
+  for (const error of [{ code: 'EIO' }, {}, null, 'EPERM']) {
+    assert.equal(isUnsupportedWindowsDirectorySync(error, 'win32'), false);
+  }
+});
+
+test('isFsyncDisabledByPermissionModel accepts only ERR_ACCESS_DENIED', () => {
+  assert.equal(isFsyncDisabledByPermissionModel({ code: 'ERR_ACCESS_DENIED' }), true);
+  for (const error of [{ code: 'EPERM' }, {}, null, 'ERR_ACCESS_DENIED']) {
+    assert.equal(isFsyncDisabledByPermissionModel(error), false);
+  }
+});
+
+test('atomicWriteFileSync replaces an existing file and leaves no temporary file', async (t) => {
+  const root = await makeTestDirectory(t);
+  const target = path.join(root, 'song-book.json');
+
+  atomicWriteFileSync(target, 'first');
+  atomicWriteFileSync(target, new TextEncoder().encode('second'));
+
+  assert.equal(await fs.readFile(target, 'utf8'), 'second');
+  assert.deepEqual(await fs.readdir(root), ['song-book.json']);
+});
+
+test('atomicWriteFileSync keeps the previous file and removes the temporary on failure', async (t) => {
+  const root = await makeTestDirectory(t);
+  const target = path.join(root, 'occupied');
+  // A non-empty directory at the target makes the rename fail on every OS.
+  await fs.mkdir(target);
+  await fs.writeFile(path.join(target, 'keep'), 'previous');
+
+  assert.throws(() => atomicWriteFileSync(target, 'new'));
+  assert.equal(await fs.readFile(path.join(target, 'keep'), 'utf8'), 'previous');
+  assert.deepEqual(await fs.readdir(root), ['occupied']);
+});
+
+test(
+  'atomicWriteFileSync creates the file with the requested mode',
+  { skip: process.platform === 'win32' ? 'Windows has no POSIX file modes' : false },
+  async (t) => {
+    const root = await makeTestDirectory(t);
+    const target = path.join(root, 'secret');
+    atomicWriteFileSync(target, 'token', { mode: 0o600 });
+    assert.equal((await fs.stat(target)).mode & 0o777, 0o600);
+  },
+);
 
 async function makeTestDirectory(t) {
   const root = await fs.mkdtemp(path.join(os.tmpdir(), 'rc-setlist-atomic-'));

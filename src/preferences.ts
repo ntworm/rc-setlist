@@ -1,6 +1,7 @@
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { getExtensionContext } from './context.js';
+import { atomicWriteFileSync } from './util/atomic-write.js';
 
 const SETLIST_DIR = '.setlist';
 const AUTO_START_FILE = 'auto-start';
@@ -65,7 +66,11 @@ function readPreference(fileName: string): string | null {
   }
 }
 
+// The peer config holds the pairing token, so only its owner may read it.
+const SECRET_FILE_MODE = 0o600;
+
 function writePreference(fileName: string, value: string): boolean {
+  const options = fileName === PEER_CONFIG_FILE ? { mode: SECRET_FILE_MODE } : {};
   // 1. Try SDK storageDirectory first if context is available
   const context = getExtensionContext();
   if (context && context.environment.storageDirectory) {
@@ -74,7 +79,7 @@ function writePreference(fileName: string, value: string): boolean {
       if (!fs.existsSync(dir)) {
         fs.mkdirSync(dir, { recursive: true });
       }
-      fs.writeFileSync(path.join(dir, fileName), value, 'utf8');
+      atomicWriteFileSync(path.join(dir, fileName), value, options);
       return true;
     } catch (err) {
       console.error(
@@ -95,7 +100,7 @@ function writePreference(fileName: string, value: string): boolean {
     const setlistDir = path.join(dir, SETLIST_DIR);
     try {
       if (!fs.existsSync(setlistDir)) continue;
-      fs.writeFileSync(path.join(setlistDir, fileName), value, 'utf8');
+      atomicWriteFileSync(path.join(setlistDir, fileName), value, options);
       return true;
     } catch (err) {
       console.error(
@@ -184,12 +189,26 @@ function isPeerConfig(value: unknown): value is PeerConfig {
   return isValidPort(record.port);
 }
 
+// A pairing written before the file was created owner-only may still be
+// readable by others; tighten it on read. Best effort: a filesystem without
+// POSIX modes must not lose the pairing.
+function restrictPeerConfigMode(): void {
+  const peerFile = preferencePath(PEER_CONFIG_FILE);
+  if (!peerFile) return;
+  try {
+    fs.chmodSync(peerFile, SECRET_FILE_MODE);
+  } catch {
+    // ignore: the pairing still loads
+  }
+}
+
 /**
  * Reads the paired computer, or null when there is none.
  */
 export function readPeerConfig(): PeerConfig | null {
   const raw = readPreference(PEER_CONFIG_FILE);
   if (!raw) return null;
+  restrictPeerConfigMode();
   try {
     const parsed: unknown = JSON.parse(raw);
     return isPeerConfig(parsed) ? parsed : null;

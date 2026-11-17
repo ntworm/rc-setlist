@@ -1,32 +1,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert';
-import {
-  nextDownbeat,
-  JumpScheduler,
-  getQuantizationBeats,
-} from '../src/core/next-downbeat-jump.ts';
+import { JumpScheduler, getQuantizationBeats } from '../src/core/next-downbeat-jump.ts';
 
 const STATE = { tempo: 120, isPlaying: true, signatureNumerator: 4, currentSongTime: 10.0 };
-
-test('nextDownbeat: rounds up to next bar boundary at 120 BPM, 4/4', () => {
-  // barLength = (60/120)*4 = 2s; bars at 0,2,4,6,8,10,12,...
-  assert.strictEqual(nextDownbeat(10.0, 120, 4), 10.0);
-  assert.strictEqual(nextDownbeat(10.1, 120, 4), 12.0);
-  assert.strictEqual(nextDownbeat(10.99, 120, 4), 12.0);
-  assert.strictEqual(nextDownbeat(11.0, 120, 4), 12.0);
-});
-
-test('nextDownbeat: 100 BPM 4/4 → barLength 2.4s, rounds up correctly', () => {
-  // 60/100*4 = 2.4 → bars at 0, 2.4, 4.8, 7.2, 9.6, 12.0, ...
-  assert.strictEqual(nextDownbeat(2.5, 100, 4), 4.8);
-  assert.strictEqual(nextDownbeat(9.7, 100, 4), 12.0);
-});
-
-test('nextDownbeat: clamps malformed input to safe defaults', () => {
-  // tempo=0 → safeTempo=120; signature=0 → safeSig=4
-  assert.strictEqual(nextDownbeat(5.0, 0, 0), 6.0);
-  // behaves like 120 BPM, 4/4 in default branch
-});
 
 test('JumpScheduler.schedule: Live stopped → immediate=true, landingTime=currentSongTime', () => {
   const s = new JumpScheduler();

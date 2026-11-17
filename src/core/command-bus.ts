@@ -142,6 +142,29 @@ export class CommandBus extends EventEmitter {
     return this.processedIds.has(commandId);
   }
 
+  /**
+   * Returns the saved status of a retained command, or null.
+   *
+   * The payload stays here: a retry only needs to learn how its first send
+   * ended, and the sender id lets the caller answer only the original sender.
+   */
+  public getStatus(commandId: string): {
+    status: CommandStatus;
+    sourceClientId: string;
+    reason?: CommandFailureReason;
+    error?: string;
+  } | null {
+    const retention = this.processedIds.get(commandId);
+    const command = this.commandHistory.get(commandId);
+    if (!retention || !command || retention.command !== command) return null;
+    return {
+      status: command.status,
+      sourceClientId: command.sourceClientId,
+      ...(command.reason ? { reason: command.reason } : {}),
+      ...(command.error ? { error: command.error } : {}),
+    };
+  }
+
   public registerCommand<TPayload>(
     commandId: string,
     type: string,

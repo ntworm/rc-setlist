@@ -2,6 +2,7 @@ import * as http from 'node:http';
 import * as https from 'node:https';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
+import { randomUUID } from 'node:crypto';
 import { SetlistManager } from '../core/setlist-manager.js';
 import { JumpScheduler } from '../core/next-downbeat-jump.js';
 import { OSCClient } from '../integration/osc-client.js';
@@ -15,6 +16,7 @@ import {
   parseSongBook,
   setSongColor,
   setSongNotes,
+  songBookDiscardedEverything,
   type SongBook,
 } from '../core/song-book.js';
 import { EventLogger } from '../core/event-log.js';
@@ -32,6 +34,7 @@ import type { ProjectIdentity } from '../core/project-identity.js';
 import type { ProfileManagerOptions } from '../core/profile-manager.js';
 import type { PeerStatus } from '../types.js';
 import { log } from '../util/log.js';
+import { atomicWriteFileSync } from '../util/atomic-write.js';
 import { isPlainObject, isStringArray, parseJson } from '../util/json.js';
 import { warnIfSlow } from './event-loop-watch.js';
 
@@ -326,14 +329,29 @@ export function loadSongBook(filePath: string): SongBook {
   try {
     if (!fs.existsSync(filePath)) return emptySongBook();
     const parsed = parseJson(fs.readFileSync(filePath, 'utf8'), isPlainObject);
-    if (!parsed) return emptySongBook();
-    return parseSongBook(parsed);
+    if (!parsed) return preserveUnreadableSongBook(filePath);
+    const book = parseSongBook(parsed);
+    if (songBookDiscardedEverything(parsed, book)) preserveUnreadableSongBook(filePath);
+    return book;
   } catch {
     // A corrupt or hand-edited book costs the user their colours. It must never
     // cost them a working setlist, so this degrades instead of throwing.
     log.warn('core', 'song-book unreadable; starting a fresh one');
-    return emptySongBook();
+    return preserveUnreadableSongBook(filePath);
   }
+}
+
+// Moves a book that could not be read aside, so the next save does not
+// overwrite what the user may still recover by hand. Never throws.
+function preserveUnreadableSongBook(filePath: string): SongBook {
+  try {
+    if (fs.existsSync(filePath)) fs.renameSync(filePath, `${filePath}.corrupt-${randomUUID()}`);
+  } catch (err) {
+    log.warn('core', 'song-book could not be set aside', {
+      error: err instanceof Error ? err.message : String(err),
+    });
+  }
+  return emptySongBook();
 }
 
 /**
@@ -342,7 +360,7 @@ export function loadSongBook(filePath: string): SongBook {
 export function saveSongBook(filePath: string, book: SongBook): void {
   try {
     fs.mkdirSync(path.dirname(filePath), { recursive: true });
-    fs.writeFileSync(filePath, JSON.stringify(book, null, 1), 'utf8');
+    atomicWriteFileSync(filePath, JSON.stringify(book, null, 1));
   } catch (err) {
     log.warn('core', 'song-book could not save', {
       error: err instanceof Error ? err.message : String(err),

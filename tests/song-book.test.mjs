@@ -8,6 +8,52 @@ import {
   setSongColor,
   colorsByTime,
 } from '../src/core/song-book.ts';
+import * as fs from 'node:fs';
+import * as path from 'node:path';
+import { tmpdir } from 'node:os';
+import { loadSongBook } from '../src/runtime/bridge-state.ts';
+
+function loadFromDisk(t, content) {
+  const dir = fs.mkdtempSync(path.join(tmpdir(), 'rc-setlist-song-book-'));
+  t.after(() => fs.rmSync(dir, { recursive: true, force: true }));
+  const file = path.join(dir, 'song-book.json');
+  fs.writeFileSync(file, content, 'utf8');
+  const book = loadSongBook(file);
+  const kept = fs
+    .readdirSync(dir)
+    .filter((name) => name.startsWith('song-book.json.corrupt-'))
+    .map((name) => fs.readFileSync(path.join(dir, name), 'utf8'));
+  return { book, kept, originalLeft: fs.existsSync(file) };
+}
+
+for (const [label, content] of [
+  ['truncated JSON', '{"version":1,"present":[{"id":"a"'],
+  ['non-object JSON', '[1,2,3]'],
+  ['an unknown version', '{"version":99}'],
+  [
+    'a version 1 book whose entries were all discarded',
+    JSON.stringify({ version: 1, present: [{ id: 'bad' }], data: { a: { color: 42 } } }),
+  ],
+]) {
+  test(`loading ${label} sets the file aside and starts empty`, (t) => {
+    const { book, kept, originalLeft } = loadFromDisk(t, content);
+    assert.deepEqual(book, emptySongBook());
+    assert.deepEqual(kept, [content], 'the unreadable content is kept beside the book');
+    assert.equal(originalLeft, false);
+  });
+}
+
+test('loading a partly invalid version 1 book keeps it in place', (t) => {
+  const content = JSON.stringify({
+    version: 1,
+    present: [{ id: 'a', name: 'A', time: 0 }, { id: 'bad' }],
+    data: { a: { color: '#d9c7a7' } },
+  });
+  const { book, kept, originalLeft } = loadFromDisk(t, content);
+  assert.equal(book.present.length, 1);
+  assert.deepEqual(kept, []);
+  assert.equal(originalLeft, true);
+});
 
 function idFactory() {
   let n = 0;

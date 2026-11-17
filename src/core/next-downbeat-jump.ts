@@ -23,17 +23,6 @@ export interface PendingJump {
 }
 
 /**
- * Compute the next downbeat at or after `anchor` seconds.
- * Retained for backwards compatibility with tests.
- */
-export function nextDownbeat(anchor: number, tempo: number, signatureNumerator: number): number {
-  const safeTempo = tempo > 0 ? tempo : 120;
-  const safeSig = signatureNumerator > 0 ? signatureNumerator : 4;
-  const barLength = (60 / safeTempo) * safeSig;
-  return Math.ceil(anchor / barLength) * barLength;
-}
-
-/**
  * Compute the next quantization boundary in beats at or after `anchor` beats.
  */
 export function nextQuantizationBoundary(anchor: number, quantizationBeats: number): number {

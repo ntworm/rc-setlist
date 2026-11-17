@@ -6,34 +6,33 @@
 
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
+import { atomicWriteFile } from '../../util/atomic-write.js';
 import { ProfileError } from './types.js';
 
 /**
- * Writes the json atomic.
+ * Writes `value` as JSON, replacing the file atomically through `writer` and
+ * keeping the previous content in `<file>.bak`. A failed write leaves the
+ * previous file in place. The error message carries no path, because profile
+ * errors reach the client; the path stays in `cause`.
  */
-export async function writeJsonAtomic(filePath: string, value: unknown): Promise<void> {
-  const dir = path.dirname(filePath);
-  await fs.mkdir(dir, { recursive: true });
-
-  const tempPath = `${filePath}.tmp.${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+export async function writeJsonAtomic(
+  filePath: string,
+  value: unknown,
+  writer: (targetPath: string, data: string) => Promise<void> = atomicWriteFile,
+): Promise<void> {
   const backupPath = `${filePath}.bak`;
   const jsonStr = JSON.stringify(value, null, 2) + '\n';
 
   try {
-    await fs.writeFile(tempPath, jsonStr, 'utf-8');
+    await fs.mkdir(path.dirname(filePath), { recursive: true });
     try {
       await fs.copyFile(filePath, backupPath);
     } catch (err) {
       if ((err as NodeJS.ErrnoException).code !== 'ENOENT') throw err;
     }
-    await fs.rename(tempPath, filePath);
+    await writer(filePath, jsonStr);
   } catch (err) {
-    try {
-      await fs.unlink(tempPath);
-    } catch {
-      // swallow: nothing to do here on purpose
-    }
-    throw new ProfileError('profile_io_error', `Failed to atomically write ${filePath}`, {
+    throw new ProfileError('profile_io_error', 'Failed to atomically write a profile file', {
       cause: err,
     });
   }

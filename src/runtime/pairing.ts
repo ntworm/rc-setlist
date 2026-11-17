@@ -23,6 +23,7 @@ import { httpsOptions } from '../server/cert.js';
 import { writePeerConfig, type PeerConfig } from '../preferences.js';
 import { bridgeState } from './bridge-state.js';
 import { log } from '../util/log.js';
+import { atomicWriteFileSync } from '../util/atomic-write.js';
 
 /** How long a pairing code stays usable. */
 const PAIRING_CODE_TTL_MS = 10 * 60 * 1000;
@@ -190,15 +191,8 @@ export function certificateFingerprint(raw: Buffer): string {
   return new X509Certificate(raw).fingerprint256;
 }
 
-/**
- * Returns the credential a paired computer presents.
- *
- * It lives beside the security token and is a credential of its own: a
- * computer that holds it may run transport commands here and nothing else.
- * It is never the same string as the security token.
- */
-export function getOrGeneratePeerToken(): string {
-  const tokenPath = path.join(bridgeState.globalPersistenceDir, 'peer-token');
+/** Reads a stored peer token; an empty string means there is none to keep. */
+function readStoredPeerToken(tokenPath: string): string {
   try {
     if (fs.existsSync(tokenPath)) {
       const token = fs.readFileSync(tokenPath, 'utf8').trim();
@@ -209,11 +203,36 @@ export function getOrGeneratePeerToken(): string {
       error: err instanceof Error ? err.message : String(err),
     });
   }
+  return '';
+}
+
+/**
+ * Returns the credential a paired computer presents.
+ *
+ * It lives beside the security token and is a credential of its own: a
+ * computer that holds it may run transport commands here and nothing else.
+ * It is never the same string as the security token.
+ */
+export function getOrGeneratePeerToken(): string {
+  const tokenPath = path.join(bridgeState.globalPersistenceDir, 'peer-token');
+  const existing = readStoredPeerToken(tokenPath);
+  if (existing) {
+    // Failing to tighten the mode must not replace a token already paired.
+    try {
+      fs.chmodSync(tokenPath, 0o600);
+    } catch (err) {
+      log.error('peer', 'Failed to restrict the peer token file mode.', {
+        error: err instanceof Error ? err.message : String(err),
+      });
+    }
+    return existing;
+  }
 
   let token = randomBytes(16).toString('hex'); // 32 hex characters
   while (token === bridgeState.authToken) token = randomBytes(16).toString('hex');
   try {
-    fs.writeFileSync(tokenPath, token, 'utf8');
+    // A replaced file gets the mode too: the rename swaps in a new owner-only file.
+    atomicWriteFileSync(tokenPath, token, { mode: 0o600 });
   } catch (err) {
     log.error('peer', 'Failed to write the peer token.', {
       error: err instanceof Error ? err.message : String(err),
