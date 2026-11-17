@@ -68,6 +68,10 @@ test('decoder accepts every current browser and server command, including legacy
     { type: 'jump', songIndex: 2 },
     { type: 'jump', songIndex: 2, sectionIndex: null },
     { type: 'jump', songIndex: 2, sectionIndex: 3 },
+    { type: 'jump', songIndex: 2, immediate: true },
+    { type: 'jump', songIndex: 2, immediate: false },
+    { type: 'jump_time', time: 100, section: true },
+    { type: 'jump_time', time: 100, immediate: true },
     { type: 'click_preview' },
     { type: 'click_preview', bpm: 120, beats: 4 },
     { type: 'set_panic', active: true },
@@ -106,6 +110,11 @@ test('decoder rejects invalid scalar command fields', () => {
     [{ type: 'set_quantization', value: 99 }, /value/],
     [{ type: 'jump', songIndex: -1 }, /songIndex/],
     [{ type: 'jump', songIndex: 0, sectionIndex: -1 }, /sectionIndex/],
+    [{ type: 'jump', songIndex: 2, immediate: 'yes' }, /immediate/],
+    [{ type: 'jump', songIndex: 2, immediate: 1 }, /immediate/],
+    [{ type: 'jump', songIndex: 2, immediate: null }, /immediate/],
+    [{ type: 'jump_time', time: 100, immediate: 'yes' }, /immediate/],
+    [{ type: 'jump_time', time: 100, immediate: 0 }, /immediate/],
     [{ type: 'click_preview', bpm: 0 }, /bpm/],
     [{ type: 'click_preview', beats: Number.POSITIVE_INFINITY }, /beats/],
     [{ type: 'set_panic', active: 1 }, /active/],
@@ -121,6 +130,34 @@ test('decoder canonicalizes the pre-roll toggle and drops unexpected fields', ()
 
   assert.equal(result.ok, true);
   assert.deepEqual(result.message, { type: 'set_pre_roll', value: true });
+});
+
+test('the immediate flag is a boolean, and a jump without it keeps none', () => {
+  // A jump that does not ask to land now must stay a jump without the flag:
+  // the flag is what tells the two computers apart.
+  assert.deepEqual(decodeClientMessage({ type: 'jump', songIndex: 2 }).message, {
+    type: 'jump',
+    songIndex: 2,
+  });
+  assert.deepEqual(decodeClientMessage({ type: 'jump', songIndex: 2, sectionIndex: 1 }).message, {
+    type: 'jump',
+    songIndex: 2,
+    sectionIndex: 1,
+  });
+  assert.deepEqual(decodeClientMessage({ type: 'jump_time', time: 100 }).message, {
+    type: 'jump_time',
+    time: 100,
+  });
+
+  assert.deepEqual(decodeClientMessage({ type: 'jump', songIndex: 2, immediate: true }).message, {
+    type: 'jump',
+    songIndex: 2,
+    immediate: true,
+  });
+  assert.deepEqual(
+    decodeClientMessage({ type: 'jump_time', time: 100, section: true, immediate: true }).message,
+    { type: 'jump_time', time: 100, section: true, immediate: true },
+  );
 });
 
 test('decoder rejects C0 and C1 controls in every structured text field', () => {

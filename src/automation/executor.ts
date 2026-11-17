@@ -24,7 +24,7 @@ import type { AutomationAction } from '../core/setlist-manager.js';
  * One consequence to know: unlike a cue jump, this does not move Live's start
  * marker, so a double Stop afterwards returns wherever it pointed before.
  */
-function handOver(targetTime: number): void {
+export function handOver(targetTime: number): void {
   if (!bridgeState.oscClient || !bridgeState.manager) return;
   bridgeState.oscClient.send('/live/song/set/loop', [{ type: 'integer', value: 0 }]);
   bridgeState.manager.clearLoop();

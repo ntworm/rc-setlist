@@ -142,12 +142,24 @@ export type ClientMessage =
   | (ClientMessageBase & { type: 'metronome'; value: boolean })
   | (ClientMessageBase & { type: 'set_pre_roll'; value: boolean })
   | (ClientMessageBase & { type: 'set_quantization'; value: number })
-  | (ClientMessageBase & { type: 'jump'; songIndex: number; sectionIndex?: number | null })
+  | (ClientMessageBase & {
+      type: 'jump';
+      songIndex: number;
+      sectionIndex?: number | null;
+      /**
+       * Land the jump now, without waiting for the quantization grid.
+       * Only while the transport runs; a stopped transport jumps at once
+       * anyway, and so does a transport with no grid.
+       */
+      immediate?: boolean;
+    })
   | (ClientMessageBase & {
       type: 'jump_time';
       time: number;
       /** Whether the jump landed on a section rather than on a song. */
       section?: boolean;
+      /** Whether the jump must land now, without waiting for the grid. */
+      immediate?: boolean;
     })
   | (ClientMessageBase & { type: 'reorder'; songTitles: string[] })
   | (ClientMessageBase & { type: 'save_lyrics'; song: string; text: string })

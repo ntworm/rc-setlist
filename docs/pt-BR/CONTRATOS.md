@@ -120,14 +120,21 @@ clientId ≤ 128; campos de perfil ≤ 80; títulos ≤ 255; corpo de letra
 título, cabeçalho de letra) rejeitam controles C0/C1.
 
 Uma conexão de par (ver §5.1) envia um frame que a tabela acima não lista:
-`jump_time`, com `commandId`, `time` (o beat em que ele pousa) e `section`
-(se aquele beat é uma seção). Um salto não pode viajar como índice de uma
-lista, porque os dois computadores podem ter as músicas em outra ordem. Só
-uma conexão de par pode enviá-lo; qualquer outro cliente é recusado com
-`unauthorized`. O lado que recebe procura um marcador a menos de um centésimo
-de beat desse beat — o mais próximo e, num empate, o primeiro na ordem
-exibida — e responde `{"type":"error","code":"peer_no_marker"}` quando não
-tem nenhum.
+`jump_time`, com `commandId`, `time` (o beat em que ele pousa), `section`
+(se aquele beat é uma seção) e o `immediate` opcional (se o salto tem de
+pousar na hora, sem esperar a grade de quantização). Um salto não pode
+viajar como índice de uma lista, porque os dois computadores podem ter as
+músicas em outra ordem. Só uma conexão de par pode enviá-lo; qualquer outro
+cliente é recusado com `unauthorized`. O lado que recebe procura um marcador
+a menos de um centésimo de beat desse beat — o mais próximo e, num empate, o
+primeiro na ordem exibida — e responde
+`{"type":"error","code":"peer_no_marker"}` quando não tem nenhum.
+
+O mesmo `immediate` opcional viaja num frame `jump`: ele pede que o salto
+pouse na hora enquanto o transporte toca, em vez de esperar a próxima linha
+da grade. Ele é levado ao computador pareado junto com o salto, para que os
+dois pousem no mesmo instante. Um salto que já está esperando a grade é
+recusado: o Live segura o cue jump e o pousaria depois do salto imediato.
 
 ### 2.3 Reliability Core
 

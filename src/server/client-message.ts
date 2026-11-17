@@ -155,20 +155,28 @@ export function decodeClientMessage(input: unknown): DecodeResult {
         !isFiniteInteger(input.sectionIndex, 0, 100_000)
       )
         return fail('Invalid sectionIndex.');
-      return success(
-        input.sectionIndex === undefined
-          ? { type: 'jump', songIndex: input.songIndex }
-          : { type: 'jump', songIndex: input.songIndex, sectionIndex: input.sectionIndex },
-      );
+      if (input.immediate !== undefined && typeof input.immediate !== 'boolean') {
+        return fail('Invalid immediate flag for jump.');
+      }
+      return success({
+        type: 'jump',
+        songIndex: input.songIndex,
+        ...(input.sectionIndex === undefined ? {} : { sectionIndex: input.sectionIndex }),
+        ...(input.immediate === undefined ? {} : { immediate: input.immediate }),
+      });
     case 'jump_time':
       if (!isBoundedNumber(input.time, 0, 1_000_000)) return fail('Invalid time for jump_time.');
       if (input.section !== undefined && typeof input.section !== 'boolean') {
         return fail('Invalid section flag for jump_time.');
       }
+      if (input.immediate !== undefined && typeof input.immediate !== 'boolean') {
+        return fail('Invalid immediate flag for jump_time.');
+      }
       return success({
         type: 'jump_time',
         time: input.time,
         ...(input.section === undefined ? {} : { section: input.section }),
+        ...(input.immediate === undefined ? {} : { immediate: input.immediate }),
       });
     case 'reorder':
       if (

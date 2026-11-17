@@ -117,14 +117,22 @@ reorder ≤ 4096 songs; structured-text fields (notes, song title, lyrics
 header) reject C0/C1 controls.
 
 A peer connection (see §5.1) sends one frame the table above does not list:
-`jump_time`, with `commandId`, `time` (the beat it lands on) and `section`
-(whether that beat is a section). A jump cannot travel as an index into a
-list, because the two computers may hold the songs in another order. Only a
-peer connection may send it; any other client is refused with
-`unauthorized`. The receiving side looks for a marker less than a hundredth
-of a beat away from that beat — the closest one, and on a tie the first in
-its displayed order — and answers `{"type":"error","code":"peer_no_marker"}`
-when it has none.
+`jump_time`, with `commandId`, `time` (the beat it lands on), `section`
+(whether that beat is a section) and the optional `immediate` (whether the
+jump must land at once, without waiting for the quantization grid). A jump
+cannot travel as an index into a list, because the two computers may hold
+the songs in another order. Only a peer connection may send it; any other
+client is refused with `unauthorized`. The receiving side looks for a marker
+less than a hundredth of a beat away from that beat — the closest one, and on
+a tie the first in its displayed order — and answers
+`{"type":"error","code":"peer_no_marker"}` when it has none.
+
+The same optional `immediate` travels on a `jump` frame: it asks for the
+jump to land at once while the transport runs, instead of waiting for the
+next grid line. It is carried to the paired computer with the jump, so both
+computers land it at the same moment. A jump that is already waiting for the
+grid is refused: Live holds the cue jump and would land it after the
+immediate one.
 
 ### 2.3 Reliability Core
 

@@ -252,14 +252,23 @@
     </p>
     <p>
       A peer connection (see §5.1) sends one frame the table above does not list:
-      <code>jump_time</code>, with <code>commandId</code>, <code>time</code> (the beat it lands on)
-      and <code>section</code> (whether that beat is a section). A jump cannot travel as an index
-      into a list, because the two computers may hold the songs in another order. Only a peer
-      connection may send it; any other client is refused with <code>unauthorized</code>. The
-      receiving side looks for a marker less than a hundredth of a beat away from that beat — the
-      closest one, and on a tie the first in its displayed order — and answers
+      <code>jump_time</code>, with <code>commandId</code>, <code>time</code> (the beat it lands on),
+      <code>section</code> (whether that beat is a section) and the optional
+      <code>immediate</code> (whether the jump must land at once, without waiting for the
+      quantization grid). A jump cannot travel as an index into a list, because the two computers
+      may hold the songs in another order. Only a peer connection may send it; any other client is
+      refused with <code>unauthorized</code>. The receiving side looks for a marker less than a
+      hundredth of a beat away from that beat — the closest one, and on a tie the first in its
+      displayed order — and answers
       <code>{&quot;type&quot;:&quot;error&quot;,&quot;code&quot;:&quot;peer_no_marker&quot;}</code>
       when it has none.
+    </p>
+    <p>
+      The same optional <code>immediate</code> travels on a <code>jump</code> frame: it asks for the
+      jump to land at once while the transport runs, instead of waiting for the next grid line. It
+      is carried to the paired computer with the jump, so both computers land it at the same moment.
+      A jump that is already waiting for the grid is refused: Live holds the cue jump and would land
+      it after the immediate one.
     </p>
     <h3 id="2-3-reliability-core">2.3 Reliability Core</h3>
     <p>
@@ -664,6 +673,6 @@
       <code>npm run ci:public</code> and <code>npm run version:check</code>. Both run in CI before
       any tagged release.
     </p>
-    <div class="source">Rendered from <code>docs\CONTRACTS.md</code> on 2026-11-07.</div>
+    <div class="source">Rendered from <code>docs\CONTRACTS.md</code> on 2026-11-17.</div>
   </body>
 </html>

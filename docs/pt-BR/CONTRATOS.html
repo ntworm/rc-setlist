@@ -257,13 +257,21 @@
     <p>
       Uma conexão de par (ver §5.1) envia um frame que a tabela acima não lista:
       <code>jump_time</code>, com <code>commandId</code>, <code>time</code> (o beat em que ele
-      pousa) e <code>section</code> (se aquele beat é uma seção). Um salto não pode viajar como
-      índice de uma lista, porque os dois computadores podem ter as músicas em outra ordem. Só uma
-      conexão de par pode enviá-lo; qualquer outro cliente é recusado com <code>unauthorized</code>.
-      O lado que recebe procura um marcador a menos de um centésimo de beat desse beat — o mais
-      próximo e, num empate, o primeiro na ordem exibida — e responde
+      pousa), <code>section</code> (se aquele beat é uma seção) e o <code>immediate</code> opcional
+      (se o salto tem de pousar na hora, sem esperar a grade de quantização). Um salto não pode
+      viajar como índice de uma lista, porque os dois computadores podem ter as músicas em outra
+      ordem. Só uma conexão de par pode enviá-lo; qualquer outro cliente é recusado com
+      <code>unauthorized</code>. O lado que recebe procura um marcador a menos de um centésimo de
+      beat desse beat — o mais próximo e, num empate, o primeiro na ordem exibida — e responde
       <code>{&quot;type&quot;:&quot;error&quot;,&quot;code&quot;:&quot;peer_no_marker&quot;}</code>
       quando não tem nenhum.
+    </p>
+    <p>
+      O mesmo <code>immediate</code> opcional viaja num frame <code>jump</code>: ele pede que o
+      salto pouse na hora enquanto o transporte toca, em vez de esperar a próxima linha da grade.
+      Ele é levado ao computador pareado junto com o salto, para que os dois pousem no mesmo
+      instante. Um salto que já está esperando a grade é recusado: o Live segura o cue jump e o
+      pousaria depois do salto imediato.
     </p>
     <h3 id="2-3-reliability-core">2.3 Reliability Core</h3>
     <p>
@@ -646,6 +654,6 @@
       <code>npm run ci:public</code> e <code>npm run version:check</code>. Ambos rodam em CI antes
       de qualquer release tagged.
     </p>
-    <div class="source">Rendered from <code>docs\pt-BR\CONTRATOS.md</code> on 2026-11-07.</div>
+    <div class="source">Rendered from <code>docs\pt-BR\CONTRATOS.md</code> on 2026-11-17.</div>
   </body>
 </html>

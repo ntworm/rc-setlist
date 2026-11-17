@@ -143,6 +143,9 @@ export function resolvePeerJump(msg: ClientMessage, state: SetlistState): PeerJu
     type: 'jump',
     songIndex: target.songIndex,
     sectionIndex: target.sectionIndex,
+    // The flag travels with the beat: the paired computer lands the jump now
+    // too, instead of waiting for its own grid.
+    ...(msg.immediate === undefined ? {} : { immediate: msg.immediate }),
     ...(msg.commandId ? { commandId: msg.commandId } : {}),
   };
   return { kind: 'jump', message };

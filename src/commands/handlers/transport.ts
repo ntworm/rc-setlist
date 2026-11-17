@@ -7,9 +7,39 @@ import { log } from '../../util/log.js';
 import { applyJumpTargetTempo } from '../jump-tempo.js';
 import { buildClickPreviewWav, clickPreviewFilename } from '../../core/click-preview.js';
 import { OperatorError } from '../../core/operator-error.js';
+import { handOver } from '../../automation/executor.js';
 import { resolveCueAtTime, type ClientMessageOf } from './shared.js';
 import type { AugmentedWebSocket } from '../../types.js';
 import type { atomicWriteFile } from '../../util/atomic-write.js';
+
+/**
+ * Arms the loop of the section a jump lands on, or turns the loop off.
+ *
+ * A section that counts its loops repeats in Live; a song does not, so a jump
+ * that lands on a song always turns the loop off.
+ */
+function applyJumpLoop(songIndex: number, sectionIndex: number | null | undefined): void {
+  const manager = bridgeState.manager;
+  const osc = bridgeState.oscClient;
+  if (!manager || !osc) return;
+
+  if (sectionIndex === null || sectionIndex === undefined) {
+    osc.send('/live/song/set/loop', [{ type: 'integer', value: 0 }]);
+    return;
+  }
+
+  const section = manager.getState().songs[songIndex]?.sections[sectionIndex];
+  if (!section || section.loopCount === null) {
+    osc.send('/live/song/set/loop', [{ type: 'integer', value: 0 }]);
+    return;
+  }
+
+  const loopRegion = manager.getLoopRegion(songIndex, sectionIndex);
+  if (!loopRegion) return;
+  osc.send('/live/song/set/loop', [{ type: 'integer', value: 1 }]);
+  osc.send('/live/song/set/loop_start', [{ type: 'float', value: loopRegion.start }]);
+  osc.send('/live/song/set/loop_length', [{ type: 'float', value: loopRegion.duration }]);
+}
 
 /**
  * ExecuteJumpCommand — implementation detail. Returns how long, in
@@ -47,6 +77,31 @@ export function executeJumpCommand(msg: ClientMessageOf<'jump'>): number {
   );
   const isImmediate = !mgrState.isPlaying || quantBeats === 0;
 
+  /*
+   * An immediate jump asked for while the transport runs moves the playhead
+   * now, through the same handover the automation uses, instead of the cue
+   * jump Live would hold until the next grid line. A stopped transport and a
+   * transport with no grid jump at once already, so the flag changes nothing
+   * there.
+   */
+  if (msg.immediate === true && mgrState.isPlaying && quantBeats > 0) {
+    // Live already holds the cue jump of a jump waiting for the grid; it
+    // would land after this one and undo it, so it is refused instead.
+    if (bridgeState.scheduler.hasPending()) {
+      throw new OperatorError('A jump is already waiting for the grid.');
+    }
+    applyJumpTargetTempo(msg.songIndex, msg.sectionIndex ?? null);
+    handOver(targetTime);
+    applyJumpLoop(msg.songIndex, msg.sectionIndex);
+    bridgeState.manager.resetFiredAutomations();
+    bridgeState.wsServer?.broadcast({
+      type: 'jump_executed',
+      songIndex: msg.songIndex,
+      sectionIndex: msg.sectionIndex ?? null,
+    });
+    return 0;
+  }
+
   if (isImmediate) {
     bridgeState.scheduler.clearPending();
     applyJumpTargetTempo(msg.songIndex, msg.sectionIndex ?? null);
@@ -67,25 +122,7 @@ export function executeJumpCommand(msg: ClientMessageOf<'jump'>): number {
       broadcastState();
     }
 
-    if (msg.sectionIndex !== null && msg.sectionIndex !== undefined) {
-      const sec = song.sections[msg.sectionIndex];
-      if (sec && sec.loopCount !== null) {
-        const loopRegion = bridgeState.manager.getLoopRegion(msg.songIndex, msg.sectionIndex);
-        if (loopRegion) {
-          bridgeState.oscClient.send('/live/song/set/loop', [{ type: 'integer', value: 1 }]);
-          bridgeState.oscClient.send('/live/song/set/loop_start', [
-            { type: 'float', value: loopRegion.start },
-          ]);
-          bridgeState.oscClient.send('/live/song/set/loop_length', [
-            { type: 'float', value: loopRegion.duration },
-          ]);
-        }
-      } else {
-        bridgeState.oscClient.send('/live/song/set/loop', [{ type: 'integer', value: 0 }]);
-      }
-    } else {
-      bridgeState.oscClient.send('/live/song/set/loop', [{ type: 'integer', value: 0 }]);
-    }
+    applyJumpLoop(msg.songIndex, msg.sectionIndex);
 
     bridgeState.manager.clearLoop();
     bridgeState.manager.resetFiredAutomations();

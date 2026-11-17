@@ -167,7 +167,19 @@ function buildPeerMessage(command: ShowCommand<unknown>): Record<string, unknown
     // not the same jump.
     const beat = localJumpBeat(command.payload);
     if (!beat) return null;
-    return { type: 'jump_time', time: beat.time, section: beat.section, commandId };
+    // An immediate jump lands at once on this computer, so it must land at
+    // once on the other one too.
+    const immediate =
+      isRecord(command.payload) && typeof command.payload.immediate === 'boolean'
+        ? command.payload.immediate
+        : undefined;
+    return {
+      type: 'jump_time',
+      time: beat.time,
+      section: beat.section,
+      ...(immediate === undefined ? {} : { immediate }),
+      commandId,
+    };
   }
   return { type: command.type, ...payloadFields(command.payload), commandId };
 }

@@ -20,6 +20,7 @@ import {
   stopPeerLink,
 } from '../src/runtime/peer-link.ts';
 import { writePeerConfig } from '../src/preferences.ts';
+import { resolvePeerJump } from '../src/commands/handlers/peer.ts';
 import {
   MAIN_CUES,
   PEER_TOKEN,
@@ -329,6 +330,16 @@ test('a jump to a section travels with its level', async () => {
   assert.strictEqual(song.section, false);
   await waitFor(() => peerComputer.actions.length > 0);
   assert.strictEqual(peerComputer.actions[0].sectionIndex, null);
+});
+
+test('an immediate jump travels to the peer with the flag', async () => {
+  peerComputer.messages.length = 0;
+  relayToPeer(makeCommand('jump', 'cmd-immediate', { type: 'jump', songIndex: 1, immediate: true }));
+  await waitFor(() => peerComputer.messages.some((message) => message.type === 'jump_time'));
+  const jump = peerComputer.messages.find((message) => message.type === 'jump_time');
+  assert.strictEqual(jump.immediate, true, 'the paired computer lands it at once too');
+  const resolved = resolvePeerJump(jump, bridgeState.manager.getState());
+  assert.strictEqual(resolved.message?.immediate, true, 'the conversion keeps the flag');
 });
 
 test('a jump to a section that does not exist does not travel', async () => {
