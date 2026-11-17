@@ -626,7 +626,7 @@ export class SetlistManager {
   private barLineNearest(segment: SignatureSegment, position: number): number {
     const barBeats = (segment.numerator * 4) / segment.denominator;
     const bars = Math.floor((position - segment.fromBeat) / barBeats + 0.5 + 1e-9);
-    return segment.fromBeat + bars * barBeats;
+    return Math.max(0, segment.fromBeat + bars * barBeats);
   }
 
   /**
