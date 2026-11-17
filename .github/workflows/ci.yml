@@ -32,6 +32,8 @@ jobs:
       - name: Install ruff
         run: pip install ruff==0.16.7
       - run: npm ci
+      - name: Audit production dependencies
+        run: npm audit --audit-level=high --omit=dev
       - if: runner.os == 'Linux'
         run: npx playwright install --with-deps chromium
       - if: runner.os != 'Linux'

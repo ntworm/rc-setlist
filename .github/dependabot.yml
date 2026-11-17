@@ -5,6 +5,11 @@ updates:
     schedule:
       interval: monthly
     open-pull-requests-limit: 5
+    groups:
+      npm-minor-and-patch:
+        update-types:
+          - minor
+          - patch
     labels:
       - dependencies
     ignore:
@@ -14,3 +19,9 @@ updates:
       - dependency-name: '@types/node'
         update-types:
           - version-update:semver-major
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+    labels:
+      - dependencies

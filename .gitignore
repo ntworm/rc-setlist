@@ -37,3 +37,6 @@ auto-start
 ui-locale
 .setlist/
 .hub-review/
+/peer-token
+/profiles/
+/events.log
