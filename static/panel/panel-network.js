@@ -246,9 +246,7 @@
     shell.setLinkEnabled(el('openStage'), running(), urls.performance);
   }
 
-  /**
-   * The one code on show, and the button that swaps it for the other page.
-   */
+  /** The one code on show, and the button that swaps it for the other page. */
   function renderAccessPanels() {
     const stageVisible = shell.state.access !== 'performance';
     const pairs = [
@@ -270,9 +268,7 @@
     return stageVisible;
   }
 
-  /**
-   * The codes of the two pages.
-   */
+  /** The codes of the two pages. */
   function renderAccessCodes(urls, stageVisible) {
     const grid = el('qrGrid');
     const placeholder = el('placeholderText');
@@ -302,9 +298,7 @@
     renderAccessCodes(urls, stageVisible);
   }
 
-  /**
-   * The certificate of this computer and its page.
-   */
+  /** The certificate of this computer and its page. */
   function renderCertificate() {
     const card = el('phoneCertCard');
     const url = certificateUrl();
@@ -314,9 +308,7 @@
     if (certQrDrawn && url) drawQr('qrCert', url, 72);
   }
 
-  /**
-   * The words and the host of the second computer.
-   */
+  /** The words and the host of the second computer. */
   function renderPeerStatus(peer) {
     const statusText = el('peerStatusText');
     const localAddress = el('peerLocalAddress');
@@ -328,9 +320,7 @@
     if (hostInput && !hostInput.value) hostInput.value = peer.host || '';
   }
 
-  /**
-   * The code of the second computer and the button that asks for it.
-   */
+  /** The code of the second computer and the button that asks for it. */
   function renderPeerCode(peer) {
     const activeCode = el('peerActiveCode');
     const codeHint = el('peerCodeHint');
@@ -340,20 +330,37 @@
     if (codeButton) codeButton.disabled = !peer.canGenerateCode;
   }
 
-  /**
-   * The second computer.
-   */
+  /** The computers that answered on the network, one button each. */
+  function renderPeerFound(peer) {
+    const list = el('peerFoundList');
+    const found = el('peerFound');
+    if (!list || !found) return;
+    // The list is painted again on every render, never added to.
+    list.textContent = '';
+    for (const one of peer.discovered || []) {
+      const button = document.createElement('button');
+      button.className = 'btn small';
+      button.textContent = `${one.name} \xB7 ${one.host}`;
+      button.onclick = () => {
+        el('peerHostInput').value = one.host;
+        el('peerCodeInput').focus();
+      };
+      list.appendChild(button);
+    }
+    found.hidden = list.childElementCount === 0;
+  }
+
+  /** The second computer, and the computers that answered on the network. */
   function renderPeer() {
     const peer = window.INITIAL_PEER || {};
     renderPeerStatus(peer);
     renderPeerCode(peer);
+    renderPeerFound(peer);
     const details = el('peerDetails');
     if (peer.code && details && details.hidden) togglePeerDetails();
   }
 
-  /**
-   * Draws the code of the certificate page.
-   */
+  /** Draws the code of the certificate page. */
   function drawCertQr() {
     const url = certificateUrl();
     if (!url) return;
@@ -361,9 +368,7 @@
     certQrDrawn = true;
   }
 
-  /**
-   * Opens or closes the card of the second computer.
-   */
+  /** Opens or closes the card of the second computer. */
   function togglePeerDetails() {
     const details = el('peerDetails');
     const button = el('btnPeerToggle');
@@ -378,9 +383,7 @@
     button.textContent = shell.text(labelKey);
   }
 
-  /**
-   * Opens or closes the card of the certificate.
-   */
+  /** Opens or closes the card of the certificate. */
   function toggleCertDetails() {
     const details = el('certDetails');
     const button = el('btnCertToggle');

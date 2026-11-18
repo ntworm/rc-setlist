@@ -46,6 +46,7 @@ import { relayToPeer, startPeerLinks, stopPeerLink } from './runtime/peer-link.j
 import { receiveSetlistChunk } from './runtime/peer-setlist.js';
 import { handlePeerClock, notePeerCommand } from './runtime/peer-follow-runtime.js';
 import { getOrGeneratePeerToken } from './runtime/pairing.js';
+import { startPeerDiscovery, stopPeerDiscovery } from './runtime/peer-discovery.js';
 import { startEventLoopWatch, warnIfSlow } from './runtime/event-loop-watch.js';
 import { readPeerConfigs } from './preferences.js';
 import { applyJumpTargetTempo } from './commands/jump-tempo.js';
@@ -298,6 +299,17 @@ function refusedByThisComputer(command: ShowCommand<ClientMessage>): boolean {
 }
 
 /**
+ * The port the server listens on right now.
+ *
+ * The port may be one the system chose (port 0 asks for a free one), so the
+ * address of the server is the truth and not the number that was asked for.
+ */
+function servingPort(): number {
+  const address = bridgeState.server?.address();
+  return address && typeof address === 'object' ? address.port : PORT;
+}
+
+/**
  * Starts the server.
  */
 export async function startServer(options: StartServerOptions = {}): Promise<void> {
@@ -512,6 +524,10 @@ export async function startServer(options: StartServerOptions = {}): Promise<voi
 
     // The paired computers, if there are any, follow from here on.
     startPeerLinks(readPeerConfigs());
+
+    // The computers of the network announce themselves, so the main one
+    // finds them without an address to type.
+    startPeerDiscovery(servingPort, () => bridgeState.serverUsesTls);
 
     bridgeState.wsServer.on('client_message', (msg: ClientMessage, ws: AugmentedWebSocket) => {
       if (!bridgeState.manager) return;
@@ -831,6 +847,9 @@ export async function stopServer(): Promise<void> {
   }
 
   stopPeerLink();
+
+  // The computers of the network stop saying hello with the server.
+  stopPeerDiscovery();
 
   if (bridgeState.oscClient) {
     try {

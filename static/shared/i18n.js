@@ -193,6 +193,7 @@
     'panel.peerShow': { en: 'Show', 'pt-BR': 'Mostrar' },
     'panel.peerHide': { en: 'Hide', 'pt-BR': 'Esconder' },
     'panel.peerHostLabel': { en: 'Second computer IP', 'pt-BR': 'IP do segundo computador' },
+    'panel.peerFound': { en: 'Ready to pair', 'pt-BR': 'Prontos para parear' },
     'panel.peerCodeLabel': { en: 'Code', 'pt-BR': 'Código' },
     'panel.peerThisComputer': { en: 'This computer', 'pt-BR': 'Este computador' },
     'panel.peerGenerateCode': { en: 'Generate code', 'pt-BR': 'Gerar código' },

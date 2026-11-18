@@ -1,7 +1,6 @@
 import { expect, test } from '@playwright/test';
 
-// The panel as the extension hands it over: the server runs, the RC Bridge
-// answered and the machine holds two addresses.
+// The panel as the extension hands it over: the server runs, the RC Bridge answered and the machine holds two addresses.
 const LIVE_OSC_DIAGNOSTICS = {
   state: 'responding',
   listenPort: 11101,
@@ -79,6 +78,10 @@ const LIVE_PEER = {
   code: null,
   canGenerateCode: true,
   codeHint: '',
+  discovered: [
+    { host: '192.168.1.77', name: 'Studio', port: 4444 },
+    { host: '192.168.1.78', name: 'Backline', port: 4444 },
+  ],
 };
 
 const LIVE_PACKAGES = {
@@ -96,8 +99,7 @@ const LIVE_FIXTURE = {
   project: LIVE_PROJECT,
 };
 
-// The panel as the extension hands it over: the values above reach the
-// page as they are.
+// The panel as the extension hands it over: the values above reach the page as they are.
 const livePanelInit = (fixture) => {
   window.INITIAL_IS_RUNNING = true;
   window.INITIAL_PORT = 4444;
@@ -120,15 +122,8 @@ const livePanelInit = (fixture) => {
 // test can see what the panel asked for.
 const hostInit = () => {
   window.__messages = [];
-  window.webkit = {
-    messageHandlers: {
-      live: {
-        postMessage: (message) => {
-          window.__messages.push(message);
-        },
-      },
-    },
-  };
+  const post = (message) => window.__messages.push(message);
+  window.webkit = { messageHandlers: { live: { postMessage: post } } };
 };
 
 async function openPanel(page, { size = { width: 760, height: 600 } } = {}) {
@@ -139,23 +134,17 @@ async function openPanel(page, { size = { width: 760, height: 600 } } = {}) {
 }
 
 async function sentEnvelopes(page) {
-  return page.evaluate(() =>
-    (window.__messages || []).map((message) => JSON.parse(message.params[0])),
-  );
+  return page.evaluate(() => (window.__messages || []).map((m) => JSON.parse(m.params[0])));
 }
 
-// The code inside the frame: the image the library draws, or the canvas it
-// falls back to, and the box the frame takes.
+// The code inside the frame: the image the library draws, or the canvas it falls back to, and the box the frame takes.
 async function qrFrame(page, frame) {
   return page.locator(frame).evaluate((element) => {
     const image = element.querySelector('img');
     const canvas = element.querySelector('canvas');
     const rect = element.getBoundingClientRect();
-    return {
-      height: rect.height,
-      source: image ? image.src : canvas ? canvas.toDataURL() : '',
-      width: rect.width,
-    };
+    const source = image ? image.src : canvas ? canvas.toDataURL() : '';
+    return { height: rect.height, source, width: rect.width };
   });
 }
 
@@ -429,6 +418,15 @@ test('pairing with an empty field sends nothing', async ({ page }) => {
 
   expect(await sentEnvelopes(page)).toHaveLength(0);
   await expect(page.locator('#peerHostInput')).toBeFocused();
+});
+
+test('the computers that answered are ready to pair', async ({ page }) => {
+  await openPanel(page);
+  await page.locator('#tabNetwork').click();
+  await page.locator('#btnPeerToggle').click();
+  await expect(page.locator('#peerFoundList button')).toHaveCount(2);
+  await page.locator('#peerFoundList button').first().click();
+  await expect(page.locator('#peerHostInput')).toHaveValue('192.168.1.77');
 });
 
 test('the code for a second computer is asked for in Portuguese too', async ({ page }) => {
