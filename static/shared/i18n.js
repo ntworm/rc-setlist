@@ -399,6 +399,9 @@
       en: 'Expected {expected} BPM (set by the locator). Live {live}.',
       'pt-BR': 'Esperado: {expected} BPM (definido pelo locator). Live: {live}.',
     },
+    'stageMode.label': { en: 'Panel mode', 'pt-BR': 'Modo do painel' },
+    'stageMode.edit': { en: 'Edit', 'pt-BR': 'Edi\u00e7\u00e3o' },
+    'stageMode.show': { en: 'Show', 'pt-BR': 'Show' },
     'next.repeat': { en: '{name} (Repeat)', 'pt-BR': '{name} (Repetir)' },
 
     'midi.title': { en: 'MIDI mapping', 'pt-BR': 'Mapeamento MIDI' },

@@ -43,6 +43,31 @@
       </div>
 
       <div class="app-bar-actions">
+        <div
+          class="stage-mode-switch"
+          role="group"
+          data-i18n-aria-label="stageMode.label"
+          aria-label="Panel mode"
+        >
+          <button
+            type="button"
+            class="ui-button"
+            data-stage-mode="edit"
+            data-i18n="stageMode.edit"
+            aria-pressed="true"
+          >
+            Edit
+          </button>
+          <button
+            type="button"
+            class="ui-button"
+            data-stage-mode="show"
+            data-i18n="stageMode.show"
+            aria-pressed="false"
+          >
+            Show
+          </button>
+        </div>
         <label class="language-control">
           <span class="sr-only" data-i18n="common.language">Language</span>
           <select
@@ -1517,6 +1542,7 @@ A quiet pulse becomes our guide..."
     <script src="./controller-runtime.js"></script>
     <script src="./app-bar-fit.js"></script>
     <script src="./song-fold.js"></script>
+    <script src="./stage-mode.js"></script>
     <script src="./setlist.js"></script>
   </body>
 </html>
