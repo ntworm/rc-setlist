@@ -47,7 +47,7 @@ de coisas que só aparecem num celular em sala escura.
 - **O primeiro Play depois de abrir retoma de onde o Live está**, em vez de
   ler os relatos de andamento que chegam antes de qualquer posição como um
   playhead parado no zero.
-- **O Stop não dispara mais um salto abandonado.** Um salto esperando a
+- **O Stop cancela saltos pendentes.** Um salto esperando a
   quantização ficava armado através do Stop e podia levar o transporte para uma
   seção da qual você já tinha desistido, segundos depois.
 - **Um salto com o transporte parado move o playhead na hora**, então a
@@ -60,8 +60,8 @@ de coisas que só aparecem num celular em sala escura.
   avaliadas de forma independente.
 - **Um Live Set vazio limpa as músicas anteriores**, inclusive quando o último
   localizador é apagado.
-- **A lista de músicas não se reconstrói mais a cada dois segundos**, e o
-  piscar do tempo não força mais um layout inteiro da página a cada batida.
+- **A lista de músicas é reconstruída apenas ao mudar de música**, e o
+  piscar do tempo evita recalcular o layout da página a cada batida.
 - **O dígito da contagem substitui o triângulo de Play** em vez de ser
   desenhado por cima, e um segundo toque silencia a contagem em vez de deixar
   o compasso soando embaixo da reprodução que ele iniciou.

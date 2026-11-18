@@ -1,13 +1,13 @@
-﻿# Notas da Versão 0.5.1
+# Notas da Versão 0.5.1
 
-O RC Setlist 0.5.1 chegou! Esta versão traz melhorias significativas de usabilidade, particularmente nos controles de transporte do palco, além de correções cruciais de bugs para garantir a máxima confiabilidade da performance ao vivo.
+O RC Setlist 0.5.1 atualiza os controles de transporte de palco, mapeamento de teclado e sincronização do relógio do show.
 
 ## Novidades
 
-- **Suporte a Keyboard Mapping**: Agora você pode mapear teclas (como o Numpad ou alfanuméricas) para os controles de transporte, tornando as mudanças de música e navegação muito mais seguras e fáceis sem depender de toque na tela ou mouse.
-- **Toggle de Count-in Pre-roll**: Você agora pode ativar ou desativar o count-in de pre-roll de 1 compasso diretamente pelo painel Stage Control. Isso permite iniciar o playback sem count-in quando a banda precisar.
-- **Melhorias de "Hold-to-Select" no Mobile**: A navegação pelo transporte em aparelhos mobile agora requer um gesto de "hold" (pressionar e segurar) para saltos seguros entre as músicas, prevenindo toques acidentais durante o show. O threshold foi cuidadosamente balanceado.
-- **Edição de Seção via Double-Click**: Agora você pode fazer um clique duplo para editar as tags da seção diretamente da visualização Setlist no desktop.
+- **Suporte a Keyboard Mapping**: Permite mapear teclas do teclado (como Numpad ou alfanuméricas) para controles de transporte de palco, facilitando troca de páginas e navegação entre músicas.
+- **Toggle de Count-in Pre-roll**: Adiciona alternância para o count-in de pre-roll de 1 compasso no painel Stage Control.
+- **Navegação Mobile com Hold**: A navegação de transporte mobile exige o gesto de pressionar e segurar para saltos entre músicas, evitando disparos involuntários.
+- **Edição de Seção via Double-Click**: O clique duplo abre a edição direta de tags de seção na visualização Setlist no desktop.
 
 ## Correções de Bugs
 

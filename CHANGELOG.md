@@ -55,11 +55,11 @@ All notable public changes to Ableton RC Setlist are recorded here.
   panel shows a QR to an install page on port 4445.
 - **Network address**: the QR and the pairing card announce the address the
   system routes through instead of the first private address.
-- **Two computers, one show**: the Live panel gained a **Second computer**
-  card, in the Network tab. The second computer prints a six-digit pairing code, the main computer
-  types its address and the code, and the transport commands the operator
-  gives are relayed to it over a link whose certificate is pinned.
-- **A second dot in the Stage Control header**: green when the second
+- **Second computer coordination**: the Live panel includes a **Second computer**
+  card, in the Network tab. The second computer generates a six-digit pairing code, the main computer
+  enters its address and the code, and the transport commands the operator
+  gives are relayed to it over a link with pinned certificates.
+- **Second computer status indicator**: green when the second
   computer is connected and both read the same markers, amber when it is
   connected and the markers differ, red when it is not answering or its
   certificate changed, and no dot at all when nothing is paired.
@@ -67,9 +67,9 @@ All notable public changes to Ableton RC Setlist are recorded here.
   over TLS, and a jump between two computers travels as the beat it lands on
   (`jump_time`) instead of an index into a list, because the two machines may
   hold the songs in another order.
-- **A pairing code that can be read again**: the panel redraws itself with
-  the code that is already alive instead of asking for a new one, so the
-  number the operator reads is the number that opens the door.
+- **Persistent pairing code**: the panel displays
+  the active pairing code, and the
+  number the operator reads connects the session.
 
 ### Changed
 
@@ -86,12 +86,12 @@ All notable public changes to Ableton RC Setlist are recorded here.
 - **`docs/CONTRACTS.md` and `docs/pt-BR/CONTRATOS.md`** describe the pairing
   route, the peer credential, the `jump_time` frame and the new `peerStatus`
   field of the state frame.
-- **The user guides** (English and Portuguese) gained a *Two computers*
+- **The user guides** (English and Portuguese) include a *Two computers*
   section: pairing from the panel, Link on, Start Stop Sync off, what each
   colour of the dot means, and which commands reach the second computer.
 
 - **The quality gates block the CI and ESLint has no warnings left**: `npm run lint` now runs `eslint . --max-warnings 0`, every rule registered in `eslint.config.mjs` is an `error`, and the `Quality gates` step of the CI workflow lost `continue-on-error`, so `npm run gates:quality` fails the job instead of being reported as an artifact.
-- **The Ableton Extensions SDK surface is typed instead of `any`**: `src/ableton-sdk-public.d.ts` is a hand-written interface with the members the code actually uses, and ESLint resolves `@ableton-extensions/sdk` through it (`tsconfig.eslint.json`), so the `no-unsafe-*` family no longer sees an untyped SDK.
+- **The Ableton Extensions SDK surface is typed instead of `any`**: `src/ableton-sdk-public.d.ts` is a hand-written interface with the members the code actually uses, and ESLint resolves `@ableton-extensions/sdk` through it (`tsconfig.eslint.json`), so the `no-unsafe-*` family validates typed members.
 
 ### WebSocket
 
@@ -163,7 +163,7 @@ All notable public changes to Ableton RC Setlist are recorded here.
 
 ### Added
 
-- **RC Bridge, the bundled Live control surface**: the Remote Script the extension talks to now ships inside the extension and the installation kit, as a fork of the MIT-licensed AbletonOSC (upstream `0ca6821`). Nobody downloads AbletonOSC by hand any more: the kit has `Install-RC-Bridge.cmd` (Windows) and `Install RC Bridge.command` (macOS) that copy it into Live's User Library and print the one remaining step. Selecting **RCBridge** under Settings › Link, Tempo & MIDI › Control Surface stays the user's step, because Live offers no way to do it for them — and the copy itself cannot happen from inside Live either: the ExtensionHost sandboxes the filesystem to the extension's own folders, so the panel reports which script is in use and shows the steps instead of pretending to install. The fork also exposes `last_event_time`, which upstream never did, so the show's total duration no longer needs the MCP bridge.
+- **RC Bridge, the bundled Live control surface**: the Remote Script the extension talks to now ships inside the extension and the installation kit, as a fork of the MIT-licensed AbletonOSC (upstream `0ca6821`). Manual download of AbletonOSC is unnecessary: the kit has `Install-RC-Bridge.cmd` (Windows) and `Install RC Bridge.command` (macOS) that copy it into Live's User Library and print the one remaining step. Selecting **RCBridge** under Settings › Link, Tempo & MIDI › Control Surface stays the user's step, because Live offers no way to do it for them — and the copy itself cannot happen from inside Live either: the ExtensionHost sandboxes the filesystem to the extension's own folders, so the panel reports which script is in use and shows the steps instead of pretending to install. The fork also exposes `last_event_time`, which upstream never did, so the show's total duration reads directly without the MCP bridge.
 - **`[jump NAME]`**: a marker that hands playback to a *named* marker instead of the next one — a section of the same song, a song, or `Song > Section`. Names match with tags stripped and case ignored; a bare name is resolved in this song's sections first, then song titles, then every section in arrangement order. It uses the same immediate hand-over as `[next]` and `[skip]`, has its own field in the marker editor and a badge on the card, and a name that matches nothing does nothing. Along the way the locator parser stopped splitting `Song > Section` on a `>` that sits inside a tag.
 - **Notes per song**: one line for the stage — key, tuning, who counts in — edited on the song panel beside the colour, shown under the title on the card and on the performance display. Stored in the song book with the colour, so it follows the song through renames and moves and never touches the Live project.
 - **Why a fork**: AbletonOSC sends every reply and every listener update to one fixed port, 11001, so only one client per machine could hear it — RC Surface and RC Setlist in the same Live could not both work, and the loser showed "OSC return port busy". RC Bridge listens on its own port (11020, so a stock AbletonOSC can keep running beside it), replies to whichever socket asked, and publishes each listener's updates to every subscriber, with one Live listener per property and a 60-second lease that forgets clients that went away. It also stops logging every property read at INFO, which had grown one owner's log to 34 million lines. The extension probes for RC Bridge first and falls back to a stock AbletonOSC when it is absent, and the panel's OSC line says which one it is talking to (`via RC Bridge 1.0.0 on port 11020`).
@@ -188,15 +188,15 @@ All notable public changes to Ableton RC Setlist are recorded here.
 ### Fixed
 
 - **An Empty Live Set Clears the Previous Songs**: A valid empty SDK cue list now clears the displayed songs and locator targets, including when the last locator is deleted. Unavailable data and read errors still preserve the last valid snapshot.
-- **OSC Tests No Longer Intercept Live Commands**: The test mock now uses an ephemeral loopback port, supports the current Play command, and has bounded waits and socket cleanup. A stranded mock on Live's command port caused the alternating real and fabricated song lists; the earlier attribution to SDK placeholder data was incorrect.
-- **Stop No Longer Fires an Abandoned Jump**: A jump waiting for its quantization boundary stayed armed through Stop, and the scheduler executes a pending jump as soon as a reported position passes its landing beat. Live's Stop moves the playhead, so the next sample after Stop could carry the transport off to a section the operator had already changed their mind about — arriving as a jump to a seemingly random part of the set, seconds after Stop. Stop now disarms it. Stop itself is unchanged — it is exactly Live's `stop_playing`.
+- **OSC Tests Avoid Intercepting Live Commands**: The test mock now uses an ephemeral loopback port, supports the current Play command, and has bounded waits and socket cleanup. A stranded mock on Live's command port caused the alternating real and fabricated song lists; the earlier attribution to SDK placeholder data was incorrect.
+- **Stop Clears Pending Jumps**: A jump waiting for its quantization boundary stayed armed through Stop, and the scheduler executes a pending jump as soon as a reported position passes its landing beat. Live's Stop moves the playhead, so the next sample after Stop could carry the transport off to a section the operator had already changed their mind about — arriving as a jump to a seemingly random part of the set, seconds after Stop. Stop now disarms it. Stop itself is unchanged — it is exactly Live's `stop_playing`.
 - **A Stopped Jump Moves the Playhead Immediately**: Live is only told to jump, and where the playhead actually is comes back on the position poll up to half a second later. The count-in counts at the tempo declared at the playhead, so jumping to a section and pressing Play straight away counted at the tempo of wherever the playhead had been — the rehearsal case the count-in exists for. While stopped, the jump target is adopted at once.
 - **Play Plays From Where You See the Playhead**: Live offers two starts and neither is "from the playhead". `start_playing` begins at the start marker, which a cue jump or an Arrangement click while stopped moves but a stop does not; `continue_playing` resumes where the transport last came to rest and ignores everything done to the playhead since — a cue jump while stopped, a click, a written position (all measured on Live 12.4). An earlier fix in this cycle switched Play to `continue_playing`, which cured Play after Stop rewinding to the start marker but made "jump to a section while stopped, then Play" resume where the transport had stopped instead. Play now resumes when the playhead has not moved since the transport stopped, and starts from the start marker when a jump or a click moved it. The small forward drift a stop shows while its last samples settle is not a relocation; a running transport always continues, since `start_playing` would restart it.
 - **A Quantized Jump Lands on the Beat the Page Announces**: while playing with quantization on, the cue jump was sent when this side's clock passed the landing beat — just past Live's grid line — and Live, which quantizes cue jumps to its next grid line, landed it a full quantization period later. Every quantized jump arrived one bar after the page said it had. The jump is now handed to Live the moment it is requested and Live lands it on the very grid line the page shows; the landing sample applies the destination's tempo and loop. Live cancels an armed cue jump on Stop (measured on Live 12.4), so Stop's `jump_cancelled` stays truthful.
 - **The First Play After Start-Up Resumes Where Live Is**: the SDK reports the tempo every 100ms from the moment the extension starts, and that report was routed through the transport update, presenting a position of zero as the first stopped observation. The first real position then read as a relocation and Play would have started from Live's start marker. Tempo-only reports now have their own path.
 - **A `[next]` Marker at the End of a Song Actually Skips the Gap**: `[next]` and `[skip]` were executed through Live's cue jump, which Live quantizes to the global launch quantization: measured on the owner's set, NEXT fired at beat 872.3 and Live jumped at 876.0, the next bar line. For a `[next]` placed where a song's audio ends and followed by one empty bar — the reason the tag exists — the jump landed exactly where the next song was starting anyway, so the marker appeared to do nothing, and a two-bar gap only lost one bar. Both tags now relocate the playhead directly, which Live does at once: the hand-over happens about a tenth of a second after the marker is crossed (position poll plus AbletonOSC's command tick), never before it, and the next song starts from its first beat. Arming Live's quantized jump a bar early would be sample-exact, but AbletonOSC exposes no bar phase, so a marker off Live's grid — a time-signature change earlier in the set is enough — would have Live jump *before* the marker and cut the end of the song; being a tenth of a second late is the safe side of that. The OSC-only transport path, which a set-up without the Ableton MCP uses and which the owner's own machine never exercises, now has an end-to-end regression test for this.
-- **The Song List No Longer Rebuilds Every Two Seconds**: cues arrive from the Live SDK every 100ms and from AbletonOSC every 2000ms, and the two do not agree to the last decimal. The manager compared exact floats while its callers compared a fingerprint quantized to 1/100 of a beat, so each source looked like a change to the other: every OSC poll reparsed the setlist and the client rebuilt the whole song list, which on screen is the page flickering. The manager now uses the same quantized fingerprint — a difference below 1/100 of a beat cannot change how a locator parses. Independently, the renderer now compares the markup it builds against what is on screen and leaves the DOM alone when they match, so nothing upstream can throw away the list, its scroll position, or the card under a finger.
-- **The Beat Flash No Longer Forces a Full Layout**: the tempo card restarted its CSS animation by reading `offsetWidth`, which flushes layout for the whole document — twice a second at 120 BPM, on a page holding twenty songs and a couple of hundred section chips, and regardless of whether the click was on. As the cards grew badges, an identity band and a colour wash, the cost of that per-beat reflow grew with them. Both stage views now flash through the Web Animations API, which invalidates no layout and recycles a single animation instead of leaving one behind on every beat.
+- **Song List Rebuilds on Song Change Only**: cues arrive from the Live SDK every 100ms and from AbletonOSC every 2000ms, and the two do not agree to the last decimal. The manager compared exact floats while its callers compared a fingerprint quantized to 1/100 of a beat, so each source looked like a change to the other: every OSC poll reparsed the setlist and the client rebuilt the whole song list, which on screen is the page flickering. The manager now uses the same quantized fingerprint — a difference below 1/100 of a beat cannot change how a locator parses. Independently, the renderer now compares the markup it builds against what is on screen and leaves the DOM alone when they match, so nothing upstream can throw away the list, its scroll position, or the card under a finger.
+- **The Beat Flash Avoids Full Layout Reflows**: the tempo card restarted its CSS animation by reading `offsetWidth`, which flushes layout for the whole document — twice a second at 120 BPM, on a page holding twenty songs and a couple of hundred section chips, and regardless of whether the click was on. As the cards grew badges, an identity band and a colour wash, the cost of that per-beat reflow grew with them. Both stage views now flash through the Web Animations API, which invalidates no layout and recycles a single animation instead of leaving one behind on every beat.
 - **The Tools Menu Fits Its Labels**: the popover was a fixed 11rem box while its grid column sized to the widest label, so "Mapeamento de Teclado" pushed every button past the right edge and the border cut across them. The popover is now sized by its widest label, capped to the viewport.
 - **Native Select Lists Are Readable**: the setlist picker's dropdown opened as a white list with near-white text, because Chromium paints the option list from the select's own background and that select is drawn transparent over the dark control. Every native select now paints its options dark.
 - **The Help Guide Tells [next] and [skip] Apart**: the two rows read alike. The guide now says where each tag takes the playhead, that [next] never advances to the next section, that both hand over at the marker rather than on the next bar, and shows the chaining case — an end marker with [next] followed by the next song.
@@ -221,7 +221,7 @@ All notable public changes to Ableton RC Setlist are recorded here.
   - Songs without an initial tag inherit tempo from their first tagged section.
   - Sections with distinct `[bpm N]` tags calculate exact individual segment durations instead of projecting a single tempo across the whole song.
   - Tempo carries across song boundaries from the *last* tempo event in the preceding song.
-  - Mid-song section tags no longer retroactively alter the tempo of earlier sections.
+  - Mid-song section tags preserve the tempo of earlier sections.
   - Total show duration is summed from exact fractional seconds rather than accumulating rounded integer values.
   - CSV exports and elapsed show clocks reference the stable `durationBpm` basis, preventing clocks from drifting or stalling when the live tempo knob moves.
 - **Stage Transport Visibility**: The Play button now uses solid block inversion and non-chromatic SVG icon swaps (play/pause) instead of diffuse glowing shadows, maintaining clear visual state under bright or saturated stage lighting.
@@ -230,8 +230,8 @@ All notable public changes to Ableton RC Setlist are recorded here.
 
 ### Fixed
 
-- **Marker Editor Replaces Raw Text Editing**: Double-clicking a song or a section now opens a form where every tag is a control, and the whole song header is the target rather than the title alone. The raw text field it replaces exposed the name and its tags together, and a `[bpm]` tag — the one that feeds the show duration — could be deleted with a stray keystroke. A tag the panel does not display is carried through untouched, tags are compared by meaning rather than by text so a save that changes nothing writes nothing, and `[hidden]` and `[ignore]`, which remove a marker from the setlist entirely, are no longer switchable from the panel.
-- **Section Prefixes Are Preserved**: Saving a section no longer rewrites its locator prefix. Live accepts both `> VERSO`, where a section belongs to the song locator above it, and `JÚLIA > VERSO`, which names the song outright; the editor used to rebuild the second form unconditionally and renamed every section it touched in a set written in the first.
+- **Marker Editor Replaces Raw Text Editing**: Double-clicking a song or a section now opens a form where every tag is a control, and the whole song header is the target rather than the title alone. The raw text field it replaces exposed the name and its tags together, and a `[bpm]` tag — the one that feeds the show duration — could be deleted with a stray keystroke. A tag the panel does not display is carried through untouched, tags are compared by meaning rather than by text so a save that changes nothing writes nothing, and `[hidden]` and `[ignore]`, which remove a marker from the setlist entirely, are unswitchable from the panel.
+- **Section Prefixes Are Preserved**: Saving a section preserves its locator prefix. Live accepts both `> VERSO`, where a section belongs to the song locator above it, and `JÚLIA > VERSO`, which names the song outright; the editor used to rebuild the second form unconditionally and renamed every section it touched in a set written in the first.
 - **Locator Renames Happen In Place**: A rename used to delete the cue point and create a replacement, because that is how the raw Live API expresses one — a cue point is made by toggling one at the playhead, so a delete that silently failed turned the create into a second delete and the marker disappeared. It also left a window with no marker at the position at all. The bridge renames in place instead, and Live's own cue list is read back afterwards rather than the bridge's word being taken for it.
 - **Locator Edits Are Blocked While Playing**: A rename moves the playhead to the cue's position to act on it, so with the transport rolling Live services the write wherever playback has advanced to and the marker lands at the wrong beat. This is now refused in every mode, at the moment of the write as well as when the editor opens.
 - **Song Colours Repaint Immediately**: Assigning a colour changes no setlist structure, so the list's render fast path skipped it and the colour did not appear until the next structural change.
@@ -243,7 +243,7 @@ All notable public changes to Ableton RC Setlist are recorded here.
 - **The Jump Ring Clears the Title**: The song header carries no padding of its own, so the inset ring drawn while a jump is armed landed flush against the text and read as a box cutting through it.
 - **`[skip]` and `[click]` Are Visible**: Both tags changed what happens on stage while leaving no mark on the card, so setting one and seeing nothing appear read as a save that had failed. Every tag the marker panel can write now has a badge.
 - **Locator Edits Refresh Immediately**: Cue points are polled every two seconds. For up to two seconds after a rename the client still held the previous name, so reopening the marker straight away showed stale values and the next save wrote them back — the earlier edit looked randomly dropped, when it only depended on how fast the user was. The cue list is now pulled back as soon as a rename lands, the rename is verified against Live rather than assumed, and a marker whose save is still in flight cannot be reopened.
-- **Panel No Longer Closes Mid-Edit**: A click event fires on the common ancestor of the press and the release, so selecting text in a field and releasing past the panel edge counted as a click on the backdrop and dismissed the panel. Dismissal now requires the press to start on the backdrop as well.
+- **Panel Maintains State During Text Edits**: A click event fires on the common ancestor of the press and the release, so selecting text in a field and releasing past the panel edge counted as a click on the backdrop and dismissed the panel. Dismissal now requires the press to start on the backdrop as well.
 - **12px Stage Readout Floor**: Enforced the 12px minimum font size floor (`--t-stage-micro`) across all stage readouts and metadata cards.
 
 ## [0.5.1] - 2026-08-14
@@ -264,8 +264,8 @@ All notable public changes to Ableton RC Setlist are recorded here.
 
 ### Fixed
 
-- **Pre-roll Acknowledge Barrier**: Count-In no longer waits for Live to acknowledge the pre-roll before starting playback. The count-in now sends the temporary Click, the position and Play in one ordered burst, decides Click restoration from playhead samples alone, and treats any observed stop as the end of the pre-roll.
-- **Elapsed Show Time Calculation**: Elapsed show and song time no longer move backwards when the tempo changes. Song durations are derived from each song's declared BPM.
+- **Pre-roll Acknowledge Barrier**: Count-In dispatches Click, position and Play in one ordered burst. The count-in now sends the temporary Click, the position and Play in one ordered burst, decides Click restoration from playhead samples alone, and treats any observed stop as the end of the pre-roll.
+- **Elapsed Show Time Calculation**: Elapsed show and song time advance monotonically when tempo changes. Song durations are derived from each song's declared BPM.
 - **WebSocket Boundaries**: Hardened WebSocket boundaries and internal command routing to resolve dropping successive fast events.
 
 ## [0.5.0] - 2026-08-01
@@ -326,7 +326,7 @@ All notable public changes to Ableton RC Setlist are recorded here.
 ### Fixed
 
 - Lyrics edits and synchronized buffers now remain available until the matching
-  persistence command is confirmed; failures, disconnects and timeouts no longer
+  persistence command is confirmed; failures, disconnects and timeouts do not
   report a false save.
 - WebSocket messages are decoded into canonical commands before dispatch, with
   bounded priority handling and safety revalidation immediately before execution.
@@ -390,8 +390,8 @@ All notable public changes to Ableton RC Setlist are recorded here.
   preceding song instead of blank song cards.
 - Newly discovered Arrangement songs are inserted at their chronological
   position while preserving the user's saved custom order.
-- The Live panel no longer lets its footer cover the two
-  **Open on this computer** links, and late translation no longer changes a
+- The Live panel keeps its footer clear of the two
+  **Open on this computer** links, and late translation preserves a
   running server label back to `Server stopped`.
 - Mobile rename fields keep their focus, draft text and keyboard while normal
   Live transport updates continue; Enter can confirm the rename.
@@ -399,7 +399,7 @@ All notable public changes to Ableton RC Setlist are recorded here.
   Project matches the current Live Set, instead of listing every historical
   project in Manage Setlists.
 - Requested quantization now becomes the local jump-scheduler authority
-  immediately, so `None` no longer falls back to `1 bar` when the OSC reply port
+  immediately, so `None` avoids falling back to `1 bar` when the OSC reply port
   is occupied.
 - The single-flight MCP fallback now supplies transport observation and the
   Arrangement end used by Total Duration without building a delayed request
@@ -416,7 +416,7 @@ All notable public changes to Ableton RC Setlist are recorded here.
 - Stage Control now disables its language selector while Live is playing or the
   panel is locked, and resolves the localized lock warning every time it opens.
 - The Lyrics dialog now keeps one active-song selector above Create, Sync and
-  Edit; editor requests for other songs can no longer replace the synchronized
+  Edit; editor requests for other songs cannot replace the synchronized
   lyrics shown for the song currently playing, and closing/reopening the dialog
   preserves an unsaved edit buffer.
 
@@ -476,8 +476,8 @@ All notable public changes to Ableton RC Setlist are recorded here.
 
 ### Fixed
 
-- First-run profile initialization no longer depends on `structuredClone`, which is unavailable in Ableton's embedded runtime.
-- Outgoing OSC transport, navigation, click and refresh commands no longer depend on global `TextEncoder`/`TextDecoder` support.
+- First-run profile initialization avoids depending on `structuredClone`, which is unavailable in Ableton's embedded runtime.
+- Outgoing OSC transport, navigation, click and refresh commands avoid depending on global `TextEncoder`/`TextDecoder` support.
 - Existing lyrics and custom order are migrated without overwriting data when upgrading from the previous extension storage identities.
 - Previous installations using either the English or legacy Portuguese default profile name migrate into the active profile without duplication.
 

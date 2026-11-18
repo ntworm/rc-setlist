@@ -18,8 +18,8 @@ versus the last private 0.7.x build:
   document the on-disk format, the WebSocket protocol (v3), the
   locator grammar, the OSC integration, the HTTP endpoints, and the
   SemVer policy. Every claim has a regression test in
-  `tests/release-contracts.test.mjs`. The renderer no longer masks
-  Prettier failures (the `|| exit 0` is gone from `format:check`); the
+  `tests/release-contracts.test.mjs`. The renderer surfaces Prettier failures directly
+  (the `|| exit 0` is gone from `format:check`); the
   rendered HTML is now byte-idêntico across runs and prettier-clean.
 - **Reliability Core.** Command bus settles with a stable status
   (`created` → `sent` → `acknowledged` → `confirmed` / `failed` /
@@ -63,9 +63,8 @@ Full notes: [`RELEASE-NOTES-1.0.0.md`](RELEASE-NOTES-1.0.0.md).
 
 Private development line shipped only to early-access testers. The
 0.6.0 / 0.6.1 / 0.7.0 release notes were folded into the **Since 0.5.1**
-section of [`RELEASE-NOTES-1.0.0.md`](RELEASE-NOTES-1.0.0.md) and are
-no longer in the repository as separate files; their binaries were
-never distributed publicly. Schema and storage paths changed several
+section of [`RELEASE-NOTES-1.0.0.md`](RELEASE-NOTES-1.0.0.md);
+their binaries were never distributed publicly. Schema and storage paths changed several
 times; treat anything pre-1.0 as draft.
 
 | Release | Headline                                                                                                                                  |

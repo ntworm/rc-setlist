@@ -26,8 +26,8 @@ escura, e não para mesa iluminada.
   querer e recrie: o que o RC Setlist lembrava volta.
 - **Tipografia própria de palco**: Martian Mono para a interface e Barlow Semi
   Condensed para as letras cantadas, que cabe cerca de 45% mais palavras por
-  linha no celular sem descer do piso de 12px. Acentos e cedilhas não são mais
-  cortados.
+  linha no celular sem descer do piso de 12px. Acentos e cedilhas são exibidos
+  sem corte.
 - **Confiança da duração**: um selo `EST.` aparece sempre que o setlist não tem
   nenhuma tag `[bpm N]`, para que uma estimativa uniforme nunca seja confundida
   com um número exato.
@@ -38,18 +38,17 @@ escura, e não para mesa iluminada.
 
 ## Correções
 
-- **A duração do show não depende mais do que estava tocando.** Um campo
+- **A duração do show é calculada independentemente do estado da reprodução.** Um campo
   capturado devolvia o tempo ao vivo para a duração da própria música, então um
   set com automação de tempo se media de um jeito diferente a cada passada — até
   16:59 de variação num show de 79 minutos. As durações agora vêm do tempo que os
   localizadores declaram, integrado trecho a trecho numa única linha do tempo
   cronológica para o setlist inteiro.
-- **Renomear um localizador não arrisca mais perdê-lo.** A renomeação acontece no
-  lugar, em vez de apagar o cue point e criar um substituto, e a lista de cues do
+- **A renomeação de localizador opera no local.** A renomeação acontece no
+  lugar sem apagar o cue point, e a lista de cues do
   próprio Live é relida em vez de confiar na palavra da ponte.
 - **Os prefixos das seções são preservados.** O Live aceita tanto `> Verso`
-  quanto `Música > Verso`; o editor reescrevia a primeira forma na segunda e
-  renomeava toda seção em que encostava.
+  quanto `Música > Verso`; o editor preserva a forma original.
 - **A edição é recusada com o transporte tocando**, em qualquer modo. A
   renomeação move o playhead para agir sobre o cue, então com a reprodução
   rodando a escrita caía no compasso onde a reprodução tivesse chegado.
@@ -58,8 +57,7 @@ escura, e não para mesa iluminada.
   gravava de volta — o que fazia as tags parecerem cair aleatoriamente.
 - **Toda tag que o painel escreve agora tem selo.** `[skip]` e `[click]` mudavam
   o que acontece no palco sem deixar marca nenhuma no card.
-- **O play não vira mais um símbolo de pause**, que dava a impressão de que
-  clicar de novo pausaria.
+- **O play mantém o símbolo de reprodução durante a execução**, sem alternar para um símbolo de pause.
 
 _Para detalhes completos sobre a migração a partir da 0.5.x, consulte o [Guia de Instalação](INSTALL.md)._
 

@@ -1,4 +1,4 @@
-﻿# Solução de problemas
+# Solução de problemas
 
 ## O RC Setlist não aparece no Live
 
@@ -112,28 +112,27 @@ em apenas uma extensão RC que dependa de OSC.
 
 ## Aparecem setlists de outro Live Set
 
-O RC Setlist guarda cada operação de perfil dentro do escopo do Live Set
-atual. A lista global de perfis não aparece, e um Live Set novo e não salvo não
+O RC Setlist salva cada operação de perfil imediatamente dentro do escopo do Live
+Set atual. A lista global de perfis não é exibida, e um Live Set novo e não salvo não
 importa outra sessão temporária automaticamente.
 
-Os dados globais antigos continuam preservados como backup. Somente a pasta por
-projeto que corresponde exatamente ao Live Set salvo atual é importada
-automaticamente.
+Dados globais de versões anteriores são mantidos como backup e não são apagados.
+Apenas a pasta por projeto que corresponde exatamente ao Live Set salvo atual é
+importada automaticamente.
 
-Se os metadados do projeto chegarem depois da inicialização, ou se você usar
-**Save As** sem mudar o Song handle, o escopo temporário do projeto é
-promovido ao escopo do `.als` salvo, e só quando esses metadados atrasados
-ainda correspondem à mesma sessão do Live e ao mesmo escopo de perfil. Perfis
-criados durante a espera, inclusive `Second Setlist`, são copiados sem apagar
-a origem temporária.
+Se os metadados do projeto chegarem após a inicialização, ou se for usado **Salvar Como**
+sem alterar o identificador do Set, o escopo temporário do projeto pode ser promovido ao
+escopo do `.als` salvo apenas quando esses metadados postergados ainda corresponderem à
+mesma sessão do Live e ao mesmo escopo de perfil. Perfis criados durante essa espera,
+incluindo `Second Setlist`, são copiados sem apagar a origem temporária.
 
-Depois de trocar de Live Set, reinicie o RC Setlist antes de abrir o `.als`
-salvo pretendido. A pasta temporária criada quando o Song handle muda é
-mantida para recuperação manual, mas os perfis dela não são migrados
-automaticamente. Outras pastas temporárias de sessões anteriores também são
-mantidas para recuperação manual. Em um Set não identificado, letras ausentes
-só são recuperadas quando uma única ordem personalizada antiga corresponde à
-lista completa de músicas atual; resultados ambíguos permanecem intactos.
+Após alternar entre Live Sets, reinicie o RC Setlist antes de anexar o `.als` salvo
+pretendido. A pasta temporária criada quando o identificador do Set muda é mantida
+para recuperação manual, mas seus perfis não são migrados automaticamente. Outras
+pastas temporárias de sessões anteriores também são mantidas para recuperação manual.
+Para um Set não identificado, letras ausentes só são recuperadas quando uma ordem
+personalizada de versão anterior corresponder à lista completa de músicas atual;
+correspondências ambíguas permanecem intactas.
 
 ## Os setlists somem no macOS depois de reiniciar o Live
 

@@ -43,16 +43,16 @@ section below for anyone crossing over from the public 0.5.1 line.
 
 ### RC Bridge (bundled Live control surface)
 
-The Remote Script the extension talks to now ships inside the extension
+The Remote Script the extension talks to is bundled inside the extension
 and the installation kit, as a fork of the MIT-licensed AbletonOSC
-(upstream `0ca6821`). Nobody downloads AbletonOSC by hand any more:
+(upstream `0ca6821`). Manual download of AbletonOSC is unnecessary:
 the kit has `Install-RC-Bridge.cmd` (Windows) and
 `Install RC Bridge.command` (macOS) that copy it into Live's User
 Library and print the one remaining step. Selecting **RCBridge**
 under Settings › Link, Tempo & MIDI › Control Surface stays the user's
 step, because Live offers no way to do it for them. The fork also
 exposes `last_event_time`, which upstream never did, so the show's
-total duration no longer needs the MCP bridge.
+total duration reads directly without the MCP bridge.
 
 A stock AbletonOSC sends every reply and every listener update to one
 fixed port, 11001, so only one client per machine could hear it —
@@ -88,8 +88,8 @@ Live project.
 
 ### Count-In rethought (0.6.1)
 
-The count-in used to rewind Live's playhead one bar and start the
-transport there. That bar is real arrangement time belonging to the
+The count-in operates via Web Audio without rewinding Live's playhead,
+preventing audio playback from the preceding song.
 previous song, so the count was heard at the previous song's tempo and
 its audio played too. Making the count audible also meant switching
 Live's metronome on, which overrode a click the operator had
@@ -157,7 +157,7 @@ after the page said it had. The jump is now handed to Live the moment
 it is requested and Live lands it on the very grid line the page shows;
 the landing sample applies the destination's tempo and loop.
 
-### Song list no longer rebuilds every two seconds (0.6.1)
+### Song list stability and selective rebuilds (0.6.1)
 
 Cues arrive from the Live SDK every 100ms and from AbletonOSC every
 2000ms, and the two do not agree to the last decimal. The manager
@@ -288,7 +288,7 @@ were removed cleanly.
 
 ### Renamed to "RC Setlist"
 
-The product name no longer includes "Ableton" (Ableton trademark
+The product name omits "Ableton" (Ableton trademark
 guidelines). Old 0.x data lives in `<Extensions Data>/ntworm.ableton-rc-setlist`;
 the kit migrates it to `<Extensions Data>/ntworm.rc-setlist` and the
 old Live extension entry must be removed from

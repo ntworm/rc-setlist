@@ -6,11 +6,9 @@ song.
 
 ## What's New
 
-- **RC Bridge ships inside the extension.** Until now, the Control Surface the
-  extension talks to was a separate download — AbletonOSC, fetched and
-  installed by hand into Live's User Library. It now ships as RC Bridge, a
-  fork of the MIT-licensed AbletonOSC, and the installation kit copies it for
-  you: `Install-RC-Bridge.cmd` on Windows, `Install RC Bridge.command` on
+- **RC Bridge bundled with the extension.** The Control Surface the
+  extension communicates with is distributed as RC Bridge, a fork of
+  the MIT-licensed AbletonOSC, and the installation kit copies it: `Install-RC-Bridge.cmd` on Windows, `Install RC Bridge.command` on
   macOS. Selecting **RCBridge** under Settings › Link, Tempo & MIDI › Control
   Surface stays your step, because Live offers no way to do it for you — and
   the copy itself cannot happen from inside Live either: the ExtensionHost
@@ -27,8 +25,8 @@ song.
   Bridge first and falls back to a stock AbletonOSC when it is absent; the
   panel's OSC line says which one it is talking to
   (`via RC Bridge 1.0.0 on port 11020`). The fork also answers
-  `last_event_time`, which upstream never did, so the show's total duration no
-  longer needs the MCP bridge.
+  `last_event_time`, which upstream never did, so the show's total duration
+  reads directly without the MCP bridge.
 - **`[jump NAME]` — a marker that hands playback to a _named_ target.** A
   section of the same song, a song, or the form `Song > Section`. Names match
   with tags stripped and case ignored; a bare name resolves in this song's

@@ -18,10 +18,8 @@ exists when it carries information.**
 It is not an app. No cards, no diffuse shadows, no rounded corners, no
 confirmation dialogs.
 
-The corollary settles every ambiguous case: **black ground, expensive ink.**
-Every lit pixel costs the player dark adaptation — rods take 20 to 40 minutes to
-recover from a bright field — so the interface pays per lit pixel and each one
-has to justify itself.
+The interface maintains a dark background to preserve the player's dark adaptation on stage.
+Rods take 20 to 40 minutes to recover from a bright field, so dark adaptation is preserved by keeping illuminated areas minimal.
 
 ---
 
@@ -122,9 +120,7 @@ SaaS card. If something needs to lift, use a zero-blur offset.
 **Martian Mono**, variable, SIL OFL 1.1, self-hosted at `static/fonts/`, with
 `OFL.txt` beside it.
 
-Before this revision the product had no typeface at all: `--ui-font` listed
-Inter and fell straight through to the operating system default. The same
-player's phone and laptop rendered the same show in different fonts.
+Font specification: `--ui-font` configures the technical monospace face.
 
 Rule for the suite: **one technical mono per product, served locally, licence
 file alongside.** RC Surface ships Departure Mono; RC Setlist ships Martian
@@ -211,7 +207,7 @@ Activate on `pointerup`, cancellable by sliding off. Nothing executes on
 screen blows the two-second glance budget. Use the 500 ms hold gate in
 `static/setlist/transport-runtime.js` instead — it handles pointer, touch,
 keyboard, `blur`, `visibilitychange`, a 12px move tolerance and synthetic-click
-suppression, and it is the best stage decision in the product.
+suppression.
 
 Every control whose mistake is expensive is held, not tapped. That now includes
 Stop, which halts the band mid-song and sits a thumb's width from Play.

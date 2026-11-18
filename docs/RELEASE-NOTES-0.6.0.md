@@ -26,7 +26,7 @@ desk.
 - **Dedicated stage typography**: self-hosted Martian Mono for the interface and
   Barlow Semi Condensed for sung lyrics, which fits roughly 45% more words per
   line on a phone without dropping below the 12px stage floor. Accents and
-  cedillas no longer clip.
+  cedillas render without clipping.
 - **Duration confidence**: an `EST.` badge appears whenever a setlist carries no
   `[bpm N]` tags, so a uniform estimate is never mistaken for an exact figure.
 - **Tempo automation safety**: a **Set Live tempo on jump** toggle, off by
@@ -35,17 +35,16 @@ desk.
 
 ## Bug Fixes
 
-- **Show duration no longer depends on what was playing.** A captured field fed
+- **Show duration calculates independently of playback state.** A captured field fed
   the live tempo back into the song's own duration, so a set with tempo
   automation measured itself differently on every pass — up to 16:59 of drift on
   a 79-minute show. Durations now come from the tempo the locators declare,
   integrated piecewise across one chronological timeline for the whole setlist.
-- **Renaming a locator no longer risks losing it.** The rename happens in place
-  instead of deleting the cue point and creating a replacement, and Live's own
+- **Renaming a locator happens in place.** The rename operates on the existing
+  cue point without deleting it, and Live's own
   cue list is read back rather than the bridge's word being taken for it.
 - **Section prefixes are preserved.** Live accepts both `> Verse` and
-  `Song > Verse`; the editor used to rewrite the first form into the second and
-  renamed every section it touched.
+  `Song > Verse`; the editor preserves the original form.
 - **Editing is refused while the transport is playing**, in every mode. A rename
   moves the playhead to act on the cue, so with playback running the write landed
   at whatever beat playback had reached.
@@ -54,8 +53,7 @@ desk.
   — which made tags look like they landed at random.
 - **Every tag the panel writes now has a badge.** `[skip]` and `[click]` changed
   what happens on stage while leaving no mark on the card.
-- **Play no longer swaps to a pause glyph**, which had implied that pressing it
-  again would pause.
+- **Play maintains the play glyph during playback**, rather than swapping to a pause glyph.
 
 _For full details on migrating from 0.5.x, please refer to the [Installation Guide](INSTALL.md)._
 
