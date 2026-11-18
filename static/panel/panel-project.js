@@ -396,13 +396,19 @@
   }
 
   /**
-   * The buttons that bring a package into the project and out of it.
+   * The buttons of the packages, and the one that brings the setlist of the master.
    */
   function renderPackageButtons(locked) {
     const importButton = el('btnImportPackage');
     if (importButton) importButton.disabled = locked || !ui.selectedPackage;
     const exportButton = el('btnExportPackage');
     if (exportButton) exportButton.disabled = locked || !project().profiles.length;
+    const pull = el('btnPullMaster');
+    const { role, slaveConnected } = window.INITIAL_PEER || {};
+    if (!pull) return;
+    pull.hidden = role !== 'slave';
+    pull.disabled = locked || slaveConnected !== true;
+    pull.title = shell.text(slaveConnected ? 'package.pullMasterHint' : 'package.pullMasterOffline');
   }
 
   /**
@@ -485,6 +491,7 @@
         }
       });
     }
+    el('btnPullMaster')?.addEventListener('click', () => shell.sendAction('pull-master-setlist'));
     const copy = el('btnCopyPackagesDir');
     if (copy) copy.addEventListener('click', onCopyFolder);
   }

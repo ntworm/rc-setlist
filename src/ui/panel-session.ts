@@ -59,6 +59,7 @@ const PLAIN_ACTIONS: ReadonlySet<string> = new Set([
   'export-package',
   'import-package',
   'rename-package',
+  'pull-master-setlist',
   'peer-code',
   'peer-unpair',
 ]);

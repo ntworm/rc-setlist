@@ -8,6 +8,7 @@ import {
   isKnownAction,
   resolveSessionAddress,
 } from '../src/ui/panel-session.ts';
+import { isSetlistAction } from '../src/ui/panel-setlists.ts';
 
 test('the panel session starts on the main section', () => {
   const session = createPanelSession();
@@ -34,6 +35,17 @@ test('the actions the panel has always sent are still understood', () => {
     assert.ok(envelope, `${action} must be understood`);
     assert.equal(envelope.action, action);
   }
+});
+
+test('the action that brings the setlist of the master is understood', () => {
+  assert.equal(isKnownAction('pull-master-setlist'), true);
+  assert.equal(isSetlistAction('pull-master-setlist'), true);
+  const envelope = decodePanelEnvelope('pull-master-setlist');
+  assert.ok(envelope);
+  assert.equal(envelope.action, 'pull-master-setlist');
+  const json = decodePanelEnvelope('{"action":"pull-master-setlist"}');
+  assert.ok(json);
+  assert.equal(json.action, 'pull-master-setlist');
 });
 
 test('an answer that is not an envelope is discarded', () => {

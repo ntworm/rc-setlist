@@ -12,6 +12,7 @@ import {
   broadcastProfileState,
   profileStatePayload,
 } from '../runtime/bridge-state.js';
+import { requestMasterSetlist } from '../runtime/peer-setlist.js';
 import {
   executeProfileSelect,
   executeProfileCreate,
@@ -52,6 +53,7 @@ const SETLIST_ACTIONS: ReadonlySet<string> = new Set([
   'export-package',
   'import-package',
   'rename-package',
+  'pull-master-setlist',
 ]);
 
 /**
@@ -204,19 +206,27 @@ async function runPackageAction(envelope: PanelEnvelope): Promise<PanelNotice> {
 }
 
 /**
+ * Brings the setlist of the main computer here, as a setlist of its own.
+ *
+ * The setlist of the master comes over the link and lands here as a new
+ * setlist of this project. A link that does not answer is said by the catch
+ * below: the operator reads the sentence the extension gives.
+ */
+async function runMasterSetlistAction(): Promise<PanelNotice> {
+  const result = await requestMasterSetlist();
+  return {
+    tone: 'ok',
+    key: 'notice.pulledFromMaster',
+    params: { names: result.names.join(', ') },
+  };
+}
+
+/**
  * Carries out a setlist action of the panel and says how it went.
  */
 export async function runSetlistAction(envelope: PanelEnvelope): Promise<PanelNotice> {
   try {
-    // A package of the folder is a file, not a setlist: its name may change
-    // while Live plays.
-    if (envelope.action === 'rename-package') return await runPackageAction(envelope);
-    const blocked = blockedReason();
-    if (blocked) return blocked;
-    if (envelope.action === 'export-package' || envelope.action === 'import-package') {
-      return await runPackageAction(envelope);
-    }
-    return await runProfileAction(envelope);
+    return await dispatchSetlistAction(envelope);
   } catch (err) {
     // A name that is taken is said in the language of the panel.
     if ((err as { code?: unknown } | null)?.code === 'duplicate_profile_name') {
@@ -224,4 +234,20 @@ export async function runSetlistAction(envelope: PanelEnvelope): Promise<PanelNo
     }
     return failure('notice.failed', { detail: err instanceof Error ? err.message : String(err) });
   }
+}
+
+/**
+ * Sends an action to the part of the module that carries it out.
+ */
+async function dispatchSetlistAction(envelope: PanelEnvelope): Promise<PanelNotice> {
+  // A package of the folder is a file, not a setlist: its name may change
+  // while Live plays.
+  if (envelope.action === 'rename-package') return runPackageAction(envelope);
+  const blocked = blockedReason();
+  if (blocked) return blocked;
+  if (envelope.action === 'pull-master-setlist') return runMasterSetlistAction();
+  if (envelope.action === 'export-package' || envelope.action === 'import-package') {
+    return runPackageAction(envelope);
+  }
+  return runProfileAction(envelope);
 }
