@@ -1,7 +1,7 @@
 # RC Setlist
 
 [![PolyForm Noncommercial](https://img.shields.io/badge/licença-PolyForm%20Noncommercial-orange)](LICENSE)
-[![Versão](https://img.shields.io/badge/versão-1.1.0-f97316)](CHANGELOG.md)
+[![Versão](https://img.shields.io/badge/versão-1.2.0-f97316)](CHANGELOG.md)
 [![CI](https://github.com/ntworm/rc-setlist/actions/workflows/ci.yml/badge.svg)](https://github.com/ntworm/rc-setlist/actions/workflows/ci.yml)
 
 [English](README.md) · **Português (Brasil)**
@@ -29,7 +29,7 @@ experimental até ser validado em hardware Apple físico dedicado.
 
 ## Instalação
 
-1. Baixe o `RC-Setlist-1.1.0.ablx` e o kit de instalação na
+1. Baixe o `RC-Setlist-1.2.0.ablx` e o kit de instalação na
    [versão mais recente](https://github.com/ntworm/rc-setlist/releases/latest).
 2. Instale o RC Bridge a partir do kit: execute o `Install-RC-Bridge.cmd`
    (Windows) ou `Install RC Bridge.command` (macOS) e selecione RCBridge como
@@ -104,25 +104,36 @@ Todos os exemplos neste repositório são fictícios. Consulte
   navegação pelo teclado numérico ou alfanumérico.
 - Sem necessidade de contas, sincronização em nuvem, analytics ou telemetria.
 
-## O que há de novo na 1.1.0
+## O que há de novo na 1.2.0
 
-Detalhes em [notas da versão 1.1.0](docs/pt-BR/NOTAS-DA-VERSAO-1.1.0.md).
+Detalhes em [notas da versão 1.2.0](docs/pt-BR/NOTAS-DA-VERSAO-1.2.0.md).
 
-- **Painel do Live.** Três abas, Principal, Repertórios e Rede: o QR code, o
-  repertório ativo e o segundo computador.
-- **Gestão de repertórios no painel.** Ativar, renomear, apagar, criar e
-  restaurar repertórios com o transporte parado.
-- **Pacotes de repertórios.** Exportar todos os repertórios de um Live Set
-  para um arquivo `.rcsetlist` e importá-los de novo.
-- **Segundo computador.** Pareie um segundo computador com o Live usando um
-  código de seis dígitos; os comandos de transporte são enviados a ele.
-- **Lista de músicas recolhível.** Recolher as seções de uma música, recolher
-  ou abrir a lista inteira, segurar o nome da música para saltar e arrastar a
-  alça para reordenar.
-- **Certificado local.** A extensão cria uma autoridade certificadora para este
-  computador, válida para localhost e endereços privados da rede, e a aba Rede
-  mostra um QR para uma página de instalação na porta `4445`.
-- **Endereço de rede.** O QR usa o endereço da rota padrão.
+- **Vários segundos computadores.** Um master pareia vários slaves; a aba Rede
+  lista cada um com o estado dele e o próprio Desfazer, e todo comando de
+  transporte vai para todos.
+- **Master e slave no painel.** A barra na parte de baixo do painel do Live
+  mostra se este computador é Master (com quantos slaves estão conectados) ou
+  Slave (com o estado do master).
+- **O slave acompanha o tempo do master.** O master envia a posição da agulha
+  duas vezes por segundo para o slave corrigir diferenças de beats inteiros,
+  começar num Play perdido e parar num Stop perdido.
+- **Prontos para parear.** Um slave com código de pareamento ativo anuncia nome
+  e porta na UDP `4447`; o master o lista em Prontos para parear para
+  preencher o endereço com um clique.
+- **Trazer do master.** Num slave com o Live parado, Trazer do master no cartão
+  Importar traz o repertório ativo do master com ordem, cores das músicas,
+  notas e letras.
+- **Modo Show.** Uma chave na barra superior do Controle de palco escolhe entre
+  Edição e Show, escondendo os controles de configuração e fixando só a música
+  ativa aberta no topo.
+- **Próxima música agora e Música anterior agora.** Duas ações de MIDI e
+  teclado saltam na hora durante a reprodução, sem esperar a grade de
+  quantização.
+- **Mudanças de fórmula de compasso.** O mostrador de compasso conta cada
+  trecho do set na própria fórmula de compasso e conta os tempos na unidade do
+  denominador.
+- **Renomear um pacote.** Um clique duplo no nome de um pacote no cartão
+  Importar renomeia o arquivo na pasta `packages`.
 
 ## Documentação
 
@@ -131,7 +142,7 @@ Detalhes em [notas da versão 1.1.0](docs/pt-BR/NOTAS-DA-VERSAO-1.1.0.md).
 - [Guia do usuário](docs/pt-BR/USER-GUIDE.md)
 - [Solução de problemas](docs/pt-BR/TROUBLESHOOTING.md)
 - [Perguntas frequentes (FAQ)](docs/pt-BR/FAQ.md)
-- [O que há de novo na versão 1.1.0](docs/pt-BR/NOTAS-DA-VERSAO-1.1.0.md)
+- [O que há de novo na versão 1.2.0](docs/pt-BR/NOTAS-DA-VERSAO-1.2.0.md)
 - [Privacidade](PRIVACY.md)
 - [Segurança](SECURITY.md)
 - [Todos os outros documentos](docs/pt-BR/README.md)
@@ -154,7 +165,7 @@ Compilar a partir do código-fonte exige Node.js 24.16.0 ou superior, na linha
 Node 24 LTS; quem instala o `.ablx` não precisa do Node.js.
 
 O kit de instalação é gerado por `npm run package:kit`. O comando produz o
-arquivo `release-candidates/RC-Setlist-1.1.0-Installation-Kit.zip` com o
+arquivo `release-candidates/RC-Setlist-1.2.0-Installation-Kit.zip` com o
 `.ablx`, a página `START-HERE.html`, o `README.txt` de instruções, os
 instaladores em `RC-Bridge/`, os scripts de migração da 0.x e as pastas de
 documentação `en/` e `pt-BR/`.

@@ -1,7 +1,7 @@
 # RC Setlist
 
 [![PolyForm Noncommercial](https://img.shields.io/badge/license-PolyForm%20Noncommercial-orange)](LICENSE)
-[![Version](https://img.shields.io/badge/version-1.1.0-f97316)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-1.2.0-f97316)](CHANGELOG.md)
 [![CI](https://github.com/ntworm/rc-setlist/actions/workflows/ci.yml/badge.svg)](https://github.com/ntworm/rc-setlist/actions/workflows/ci.yml)
 
 **English** · [Português (Brasil)](README.pt-BR.md)
@@ -31,7 +31,7 @@ until it is exercised on real macOS hardware.
 
 ## Install
 
-1. Download `RC-Setlist-1.1.0.ablx` and the installation kit from the
+1. Download `RC-Setlist-1.2.0.ablx` and the installation kit from the
    [latest release](https://github.com/ntworm/rc-setlist/releases/latest).
 2. Install RC Bridge from the kit: run `Install-RC-Bridge.cmd` (Windows) or
    `Install RC Bridge.command` (macOS), then choose RCBridge as a Control
@@ -101,24 +101,34 @@ All examples in this repository are fictional. See
   keys.
 - No account, cloud sync, analytics or telemetry.
 
-## What is new in 1.1.0
+## What is new in 1.2.0
 
-Full details in the [1.1.0 release notes](docs/RELEASE-NOTES-1.1.0.md).
+Full details in the [1.2.0 release notes](docs/RELEASE-NOTES-1.2.0.md).
 
-- **Live panel.** Three tabs, Main, Setlists and Network: the QR code, the
-  active setlist and the second computer.
-- **Setlist management in the panel.** Activate, rename, delete, create and
-  restore setlists while the transport is stopped.
-- **Setlist packages.** Export all the setlists of a Live Set to one
-  `.rcsetlist` file and import them again.
-- **Second computer.** Pair a second computer running Live with a six-digit
-  code; the transport commands are sent to it.
-- **Collapsible song list.** Collapse the sections of a song, fold or unfold the
-  whole list, hold the song name to jump and drag the grip to reorder.
-- **Local certificate.** The extension creates a certificate authority for this
-  computer, valid for localhost and private network addresses, and the Network
-  tab shows a QR code for the install page on port `4445`.
-- **Network address.** The QR code uses the address of the default route.
+- **Several second computers.** One master pairs several slaves; the Network
+  tab lists each with its state and Unpair, and every transport command goes to
+  all of them.
+- **Master and slave in the panel.** The bar at the bottom of the Live panel
+  shows whether this computer is Master (with connected slave count) or Slave
+  (with master link state).
+- **The slave keeps the beat of the master.** The master sends its playhead
+  twice a second so a slave corrects whole-beat drift, starts on the next bar
+  after a missed Play, and stops after a missed Stop.
+- **Ready to pair.** A slave showing a pairing code announces its name and port
+  on UDP `4447`; the master lists it under Ready to pair so one click fills the
+  address.
+- **Bring from master.** On a slave with Live stopped, Bring from master in
+  the Import card brings the master's active setlist, with its order, song
+  colours, notes and lyrics.
+- **Show mode.** A switch in the Stage Control top bar picks Edit or Show,
+  hiding setup controls and keeping only the active song open and pinned at
+  the top.
+- **Next Song Now and Previous Song Now.** Two MIDI and keyboard actions jump
+  at once while playing without waiting for the quantization grid.
+- **Time signature changes.** The bar display counts each stretch of the set in
+  its own time signature and counts beats in the unit of the denominator.
+- **Rename a package.** A double click on a package name in the Import card
+  renames the file in the `packages` folder.
 
 ## Documentation
 
@@ -127,7 +137,7 @@ Full details in the [1.1.0 release notes](docs/RELEASE-NOTES-1.1.0.md).
 - [User guide](docs/USER-GUIDE.md)
 - [Troubleshooting](docs/TROUBLESHOOTING.md)
 - [Frequently asked questions](docs/FAQ.md)
-- [What is new in 1.1.0](docs/RELEASE-NOTES-1.1.0.md)
+- [What is new in 1.2.0](docs/RELEASE-NOTES-1.2.0.md)
 - [Privacy](PRIVACY.md)
 - [Security](SECURITY.md)
 - [All other documents](docs/README.md)
@@ -150,7 +160,7 @@ Building from source needs Node.js 24.16.0 or newer, in the Node 24 LTS line;
 end users install the `.ablx` and do not need Node.js.
 
 The installation kit is built with `npm run package:kit`. It writes
-`release-candidates/RC-Setlist-1.1.0-Installation-Kit.zip` with the `.ablx`,
+`release-candidates/RC-Setlist-1.2.0-Installation-Kit.zip` with the `.ablx`,
 the `START-HERE.html` page, the `README.txt` instructions, the `RC-Bridge/`
 installers, the 0.x migration scripts and the documentation folders `en/` and
 `pt-BR/`.

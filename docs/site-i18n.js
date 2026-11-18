@@ -12,12 +12,12 @@
       'Extensão de setlist para Ableton Live 12, grátis para uso não comercial: o RC Setlist lê os locators do Arrangement de um Live Set e mostra um setlist para quem opera e uma tela de palco com letra sincronizada para a banda, no celular ou tablet.',
 
     skip: 'Pular para o conteúdo',
-    'top.ver': 'Versão 1.1.0',
+    'top.ver': 'Versão 1.2.0',
     'top.req': 'Live 12.4.5+ Suite',
     'top.language': 'Idioma',
     'top.navAria': 'Seções',
     'nav.about': 'Sobre',
-    'nav.new': 'Novo na 1.1',
+    'nav.new': 'Novo na 1.2',
     'nav.chain': 'Como funciona',
     'nav.locators': 'Locators',
     'nav.views': 'Duas telas',
@@ -35,31 +35,31 @@
     'about.spec4': 'Grátis para uso não comercial',
     'about.download': 'Baixar .ablx',
     'about.docs': 'Ler a documentação',
-    'about.new': 'O que há de novo na 1.1.0',
+    'about.new': 'O que há de novo na 1.2.0',
     'about.source': 'Código-fonte',
     'about.figCap': 'As duas telas',
     'about.figAlt':
       'Controle de palco: setlist de cinco músicas com seções e tags, a música 3 destacada como ativa, estado do show, quantização, click e transporte.',
 
-    'new.title': 'Novo na 1.1.0',
-    'new.lTitle': 'Painel do Live',
+    'new.title': 'Novo na 1.2.0',
+    'new.lTitle': 'Vários segundos computadores',
     'new.lBody':
-      'Três abas: Principal, Repertórios, Rede. Um QR code, o repertório ativo e a lista de músicas.',
-    'new.pkTitle': 'Pacotes de repertórios',
+      'Um master pareia vários slaves na aba Rede, e todo comando de transporte vai para todos.',
+    'new.pkTitle': 'Master e slave',
     'new.pkBody':
-      'Exportar grava os repertórios do Live Set num arquivo .rcsetlist; Importar acrescenta um pacote.',
-    'new.pTitle': 'Segundo computador',
+      'A barra na parte de baixo do painel do Live mostra se este computador é Master ou Slave e se o link está ativo.',
+    'new.pTitle': 'Acompanha o tempo',
     'new.pBody':
-      'Pareie um segundo computador com o Live por um código de seis dígitos; os comandos de transporte vão para ele.',
-    'new.fTitle': 'Lista de músicas recolhível',
+      'O master envia a posição da agulha duas vezes por segundo para o slave corrigir desvios de beats inteiros, começar num Play perdido e parar num Stop perdido.',
+    'new.fTitle': 'Prontos para parear',
     'new.fBody':
-      'O botão de três pontos recolhe as seções de uma música; segure o nome ou o número para saltar.',
-    'new.cTitle': 'Certificado local',
+      'Um slave com código de pareamento ativo anuncia nome e porta na UDP 4447, e o master o lista para preencher o endereço com um clique.',
+    'new.cTitle': 'Trazer do master',
     'new.cBody':
-      'A extensão cria uma autoridade certificadora válida para localhost e endereços privados.',
-    'new.nTitle': 'Endereço de rede',
+      'Num slave com o Live parado, o cartão Importar traz o repertório ativo do master com ordem, cores, notas e letras.',
+    'new.nTitle': 'Modo Show',
     'new.nBody':
-      'O QR usa o endereço da rota padrão, então uma segunda interface não substitui o endereço do Wi-Fi.',
+      'Uma chave no Controle de palco esconde controles de edição e reordenação, e mantém só a música ativa aberta no topo.',
 
     'chain.title': 'Cadeia de sinal',
     'chain.why':
@@ -223,7 +223,7 @@
     'install.title': 'Instalação',
     'install.s1': 'Baixe',
     'install.s1d':
-      '<code>RC-Setlist-1.1.0.ablx</code> e o kit de instalação, na <a href="https://github.com/ntworm/rc-setlist/releases/latest">versão mais recente</a>.',
+      '<code>RC-Setlist-1.2.0.ablx</code> e o kit de instalação, na <a href="https://github.com/ntworm/rc-setlist/releases/latest">versão mais recente</a>.',
     'install.s2': 'Instale o RC Bridge',
     'install.s2d':
       'Rode <code>Install-RC-Bridge.cmd</code> (Windows) ou <code>Install RC Bridge.command</code> (macOS), que vêm no kit. No Live, abra <b>Settings › Link, Tempo &amp; MIDI</b> e escolha <b>RCBridge</b> como Control Surface.',
@@ -294,7 +294,7 @@
     'docs.guide': 'Guia do usuário',
     'docs.trouble': 'Solução de problemas',
     'docs.faq': 'Perguntas frequentes',
-    'docs.notes': 'O que há de novo na 1.1.0',
+    'docs.notes': 'O que há de novo na 1.2.0',
     'docs.notesPrevious': 'O que havia de novo na 1.0.0',
     'docs.security': 'Segurança · privacidade',
 
@@ -317,7 +317,7 @@
     'docs.lGuide': 'Ler o guia do usuário',
     'docs.lTrouble': 'Ler a solução de problemas',
     'docs.lFaq': 'Ler as perguntas frequentes',
-    'docs.lNotes': 'Ler as notas da 1.1.0',
+    'docs.lNotes': 'Ler as notas da 1.2.0',
     'docs.lNotesPrevious': 'Ler as notas da 1.0.0',
   };
 

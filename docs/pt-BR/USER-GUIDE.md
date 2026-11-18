@@ -378,7 +378,7 @@ preenche o endereço, e só falta digitar o código. O anúncio leva o nome e a
 porta do computador, nunca o código. Uma rede que bloqueia broadcast entre
 aparelhos deixa o campo de endereço como caminho.
 
-No slave, **Trazer do master** no cartão **Import** traz o setlist ativo do
+No slave, **Trazer do master** no cartão **Importar** traz o setlist ativo do
 master, com ordem, notas, cores e letras, como um setlist novo do slave. O Live
 precisa estar parado no slave.
 

@@ -10,12 +10,12 @@ As notas da versão estão em en/RELEASE-NOTES.md e pt-BR/NOTAS-DA-VERSAO.md.
 
 MAIN FILE / ARQUIVO PRINCIPAL
 -----------------------------
-RC-Setlist-1.1.0.ablx
+RC-Setlist-1.2.0.ablx
 
 DATA MIGRATION FROM 0.X / MIGRAÇÃO DE DADOS DA 0.X
 -------------------------------------------------
 If you used the old "Ableton RC Setlist" 0.x build (any 0.4.x–1.0.0 version),
-run the data migration BEFORE opening Live for the first time with 1.1.0:
+run the data migration BEFORE opening Live for the first time with 1.2.0:
 
   Windows: double-click Migrate-RC-Setlist-Data.cmd
   macOS:   double-click "Migrate RC Setlist Data.command"
@@ -26,7 +26,7 @@ never overwrites. In Live, also remove the old "Ableton RC Setlist" extension
 from Settings › Extensions so the two do not coexist.
 
 Se você usou o antigo "Ableton RC Setlist" 0.x (qualquer 0.4.x–1.0.0),
-rode a migração de dados ANTES de abrir o Live pela primeira vez com a 1.1.0:
+rode a migração de dados ANTES de abrir o Live pela primeira vez com a 1.2.0:
 
   Windows: clique duas vezes em Migrate-RC-Setlist-Data.cmd
   macOS:   clique duas vezes em "Migrate RC Setlist Data.command"

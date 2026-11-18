@@ -1,0 +1,258 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Notas da versão RC Setlist 1.2.0 — Ableton Live</title>
+    <meta
+      name="description"
+      content="Notas da versão RC Setlist 1.2.0: documentação do RC Setlist, a extensão de setlist, letra e tela de palco para o Ableton Live."
+    />
+    <link
+      rel="canonical"
+      href="https://ntworm.github.io/rc-setlist/pt-BR/NOTAS-DA-VERSAO-1.2.0.html"
+    />
+    <link rel="alternate" type="text/markdown" href="./NOTAS-DA-VERSAO-1.2.0.md" />
+    <link rel="describedby" href="../llms.txt" />
+    <meta property="og:type" content="article" />
+    <meta property="og:site_name" content="RC Setlist" />
+    <meta property="og:locale" content="pt_BR" />
+    <meta property="og:title" content="Notas da versão RC Setlist 1.2.0 — Ableton Live" />
+    <meta
+      property="og:description"
+      content="Notas da versão RC Setlist 1.2.0: documentação do RC Setlist, a extensão de setlist, letra e tela de palco para o Ableton Live."
+    />
+    <meta
+      property="og:url"
+      content="https://ntworm.github.io/rc-setlist/pt-BR/NOTAS-DA-VERSAO-1.2.0.html"
+    />
+    <meta property="og:image" content="https://ntworm.github.io/rc-setlist/og-image.png" />
+    <style>
+      body {
+        font:
+          16px/1.55 system-ui,
+          sans-serif;
+        max-width: 920px;
+        margin: 2rem auto;
+        padding: 0 1rem;
+        color: #f2f2f2;
+        background: #0e0e0e;
+      }
+      h1,
+      h2,
+      h3,
+      h4 {
+        line-height: 1.25;
+      }
+      h1 {
+        font-size: 2.2rem;
+        margin-top: 0;
+      }
+      h2 {
+        margin-top: 2rem;
+        padding-top: 1rem;
+        border-top: 1px solid #333;
+      }
+      h3 {
+        margin-top: 1.5rem;
+      }
+      code {
+        font:
+          0.92em ui-monospace,
+          Consolas,
+          monospace;
+        background: #1a1a1a;
+        padding: 0.1em 0.35em;
+        border-radius: 0;
+      }
+      pre {
+        background: #1a1a1a;
+        padding: 0.8rem 1rem;
+        overflow-x: auto;
+        border: 1px solid #333;
+      }
+      pre code {
+        background: transparent;
+        padding: 0;
+      }
+      a {
+        color: #ffa133;
+      }
+      ul,
+      ol {
+        padding-left: 1.2em;
+      }
+      blockquote {
+        border-left: 4px solid #ffa133;
+        margin: 1em 0;
+        padding: 0.5em 1em;
+        color: #a0a0a0;
+      }
+      .crumbs {
+        font-size: 0.85em;
+        color: #a0a0a0;
+        margin-bottom: 1rem;
+      }
+      .crumbs a {
+        color: #a0a0a0;
+        text-decoration: none;
+      }
+      .crumbs a:hover {
+        color: #f2f2f2;
+      }
+      .source {
+        font-size: 0.78em;
+        color: #a0a0a0;
+        margin-top: 2rem;
+        border-top: 1px solid #333;
+        padding-top: 0.5rem;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="crumbs"><a href="./">RC Setlist</a> · <a href="./README.html">Documentação</a></div>
+    <h1 id="notas-da-vers-o-rc-setlist-1-2-0">Notas da versão RC Setlist 1.2.0</h1>
+    <p>
+      <strong>Data de lançamento:</strong> 2026-11-18 <strong>Linha de versões suportada:</strong>
+      <code>1.2.x</code> <strong>Também disponível em inglês:</strong>
+      <a href="../RELEASE-NOTES-1.2.0.md"><code>../RELEASE-NOTES-1.2.0.md</code></a>
+    </p>
+    <h2 id="novidades">Novidades</h2>
+    <ul>
+      <li>
+        <strong>Vários segundos computadores.</strong> Um computador principal, o
+        <strong>master</strong>,
+      </li>
+    </ul>
+    <p>
+      pareia vários segundos computadores, os <strong>slaves</strong>. O cartão
+      <strong>Segundo computador</strong> da aba <strong>Rede</strong> lista cada slave com o estado
+      dele e o próprio <strong>Desfazer</strong>, e todo comando de transporte vai para todos.
+      Parear ou desfazer o pareamento de um slave mantém os links dos outros abertos.
+    </p>
+    <ul>
+      <li>
+        <strong>Master e slave no painel.</strong> A barra na parte de baixo do painel do Live
+      </li>
+    </ul>
+    <p>
+      mostra o papel deste computador: <strong>Master</strong> com quantos slaves estão conectados,
+      ou <strong>Slave</strong> e se o master está falando com ele. O slave lembra do master depois
+      de reiniciar e mostra o endereço dele no cartão.
+    </p>
+    <ul>
+      <li><strong>O slave acompanha o tempo do master.</strong> O master envia onde está a sua</li>
+    </ul>
+    <p>
+      agulha duas vezes por segundo. Quando o Link inicia um Play ou um salto quantizado um compasso
+      atrasado num slave, o slave se move pelos beats inteiros de diferença; quando perde um Play,
+      ele começa no próximo compasso do master, e quando perde um Stop, ele para. Nada se move
+      enquanto um salto espera a grade, enquanto um loop roda, com pânico ou trava ligados, nem logo
+      depois de um comando repassado, e uma diferença que não é de beats inteiros é apontada como um
+      problema de Link em vez de ser corrigida.
+    </p>
+    <ul>
+      <li>
+        <strong>Prontos para parear.</strong> Enquanto mostra um código de pareamento, o slave
+      </li>
+    </ul>
+    <p>
+      anuncia o próprio nome e a porta na rede local, na porta UDP <code>4447</code>. O master o
+      lista em <strong>Prontos para parear</strong>, e um clique preenche o endereço. O anúncio
+      nunca leva o código.
+    </p>
+    <ul>
+      <li>
+        <strong>Trazer do master.</strong> Num slave, <strong>Trazer do master</strong> no cartão
+      </li>
+    </ul>
+    <p>
+      <strong>Importar</strong> traz o repertório ativo do master, com ordem, cores das músicas,
+      notas e letras, como um repertório novo do slave. O Live precisa estar parado no slave.
+    </p>
+    <ul>
+      <li>
+        <strong>Modo Show.</strong> Uma chave na barra superior do Controle de palco escolhe entre
+      </li>
+    </ul>
+    <p>
+      <strong>Edição</strong> e <strong>Show</strong>. O modo Show esconde os controles de
+      configuração, os pontos de recolher, a alça de arrastar e o seletor de repertório, recusa o
+      editor de marcadores e a reordenação, e mantém aberta só a música ativa, fixada no topo da
+      lista em todas as telas.
+    </p>
+    <ul>
+      <li>
+        <strong>Próxima música agora e Música anterior agora.</strong> Duas ações de MIDI e de
+      </li>
+    </ul>
+    <p>teclado saltam na hora durante a reprodução, sem esperar a grade de quantização.</p>
+    <ul>
+      <li><strong>Mudanças de fórmula de compasso.</strong> O mostrador de compasso conta os</li>
+    </ul>
+    <p>
+      compassos de cada trecho do set na sua própria fórmula de compasso, e conta os tempos na
+      unidade do denominador, então 6/8 mostra seis colcheias por compasso.
+    </p>
+    <ul>
+      <li><strong>Renomear um pacote.</strong> Um clique duplo no nome de um pacote no cartão</li>
+    </ul>
+    <p><strong>Importar</strong> renomeia o arquivo na pasta <code>packages</code>.</p>
+    <h2 id="corre-es">Correções</h2>
+    <ul>
+      <li>
+        <strong>Repertórios no macOS.</strong> O Live Set é reconhecido pelo título da janela do
+      </li>
+    </ul>
+    <p>
+      Live também no macOS, por meio do System Events com a permissão de Acessibilidade, para que os
+      repertórios não comecem mais vazios a cada reinício do Live.
+    </p>
+    <ul>
+      <li>
+        <strong>Gerenciar setlists</strong> diz por que está bloqueado: sem conexão, página só de
+      </li>
+    </ul>
+    <p>
+      leitura, Live tocando ou Live Set mudando. Um comando de repertório recusado não deixa mais a
+      janela esperando.
+    </p>
+    <ul>
+      <li><strong>Pareamento</strong> aceita o endereço com a porta, como o cartão mostra, e um</li>
+    </ul>
+    <p>código digitado com espaços; um pareamento recusado informa o endereço que leu.</p>
+    <ul>
+      <li>Um comando repassado só é descartado quando o link com o slave está</li>
+    </ul>
+    <p>travado, e não atrás de um frame que ainda está saindo.</p>
+    <ul>
+      <li>Um comando enviado de novo com o mesmo id recebe de volta o estado salvo,</li>
+    </ul>
+    <p>em vez de ficar sem resposta.</p>
+    <ul>
+      <li>Os arquivos de token e <code>peer.json</code> são mantidos só para o dono, e os dados</li>
+    </ul>
+    <p>do usuário são gravados de forma atômica.</p>
+    <h2 id="outras-mudan-as">Outras mudanças</h2>
+    <ul>
+      <li>
+        <strong>Verificar OSC</strong> roda a partir do estado do OSC na barra de baixo do painel
+      </li>
+    </ul>
+    <p>do Live; o botão saiu da barra.</p>
+    <h2 id="atualizando-da-1-1">Atualizando da 1.1</h2>
+    <p>
+      Nada a migrar: um pareamento salvo pela 1.1 carrega como o primeiro slave da lista. O Live
+      recusa instalar por cima de uma pasta de extensão existente: remova o RC Setlist nas
+      configurações de extensões do Live antes; a pasta de dados fica. Instale a 1.2.0 no master e
+      em cada slave. No macOS, permita o Ableton Live em
+      <strong>System Settings &gt; Privacy &amp; Security &gt; Accessibility</strong> e
+      <strong>Automation</strong> quando o macOS pedir, depois reinicie o RC Setlist. Repertórios
+      feitos num Mac antes da 1.2.0 ficavam em pastas temporárias, que continuam no disco para
+      recuperação manual.
+    </p>
+    <div class="source">
+      Rendered from <code>docs\pt-BR\NOTAS-DA-VERSAO-1.2.0.md</code> on 2026-11-18.
+    </div>
+  </body>
+</html>
