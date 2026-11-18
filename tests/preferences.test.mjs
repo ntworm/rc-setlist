@@ -143,6 +143,87 @@ test('Preferences: UI locale persists only supported languages in SDK storage', 
 });
 
 const PEER = { host: '192.168.0.10', port: 4444, peerToken: 'secret-token', fingerprint: 'ab:cd' };
+const PEER_TWO = { host: '192.168.0.11', port: 4444, peerToken: 'other-token', fingerprint: 'ef:01' };
+
+// The pairings live in the storage of the extension, so every test gets one
+// of its own and hands it over while the test runs.
+function withPeerStorage(run) {
+  const storageDir = fs.mkdtempSync(path.join(tmpdir(), 'setlist-peers-'));
+  setExtensionContext({ environment: { storageDirectory: storageDir } });
+  try {
+    run(storageDir);
+  } finally {
+    clearExtensionContext();
+    fs.rmSync(storageDir, { recursive: true, force: true });
+  }
+}
+
+test('Preferences: a pairing file from before the list loads as one entry', () => {
+  withPeerStorage((storageDir) => {
+    fs.writeFileSync(path.join(storageDir, 'peer.json'), JSON.stringify(PEER), 'utf8');
+    assert.deepStrictEqual(preferences.readPeerConfigs(), [PEER]);
+    assert.deepStrictEqual(preferences.readPeerConfig(), PEER);
+  });
+});
+
+test('Preferences: two computers can be paired at the same time', () => {
+  withPeerStorage((storageDir) => {
+    assert.strictEqual(preferences.writePeerConfig(PEER), true);
+    assert.strictEqual(preferences.writePeerConfig(PEER_TWO), true);
+    assert.deepStrictEqual(preferences.readPeerConfigs(), [PEER, PEER_TWO]);
+    const stored = JSON.parse(fs.readFileSync(path.join(storageDir, 'peer.json'), 'utf8'));
+    assert.deepStrictEqual(stored, { peers: [PEER, PEER_TWO] });
+  });
+});
+
+test('Preferences: pairing the same computer again replaces the old pairing', () => {
+  withPeerStorage(() => {
+    assert.strictEqual(preferences.writePeerConfig(PEER), true);
+    assert.strictEqual(preferences.writePeerConfig(PEER_TWO), true);
+    const again = { ...PEER, peerToken: 'fresh-token' };
+    assert.strictEqual(preferences.writePeerConfig(again), true);
+    assert.deepStrictEqual(preferences.readPeerConfigs(), [again, PEER_TWO]);
+  });
+});
+
+test('Preferences: the key of a pairing ignores the case of the host', () => {
+  assert.strictEqual(preferences.peerKey({ host: 'LOCALHOST', port: 4444 }), 'localhost:4444');
+});
+
+test('Preferences: removing one computer keeps the other', () => {
+  withPeerStorage((storageDir) => {
+    preferences.writePeerConfig(PEER);
+    preferences.writePeerConfig(PEER_TWO);
+    assert.strictEqual(preferences.removePeerConfig(PEER.host, PEER.port), true);
+    assert.deepStrictEqual(preferences.readPeerConfigs(), [PEER_TWO]);
+    assert.ok(
+      fs.existsSync(path.join(storageDir, 'peer.json')),
+      'the file stays for the computer that is still paired',
+    );
+  });
+});
+
+test('Preferences: removing the last computer removes the file', () => {
+  withPeerStorage((storageDir) => {
+    preferences.writePeerConfig(PEER);
+    assert.strictEqual(preferences.removePeerConfig(PEER.host, PEER.port), true);
+    assert.deepStrictEqual(preferences.readPeerConfigs(), []);
+    assert.strictEqual(fs.existsSync(path.join(storageDir, 'peer.json')), false);
+  });
+});
+
+test('Preferences: a broken entry is skipped and the other computers stay', () => {
+  withPeerStorage((storageDir) => {
+    const broken = { host: '192.168.0.12', port: 'not-a-port' };
+    fs.writeFileSync(
+      path.join(storageDir, 'peer.json'),
+      JSON.stringify({ peers: [PEER, broken, PEER_TWO] }),
+      'utf8',
+    );
+    assert.deepStrictEqual(preferences.readPeerConfigs(), [PEER, PEER_TWO]);
+    assert.deepStrictEqual(preferences.readPeerConfig(), PEER);
+  });
+});
 
 test(
   'Preferences: the peer config is owner-only, also when an older file was not',

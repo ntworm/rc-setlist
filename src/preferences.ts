@@ -10,7 +10,7 @@ const WRITE_TEMPO_ON_JUMP_FILE = 'write-tempo-on-jump';
 const PEER_CONFIG_FILE = 'peer.json';
 
 /**
- * The paired computer this one relays to.
+ * One computer this one is paired with.
  *
  * The fingerprint pins the certificate that was presented when the pairing
  * happened: the link refuses to talk to a computer whose certificate changed
@@ -203,29 +203,107 @@ function restrictPeerConfigMode(): void {
 }
 
 /**
- * Reads the paired computer, or null when there is none.
+ * The key that tells one paired computer from another.
+ *
+ * The host is compared without its case, because the same address can be
+ * typed in different cases.
  */
-export function readPeerConfig(): PeerConfig | null {
+export function peerKey(config: { host: string; port: number }): string {
+  return `${config.host.toLowerCase()}:${config.port}`;
+}
+
+/**
+ * Keeps the entries of a list that look like a pairing.
+ */
+function peerConfigList(value: unknown): PeerConfig[] {
+  if (!Array.isArray(value)) return [];
+  const entries: unknown[] = value;
+  return entries.filter((entry): entry is PeerConfig => isPeerConfig(entry));
+}
+
+/**
+ * Tells whether the file holds the list of pairings.
+ */
+function isPeerConfigFile(value: unknown): value is { peers: unknown } {
+  return value !== null && typeof value === 'object' && 'peers' in value;
+}
+
+/**
+ * Reads every paired computer.
+ *
+ * The file holds a list, but a pairing written before the list existed is a
+ * single object and still loads as a list of one. An entry that does not
+ * look like a pairing is skipped, so one broken computer cannot hide the
+ * others.
+ */
+export function readPeerConfigs(): PeerConfig[] {
   const raw = readPreference(PEER_CONFIG_FILE);
-  if (!raw) return null;
+  if (!raw) return [];
   restrictPeerConfigMode();
   try {
     const parsed: unknown = JSON.parse(raw);
-    return isPeerConfig(parsed) ? parsed : null;
+    if (isPeerConfigFile(parsed)) return peerConfigList(parsed.peers);
+    if (Array.isArray(parsed)) return peerConfigList(parsed);
+    return isPeerConfig(parsed) ? [parsed] : [];
   } catch {
-    return null;
+    return [];
   }
 }
 
 /**
- * Stores the paired computer.
+ * Reads the paired computer, or null when there is none.
  */
-export function writePeerConfig(config: PeerConfig): boolean {
-  return writePreference(PEER_CONFIG_FILE, JSON.stringify(config));
+export function readPeerConfig(): PeerConfig | null {
+  return readPeerConfigs()[0] ?? null;
 }
 
 /**
- * Forgets the paired computer.
+ * Stores the list of paired computers.
+ *
+ * An empty list leaves no file behind, the same way forgetting every
+ * pairing does.
+ */
+export function writePeerConfigs(configs: PeerConfig[]): boolean {
+  if (configs.length === 0) return clearPeerConfig();
+  return writePreference(PEER_CONFIG_FILE, JSON.stringify({ peers: configs }));
+}
+
+/**
+ * Stores a paired computer.
+ *
+ * A computer already paired at the same address is paired again instead of
+ * being stored twice, and the other computers stay.
+ */
+export function writePeerConfig(config: PeerConfig): boolean {
+  const key = peerKey(config);
+  const configs = readPeerConfigs();
+  const index = configs.findIndex((stored) => peerKey(stored) === key);
+  if (index === -1) return writePeerConfigs([...configs, config]);
+  const next = [...configs];
+  next[index] = config;
+  return writePeerConfigs(next);
+}
+
+/**
+ * Forgets one paired computer.
+ *
+ * Reports whether nothing of that computer is left on disk: a file that
+ * could not be written is a pairing the next start of the server would
+ * bring back.
+ */
+export function removePeerConfig(host: string, port: number): boolean {
+  const key = peerKey({ host, port });
+  const configs = readPeerConfigs();
+  const remaining = configs.filter((stored) => peerKey(stored) !== key);
+  if (remaining.length === configs.length) {
+    // The computer was not paired, so nothing of it is on disk.
+    return true;
+  }
+  return writePeerConfigs(remaining);
+}
+
+/**
+ * Forgets every pairing.
  *
  * Reports whether no pairing is left on disk: with no place to store one
  * there is nothing to forget, and a file that could not be removed is a
