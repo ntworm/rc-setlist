@@ -12,9 +12,9 @@ import { tmpdir } from 'node:os';
 import { setExtensionContext, clearExtensionContext } from '../src/context.ts';
 import { startServer, stopServer } from '../src/index.ts';
 import { bridgeState } from '../src/runtime/bridge-state.ts';
-import { relayToPeer, stopPeerLink } from '../src/runtime/peer-link.ts';
+import { relayToPeer, startPeerLinks, stopPeerLink } from '../src/runtime/peer-link.ts';
 import { aggregatePeerStatus } from '../src/runtime/peer-status-list.ts';
-import { writePeerConfigs } from '../src/preferences.ts';
+import { readPeerConfigs, writePeerConfigs } from '../src/preferences.ts';
 import {
   MAIN_CUES,
   PEER_TOKEN,
@@ -137,15 +137,19 @@ test('a relayed play reaches both computers', async () => {
   assert.equal(peerTwo.actions[0].source, 'play');
 });
 
+test('starting the same pairings again keeps the links that are up', () => {
+  startPeerLinks(readPeerConfigs());
+  // A link taken down would read as not connected right away.
+  assert.equal(bridgeState.peerStatus.connected, true);
+  assert.equal(rowOf(portOne).connected, true);
+  assert.equal(rowOf(portTwo).connected, true);
+});
+
 test('one computer going down does not touch the other', async () => {
   await closePeerComputer(peerOne);
   const down = await waitFor(() => bridgeState.peerStatus.connected === false, 8000);
   assert.equal(down, true);
-  assert.equal(
-    bridgeState.peerStatuses.length,
-    2,
-    'the computer that went down stays in the list',
-  );
+  assert.equal(bridgeState.peerStatuses.length, 2, 'the computer that went down stays in the list');
   assert.equal(rowOf(portOne).connected, false);
   assert.equal(rowOf(portTwo).connected, true);
 

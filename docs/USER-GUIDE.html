@@ -525,6 +525,27 @@ Song B [bpm 96]</code></pre>
       <li><strong>no dot</strong>: there is no second computer paired, and nothing is sent</li>
     </ul>
     <p>anywhere.</p>
+    <h3 id="master-slaves-and-finding-them">Master, slaves and finding them</h3>
+    <p>
+      The main computer is the <strong>master</strong>; every computer whose code it typed is a
+      <strong>slave</strong>. A master may pair several slaves: the
+      <strong>Second computer</strong> card lists each one with its state and its own
+      <strong>Unpair</strong>, and every transport command goes to all of them. The bar at the
+      bottom of the panel says the role of this computer, Master with how many slaves are connected,
+      or Slave and whether the master is talking, and a slave remembers its master after a restart.
+    </p>
+    <p>
+      While a slave shows a pairing code it announces itself on the local network, on UDP port
+      <code>4447</code>. The master lists it under <strong>Ready to pair</strong>; a click fills the
+      address, and only the code is left to type. The announcement carries the name and the port of
+      the computer, never the code. A network that blocks broadcasts between devices leaves the
+      address field as the way in.
+    </p>
+    <p>
+      On a slave, <strong>Bring from master</strong> in the <strong>Import</strong> card brings the
+      active setlist of the master, with its order, notes, colours and lyrics, as a new setlist of
+      the slave. Live has to be stopped on the slave.
+    </p>
     <h3 id="what-reaches-the-second-computer">What reaches the second computer</h3>
     <p>
       These travel to the paired computer: <strong>Play</strong>, <strong>Stop</strong>,

@@ -273,3 +273,13 @@ test('only a relayed command that moves the transport holds the follower back', 
     assert.strictEqual(movesTransport(type), false, type);
   }
 });
+
+test('a link that was quiet for a while counts again from nothing', () => {
+  const h = harness();
+  feed(h, 4, STABLE_CLOCKS);
+  assert.strictEqual(moves(h).length, 0);
+  // Three seconds without a clock: the next one does not finish the count.
+  h.advance(3000);
+  feed(h, 4);
+  assert.strictEqual(moves(h).length, 0);
+});

@@ -30,6 +30,7 @@ import {
   pair,
 } from '../runtime/pairing.js';
 import { startPeerLink, startPeerLinks } from '../runtime/peer-link.js';
+import { listDiscoveredPeers, type DiscoveredPeer } from '../runtime/peer-discovery.js';
 import { bridgeState, readPeerRole, type PeerRole } from '../runtime/bridge-state.js';
 import { getLanAddresses, pickLanIps } from '../util/helpers.js';
 import { roleText } from './peer-role-text.js';
@@ -91,6 +92,8 @@ export interface PeerPanelModel {
   codeHint: string;
   /** The computers this one is paired with, one row each. */
   peers?: PeerPanelPeer[];
+  /** The computers that answered on the network and are not paired yet. */
+  discovered?: DiscoveredPeer[];
   /** The role this computer plays in the pair, and the sentence for it. */
   role?: PeerRole;
   roleText?: string;
@@ -460,6 +463,10 @@ export function peerPanelModel(options: PeerPanelOptions = {}): PeerPanelModel {
   const tlsEnabled = isServerTls();
   const code = currentPairingCode();
   const { role, masterAddress } = readPeerRole();
+  // A computer that is paired already is not to be paired again.
+  const discovered = listDiscoveredPeers().filter(
+    (peer) => !configs.some((config) => config.host === peer.host),
+  );
   const peers = bridgeState.peerStatuses.map((row) => ({
     ...row,
     statusText: peerStateText(peerPanelState({ paired: true, ...row }), locale),
@@ -478,6 +485,7 @@ export function peerPanelModel(options: PeerPanelOptions = {}): PeerPanelModel {
     canGenerateCode: serverRunning && tlsEnabled,
     codeHint: codeHint(serverRunning, tlsEnabled, locale),
     peers,
+    discovered,
     role,
     roleText: roleText(role, locale, peers),
     masterAddress,

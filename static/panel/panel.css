@@ -276,7 +276,8 @@ select {
   color: var(--p-bg);
 }
 
-.btn-small {
+.btn-small,
+.btn.small {
   min-height: 22px;
   padding: 3px 8px;
   font-size: 9px;
@@ -972,6 +973,17 @@ select {
 
 .peer-list-status.active {
   color: var(--p-ok);
+}
+
+.peer-found {
+  margin: 0 0 8px;
+}
+
+.peer-found-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 4px;
 }
 
 /* ---- Options and status, at the foot ---- */

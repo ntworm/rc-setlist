@@ -218,3 +218,58 @@ test('the second computer says which master it follows', async ({ page }) => {
   await expect(page.locator('#peerRoleText')).toBeVisible();
   await expect(page.locator('#peerRoleText')).toHaveClass(/active/);
 });
+
+test('only a second computer brings the setlist of a master', async ({ page }) => {
+  await openPanel(page);
+  await page.locator('#tabSetlist').click();
+
+  // A computer that is not paired has no master to ask.
+  await expect(page.locator('#btnPullMaster')).toBeHidden();
+
+  // The main computer has no master of its own.
+  await pairedWith(page, { role: 'master', roleText: MASTER_ROLE, peers: PAIRED_PEERS });
+  await page.locator('#tabSetlist').click();
+  await expect(page.locator('#btnPullMaster')).toBeHidden();
+});
+
+test('a second computer brings the setlist of the master', async ({ page }) => {
+  await openPanel(page);
+  await pairedWith(page, {
+    role: 'slave',
+    roleText: 'Slave \xB7 connected to the master',
+    slaveConnected: true,
+    masterAddress: '192.168.1.50:4444',
+  });
+  await page.locator('#tabSetlist').click();
+
+  const button = page.locator('#btnPullMaster');
+  await expect(button).toBeVisible();
+  await expect(button).toBeEnabled();
+  await expect(button).toHaveText('Bring from master');
+  await expect(button).toHaveAttribute(
+    'title',
+    'Brings the active setlist of the master as a new setlist here',
+  );
+
+  await button.click();
+
+  const envelopes = await sentEnvelopes(page);
+  expect(envelopes).toHaveLength(1);
+  expect(envelopes[0]).toMatchObject({ action: 'pull-master-setlist', tab: 'setlist' });
+});
+
+test('a second computer whose master is away brings nothing', async ({ page }) => {
+  await openPanel(page);
+  await pairedWith(page, {
+    role: 'slave',
+    roleText: 'Slave \xB7 master not connected',
+    slaveConnected: false,
+    masterAddress: '192.168.1.50:4444',
+  });
+  await page.locator('#tabSetlist').click();
+
+  const button = page.locator('#btnPullMaster');
+  await expect(button).toBeVisible();
+  await expect(button).toBeDisabled();
+  await expect(button).toHaveAttribute('title', 'The master is not connected');
+});

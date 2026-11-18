@@ -96,6 +96,25 @@ function projectNameOf(name?: string): string {
   return name ?? bridgeState.projectIdentity?.displayName ?? '';
 }
 
+/** How long a piece waits for room on the socket, and how often it looks. */
+const ROOM_WAIT_MS = 15_000;
+const ROOM_POLL_MS = 20;
+
+/**
+ * Waits until the socket has room, or says it never came: null from the
+ * check means the socket is gone.
+ */
+async function waitForRoom(room: () => boolean | null): Promise<boolean> {
+  const deadline = Date.now() + ROOM_WAIT_MS;
+  for (;;) {
+    const answer = room();
+    if (answer === null) return false;
+    if (answer) return true;
+    if (Date.now() > deadline) return false;
+    await new Promise((resolve) => setTimeout(resolve, ROOM_POLL_MS));
+  }
+}
+
 /**
  * Answers a request for the setlist of this computer.
  *
@@ -108,6 +127,7 @@ export async function answerSetlistRequest(
   send: (message: unknown) => boolean,
   manager?: SetlistSource,
   projectName?: string,
+  room: () => boolean | null = () => true,
 ): Promise<void> {
   const source = manager ?? bridgeState.profileManager;
   const name = projectNameOf(projectName);
@@ -116,8 +136,13 @@ export async function answerSetlistRequest(
     const active = source.getActive();
     const text = await exportSetlistText(source, active.id, name);
     const pieces = splitIntoPieces(text);
-    if (pieces.length > MAX_PIECES) throw new Error('The setlist is too large to send.');
+    if (pieces.length > MAX_PIECES || Buffer.byteLength(text, 'utf8') > MAX_SETLIST_BYTES) {
+      throw new Error('The setlist is too large to send.');
+    }
     for (const [index, data] of pieces.entries()) {
+      // A piece waits for room on the socket, so the commands of the show
+      // that share it are never held back behind the setlist.
+      if (!(await waitForRoom(room))) return;
       if (!send({ type: 'setlist_chunk', requestId, index, total: pieces.length, data })) return;
     }
   } catch {

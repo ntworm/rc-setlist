@@ -66,6 +66,8 @@ export const WHOLE_BEAT_TOLERANCE = 0.35;
 export const STABLE_CLOCKS = 3;
 /** How long after a relayed command the follower keeps still, in ms. */
 export const SETTLE_AFTER_COMMAND_MS = 2_500;
+/** A silence between two clocks longer than this starts the count again, in ms. */
+export const CLOCK_GAP_RESET_MS = 2_000;
 /** How long after a correction the follower keeps still, in ms. */
 export const SETTLE_AFTER_CORRECTION_MS = 3_000;
 /** Two tempos closer than this are the same tempo. */
@@ -176,6 +178,9 @@ export class PeerFollower {
   /** Reads one clock and acts when its case has held long enough. */
   onClock(remote: PeerClock, local: LocalTransport): FollowAction {
     const at = this.now();
+    // A link that was quiet for a while came back: what was counted before
+    // it is not counted on top of the first clock after it.
+    if (this.lastRemote && at - this.lastRemote.at > CLOCK_GAP_RESET_MS) this.reset();
     const steady = this.steady(remote, local, at);
     this.lastRemote = { time: remote.songTime, at };
     this.lastLocal = { time: local.songTime, at };

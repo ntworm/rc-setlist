@@ -229,6 +229,15 @@
               >
                 Import
               </button>
+              <button
+                class="btn"
+                id="btnPullMaster"
+                type="button"
+                data-rc-text="package.pullMaster"
+                hidden
+              >
+                Bring from master
+              </button>
             </div>
           </section>
         </div>
@@ -351,6 +360,10 @@
           <div class="hint" id="peerCodeHint"></div>
           <ul class="peer-list" id="peerList" hidden></ul>
           <div class="fold-body" id="peerDetails" hidden>
+            <div class="peer-found" id="peerFound" hidden>
+              <span class="cap" data-i18n="panel.peerFound">Ready to pair</span>
+              <div class="peer-found-list" id="peerFoundList"></div>
+            </div>
             <div class="peer-field-row">
               <label class="peer-field">
                 <span class="cap" data-i18n="panel.peerHostLabel">Second computer IP</span>
