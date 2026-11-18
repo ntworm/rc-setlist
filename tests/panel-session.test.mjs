@@ -145,6 +145,38 @@ test('a package file the panel may not send is refused', () => {
   assert.equal(decodePanelEnvelope('{"action":"import-package","packageFile":42}'), null);
 });
 
+test('the rename of a package travels into the envelope', () => {
+  const envelope = decodePanelEnvelope(
+    '{"action":"rename-package","packageFile":"Winter Set.rcsetlist","name":"Summer Set"}',
+  );
+  assert.ok(envelope);
+  assert.equal(envelope.action, 'rename-package');
+  assert.equal(envelope.packageFile, 'Winter Set.rcsetlist');
+  assert.equal(envelope.name, 'Summer Set');
+  assert.equal(isKnownAction('rename-package'), true);
+});
+
+test('a rename the panel may not send is refused', () => {
+  assert.equal(
+    decodePanelEnvelope(
+      '{"action":"rename-package","packageFile":"folder/Winter.rcsetlist","name":"Summer"}',
+    ),
+    null,
+  );
+  assert.equal(
+    decodePanelEnvelope(
+      '{"action":"rename-package","packageFile":"Winter Set.rcsetlist","name":"  "}',
+    ),
+    null,
+  );
+  assert.equal(
+    decodePanelEnvelope(
+      '{"action":"rename-package","packageFile":"Winter Set.rcsetlist","name":42}',
+    ),
+    null,
+  );
+});
+
 test('an answer that is far too long is discarded', () => {
   assert.equal(decodePanelEnvelope('x'.repeat(600)), null);
 });
@@ -152,6 +184,21 @@ test('an answer that is far too long is discarded', () => {
 test('an unknown action is not one the panel may send', () => {
   assert.equal(isKnownAction('drop-the-table'), false);
   assert.equal(isKnownAction('start'), true);
+});
+
+test('the action that unpairs one computer is understood', () => {
+  const action = 'peer-unpair:192.168.1.5:4444';
+  assert.equal(isKnownAction(action), true);
+  const envelope = decodePanelEnvelope(action);
+  assert.ok(envelope);
+  assert.equal(envelope.action, action);
+  assert.equal(isKnownAction('peer-unpair'), true);
+  const json = decodePanelEnvelope('{"action":"peer-unpair:192.168.1.5:4444"}');
+  assert.equal(json.action, action);
+});
+
+test('an unpair action that is far too long is discarded', () => {
+  assert.equal(decodePanelEnvelope(`peer-unpair:${'x'.repeat(600)}`), null);
 });
 
 test('the session follows what the panel said', () => {

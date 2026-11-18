@@ -42,10 +42,12 @@ import { registerOscListeners } from './osc/registration.js';
 import { executeCommandAction } from './commands/handlers/index.js';
 import { immediateJumpRefused } from './commands/handlers/transport.js';
 import { peerCommandRejection, resolvePeerJump } from './commands/handlers/peer.js';
-import { relayToPeer, startPeerLink, stopPeerLink } from './runtime/peer-link.js';
+import { relayToPeer, startPeerLinks, stopPeerLink } from './runtime/peer-link.js';
+import { receiveSetlistChunk } from './runtime/peer-setlist.js';
+import { handlePeerClock, notePeerCommand } from './runtime/peer-follow-runtime.js';
 import { getOrGeneratePeerToken } from './runtime/pairing.js';
 import { startEventLoopWatch, warnIfSlow } from './runtime/event-loop-watch.js';
-import { readPeerConfig } from './preferences.js';
+import { readPeerConfigs } from './preferences.js';
 import { applyJumpTargetTempo } from './commands/jump-tempo.js';
 import type { ClientMessage, ShowCommand } from './types.js';
 import {
@@ -508,8 +510,8 @@ export async function startServer(options: StartServerOptions = {}): Promise<voi
     // its own, next to the server that answers.
     if (tlsOptions !== null) startCaDownloadServer();
 
-    // The paired computer, if there is one, follows from here on.
-    startPeerLink(readPeerConfig());
+    // The paired computers, if there are any, follow from here on.
+    startPeerLinks(readPeerConfigs());
 
     bridgeState.wsServer.on('client_message', (msg: ClientMessage, ws: AugmentedWebSocket) => {
       if (!bridgeState.manager) return;
@@ -577,6 +579,20 @@ export async function startServer(options: StartServerOptions = {}): Promise<voi
         );
         return;
       }
+
+      // The clock of the main computer is not a command: it changes nothing
+      // unless this computer has fallen off the main computer's beat.
+      if (msg.type === 'peer_clock') {
+        handlePeerClock(msg);
+        return;
+      }
+      // The setlist of the main computer travels in pieces: it is a setlist
+      // of its own here, not a command of this computer.
+      if (msg.type === 'setlist_chunk') {
+        receiveSetlistChunk(msg);
+        return;
+      }
+      if (isPeerConnection) notePeerCommand(msg.type);
 
       const readOnlyTypes = new Set(['get_lyrics', 'profiles_get', 'preflight_check']);
       if (!readOnlyTypes.has(msg.type) && !isController && !isPeerConnection) {

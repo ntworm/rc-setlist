@@ -6,12 +6,15 @@ import * as path from 'node:path';
 
 import {
   exportPackage,
+  exportSetlistText,
   importPackage,
+  importPackageText,
   isPackageFileName,
   listPackages,
   parsePackage,
   PackageError,
 } from '../src/core/setlist-package.ts';
+import { renamePackage } from '../src/core/package-rename.ts';
 import { parseSongBook } from '../src/core/song-book.ts';
 
 // A folder of its own, so that the test never touches the machine.
@@ -97,6 +100,71 @@ test('a package carries the setlists of the project and gives them back', async 
       await fs.readFile(path.join(imported.lyrics, 'Beta.lrc'), 'utf8'),
       '[00:01.00] Beta line',
     );
+  } finally {
+    await fs.rm(root, { recursive: true, force: true });
+  }
+});
+
+test('the text of one setlist is the package of that setlist', async () => {
+  const root = await tempRoot();
+  try {
+    const manager = fakeManager(root);
+    const one = await manager.create('One');
+    await manager.create('Two');
+    await fs.writeFile(manager.getPaths(one.id).customOrder, JSON.stringify(['Beta']), 'utf8');
+
+    const text = await exportSetlistText(manager, one.id, 'Summer Tour');
+    const parsed = parsePackage(text);
+    assert.equal(parsed.length, 1);
+    assert.equal(parsed[0].name, 'One');
+    assert.deepEqual(parsed[0].customOrder, ['Beta']);
+
+    // The package of the project carries every setlist of it.
+    const dir = path.join(root, 'packages');
+    const file = await exportPackage(manager, { dir, projectName: 'Summer Tour' });
+    const all = parsePackage(await fs.readFile(path.join(dir, file), 'utf8'));
+    assert.deepEqual(
+      all.map((setlist) => setlist.name),
+      ['One', 'Two'],
+    );
+    // A setlist that is not in the project has no text.
+    await assert.rejects(
+      () => exportSetlistText(manager, 'nope', 'Summer Tour'),
+      /not in the project/,
+    );
+  } finally {
+    await fs.rm(root, { recursive: true, force: true });
+  }
+});
+
+test('a package of text is imported like a package of the folder', async () => {
+  const root = await tempRoot();
+  try {
+    const source = fakeManager(root);
+    const created = await source.create('Main Setlist');
+    const paths = source.getPaths(created.id);
+    await fs.writeFile(paths.customOrder, JSON.stringify(['Beta', 'Alpha']), 'utf8');
+    await fs.writeFile(paths.songBook, JSON.stringify(SONG_BOOK), 'utf8');
+    await fs.mkdir(paths.lyrics, { recursive: true });
+    await fs.writeFile(path.join(paths.lyrics, 'Beta.lrc'), '[00:01.00] Beta line', 'utf8');
+
+    const dir = path.join(root, 'packages');
+    const file = await exportPackage(source, { dir, projectName: 'Summer Tour' });
+    const text = await fs.readFile(path.join(dir, file), 'utf8');
+
+    const target = fakeManager(path.join(root, 'target'));
+    const result = await importPackageText(target, text);
+    assert.equal(result.count, 1);
+    assert.deepEqual(result.names, ['Main Setlist']);
+    const imported = target.getPaths(target.list()[0].id);
+    const order = JSON.parse(await fs.readFile(imported.customOrder, 'utf8'));
+    const book = JSON.parse(await fs.readFile(imported.songBook, 'utf8'));
+    assert.deepEqual(order, ['Beta', 'Alpha']);
+    assert.deepEqual(book, parseSongBook(SONG_BOOK));
+    const lyric = await fs.readFile(path.join(imported.lyrics, 'Beta.lrc'), 'utf8');
+    assert.equal(lyric, '[00:01.00] Beta line');
+    // A text that is not a package is refused.
+    await assert.rejects(() => importPackageText(target, 'not a package'), PackageError);
   } finally {
     await fs.rm(root, { recursive: true, force: true });
   }
@@ -267,6 +335,114 @@ test('only the name of a package file is the name of a package file', () => {
   assert.equal(isPackageFileName('notes.txt'), false);
   assert.equal(isPackageFileName('folder/Winter Set.rcsetlist'), false);
   assert.equal(isPackageFileName('Winter Set'), false);
+});
+
+test('a package of the folder is renamed', async () => {
+  const root = await tempRoot();
+  try {
+    const dir = path.join(root, 'packages');
+    await fs.mkdir(dir, { recursive: true });
+    await fs.writeFile(path.join(dir, 'Winter Set.rcsetlist'), '{}', 'utf8');
+
+    const file = await renamePackage(dir, 'Winter Set.rcsetlist', '  Summer Set  ');
+    assert.equal(file, 'Summer Set.rcsetlist');
+    assert.deepEqual(await fs.readdir(dir), ['Summer Set.rcsetlist']);
+  } finally {
+    await fs.rm(root, { recursive: true, force: true });
+  }
+});
+
+test('a package renamed to the name it has stays as it is', async () => {
+  const root = await tempRoot();
+  try {
+    const dir = path.join(root, 'packages');
+    await fs.mkdir(dir, { recursive: true });
+    await fs.writeFile(path.join(dir, 'Winter Set.rcsetlist'), '{}', 'utf8');
+
+    const file = await renamePackage(dir, 'Winter Set.rcsetlist', 'Winter Set');
+    assert.equal(file, 'Winter Set.rcsetlist');
+    assert.deepEqual(await fs.readdir(dir), ['Winter Set.rcsetlist']);
+  } finally {
+    await fs.rm(root, { recursive: true, force: true });
+  }
+});
+
+test('a name that is taken is refused', async () => {
+  const root = await tempRoot();
+  try {
+    const dir = path.join(root, 'packages');
+    await fs.mkdir(dir, { recursive: true });
+    await fs.writeFile(path.join(dir, 'Winter Set.rcsetlist'), '{}', 'utf8');
+    await fs.writeFile(path.join(dir, 'Summer Set.rcsetlist'), '{}', 'utf8');
+
+    await assert.rejects(
+      () => renamePackage(dir, 'Winter Set.rcsetlist', 'Summer Set'),
+      /already in the folder/,
+    );
+    // Both files are as they were.
+    assert.deepEqual((await fs.readdir(dir)).sort(), [
+      'Summer Set.rcsetlist',
+      'Winter Set.rcsetlist',
+    ]);
+  } finally {
+    await fs.rm(root, { recursive: true, force: true });
+  }
+});
+
+test('a name a file may not carry is refused', async () => {
+  const root = await tempRoot();
+  try {
+    const dir = path.join(root, 'packages');
+    await fs.mkdir(dir, { recursive: true });
+    await fs.writeFile(path.join(dir, 'Winter Set.rcsetlist'), '{}', 'utf8');
+
+    const names = [
+      '',
+      '   ',
+      'a/b',
+      'a:b',
+      'a*b',
+      'a?b',
+      'a"b',
+      'a<b',
+      'a>b',
+      'a|b',
+      'Fest\u0000ival',
+      'x'.repeat(121),
+    ];
+    for (const name of names) {
+      await assert.rejects(
+        () => renamePackage(dir, 'Winter Set.rcsetlist', name),
+        /Invalid package name/,
+        `the name "${name}" must be refused`,
+      );
+    }
+    // The file is as it was.
+    assert.deepEqual(await fs.readdir(dir), ['Winter Set.rcsetlist']);
+  } finally {
+    await fs.rm(root, { recursive: true, force: true });
+  }
+});
+
+test('a package that is not in the folder is not renamed', async () => {
+  const root = await tempRoot();
+  try {
+    const dir = path.join(root, 'packages');
+    await fs.mkdir(dir, { recursive: true });
+    await fs.writeFile(path.join(dir, 'notes.txt'), 'x', 'utf8');
+
+    await assert.rejects(
+      () => renamePackage(dir, 'Missing.rcsetlist', 'Summer Set'),
+      /not in the folder/,
+    );
+    await assert.rejects(
+      () => renamePackage(dir, 'notes.txt', 'Summer Set'),
+      /Invalid package name/,
+    );
+    assert.deepEqual(await fs.readdir(dir), ['notes.txt']);
+  } finally {
+    await fs.rm(root, { recursive: true, force: true });
+  }
 });
 
 test('a package that is not in the folder is refused', async () => {

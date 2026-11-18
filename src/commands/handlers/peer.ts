@@ -34,7 +34,14 @@ export type PeerJumpResolution =
  * the list: an index into a list means nothing on the other side.
  */
 export function isPeerCommandType(type: string): boolean {
-  if (type === 'handshake' || type === 'sync_confirm' || type === 'jump_time') return true;
+  if (
+    type === 'handshake' ||
+    type === 'sync_confirm' ||
+    type === 'jump_time' ||
+    type === 'peer_clock' ||
+    type === 'setlist_chunk'
+  )
+    return true;
   return PEER_RELAY_TYPES.has(type) && type !== 'jump';
 }
 
@@ -54,6 +61,18 @@ export function peerCommandRejection(
       };
     }
     return null;
+  }
+  if (msg.type === 'peer_clock' && !isPeer) {
+    return {
+      code: 'unauthorized',
+      message: 'Unauthorized: only a peer connection may send its clock.',
+    };
+  }
+  if (msg.type === 'setlist_chunk' && !isPeer) {
+    return {
+      code: 'unauthorized',
+      message: 'Unauthorized: only a peer connection may send a setlist.',
+    };
   }
   if (isPeer && !isPeerCommandType(msg.type)) {
     return {

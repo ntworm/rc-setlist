@@ -740,6 +740,18 @@ select {
   color: var(--p-text-hi);
 }
 
+.package-rename-input {
+  flex: 1 1 auto;
+  width: 100%;
+  min-width: 0;
+  padding: 0 2px;
+  border: 1px solid var(--p-text-2);
+  border-radius: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+}
+
 .package-empty {
   padding: 8px;
   border: 1px dashed var(--p-line);
@@ -929,6 +941,39 @@ select {
   letter-spacing: 0.2em;
 }
 
+.peer-list {
+  list-style: none;
+  margin: 6px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 4px;
+}
+
+.peer-list li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+}
+
+.peer-list-address {
+  font-family: var(--p-mono, monospace);
+  color: var(--p-text);
+}
+
+.peer-list-status {
+  flex: 1;
+  color: var(--p-text-2);
+}
+
+.peer-list-status.warning {
+  color: var(--p-warn);
+}
+
+.peer-list-status.active {
+  color: var(--p-ok);
+}
+
 /* ---- Options and status, at the foot ---- */
 
 .options-bar {
@@ -1034,6 +1079,33 @@ select {
 
 .status-text.warning {
   color: var(--p-warn);
+}
+
+.status-osc {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+
+.status-osc:hover:not(:disabled) .status-text,
+.status-osc:focus-visible .status-text {
+  text-decoration: underline;
+}
+
+.status-osc:focus-visible {
+  outline: 1px solid var(--p-text-2);
+  outline-offset: 2px;
+}
+
+.status-osc:disabled {
+  cursor: default;
 }
 
 .status-port {

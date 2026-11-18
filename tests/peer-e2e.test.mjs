@@ -219,6 +219,31 @@ test('critical lock prevents jump from being relayed to peer', async () => {
   bridgeState.manager.setCriticalCommandsLocked(false);
 });
 
+test('a second computer left stopped while the main one plays starts on the next bar', async () => {
+  const beforeCount = readLogCalls(childLogFile).length;
+  // The main computer plays at its tempo: the follower trusts only a
+  // playhead that moves.
+  const startedAt = Date.now();
+  const tempo = bridgeState.manager.getState().tempo;
+  const advance = () =>
+    bridgeState.manager.updateTransport(64 + ((Date.now() - startedAt) / 60_000) * tempo, true);
+  advance();
+  const timer = setInterval(advance, 100);
+  try {
+    const started = await waitFor(() => {
+      const calls = readLogCalls(childLogFile).slice(beforeCount);
+      const at = calls.findIndex((c) => c.startsWith('setCurrentSongTime:'));
+      if (at < 0) return false;
+      const beat = Number(calls[at].split(':')[1]);
+      return beat % 4 === 0 && calls.slice(at + 1).includes('startPlaying');
+    }, 10000);
+    assert.equal(started, true, 'the follower must move to a bar line and start');
+  } finally {
+    clearInterval(timer);
+    bridgeState.manager.updateTransport(64, false);
+  }
+});
+
 test('killing the peer child marks connected false and local stop executes in < 500ms', async () => {
   childProcess.kill('SIGTERM');
   const disconnected = await waitFor(() => bridgeState.peerStatus.connected === false, 5000);

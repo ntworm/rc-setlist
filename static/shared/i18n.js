@@ -188,6 +188,7 @@
     'panel.off': { en: 'Off', 'pt-BR': 'Desligado' },
     'panel.peerSecondComputer': { en: 'Second computer', 'pt-BR': 'Segundo computador' },
     'panel.peerUnpair': { en: 'Unpair', 'pt-BR': 'Desfazer' },
+    'panel.peerSlaveOf': { en: 'Slave of {address}', 'pt-BR': 'Slave de {address}' },
     'panel.peerPair': { en: 'Pair', 'pt-BR': 'Parear' },
     'panel.peerShow': { en: 'Show', 'pt-BR': 'Mostrar' },
     'panel.peerHide': { en: 'Hide', 'pt-BR': 'Esconder' },

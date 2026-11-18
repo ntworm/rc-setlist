@@ -758,6 +758,29 @@ These stay on the main computer: setlist editing, marker editing, colours,
 notes, lyrics, profiles, ordering and the CSV export. The second computer
 keeps its own setlist and its own profiles.
 
+### The second computer keeps itself on the beat
+
+With Link on, Live starts Play and a quantized jump on the next bar line. A
+command that crosses the network while that bar line passes lands one bar late
+on the second computer, and a command sent while the link was down never
+arrives. So the main computer also sends where its playhead is, twice a
+second, and the second computer corrects what it can tell for sure:
+
+- Both play and the second one is a whole number of beats off: its playhead
+  moves by that gap.
+- The main computer plays and the second one is stopped: it starts on the next
+  bar line of the main computer's position.
+- The main computer is stopped and the second one plays: it stops.
+
+Each case has to hold for about a second and a half before anything happens.
+Nothing moves while a jump waits for its grid, while a loop runs, during panic
+or a lock, in the seconds after a relayed Play, Stop, jump or count-in, or
+while either playhead is not moving at its tempo (a Live that stopped
+answering is never followed). A gap that is not whole
+beats means the two are not on the same beat; the second computer reports it
+and asks to check Link, without moving. Every correction is written to the log
+of the second computer.
+
 ### A phone is not a second computer
 
 A phone or a tablet that opens the Stage Control page is a **controller** of

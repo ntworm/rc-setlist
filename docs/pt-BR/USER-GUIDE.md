@@ -373,6 +373,30 @@ Ficam no computador principal: edição do setlist, edição de marcadores, core
 notas, letras, perfis, ordenação e a exportação CSV. O segundo computador
 mantém o próprio setlist e os próprios perfis.
 
+### O segundo computador se mantém no tempo
+
+Com o Link ligado, o Live começa o Play e um salto quantizado na próxima
+barra. Um comando que atravessa a rede enquanto essa barra passa chega uma
+barra atrasado no segundo computador, e um comando enviado com o link caído
+nunca chega. Por isso o computador principal também manda onde está a agulha,
+duas vezes por segundo, e o segundo computador corrige o que dá para saber
+com certeza:
+
+- Os dois tocam e o segundo está um número inteiro de beats fora: a agulha
+  dele anda essa diferença.
+- O principal toca e o segundo está parado: ele começa na próxima barra da
+  posição do principal.
+- O principal está parado e o segundo toca: ele para.
+
+Cada caso precisa durar cerca de um segundo e meio antes de qualquer ação.
+Nada se move enquanto um salto espera a grade, enquanto um loop roda, com
+pânico ou trava ligados, nos segundos depois de um Play, Stop, salto ou
+contagem repassados, ou enquanto uma das agulhas não anda no próprio tempo (um
+Live que parou de responder nunca é seguido). Uma
+diferença que não é de beats inteiros quer dizer que os dois não estão no
+mesmo tempo; o segundo computador avisa e pede para conferir o Link, sem se
+mover. Toda correção fica no log do segundo computador.
+
 ### Um celular não é um segundo computador
 
 Um celular ou tablet que abre a página do Controle de palco é um

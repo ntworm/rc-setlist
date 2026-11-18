@@ -214,7 +214,7 @@ test('the server controls follow the state of the server', async ({ page }) => {
   await expect(page.locator('#btnStart')).toBeEnabled();
   await expect(page.locator('#btnStop')).toBeDisabled();
   await expect(page.locator('#btnRestart')).toBeDisabled();
-  await expect(page.locator('#btnDiagnoseOsc')).toBeDisabled();
+  await expect(page.locator('#btnOscCheck')).toBeDisabled();
   await expect(page.locator('#statusText')).toHaveText('Server stopped');
 });
 

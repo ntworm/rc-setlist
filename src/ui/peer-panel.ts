@@ -7,14 +7,21 @@
 // Two computers can run the show. The main one holds Live and the panel; the
 // second one follows it, transport and all. The two are paired by hand: the
 // second one prints a six-digit code and the operator types it, together with
-// the second computer's address, into the panel of the main one. A code read
-// over a table of gear is the only credential an operator can carry from one
-// machine to the other.
+// the second computer's address, into the panel of the main one. The main one
+// may hold several second computers at once, and each of them is forgotten on
+// its own. A code read over a table of gear is the only credential an
+// operator can carry from one machine to the other.
 //
 // Nothing here opens a socket on its own. With no pair configured the panel
 // says so, the stage page shows no dot, and the extension talks to nobody.
 
-import { clearPeerConfig, getUiLocale, readPeerConfig, type UiLocale } from '../preferences.js';
+import {
+  clearPeerConfig,
+  getUiLocale,
+  readPeerConfigs,
+  removePeerConfig,
+  type UiLocale,
+} from '../preferences.js';
 import { getServer, isServerRunning, isServerTls } from '../index.js';
 import {
   currentPairingCode,
@@ -22,13 +29,17 @@ import {
   generatePairingCode,
   pair,
 } from '../runtime/pairing.js';
-import { startPeerLink } from '../runtime/peer-link.js';
-import { bridgeState } from '../runtime/bridge-state.js';
+import { startPeerLink, startPeerLinks } from '../runtime/peer-link.js';
+import { bridgeState, readPeerRole, type PeerRole } from '../runtime/bridge-state.js';
 import { getLanAddresses, pickLanIps } from '../util/helpers.js';
-import type { PeerStatus } from '../types.js';
+import { roleText } from './peer-role-text.js';
+import type { PeerLinkStatus, PeerStatus } from '../types.js';
 
 /** The prefix every peer action carries. */
 const PAIR_PREFIX = 'peer-pair:';
+
+/** The prefix of the action that unpairs one computer of the list. */
+const UNPAIR_PREFIX = 'peer-unpair:';
 
 /** The states the panel can show for the second computer. */
 export type PeerPanelState =
@@ -36,7 +47,13 @@ export type PeerPanelState =
 
 /** What the panel asks the extension to do about the second computer. */
 export type PeerAction =
-  { kind: 'pair'; host: string; code: string } | { kind: 'unpair' } | { kind: 'code' };
+  | { kind: 'pair'; host: string; code: string }
+  | { kind: 'unpair' }
+  | { kind: 'unpair-one'; host: string; port: number }
+  | { kind: 'code' };
+
+/** One paired computer, as the panel shows it. */
+export type PeerPanelPeer = PeerLinkStatus & { statusText: string };
 
 /** The outcome of a peer action. */
 export interface PeerActionResult {
@@ -72,6 +89,15 @@ export interface PeerPanelModel {
   canGenerateCode: boolean;
   /** Why the pairing code may or may not be asked for. */
   codeHint: string;
+  /** The computers this one is paired with, one row each. */
+  peers?: PeerPanelPeer[];
+  /** The role this computer plays in the pair, and the sentence for it. */
+  role?: PeerRole;
+  roleText?: string;
+  /** The address of the main computer, when this computer is the second one. */
+  masterAddress?: string;
+  /** Whether the main computer is talking to this one right now. */
+  slaveConnected?: boolean;
 }
 
 /** The sentence each state shows, in the two languages the panel speaks. */
@@ -211,28 +237,70 @@ function isIpv4(host: string): boolean {
  */
 export function sanitizePanelAction(action: string): string {
   if (action.startsWith(PAIR_PREFIX)) return 'peer-pair';
+  if (action.startsWith(UNPAIR_PREFIX)) return 'peer-unpair';
   return action;
 }
 
 /**
  * Reads a peer action out of the string the panel sends.
  *
- * Returns null for anything that is not one of the three actions: an
- * unknown action, an address that is not a plain address, and a code that is
- * not six digits.
+ * Returns null for anything that is not one of the actions: an unknown
+ * action, an address that is not a plain address, a code that is not six
+ * digits, and a port that is not a port.
  */
 export function parsePeerAction(action: string): PeerAction | null {
   if (action === 'peer-unpair') return { kind: 'unpair' };
   if (action === 'peer-code') return { kind: 'code' };
+  if (action.startsWith(UNPAIR_PREFIX)) {
+    const read = readUnpairInput(action.slice(UNPAIR_PREFIX.length));
+    if (!read) return null;
+    return { kind: 'unpair-one', host: read.host, port: read.port };
+  }
   if (!action.startsWith(PAIR_PREFIX)) return null;
-  const rest = action.slice(PAIR_PREFIX.length);
-  const separator = rest.lastIndexOf(':');
-  if (separator <= 0) return null;
-  const host = rest.slice(0, separator);
-  const code = rest.slice(separator + 1);
+  const read = readPairInput(action.slice(PAIR_PREFIX.length));
+  if (!read) return null;
+  const { host, code } = read;
   if (!isValidPeerHost(host)) return null;
   if (!/^[0-9]{6}$/.test(code)) return null;
   return { kind: 'pair', host, code };
+}
+
+/**
+ * The address and the code as the operator meant them.
+ *
+ * The card shows the address of the second computer with its port, and people
+ * type what they read: a link with its scheme, the port, spaces in the code or digits
+ * from another keyboard layout. All of these name the same computer and code.
+ */
+export function readPairInput(rest: string): { host: string; code: string } | null {
+  const separator = rest.lastIndexOf(':');
+  if (separator <= 0) return null;
+  const code = rest
+    .slice(separator + 1)
+    .normalize('NFKC')
+    .replace(/[\s.-]/g, '');
+  let host = rest
+    .slice(0, separator)
+    .normalize('NFKC')
+    .replace(/^ +| +$/g, '')
+    .toLowerCase();
+  host = host
+    .replace(/^https?:\/\//, '')
+    .replace(/\/$/, '')
+    .replace(/:[0-9]{1,5}$/, '');
+  return { host, code };
+}
+
+/** The address and the port of the computer to unpair. */
+function readUnpairInput(rest: string): { host: string; port: number } | null {
+  const separator = rest.lastIndexOf(':');
+  if (separator <= 0) return null;
+  const host = rest.slice(0, separator).trim().toLowerCase();
+  const portText = rest.slice(separator + 1).trim();
+  if (!/^[0-9]{1,5}$/.test(portText)) return null;
+  const port = Number(portText);
+  if (port < 1 || port > 65535 || !isValidPeerHost(host)) return null;
+  return { host, port };
 }
 
 /**
@@ -252,11 +320,14 @@ function pairFailureText(host: string, detail: string, locale: UiLocale): string
 /**
  * The sentence shown when the address or the code was not accepted.
  */
-function invalidInputText(locale: UiLocale): string {
+function invalidInputText(action: string, locale: UiLocale): string {
+  const read = readPairInput(action.slice(PAIR_PREFIX.length));
+  const host = read ? read.host.slice(0, 64) : '';
+  const digits = read ? read.code.replace(/[^0-9]/g, '').length : 0;
+  const others = read ? read.code.length - digits : 0;
   const templates: Record<UiLocale, string> = {
-    en: 'That address or code was not accepted. The address is a plain IP or host name, and the code is six digits.',
-    'pt-BR':
-      'Esse endereço ou código não foi aceito. O endereço é um IP ou nome de host simples, e o código tem seis dígitos.',
+    en: `That address or code was not accepted. The address is a plain IP or host name, and the code is six digits. Read: address "${host}", code with ${digits} digits${others ? ` and ${others} other characters` : ''}.`,
+    'pt-BR': `Esse endereço ou código não foi aceito. O endereço é um IP ou nome de host simples, e o código tem seis dígitos. Lido: endereço "${host}", código com ${digits} dígitos${others ? ` e ${others} outros caracteres` : ''}.`,
   };
   return templates[locale];
 }
@@ -286,7 +357,8 @@ async function pairAndLink(
   if (!result.ok || !result.config) {
     return { ok: false, message: pairFailureText(host, result.error ?? '', locale) };
   }
-  startPeerLink(result.config);
+  // Every computer this one is paired with gets a link, not only the new one.
+  startPeerLinks(readPeerConfigs());
   return { ok: true };
 }
 
@@ -294,7 +366,8 @@ async function pairAndLink(
  * Runs a peer action.
  *
  * Pairing stores the credential the second computer handed out and opens the
- * link to it; unpairing forgets the credential and closes the link; asking
+ * link to it; unpairing forgets the credential and closes the link; unpairing
+ * one computer forgets that one alone and leaves the others paired; asking
  * for a code prints the one the main computer will be given.
  *
  * The panel always pairs on the default port. The port is a parameter so a
@@ -309,7 +382,7 @@ export async function runPeerAction(
   const parsed = parsePeerAction(action);
   if (!parsed) {
     return action.startsWith(PAIR_PREFIX)
-      ? { ok: false, message: invalidInputText(locale) }
+      ? { ok: false, message: invalidInputText(action, locale) }
       : { ok: false };
   }
   if (parsed.kind === 'code') {
@@ -322,6 +395,14 @@ export async function runPeerAction(
     // "not paired" that would not last.
     if (!clearPeerConfig()) return { ok: false, message: unpairFailureText(locale) };
     startPeerLink(null);
+    return { ok: true };
+  }
+  if (parsed.kind === 'unpair-one') {
+    // Only the computer that was named is forgotten: the others stay paired.
+    if (!removePeerConfig(parsed.host, parsed.port)) {
+      return { ok: false, message: unpairFailureText(locale) };
+    }
+    startPeerLinks(readPeerConfigs());
     return { ok: true };
   }
   return pairAndLink(parsed.host, parsed.code, port, locale);
@@ -374,15 +455,20 @@ export interface PeerPanelOptions {
 export function peerPanelModel(options: PeerPanelOptions = {}): PeerPanelModel {
   const locale = options.locale ?? getUiLocale();
   const state = peerPanelState(bridgeState.peerStatus);
-  const config = readPeerConfig();
+  const configs = readPeerConfigs();
   const serverRunning = isServerRunning();
   const tlsEnabled = isServerTls();
   const code = currentPairingCode();
+  const { role, masterAddress } = readPeerRole();
+  const peers = bridgeState.peerStatuses.map((row) => ({
+    ...row,
+    statusText: peerStateText(peerPanelState({ paired: true, ...row }), locale),
+  }));
   return {
     state,
     statusText: peerStateText(state, locale),
     paired: bridgeState.peerStatus.paired,
-    host: config?.host ?? '',
+    host: configs[0]?.host ?? '',
     port: servingPort(),
     localIp: options.localIp ?? pickLanIps(getLanAddresses()).primary,
     serverRunning,
@@ -391,5 +477,10 @@ export function peerPanelModel(options: PeerPanelOptions = {}): PeerPanelModel {
     code,
     canGenerateCode: serverRunning && tlsEnabled,
     codeHint: codeHint(serverRunning, tlsEnabled, locale),
+    peers,
+    role,
+    roleText: roleText(role, locale, peers),
+    masterAddress,
+    slaveConnected: role === 'slave' && (bridgeState.wsServer?.peerConnectionCount() ?? 0) > 0,
   };
 }

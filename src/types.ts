@@ -52,6 +52,22 @@ export interface PeerStatus {
   fingerprintMismatch: boolean;
 }
 
+/**
+ * What one paired computer looks like from this one.
+ *
+ * There is one of these for every computer this one is paired with, and the
+ * summary in `PeerStatus` is what they add up to.
+ */
+export interface PeerLinkStatus {
+  /** The address of the computer. */
+  host: string;
+  /** The port the computer serves on. */
+  port: number;
+  connected: boolean;
+  markersMatch: boolean;
+  fingerprintMismatch: boolean;
+}
+
 export interface SetlistState {
   protocolVersion?: 3;
   setlistVersion?: number;
@@ -170,6 +186,25 @@ export type ClientMessage =
       section?: boolean;
       /** Whether the jump must land now, without waiting for the grid. */
       immediate?: boolean;
+    })
+  | (ClientMessageBase & {
+      type: 'peer_clock';
+      isPlaying: boolean;
+      songTime: number;
+      tempo: number;
+      jumpPending: boolean;
+      loopActive: boolean;
+    })
+  | (ClientMessageBase & {
+      type: 'setlist_chunk';
+      /** The request the pieces belong to. */
+      requestId: string;
+      /** Which piece of the setlist this is. */
+      index: number;
+      /** How many pieces the setlist is sent in. */
+      total: number;
+      /** The text of this piece. */
+      data: string;
     })
   | (ClientMessageBase & { type: 'reorder'; songTitles: string[] })
   | (ClientMessageBase & { type: 'save_lyrics'; song: string; text: string })

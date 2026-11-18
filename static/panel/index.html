@@ -347,7 +347,9 @@
               Show
             </button>
           </div>
+          <div class="hint" id="peerMasterLine" hidden></div>
           <div class="hint" id="peerCodeHint"></div>
+          <ul class="peer-list" id="peerList" hidden></ul>
           <div class="fold-body" id="peerDetails" hidden>
             <div class="peer-field-row">
               <label class="peer-field">
@@ -381,15 +383,6 @@
                 data-i18n="panel.peerPair"
               >
                 Pair
-              </button>
-              <button
-                class="btn"
-                id="btnPeerUnpair"
-                type="button"
-                data-rc-action="peer-unpair"
-                data-i18n="panel.peerUnpair"
-              >
-                Unpair
               </button>
             </div>
             <div class="peer-local-row">
@@ -459,9 +452,22 @@
         <span id="statusText" class="status-text">Server stopped</span>
         <span id="infoPort" class="status-port">Port: &mdash;</span>
         <span class="status-sep" aria-hidden="true">&middot;</span>
-        <span id="oscStatusDot" class="status-dot small"></span>
-        <span id="oscStatusText" class="status-text">Start the server to test AbletonOSC</span>
+        <button
+          id="btnOscCheck"
+          class="status-osc"
+          type="button"
+          data-rc-action="diagnose-osc"
+          data-i18n-title="panel.checkOsc"
+          data-i18n-aria-label="panel.checkOsc"
+          title="Check OSC"
+          aria-label="Check OSC"
+        >
+          <span id="oscStatusDot" class="status-dot small"></span>
+          <span id="oscStatusText" class="status-text">Start the server to test AbletonOSC</span>
+        </button>
         <span id="oscBridgeText" class="status-port" hidden></span>
+        <span class="status-sep" id="peerRoleSep" aria-hidden="true" hidden>&middot;</span>
+        <span id="peerRoleText" class="status-text" hidden></span>
       </span>
       <span class="tab-bar-gap"></span>
       <button
@@ -484,15 +490,6 @@
         data-i18n="panel.restart"
       >
         Restart
-      </button>
-      <button
-        class="btn"
-        id="btnDiagnoseOsc"
-        type="button"
-        data-rc-action="diagnose-osc"
-        data-i18n="panel.checkOsc"
-      >
-        Check OSC
       </button>
       <button
         class="btn"
