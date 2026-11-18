@@ -142,6 +142,8 @@ function handlePeerMessage(message, ws, manager, actions) {
     ws.synchronized = true;
     return;
   }
+  // The clock of the main computer is not a command the second one runs.
+  if (message.type === 'peer_clock') return;
   const jump = resolvePeerJump(message, manager.getState());
   if (jump.kind === 'error') {
     ws.send(JSON.stringify({ type: 'error', code: jump.code, message: jump.message }));

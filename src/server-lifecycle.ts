@@ -43,6 +43,7 @@ import { executeCommandAction } from './commands/handlers/index.js';
 import { immediateJumpRefused } from './commands/handlers/transport.js';
 import { peerCommandRejection, resolvePeerJump } from './commands/handlers/peer.js';
 import { relayToPeer, startPeerLink, stopPeerLink } from './runtime/peer-link.js';
+import { handlePeerClock, notePeerCommand } from './runtime/peer-follow-runtime.js';
 import { getOrGeneratePeerToken } from './runtime/pairing.js';
 import { startEventLoopWatch, warnIfSlow } from './runtime/event-loop-watch.js';
 import { readPeerConfig } from './preferences.js';
@@ -577,6 +578,14 @@ export async function startServer(options: StartServerOptions = {}): Promise<voi
         );
         return;
       }
+
+      // The clock of the main computer is not a command: it changes nothing
+      // unless this computer has fallen off the main computer's beat.
+      if (msg.type === 'peer_clock') {
+        handlePeerClock(msg);
+        return;
+      }
+      if (isPeerConnection) notePeerCommand();
 
       const readOnlyTypes = new Set(['get_lyrics', 'profiles_get', 'preflight_check']);
       if (!readOnlyTypes.has(msg.type) && !isController && !isPeerConnection) {

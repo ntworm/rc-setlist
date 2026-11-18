@@ -169,6 +169,14 @@ export type ClientMessage =
       /** Whether the jump must land now, without waiting for the grid. */
       immediate?: boolean;
     })
+  | (ClientMessageBase & {
+      type: 'peer_clock';
+      isPlaying: boolean;
+      songTime: number;
+      tempo: number;
+      jumpPending: boolean;
+      loopActive: boolean;
+    })
   | (ClientMessageBase & { type: 'reorder'; songTitles: string[] })
   | (ClientMessageBase & { type: 'save_lyrics'; song: string; text: string })
   | (ClientMessageBase & { type: 'click_preview'; bpm?: number; beats?: number })

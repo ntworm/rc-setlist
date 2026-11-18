@@ -178,6 +178,21 @@ export function decodeClientMessage(input: unknown): DecodeResult {
         ...(input.section === undefined ? {} : { section: input.section }),
         ...(input.immediate === undefined ? {} : { immediate: input.immediate }),
       });
+    case 'peer_clock':
+      if (typeof input.isPlaying !== 'boolean') return fail('Invalid isPlaying for peer_clock.');
+      if (!isBoundedNumber(input.songTime, 0, 1_000_000))
+        return fail('Invalid songTime for peer_clock.');
+      if (!isBoundedNumber(input.tempo, 1, 1_000)) return fail('Invalid tempo for peer_clock.');
+      if (typeof input.jumpPending !== 'boolean' || typeof input.loopActive !== 'boolean')
+        return fail('Invalid flags for peer_clock.');
+      return success({
+        type: 'peer_clock',
+        isPlaying: input.isPlaying,
+        songTime: input.songTime,
+        tempo: input.tempo,
+        jumpPending: input.jumpPending,
+        loopActive: input.loopActive,
+      });
     case 'reorder':
       if (
         !Array.isArray(input.songTitles) ||

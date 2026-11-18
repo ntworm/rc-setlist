@@ -53,6 +53,7 @@ export function createChildFakeOsc(logFile) {
     startPlaying: log('startPlaying'),
     continuePlaying: log('continuePlaying'),
     stopPlaying: log('stopPlaying'),
+    setCurrentSongTime: log('setCurrentSongTime'),
     setMetronome: log('setMetronome'),
     setClipTriggerQuantization: log('setClipTriggerQuantization'),
     jumpToCuePoint: log('jumpToCuePoint'),

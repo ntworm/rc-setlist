@@ -4,6 +4,13 @@ All notable public changes to Ableton RC Setlist are recorded here.
 
 ## [Unreleased]
 
+### Added
+
+- **The second computer keeps itself on the beat**: the main computer sends
+  its playhead twice a second, and the second computer moves by whole beats
+  when a launch landed a bar late, starts when it missed a Play and stops when
+  it missed a Stop.
+
 ## [1.1.0] - 2026-11-06
 
 ### Added

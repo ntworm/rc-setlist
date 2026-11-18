@@ -4,11 +4,10 @@
 //
 // The link to the paired computer.
 //
-// The main computer runs the show and forwards what the operator asks for to
-// the second computer, which follows along. The link is one client per
-// process: it connects, handshakes, and stays connected. Nothing is ever
-// queued — a command that arrives while the link is down is dropped, because
-// a transport command that lands late is worse than one that never lands.
+// The main computer forwards what the operator asks for to the second one,
+// and its clock twice a second. The link is one client per process. Nothing
+// is queued: a command that lands late is worse than one that never lands,
+// and the clock lets the second computer catch up on what it missed.
 //
 // The certificate is pinned. The TLS connection is opened first and the
 // fingerprint the socket presents is compared against the one the pairing
@@ -20,10 +19,17 @@ import { WebSocket } from 'ws';
 import { bridgeState, broadcastState } from './bridge-state.js';
 import { fingerprintFromSocket, publicKeyPinFromSocket } from './pairing.js';
 import { peerLinkTiming, watchPeerSocket, type PeerWatchdog } from './peer-liveness.js';
-import { isRecord, parseMessage, payloadFields, peerCommandId } from './peer-message.js';
+import {
+  canWriteNow,
+  isRecord,
+  parseMessage,
+  payloadFields,
+  peerCommandId,
+} from './peer-message.js';
 import type { PeerConfig } from '../preferences.js';
 import type { PeerStatus, ShowCommand } from '../types.js';
 import { log } from '../util/log.js';
+import { startPeerClock } from './peer-follow-runtime.js';
 
 export { resetPeerLinkTiming, setPeerLinkTiming } from './peer-liveness.js';
 
@@ -59,6 +65,7 @@ interface PeerLink {
   synchronized: boolean;
   stopped: boolean;
   lastRemoteFingerprint: string | null;
+  clockTimer: NodeJS.Timeout | null;
 }
 
 let link: PeerLink | null = null;
@@ -75,6 +82,7 @@ function stopTimer(timer: NodeJS.Timeout | null): null {
  * Stops every timer of the current attempt.
  */
 function stopAttemptTimers(target: PeerLink): void {
+  target.clockTimer = stopTimer(target.clockTimer);
   target.connectTimer = stopTimer(target.connectTimer);
   target.handshakeTimer = stopTimer(target.handshakeTimer);
   target.watchdog?.stop();
@@ -205,6 +213,10 @@ function handlePeerMessage(target: PeerLink, data: WebSocket.Data): void {
     sendToPeer(target, { type: 'sync_confirm', stateVersion: version });
     target.synchronized = true;
     setPeerStatus({ connected: true });
+    stopTimer(target.clockTimer);
+    target.clockTimer = startPeerClock(() =>
+      dropIfStale(target) || !target.synchronized ? null : target.socket,
+    );
     return;
   }
 
@@ -450,6 +462,7 @@ export function startPeerLink(config: PeerConfig | null): void {
     synchronized: false,
     stopped: false,
     lastRemoteFingerprint: null,
+    clockTimer: null,
   };
   setPeerStatus({ paired: true, connected: false, markersMatch: true, fingerprintMismatch: false });
   connectPeer();
@@ -461,18 +474,6 @@ export function startPeerLink(config: PeerConfig | null): void {
 export function stopPeerLink(): void {
   teardownLink();
   setPeerStatus({ connected: false });
-}
-
-/**
- * Whether a command may be written to the socket right now.
- *
- * A socket that still holds what was written to it is a socket nobody is
- * reading, so a command is dropped rather than queued behind the others. Stop
- * and panic go anyway: a second computer left playing is the worse failure.
- */
-function canWriteNow(socket: WebSocket | null, type: string): boolean {
-  if (!socket) return false;
-  return socket.bufferedAmount === 0 || type === 'stop' || type === 'set_panic';
 }
 
 /**
