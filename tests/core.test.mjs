@@ -2091,7 +2091,10 @@ test('a signature Live cannot be playing is ignored', () => {
 test('a cue reload keeps the signature timeline', () => {
   const manager = managerWithChangedSignature(128.3);
   const before = timeline(manager);
-  manager.updateCues([{ name: 'Song A', time: 0 }, { name: 'Song B', time: 64 }]);
+  manager.updateCues([
+    { name: 'Song A', time: 0 },
+    { name: 'Song B', time: 64 },
+  ]);
   assert.deepStrictEqual(timeline(manager), before);
 });
 

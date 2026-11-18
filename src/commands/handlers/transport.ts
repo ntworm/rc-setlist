@@ -56,10 +56,7 @@ export function immediateJumpRefused(msg: ClientMessageOf<'jump'>): boolean {
   if (!manager || !scheduler) return false;
   const state = manager.getState();
   if (!state.isPlaying) return false;
-  const quantBeats = getQuantizationBeats(
-    state.clipTriggerQuantization,
-    state.signatureNumerator,
-  );
+  const quantBeats = getQuantizationBeats(state.clipTriggerQuantization, state.signatureNumerator);
   if (quantBeats <= 0) return false;
   return scheduler.hasPending();
 }

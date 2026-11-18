@@ -69,7 +69,10 @@ export function syncFromMcpInfo(info: SessionInfo): void {
  */
 function syncSignature(info: SessionInfo): boolean {
   if (!bridgeState.manager) return false;
-  if (typeof info.signature_numerator !== 'number' || typeof info.signature_denominator !== 'number') {
+  if (
+    typeof info.signature_numerator !== 'number' ||
+    typeof info.signature_denominator !== 'number'
+  ) {
     return false;
   }
   return bridgeState.manager.updateSignature(info.signature_numerator, info.signature_denominator);

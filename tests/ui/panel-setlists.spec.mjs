@@ -303,7 +303,9 @@ test('a package name the operator leaves alone asks nothing', async ({ page }) =
 
   expect(await sentEnvelopes(page)).toHaveLength(0);
   await expect(page.locator('#packageList .package-rename-input')).toHaveCount(0);
-  await expect(page.locator('#packageList')).toContainText('Summer Tour 2026-11-06 21h00.rcsetlist');
+  await expect(page.locator('#packageList')).toContainText(
+    'Summer Tour 2026-11-06 21h00.rcsetlist',
+  );
 });
 
 test('a project that cannot change asks nothing', async ({ page }) => {

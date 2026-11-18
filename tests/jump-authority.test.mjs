@@ -127,7 +127,10 @@ test('an untagged destination does not send pre-jump tempo', () => {
   const harness = installHarness(0, (value, calls) => calls.push(['sdk-tempo', value]));
   try {
     executeJumpCommand({ songIndex: 0, sectionIndex: 0 });
-    assert.equal(harness.calls.some(([kind]) => kind === 'sdk-tempo' || kind === 'osc-tempo'), false);
+    assert.equal(
+      harness.calls.some(([kind]) => kind === 'sdk-tempo' || kind === 'osc-tempo'),
+      false,
+    );
     assert.deepEqual(harness.calls.at(0), ['jump', 1]);
   } finally {
     harness.restore();
@@ -145,7 +148,11 @@ test('a quantized jump is handed to Live when it is requested, not on the landin
   try {
     executeJumpCommand({ songIndex: 1, sectionIndex: 1 });
     assert.deepEqual(harness.calls, [['jump', 5]]);
-    assert.equal(harness.calls.some(([k]) => k === 'current-time'), false, 'the playhead waits');
+    assert.equal(
+      harness.calls.some(([k]) => k === 'current-time'),
+      false,
+      'the playhead waits',
+    );
     assert.equal(
       bridgeState.scheduler.hasPending(),
       true,
@@ -179,7 +186,12 @@ test('the landing of a quantized jump writes the destination tempo, after the cu
 
     handleJumpSchedulerEvent({
       type: 'executed',
-      pending: pendingJump({ songIndex: 1, cueName: 'Song B > Chorus', cueIndex: 5, targetTime: 96 }),
+      pending: pendingJump({
+        songIndex: 1,
+        cueName: 'Song B > Chorus',
+        cueIndex: 5,
+        targetTime: 96,
+      }),
     });
     assert.deepEqual(harness.calls.slice(0, 2), [
       ['jump', 5],
@@ -196,7 +208,12 @@ test('a replaced scheduled jump sends no pre-jump tempo', () => {
   try {
     handleJumpSchedulerEvent({
       type: 'replaced',
-      pending: pendingJump({ songIndex: 1, cueName: 'Song B > Chorus', cueIndex: 5, targetTime: 96 }),
+      pending: pendingJump({
+        songIndex: 1,
+        cueName: 'Song B > Chorus',
+        cueIndex: 5,
+        targetTime: 96,
+      }),
     });
     assert.deepEqual(harness.calls, []);
   } finally {
@@ -248,7 +265,10 @@ test('quantization request becomes local scheduler authority without an OSC repl
     executeJumpCommand({ songIndex: 0, sectionIndex: 1 });
     assert.equal(harness.manager.getState().clipTriggerQuantization, 0);
     assert.equal(bridgeState.scheduler.hasPending(), false);
-    assert.equal(harness.oscCalls.some(([kind]) => kind === 'jump'), true);
+    assert.equal(
+      harness.oscCalls.some(([kind]) => kind === 'jump'),
+      true,
+    );
   } finally {
     harness.restore();
   }
@@ -290,8 +310,14 @@ test('immediate jump waits for observed Ableton transport before changing active
       songIndex: 0,
       sectionIndex: 1,
     });
-    assert.equal(harness.oscCalls.some(([kind]) => kind === 'jump'), true);
-    assert.equal(harness.oscCalls.some((call) => call[1] === '/live/song/set/loop_start'), true);
+    assert.equal(
+      harness.oscCalls.some(([kind]) => kind === 'jump'),
+      true,
+    );
+    assert.equal(
+      harness.oscCalls.some((call) => call[1] === '/live/song/set/loop_start'),
+      true,
+    );
   } finally {
     harness.restore();
   }
@@ -312,7 +338,10 @@ test('scheduled execution waits for observed Ableton transport before changing a
       songIndex: 0,
       sectionIndex: 1,
     });
-    assert.equal(harness.oscCalls.some((call) => call[1] === '/live/song/set/loop_start'), true);
+    assert.equal(
+      harness.oscCalls.some((call) => call[1] === '/live/song/set/loop_start'),
+      true,
+    );
   } finally {
     harness.restore();
   }

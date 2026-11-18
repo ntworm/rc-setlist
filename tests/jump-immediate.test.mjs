@@ -196,10 +196,15 @@ test('an immediate jump while playing moves the playhead now, without a cue jump
   try {
     const waited = executeJumpCommand({ songIndex: 1, sectionIndex: 1, immediate: true });
     assert.equal(waited, 0, 'the jump lands now, so there is nothing to wait for');
-    assert.equal(harness.calls.some(([k]) => k === 'jump'), false, 'no cue jump goes out');
-    assert.deepEqual(harness.calls.filter(([k]) => k === 'current-time'), [
-      ['current-time', 96],
-    ]);
+    assert.equal(
+      harness.calls.some(([k]) => k === 'jump'),
+      false,
+      'no cue jump goes out',
+    );
+    assert.deepEqual(
+      harness.calls.filter(([k]) => k === 'current-time'),
+      [['current-time', 96]],
+    );
     assert.equal(bridgeState.scheduler.hasPending(), false, 'nothing waits for the grid');
     assert.equal(harness.manager.getState().currentSongTime, 20, 'the poll catches up');
     assert.deepEqual(harness.payloads.at(-1), {
@@ -219,7 +224,11 @@ test('an immediate jump is refused while a jump waits for the grid', () => {
     assert.equal(bridgeState.scheduler.hasPending(), true, 'the first jump waits');
     const now = () => executeJumpCommand({ songIndex: 1, sectionIndex: 0, immediate: true });
     assert.throws(now, /grid/);
-    assert.equal(harness.calls.some(([k]) => k === 'current-time'), false, 'nothing moved');
+    assert.equal(
+      harness.calls.some(([k]) => k === 'current-time'),
+      false,
+      'nothing moved',
+    );
   } finally {
     harness.restore();
   }
@@ -256,8 +265,16 @@ test('a jump at quantization zero is a cue jump, flag or no flag', () => {
   const harness = installHarness(0);
   try {
     executeJumpCommand({ songIndex: 1, sectionIndex: 1, immediate: true });
-    assert.equal(harness.calls.some(([k]) => k === 'jump'), true, 'the cue jump goes out');
-    assert.equal(harness.calls.some(([k]) => k === 'current-time'), false, 'no handover');
+    assert.equal(
+      harness.calls.some(([k]) => k === 'jump'),
+      true,
+      'the cue jump goes out',
+    );
+    assert.equal(
+      harness.calls.some(([k]) => k === 'current-time'),
+      false,
+      'no handover',
+    );
     assert.equal(bridgeState.scheduler.hasPending(), false);
   } finally {
     harness.restore();
@@ -266,7 +283,9 @@ test('a jump at quantization zero is a cue jump, flag or no flag', () => {
 
 test('an immediate jump travels to the peer with the flag', async () => {
   peerComputer.messages.length = 0;
-  relayToPeer(makeCommand('jump', 'cmd-immediate', { type: 'jump', songIndex: 1, immediate: true }));
+  relayToPeer(
+    makeCommand('jump', 'cmd-immediate', { type: 'jump', songIndex: 1, immediate: true }),
+  );
   await waitFor(() => peerComputer.messages.some((message) => message.type === 'jump_time'));
   const jump = peerComputer.messages.find((message) => message.type === 'jump_time');
   assert.strictEqual(jump.immediate, true, 'the paired computer lands it at once too');

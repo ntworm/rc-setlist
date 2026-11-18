@@ -365,8 +365,7 @@
       ui.selectedPackage = entry.file;
       markSelectedPackage();
     });
-    // A double click on the name turns it into a field: the operator may
-    // write another name for the file.
+    // A double click on the name turns it into a field for a new file name.
     name.addEventListener('dblclick', (event) => {
       event.preventDefault();
       event.stopPropagation();
@@ -408,7 +407,9 @@
     if (!pull) return;
     pull.hidden = role !== 'slave';
     pull.disabled = locked || slaveConnected !== true;
-    pull.title = shell.text(slaveConnected ? 'package.pullMasterHint' : 'package.pullMasterOffline');
+    pull.title = shell.text(
+      slaveConnected ? 'package.pullMasterHint' : 'package.pullMasterOffline',
+    );
   }
 
   /**
@@ -418,8 +419,7 @@
     const model = packages();
     const locked = project().locked;
     const files = model.files || [];
-    // The package the operator renamed is the one that stays chosen when the
-    // list comes back with its new name.
+    // The renamed package stays chosen when the list comes back.
     const renamed = ui.renamedPackage;
     if (renamed && files.some((entry) => entry.file === renamed.to)) {
       ui.selectedPackage = renamed.to;

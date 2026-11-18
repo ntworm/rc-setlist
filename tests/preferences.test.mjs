@@ -143,7 +143,12 @@ test('Preferences: UI locale persists only supported languages in SDK storage', 
 });
 
 const PEER = { host: '192.168.0.10', port: 4444, peerToken: 'secret-token', fingerprint: 'ab:cd' };
-const PEER_TWO = { host: '192.168.0.11', port: 4444, peerToken: 'other-token', fingerprint: 'ef:01' };
+const PEER_TWO = {
+  host: '192.168.0.11',
+  port: 4444,
+  peerToken: 'other-token',
+  fingerprint: 'ef:01',
+};
 
 // The pairings live in the storage of the extension, so every test gets one
 // of its own and hands it over while the test runs.
