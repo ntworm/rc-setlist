@@ -145,8 +145,9 @@ controlar o System Events e usar a Acessibilidade: permita os dois em
 **Automação**) e reinicie o RC Setlist.
 
 Sem a permissão o Set não é reconhecido, e cada início do Live abre uma lista
-de setlists vazia e temporária. Os setlists feitos antes continuam no disco e
-voltam assim que o Set for reconhecido de novo.
+de setlists vazia e temporária. Os setlists feitos numa lista temporária ficam
+no disco, na pasta dela, para recuperação manual; eles não passam para o Set
+quando ele for reconhecido.
 
 ## O que incluir em um bug report
 
