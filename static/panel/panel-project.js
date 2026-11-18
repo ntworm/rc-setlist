@@ -13,7 +13,12 @@
   const shell = Panel.shell;
   const el = shell.el;
 
-  const ui = { editingId: null, confirmId: null, selectedPackage: null };
+  const ui = {
+    editingId: null,
+    confirmId: null,
+    selectedPackage: null,
+    renamedPackage: null,
+  };
 
   /**
    * The project and its setlists, as the extension reported them.
@@ -280,6 +285,67 @@
   }
 
   /**
+   * The field that renames a package file.
+   */
+  function packageRenameField(entry) {
+    const input = document.createElement('input');
+    input.className = 'package-rename-input';
+    input.type = 'text';
+    input.maxLength = 120;
+    input.value = entry.file.replace(/\.rcsetlist$/i, '');
+    input.setAttribute('aria-label', shell.text('package.renameLabel'));
+    let done = false;
+    const cancel = () => {
+      if (done) return;
+      done = true;
+      renderPackages();
+    };
+    const save = () => {
+      if (done) return;
+      done = true;
+      const name = input.value.trim();
+      if (!name) {
+        renderPackages();
+        return;
+      }
+      // The package keeps its place in the list under its new name.
+      ui.renamedPackage = { from: entry.file, to: `${name}.rcsetlist` };
+      shell.sendAction('rename-package', { packageFile: entry.file, name: name });
+      renderPackages();
+    };
+    input.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter') {
+        event.preventDefault();
+        event.stopPropagation();
+        save();
+      }
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        event.stopPropagation();
+        cancel();
+      }
+    });
+    // A field the operator leaves is a field the operator gave up.
+    input.addEventListener('blur', cancel);
+    // A click inside the field is not a click on the row.
+    input.addEventListener('click', (event) => event.stopPropagation());
+    return input;
+  }
+
+  /**
+   * Marks the package the operator chose, without painting the list again.
+   */
+  function markSelectedPackage() {
+    const list = el('packageList');
+    if (!list) return;
+    list.querySelectorAll('.package-item').forEach((item) => {
+      const file = item.getAttribute('data-package-file');
+      item.setAttribute('aria-pressed', file === ui.selectedPackage ? 'true' : 'false');
+    });
+    renderPackageButtons(project().locked);
+  }
+
+  /**
    * One package of the folder, as a row of the list.
    */
   function packageRow(entry) {
@@ -287,15 +353,27 @@
     const pick = document.createElement('button');
     pick.type = 'button';
     pick.className = 'package-item';
+    pick.setAttribute('data-package-file', entry.file);
     pick.setAttribute('aria-pressed', entry.file === ui.selectedPackage ? 'true' : 'false');
     const name = document.createElement('span');
     name.textContent = entry.file;
+    name.title = shell.text('package.renameHint');
     const date = document.createElement('span');
     date.textContent = packageDate(entry.modifiedAt);
     pick.append(name, date);
     pick.addEventListener('click', () => {
       ui.selectedPackage = entry.file;
-      renderPackages();
+      markSelectedPackage();
+    });
+    // A double click on the name turns it into a field: the operator may
+    // write another name for the file.
+    name.addEventListener('dblclick', (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      const field = packageRenameField(entry);
+      name.replaceWith(field);
+      field.focus();
+      field.select();
     });
     item.appendChild(pick);
     return item;
@@ -334,6 +412,13 @@
     const model = packages();
     const locked = project().locked;
     const files = model.files || [];
+    // The package the operator renamed is the one that stays chosen when the
+    // list comes back with its new name.
+    const renamed = ui.renamedPackage;
+    if (renamed && files.some((entry) => entry.file === renamed.to)) {
+      ui.selectedPackage = renamed.to;
+      ui.renamedPackage = null;
+    }
     if (!files.some((entry) => entry.file === ui.selectedPackage)) {
       ui.selectedPackage = files.length ? files[0].file : null;
     }

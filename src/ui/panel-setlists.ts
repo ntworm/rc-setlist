@@ -24,6 +24,7 @@ import {
   importPackage,
   listPackages,
   packagesDirectory,
+  renamePackage,
   type PackageFileEntry,
 } from '../core/setlist-package.js';
 import type { PanelEnvelope } from './panel-session.js';
@@ -50,6 +51,7 @@ const SETLIST_ACTIONS: ReadonlySet<string> = new Set([
   'restore-profile',
   'export-package',
   'import-package',
+  'rename-package',
 ]);
 
 /**
@@ -166,8 +168,21 @@ async function runProfileAction(envelope: PanelEnvelope): Promise<PanelNotice> {
  */
 async function runPackageAction(envelope: PanelEnvelope): Promise<PanelNotice> {
   const dir = packagesDir();
+  if (!dir) return failure('notice.unavailable');
+  // The name of a file of the folder is not a setlist of the project: it may
+  // change while Live plays.
+  if (envelope.action === 'rename-package') {
+    if (!envelope.packageFile) return failure('notice.packageMissing');
+    if (!envelope.name) return failure('notice.nameMissing');
+    const file = await renamePackage(dir, envelope.packageFile, envelope.name);
+    return {
+      tone: 'ok',
+      key: 'notice.packageRenamed',
+      params: { from: envelope.packageFile, to: file },
+    };
+  }
   const profileManager = bridgeState.profileManager;
-  if (!dir || !profileManager) return failure('notice.unavailable');
+  if (!profileManager) return failure('notice.unavailable');
   if (envelope.action === 'export-package') {
     const projectName = bridgeState.projectIdentity?.displayName ?? '';
     const file = await exportPackage(profileManager, { dir, projectName });
@@ -192,9 +207,12 @@ async function runPackageAction(envelope: PanelEnvelope): Promise<PanelNotice> {
  * Carries out a setlist action of the panel and says how it went.
  */
 export async function runSetlistAction(envelope: PanelEnvelope): Promise<PanelNotice> {
-  const blocked = blockedReason();
-  if (blocked) return blocked;
   try {
+    // A package of the folder is a file, not a setlist: its name may change
+    // while Live plays.
+    if (envelope.action === 'rename-package') return await runPackageAction(envelope);
+    const blocked = blockedReason();
+    if (blocked) return blocked;
     if (envelope.action === 'export-package' || envelope.action === 'import-package') {
       return await runPackageAction(envelope);
     }

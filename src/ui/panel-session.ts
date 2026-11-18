@@ -58,6 +58,7 @@ const PLAIN_ACTIONS: ReadonlySet<string> = new Set([
   'restore-profile',
   'export-package',
   'import-package',
+  'rename-package',
   'peer-code',
   'peer-unpair',
 ]);

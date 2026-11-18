@@ -270,6 +270,42 @@ test('every setlist of the project leaves as one package', async ({ page }) => {
   expect(envelopes[0]).toMatchObject({ action: 'export-package' });
 });
 
+test('the name of a package is renamed with a double click', async ({ page }) => {
+  await openPanel(page);
+  await page.locator('#tabSetlist').click();
+
+  await page.locator('#packageList .package-item span').first().dblclick();
+
+  // The name turns into a field: the row no longer holds its name as text.
+  const field = page.locator('#packageList .package-rename-input');
+  await expect(field).toBeVisible();
+  await expect(field).toHaveAttribute('aria-label', 'New name of the package');
+  await field.fill('Summer Night');
+  await field.press('Enter');
+
+  const envelopes = await sentEnvelopes(page);
+  expect(envelopes).toHaveLength(1);
+  expect(envelopes[0]).toMatchObject({
+    action: 'rename-package',
+    packageFile: 'Summer Tour 2026-11-06 21h00.rcsetlist',
+    name: 'Summer Night',
+  });
+});
+
+test('a package name the operator leaves alone asks nothing', async ({ page }) => {
+  await openPanel(page);
+  await page.locator('#tabSetlist').click();
+
+  await page.locator('#packageList .package-item span').first().dblclick();
+  const field = page.locator('#packageList .package-rename-input');
+  await expect(field).toBeVisible();
+  await field.press('Escape');
+
+  expect(await sentEnvelopes(page)).toHaveLength(0);
+  await expect(page.locator('#packageList .package-rename-input')).toHaveCount(0);
+  await expect(page.locator('#packageList')).toContainText('Summer Tour 2026-11-06 21h00.rcsetlist');
+});
+
 test('a project that cannot change asks nothing', async ({ page }) => {
   await openPanel(page);
   await page.addInitScript(() => {

@@ -740,6 +740,18 @@ select {
   color: var(--p-text-hi);
 }
 
+.package-rename-input {
+  flex: 1 1 auto;
+  width: 100%;
+  min-width: 0;
+  padding: 0 2px;
+  border: 1px solid var(--p-text-2);
+  border-radius: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+}
+
 .package-empty {
   padding: 8px;
   border: 1px dashed var(--p-line);

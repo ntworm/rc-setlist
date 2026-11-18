@@ -145,6 +145,38 @@ test('a package file the panel may not send is refused', () => {
   assert.equal(decodePanelEnvelope('{"action":"import-package","packageFile":42}'), null);
 });
 
+test('the rename of a package travels into the envelope', () => {
+  const envelope = decodePanelEnvelope(
+    '{"action":"rename-package","packageFile":"Winter Set.rcsetlist","name":"Summer Set"}',
+  );
+  assert.ok(envelope);
+  assert.equal(envelope.action, 'rename-package');
+  assert.equal(envelope.packageFile, 'Winter Set.rcsetlist');
+  assert.equal(envelope.name, 'Summer Set');
+  assert.equal(isKnownAction('rename-package'), true);
+});
+
+test('a rename the panel may not send is refused', () => {
+  assert.equal(
+    decodePanelEnvelope(
+      '{"action":"rename-package","packageFile":"folder/Winter.rcsetlist","name":"Summer"}',
+    ),
+    null,
+  );
+  assert.equal(
+    decodePanelEnvelope(
+      '{"action":"rename-package","packageFile":"Winter Set.rcsetlist","name":"  "}',
+    ),
+    null,
+  );
+  assert.equal(
+    decodePanelEnvelope(
+      '{"action":"rename-package","packageFile":"Winter Set.rcsetlist","name":42}',
+    ),
+    null,
+  );
+});
+
 test('an answer that is far too long is discarded', () => {
   assert.equal(decodePanelEnvelope('x'.repeat(600)), null);
 });

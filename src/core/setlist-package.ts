@@ -278,6 +278,29 @@ export async function exportPackage(
 }
 
 /**
+ * Renames a package file of the folder: the name is the one without the
+ * extension, 1 to 120 characters, written as a file name may be written.
+ */
+export async function renamePackage(dir: string, file: string, newName: string): Promise<string> {
+  const name = typeof newName === 'string' ? newName.normalize('NFKC').trim() : '';
+  // eslint-disable-next-line no-control-regex -- a file name holds no control character.
+  const unsafe = /[\\/:*?"<>|\u0000-\u001f\u007f-\u009f]/;
+  if (!isPackageFileName(file) || !name || name.length > 120 || unsafe.test(name)) {
+    throw new PackageError('Invalid package name.');
+  }
+  const target = `${name}${PACKAGE_EXTENSION}`;
+  if (target === file) return file;
+  if (await exists(path.join(dir, target))) {
+    throw new PackageError('A package with that name is already in the folder.');
+  }
+  const source = path.join(dir, file);
+  const stat = await fs.stat(source).catch(() => null);
+  if (!stat || !stat.isFile()) throw new PackageError('The package is not in the folder.');
+  await fs.rename(source, path.join(dir, target));
+  return target;
+}
+
+/**
  * The name of a setlist, read out of a package.
  */
 function parseSetlistName(value: unknown): string {
