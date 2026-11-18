@@ -935,3 +935,16 @@ for (const surface of [
     await expect(page.locator('html')).toHaveAttribute('lang', 'en');
   });
 }
+
+test('Manage setlists says a read-only page is read-only, not that Live must stop', async ({
+  page,
+}) => {
+  await page.goto('/setlist/?scenario=read-only');
+  await page.locator('#btnManageProfiles').click();
+  await expect(page.locator('#profileManageModal')).toHaveClass(/open/);
+  const notice = page.locator('#profileMutationNotice');
+  await expect(notice).toBeVisible();
+  await expect(notice).toContainText(/read-only|só leitura/);
+  await expect(notice).not.toContainText(/Stop Ableton Live|Pare o Ableton Live/);
+  await expect(page.locator('#btnCreateProfile')).toBeDisabled();
+});

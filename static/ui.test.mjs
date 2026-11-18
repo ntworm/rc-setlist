@@ -293,8 +293,16 @@ test('Static UI Setlist: exposes duration metrics and complete profile controls'
   assert.match(setlistJs, /renameInput\.addEventListener\(['"]keydown['"]/);
   assert.match(
     setlistJs,
-    /profileState = \{ \.\.\.profileState, canMutate: !lastState\.isPlaying \};\s*updateProfileMutationAvailability\(\);/,
+    /canMutate: !lastState\.isPlaying && lastState\.profileScopeSwitching !== true,\s*\};\s*updateProfileMutationAvailability\(\);/,
   );
+  // The window says why it is locked, not always "stop Live".
+  for (const key of [
+    'setlist.profilesDisconnected',
+    'setlist.profilesReadOnly',
+    'setlist.profilesSwitching',
+  ]) {
+    assert.ok(setlistJs.includes(`'${key}'`), key);
+  }
 });
 
 test('Static UI Setlist: presents relative show and song time without Arrangement timecode', () => {

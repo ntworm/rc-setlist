@@ -176,6 +176,7 @@ export function broadcastState(): void {
       songColors,
       songNotes,
       peerStatus: bridgeState.peerStatus,
+      profileScopeSwitching: bridgeState.profileScopeSwitching,
     });
     warnIfSlow('ws', 'state broadcast', startedAt);
   }

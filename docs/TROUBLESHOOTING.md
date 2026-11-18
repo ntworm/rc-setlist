@@ -131,6 +131,18 @@ an unidentified Set, missing lyrics are recovered only when one custom order
 from an earlier version matches the complete current song list; ambiguous
 matches are left untouched.
 
+## Setlists disappear on macOS after Live restarts
+
+RC Setlist recognises the Live Set by the title of Live's window. On macOS it
+reads that title through System Events, which needs the **Accessibility**
+permission. The first time, macOS asks whether Ableton Live may control System
+Events and use Accessibility: allow both in **System Settings > Privacy &
+Security > Accessibility** (and **Automation**), then restart RC Setlist.
+
+Without the permission the Set is not recognised, and every start of Live
+opens an empty, temporary list of setlists. The setlists made before are still
+on disk and come back as soon as the Set is recognised again.
+
 ## What to include in a bug report
 
 Include OS, Live version/edition, RC Setlist version, browser, exact reproduction

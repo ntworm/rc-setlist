@@ -135,6 +135,19 @@ mantidas para recuperação manual. Em um Set não identificado, letras ausentes
 só são recuperadas quando uma única ordem personalizada antiga corresponde à
 lista completa de músicas atual; resultados ambíguos permanecem intactos.
 
+## Os setlists somem no macOS depois de reiniciar o Live
+
+O RC Setlist reconhece o Live Set pelo título da janela do Live. No macOS ele
+lê esse título pelo System Events, que precisa da permissão de
+**Acessibilidade**. Na primeira vez, o macOS pergunta se o Ableton Live pode
+controlar o System Events e usar a Acessibilidade: permita os dois em
+**Ajustes do Sistema > Privacidade e Segurança > Acessibilidade** (e
+**Automação**) e reinicie o RC Setlist.
+
+Sem a permissão o Set não é reconhecido, e cada início do Live abre uma lista
+de setlists vazia e temporária. Os setlists feitos antes continuam no disco e
+voltam assim que o Set for reconhecido de novo.
+
 ## O que incluir em um bug report
 
 Inclua sistema operacional, versão/edição do Live, versão do RC Setlist,

@@ -130,18 +130,55 @@ export function projectIdentityFromWindowTitle(title: string): ProjectIdentity |
 }
 
 /**
+ * The AppleScript that names the main window of Live on macOS.
+ *
+ * System Events reads it only once Live (or the app that runs this server)
+ * holds the Accessibility permission; until then the script fails and the
+ * Set falls back to a session of its own. The main window is asked for by
+ * AXMain, so a plugin window or the panel of an extension in front of it is
+ * never taken for the Set.
+ */
+export const MAC_WINDOW_TITLE_SCRIPT = [
+  'tell application "System Events"',
+  '  set liveProcs to (application processes whose name is "Live" or name starts with "Ableton Live")',
+  '  if (count of liveProcs) is 0 then return ""',
+  '  set liveProc to item 1 of liveProcs',
+  '  try',
+  '    return name of (first window of liveProc whose value of attribute "AXMain" is true)',
+  '  on error',
+  '    if (count of windows of liveProc) is 0 then return ""',
+  '    return name of window 1 of liveProc',
+  '  end try',
+  'end tell',
+].join('\n');
+
+/** The command that reads the title of Live's window on this system. */
+export function windowTitleCommand(
+  platform: NodeJS.Platform,
+): { file: string; args: string[] } | null {
+  if (platform === 'win32') {
+    const command = [
+      "$process = Get-Process | Where-Object { $_.ProcessName -like 'Ableton Live*' -and $_.MainWindowTitle } | Select-Object -First 1",
+      'if ($process) { $process.MainWindowTitle }',
+    ].join('; ');
+    return { file: 'powershell.exe', args: ['-NoProfile', '-NonInteractive', '-Command', command] };
+  }
+  if (platform === 'darwin') return { file: 'osascript', args: ['-e', MAC_WINDOW_TITLE_SCRIPT] };
+  return null;
+}
+
+/**
  * Reads the ableton window title.
  */
-export function readAbletonWindowTitle(): Promise<string> {
-  if (process.platform !== 'win32') return Promise.resolve('');
-  const command = [
-    "$process = Get-Process | Where-Object { $_.ProcessName -like 'Ableton Live*' -and $_.MainWindowTitle } | Select-Object -First 1",
-    'if ($process) { $process.MainWindowTitle }',
-  ].join('; ');
+export function readAbletonWindowTitle(
+  platform: NodeJS.Platform = process.platform,
+): Promise<string> {
+  const command = windowTitleCommand(platform);
+  if (!command) return Promise.resolve('');
   return new Promise((resolve) => {
     execFile(
-      'powershell.exe',
-      ['-NoProfile', '-NonInteractive', '-Command', command],
+      command.file,
+      command.args,
       { encoding: 'utf8', timeout: 2_000, windowsHide: true },
       (error, stdout) => resolve(error ? '' : stdout.trim()),
     );

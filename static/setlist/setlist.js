@@ -334,7 +334,20 @@ function profileCommandId(type) {
 }
 
 function canMutateProfiles() {
-  return Boolean(isController && profileState.canMutate && ws && ws.readyState === WebSocket.OPEN);
+  return profileBlockReason() === null;
+}
+
+/**
+ * Why the setlists cannot change from this page, as the key of its text, or
+ * null when they can. The reasons come in the order the operator can act on
+ * them: a page that is not connected or not the controller cannot be fixed by
+ * stopping Live.
+ */
+function profileBlockReason() {
+  if (!ws || ws.readyState !== WebSocket.OPEN) return 'setlist.profilesDisconnected';
+  if (!isController) return 'setlist.profilesReadOnly';
+  if (profileState.canMutate) return null;
+  return lastState && !lastState.isPlaying ? 'setlist.profilesSwitching' : 'setlist.stopLiveFirst';
 }
 
 function requestProfiles() {
@@ -344,8 +357,9 @@ function requestProfiles() {
 }
 
 function sendProfileCommand(type, payload = {}) {
-  if (!canMutateProfiles()) {
-    showToast(t('setlist.stopLiveFirst'), 'error');
+  const reason = profileBlockReason();
+  if (reason) {
+    showToast(t(reason), 'error');
     renderProfileState();
     return;
   }
@@ -355,12 +369,13 @@ function sendProfileCommand(type, payload = {}) {
 }
 
 function updateProfileMutationAvailability() {
-  const mutable = canMutateProfiles();
+  const reason = profileBlockReason();
+  const mutable = reason === null;
   profileSelect.disabled = !mutable;
   profileCreateName.disabled = !mutable;
   btnCreateProfile.disabled = !mutable || !profileCreateName.value.normalize('NFKC').trim();
   profileMutationNotice.hidden = mutable;
-  profileMutationNotice.textContent = mutable ? '' : t('setlist.stopLiveFirst');
+  profileMutationNotice.textContent = mutable ? '' : t(reason);
   profileManageModal.querySelectorAll('.profile-mutation-control').forEach((control) => {
     if (!control.classList.contains('profile-delete-button')) {
       control.disabled = !mutable;
@@ -1305,6 +1320,8 @@ function connect() {
     jumpConfirmation.clear();
     quantizationConfirmation.reset();
     lyricsSaveTracker.failAll('disconnected');
+    // A setlist command sent before the drop gets no answer from this socket.
+    pendingProfileCommands.clear();
     updateTransportAvailability();
     renderProfileState();
     showConnectionFailure();
@@ -1348,7 +1365,12 @@ function connect() {
         window.RcPeerStatus?.applyPeerStatus(lastState.peerStatus);
         renderPreRoll();
         if (profileState.profiles.length > 0) {
-          profileState = { ...profileState, canMutate: !lastState.isPlaying };
+          // The server's rule, read from the frame: Live stopped and the
+          // setlists not being moved to another Live Set.
+          profileState = {
+            ...profileState,
+            canMutate: !lastState.isPlaying && lastState.profileScopeSwitching !== true,
+          };
           updateProfileMutationAvailability();
         }
         quantizationConfirmation.observe(lastState.clipTriggerQuantization);
@@ -1467,6 +1489,12 @@ function connect() {
         playCountInStarted(payload.sendPlayOffsetMs);
       } else if (payload.type === 'error') {
         lyricsSaveTracker.failAll('server_error');
+        // A refused setlist command never gets a status of its own: the list
+        // is asked for again so the window shows what the server holds.
+        if (pendingProfileCommands.size > 0) {
+          pendingProfileCommands.clear();
+          requestProfiles();
+        }
         const message = t('feedback.serverError', { detail: payload.message });
         appendLog(`⚠ ${message}`, 'error');
         alert(message);

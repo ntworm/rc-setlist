@@ -280,12 +280,28 @@
       are recovered only when one custom order from an earlier version matches the complete current
       song list; ambiguous matches are left untouched.
     </p>
+    <h2 id="setlists-disappear-on-macos-after-live-restarts">
+      Setlists disappear on macOS after Live restarts
+    </h2>
+    <p>
+      RC Setlist recognises the Live Set by the title of Live&#39;s window. On macOS it reads that
+      title through System Events, which needs the <strong>Accessibility</strong> permission. The
+      first time, macOS asks whether Ableton Live may control System Events and use Accessibility:
+      allow both in
+      <strong>System Settings &gt; Privacy &amp; Security &gt; Accessibility</strong> (and
+      <strong>Automation</strong>), then restart RC Setlist.
+    </p>
+    <p>
+      Without the permission the Set is not recognised, and every start of Live opens an empty,
+      temporary list of setlists. The setlists made before are still on disk and come back as soon
+      as the Set is recognised again.
+    </p>
     <h2 id="what-to-include-in-a-bug-report">What to include in a bug report</h2>
     <p>
       Include OS, Live version/edition, RC Setlist version, browser, exact reproduction and
       sanitized logs. Remove controller tokens, certificate material, local paths and real
       setlist/lyrics content. See <a href="../SUPPORT.md">SUPPORT.md</a>.
     </p>
-    <div class="source">Rendered from <code>docs\TROUBLESHOOTING.md</code> on 2026-11-07.</div>
+    <div class="source">Rendered from <code>docs\TROUBLESHOOTING.md</code> on 2026-11-18.</div>
   </body>
 </html>

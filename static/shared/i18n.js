@@ -380,6 +380,19 @@
       en: 'Stop Ableton Live before changing setlists.',
       'pt-BR': 'Pare o Ableton Live antes de alterar os setlists.',
     },
+    'setlist.profilesDisconnected': {
+      en: 'Not connected to the computer: setlists cannot change until the page reconnects.',
+      'pt-BR': 'Sem conexão com o computador: os setlists só mudam quando a página reconectar.',
+    },
+    'setlist.profilesReadOnly': {
+      en: 'This page is read-only. Open it from the link or QR code in the Live panel to change setlists.',
+      'pt-BR':
+        'Esta página é só leitura. Abra pelo link ou QR code do painel do Live para alterar os setlists.',
+    },
+    'setlist.profilesSwitching': {
+      en: 'The Live Set is changing. Setlists can change again in a moment.',
+      'pt-BR': 'O Live Set está mudando. Os setlists voltam a poder mudar em instantes.',
+    },
     'setlist.confirmationName': {
       en: 'Type “{name}” to confirm',
       'pt-BR': 'Digite “{name}” para confirmar',

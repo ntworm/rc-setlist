@@ -4,6 +4,15 @@ All notable public changes to Ableton RC Setlist are recorded here.
 
 ## [Unreleased]
 
+### Fixed
+
+- **Setlists on macOS**: the Live Set is recognised by the title of Live's
+  window on macOS too (through System Events, with the Accessibility
+  permission), so setlists no longer start empty after every restart of Live.
+- **Manage setlists** says why it is locked (not connected, read-only page,
+  Live playing, Live Set changing) instead of always asking to stop Live, and a
+  refused setlist command no longer leaves the window waiting.
+
 ## [1.1.0] - 2026-11-06
 
 ### Added
