@@ -69,6 +69,12 @@
     if (!container || !Number.isInteger(songIndex) || songIndex < 0) return;
     const item = container.querySelector?.(`.song-item[data-song="${songIndex}"]`);
     if (!item) return;
+    // On a phone the list does not scroll by itself, the page does.
+    const overflowY = globalScope.getComputedStyle?.(container)?.overflowY;
+    if (overflowY === 'visible') {
+      item.scrollIntoView?.({ block: 'start' });
+      return;
+    }
     const containerTop = container.getBoundingClientRect().top;
     const itemTop = item.getBoundingClientRect().top;
     container.scrollTop += itemTop - containerTop;
@@ -84,7 +90,12 @@
 
     function follow(songIndex, force = false) {
       if (getMode() !== SHOW_MODE) return;
-      if (!Number.isInteger(songIndex) || songIndex < 0) return;
+      if (!Number.isInteger(songIndex) || songIndex < 0) {
+        // No song is active: the next one to start is pinned again, even when
+        // it is the same song as before.
+        lastFollowedIndex = -1;
+        return;
+      }
       if (!force && songIndex === lastFollowedIndex) return;
       lastFollowedIndex = songIndex;
       scrollSongToTop(container, songIndex);

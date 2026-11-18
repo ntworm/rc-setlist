@@ -2224,7 +2224,9 @@ body.show-mode #btnManageProfiles,
 body.show-mode .tools-menu,
 body.show-mode .secondary-controls,
 body.show-mode .log-drawer,
-body.show-mode #btnFoldAllSongs {
+body.show-mode #btnFoldAllSongs,
+body.show-mode .song-reorder-handle,
+body.show-mode .song-drag-grip {
   display: none;
 }
 
@@ -2238,13 +2240,11 @@ body.show-mode .song-item.active.sections-folded .song-sections {
 
 /* Room after the last song, so the songs at the end of the set can also reach
    the top of the list. */
-@media (min-width: 900px) {
-  body.show-mode .song-list::after {
-    content: '';
-    display: block;
-    height: 70vh;
-    flex: 0 0 auto;
-  }
+body.show-mode .song-list::after {
+  content: '';
+  display: block;
+  height: 70vh;
+  flex: 0 0 auto;
 }
 
 body.show-mode .control-column,

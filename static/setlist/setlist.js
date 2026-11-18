@@ -152,6 +152,7 @@ const songFold = window.RcSongFold.createFoldState({
   translate: (key) => t(key),
   onChange: () => updateFoldAllButton(),
 });
+let editModeScrollTop = 0;
 const stageModeFollower = stageMode.createFollower({
   container: songListDiv,
   getMode: () => currentStageMode,
@@ -1864,6 +1865,7 @@ function restoreNativeDirectDrag() {
 }
 
 function canReorderSetlist() {
+  if (currentStageMode === 'show') return false;
   return canUseTransport() && !(lastState?.mode === 'show' && lastState.isPlaying);
 }
 
@@ -2064,13 +2066,23 @@ function mountSongFoldControls() {
 function mountStageModeControls() {
   document.querySelectorAll('[data-stage-mode]').forEach((button) => {
     button.addEventListener('click', () => {
-      currentStageMode = stageMode.parseMode(button.dataset.stageMode);
+      const nextMode = stageMode.parseMode(button.dataset.stageMode);
+      if (nextMode === currentStageMode) return;
+      // Show mode folds the list, so the place in Edit mode is kept apart and
+      // given back when the panel returns to Edit.
+      if (nextMode === 'show') editModeScrollTop = songListDiv.scrollTop;
+      currentStageMode = nextMode;
       stageMode.writeMode(localStorage, currentStageMode);
       stageMode.applyMode(document.body, currentStageMode);
       requestAnimationFrame(() => {
+        if (currentStageMode === 'edit') songListDiv.scrollTop = editModeScrollTop;
         stageModeFollower.follow(lastState?.activeSongIndex ?? -1, true);
       });
     });
+  });
+  // A new window size moves the songs: pin the active one again.
+  window.addEventListener('resize', () => {
+    stageModeFollower.follow(lastState?.activeSongIndex ?? -1, true);
   });
 }
 
@@ -3124,6 +3136,8 @@ function openMarkerEditor(kind, songIndex, sectionIndex, event) {
     event.preventDefault();
     event.stopPropagation();
   }
+  // Show mode is for playing: markers are edited in Edit mode.
+  if (currentStageMode === 'show') return;
   if (!lastState || !lastState.songs) return;
   if (!canEditMarkers()) return;
   const song = lastState.songs[songIndex];

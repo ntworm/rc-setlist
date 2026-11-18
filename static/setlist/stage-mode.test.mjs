@@ -163,3 +163,14 @@ test('createFollower scrolls only in show mode, skips repeats unless forced, and
   follower.follow(2);
   assert.equal(container.scrollTop, 520);
 });
+
+test('createFollower pins the same song again after no song was active', () => {
+  const container = fakeScrollContainer({ 1: 220 }, 50);
+  const follower = stageMode.createFollower({ container, getMode: () => 'show' });
+  follower.follow(1);
+  assert.equal(container.scrollTop, 170);
+  follower.follow(-1);
+  container.scrollTop = 0;
+  follower.follow(1);
+  assert.equal(container.scrollTop, 120);
+});
