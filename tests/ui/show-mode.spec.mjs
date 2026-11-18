@@ -62,6 +62,7 @@ async function expectShowControlsApplied(page) {
   await expect(page.locator('[data-stage-mode="show"]')).toHaveAttribute('aria-pressed', 'true');
   await expect(page.locator('.tools-menu')).toBeHidden();
   await expect(page.locator('#btnManageProfiles')).toBeHidden();
+  await expect(page.locator('#profileSelect')).toBeHidden();
   await expect(page.locator('#btnMetronome')).toBeHidden();
   await expect(page.locator('#btnPreRoll')).toBeHidden();
   await expect(page.locator('#btnRefresh')).toBeHidden();

@@ -2220,6 +2220,7 @@ body {
    Hides setup controls, collapses non-active songs without touching Edit
    mode's stored fold list, and keeps the control pane compact around the HUD. */
 
+body.show-mode .profile-select-control,
 body.show-mode #btnManageProfiles,
 body.show-mode .tools-menu,
 body.show-mode .secondary-controls,
