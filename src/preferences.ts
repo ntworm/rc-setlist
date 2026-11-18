@@ -8,6 +8,7 @@ const AUTO_START_FILE = 'auto-start';
 const UI_LOCALE_FILE = 'ui-locale';
 const WRITE_TEMPO_ON_JUMP_FILE = 'write-tempo-on-jump';
 const PEER_CONFIG_FILE = 'peer.json';
+const PEER_ROLE_FILE = 'peer-role.json';
 
 /**
  * One computer this one is paired with.
@@ -69,8 +70,12 @@ function readPreference(fileName: string): string | null {
 // The peer config holds the pairing token, so only its owner may read it.
 const SECRET_FILE_MODE = 0o600;
 
+// The files that belong to the pairing alone: the credential of the paired
+// computer and the role this computer plays in the pair.
+const SECRET_FILES: ReadonlySet<string> = new Set([PEER_CONFIG_FILE, PEER_ROLE_FILE]);
+
 function writePreference(fileName: string, value: string): boolean {
-  const options = fileName === PEER_CONFIG_FILE ? { mode: SECRET_FILE_MODE } : {};
+  const options = SECRET_FILES.has(fileName) ? { mode: SECRET_FILE_MODE } : {};
   // 1. Try SDK storageDirectory first if context is available
   const context = getExtensionContext();
   if (context && context.environment.storageDirectory) {
@@ -315,6 +320,41 @@ export function clearPeerConfig(): boolean {
   try {
     fs.rmSync(preferenceFile, { force: true });
     return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * The role this computer plays: the computer that handed out its pairing code
+ * is the second one, and it writes the main computer down here.
+ */
+export interface SlaveRole {
+  /** The address of the main computer. */
+  masterAddress: string;
+  /** When the pairing happened, in ISO 8601. */
+  pairedAt: string;
+}
+
+/** Reads the role of this computer, or null when it has none. */
+export function readSlaveRole(): SlaveRole | null {
+  const raw = readPreference(PEER_ROLE_FILE);
+  if (!raw) return null;
+  try {
+    const parsed: unknown = JSON.parse(raw);
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return null;
+    const record = parsed as Record<string, unknown>;
+    if (!isNonEmptyString(record.masterAddress) || !isNonEmptyString(record.pairedAt)) return null;
+    return { masterAddress: record.masterAddress, pairedAt: record.pairedAt };
+  } catch {
+    return null;
+  }
+}
+
+/** Writes down the role of this computer; a file that cannot be written is no role. */
+export function writeSlaveRole(role: SlaveRole): boolean {
+  try {
+    return writePreference(PEER_ROLE_FILE, JSON.stringify(role));
   } catch {
     return false;
   }

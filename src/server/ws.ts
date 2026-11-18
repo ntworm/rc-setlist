@@ -439,6 +439,20 @@ export class SetlistWSServer extends EventEmitter {
     }
   }
 
+  /**
+   * How many paired computers are talking to this one right now.
+   *
+   * A computer that was paired comes in with the peer credential, and only
+   * that credential makes it a peer: a phone watching the setlist is not one.
+   */
+  public peerConnectionCount(): number {
+    let count = 0;
+    for (const ws of this.clients) {
+      if (ws.readyState === WebSocket.OPEN && ws.isPeer) count += 1;
+    }
+    return count;
+  }
+
   public stop(): void {
     if (this.heartbeatInterval) {
       this.clearIntervalFn(this.heartbeatInterval);

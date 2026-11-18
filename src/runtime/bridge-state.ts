@@ -33,6 +33,7 @@ import {
 import type { ProjectIdentity } from '../core/project-identity.js';
 import type { ProfileManagerOptions } from '../core/profile-manager.js';
 import type { PeerLinkStatus, PeerStatus } from '../types.js';
+import { readPeerConfigs, readSlaveRole } from '../preferences.js';
 import { log } from '../util/log.js';
 import { atomicWriteFileSync } from '../util/atomic-write.js';
 import { isPlainObject, isStringArray, parseJson } from '../util/json.js';
@@ -161,6 +162,21 @@ export function requireProfileManager(): ProfileManager {
  */
 export function getActiveProfilePaths() {
   return requireProfileManager().getActivePaths();
+}
+
+/** The role this computer plays: the main one, the second one, or neither. */
+export type PeerRole = 'master' | 'slave' | 'none';
+
+/**
+ * Reads the role of this computer out of what is stored.
+ *
+ * A pairing stored on this computer makes it the main one; the role a
+ * computer leaves behind when it hands out its code makes it the second one.
+ */
+export function readPeerRole(): { role: PeerRole; masterAddress: string } {
+  const slave = readSlaveRole();
+  const role: PeerRole = readPeerConfigs().length > 0 ? 'master' : slave ? 'slave' : 'none';
+  return { role, masterAddress: slave?.masterAddress ?? '' };
 }
 
 /**

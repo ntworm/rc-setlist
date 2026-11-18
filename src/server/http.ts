@@ -4,6 +4,7 @@ import * as path from 'node:path';
 import type { TLSSocket } from 'node:tls';
 import { fileURLToPath, URL as NodeURL } from 'node:url';
 import { attemptPairing, type PairingAttempt } from '../runtime/pairing.js';
+import { writeSlaveRole } from '../preferences.js';
 import { log } from '../util/log.js';
 
 const __dirnameResolved =
@@ -264,6 +265,14 @@ function pairingRefusal(attempt: PairingAttempt): { status: number; body: string
 }
 
 /**
+ * The address of the computer that asked to pair, without the IPv6 wrapper.
+ */
+function remoteAddressOf(req: http.IncomingMessage): string {
+  const address = req.socket?.remoteAddress ?? 'unknown';
+  return address.startsWith('::ffff:') ? address.slice('::ffff:'.length) : address;
+}
+
+/**
  * Answers the pairing request of a computer that wants to be the peer.
  *
  * The code is the credential here, and it is only good over TLS: a code read
@@ -285,6 +294,14 @@ function handlePeerPair(req: http.IncomingMessage, res: http.ServerResponse): vo
     writePlain(res, refusal.status, refusal.body, false);
     return;
   }
+  // The computer that handed out its code is the second one: it writes down
+  // the address of the main computer, so it still knows who it follows after
+  // the extension is closed and opened again. A file that cannot be written
+  // must not stop the pairing.
+  writeSlaveRole({
+    masterAddress: remoteAddressOf(req),
+    pairedAt: new Date().toISOString(),
+  });
   const body = JSON.stringify({ peerToken });
   res.writeHead(200, {
     'Content-Type': 'application/json; charset=utf-8',

@@ -69,6 +69,9 @@ const LOCALE_ACTIONS: ReadonlySet<string> = new Set(['set-language:en', 'set-lan
 /** The prefix of the action that pairs a second computer. */
 const PAIR_PREFIX = 'peer-pair:';
 
+/** The prefix of the action that unpairs one second computer. */
+const UNPAIR_PREFIX = 'peer-unpair:';
+
 /** What a profile id may look like: a uuid, or something close to one. */
 const PROFILE_ID = /^[A-Za-z0-9_-]{1,64}$/;
 
@@ -115,14 +118,17 @@ export function createPanelSession(): PanelSession {
 /**
  * Whether an action is one the panel may send.
  *
- * The pairing action carries an address and a code in the action itself: it
- * is the one action the panel has always sent as a plain string, and the
- * extension still has to understand it.
+ * The pairing action carries an address and a code in the action itself, and
+ * the unpairing of one computer carries an address and a port: they are the
+ * actions the panel has always sent as a plain string, and the extension
+ * still has to understand them.
  */
 export function isKnownAction(action: string): boolean {
   if (PLAIN_ACTIONS.has(action)) return true;
   if (LOCALE_ACTIONS.has(action)) return true;
-  if (action.startsWith(PAIR_PREFIX)) return action.length <= MAX_ACTION_LENGTH;
+  if (action.startsWith(PAIR_PREFIX) || action.startsWith(UNPAIR_PREFIX)) {
+    return action.length <= MAX_ACTION_LENGTH;
+  }
   return false;
 }
 

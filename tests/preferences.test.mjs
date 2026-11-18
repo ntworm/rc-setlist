@@ -245,3 +245,47 @@ test(
     }
   },
 );
+
+test('Preferences: the computer that handed out its code remembers it is the second one', () => {
+  withPeerStorage((storageDir) => {
+    assert.strictEqual(preferences.readSlaveRole(), null);
+
+    const role = { masterAddress: '192.168.0.2', pairedAt: '2026-11-18T10:00:00.000Z' };
+    assert.strictEqual(preferences.writeSlaveRole(role), true);
+    assert.deepStrictEqual(preferences.readSlaveRole(), role);
+    assert.ok(fs.existsSync(path.join(storageDir, 'peer-role.json')));
+  });
+});
+
+test('Preferences: a role file that cannot be read is no role at all', () => {
+  withPeerStorage((storageDir) => {
+    const roleFile = path.join(storageDir, 'peer-role.json');
+    const broken = ['not json at all', JSON.stringify({ masterAddress: '' })];
+    for (const content of broken) {
+      fs.writeFileSync(roleFile, content, 'utf8');
+      assert.strictEqual(preferences.readSlaveRole(), null);
+    }
+  });
+});
+
+test(
+  'Preferences: the role file is owner-only',
+  { skip: process.platform === 'win32' ? 'Windows has no POSIX file modes' : false },
+  () => {
+    const testStorageDir = fs.mkdtempSync(path.join(tmpdir(), 'setlist-role-mode-'));
+    setExtensionContext({ environment: { storageDirectory: testStorageDir } });
+    try {
+      assert.strictEqual(
+        preferences.writeSlaveRole({ masterAddress: '10.0.0.2', pairedAt: 'now' }),
+        true,
+      );
+      assert.strictEqual(
+        fs.statSync(path.join(testStorageDir, 'peer-role.json')).mode & 0o777,
+        0o600,
+      );
+    } finally {
+      clearExtensionContext();
+      fs.rmSync(testStorageDir, { recursive: true, force: true });
+    }
+  },
+);

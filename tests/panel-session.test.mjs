@@ -186,6 +186,21 @@ test('an unknown action is not one the panel may send', () => {
   assert.equal(isKnownAction('start'), true);
 });
 
+test('the action that unpairs one computer is understood', () => {
+  const action = 'peer-unpair:192.168.1.5:4444';
+  assert.equal(isKnownAction(action), true);
+  const envelope = decodePanelEnvelope(action);
+  assert.ok(envelope);
+  assert.equal(envelope.action, action);
+  assert.equal(isKnownAction('peer-unpair'), true);
+  const json = decodePanelEnvelope('{"action":"peer-unpair:192.168.1.5:4444"}');
+  assert.equal(json.action, action);
+});
+
+test('an unpair action that is far too long is discarded', () => {
+  assert.equal(decodePanelEnvelope(`peer-unpair:${'x'.repeat(600)}`), null);
+});
+
 test('the session follows what the panel said', () => {
   const session = createPanelSession();
   const envelope = decodePanelEnvelope(
