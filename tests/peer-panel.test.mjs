@@ -30,11 +30,7 @@ import {
 } from '../src/preferences.ts';
 import { startPeerLink, startPeerLinks, stopPeerLink } from '../src/runtime/peer-link.ts';
 import { createHttpRequestListener, setPeerToken } from '../src/server/http.ts';
-import {
-  createPeerComputer,
-  fingerprintOf,
-  PEER_TOKEN,
-} from './helpers/peer-link-harness.mjs';
+import { createPeerComputer, fingerprintOf, PEER_TOKEN } from './helpers/peer-link-harness.mjs';
 
 test('the panel reads the three peer actions', () => {
   assert.deepEqual(parsePeerAction('peer-unpair'), { kind: 'unpair' });
@@ -263,7 +259,11 @@ test('parsePeerAction reads the address and code the way people type them', () =
   assert.deepEqual(parsePeerAction('peer-pair: 192.168.1.10 :123 456'), want);
   assert.deepEqual(parsePeerAction('peer-pair:192.168.1.10:123-456'), want);
   assert.deepEqual(parsePeerAction('peer-pair:１９２.168.1.10:１２３456'), want);
-  assert.deepEqual(parsePeerAction('peer-pair:Studio.Local:123456'), { kind: 'pair', host: 'studio.local', code: '123456' });
+  assert.deepEqual(parsePeerAction('peer-pair:Studio.Local:123456'), {
+    kind: 'pair',
+    host: 'studio.local',
+    code: '123456',
+  });
   assert.equal(parsePeerAction('peer-pair:192168110:123456'), null);
   assert.equal(parsePeerAction('peer-pair:192.168.1.10:12345'), null);
 });
@@ -392,7 +392,12 @@ function withOwnStorage(run) {
 
 /** The pairing of one computer, written down by hand. */
 function pairingOf(computer, port) {
-  return { host: '127.0.0.1', port, peerToken: PEER_TOKEN, fingerprint: fingerprintOf(computer.tls) };
+  return {
+    host: '127.0.0.1',
+    port,
+    peerToken: PEER_TOKEN,
+    fingerprint: fingerprintOf(computer.tls),
+  };
 }
 
 test('pairing a second computer keeps the first one linked, and unpairing one keeps the other', async () => {

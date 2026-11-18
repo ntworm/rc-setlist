@@ -352,6 +352,20 @@ test('a package of the folder is renamed', async () => {
   }
 });
 
+test('a package renamed only in its case is renamed, not called taken', async () => {
+  const root = await tempRoot();
+  try {
+    const dir = path.join(root, 'packages');
+    await fs.mkdir(dir, { recursive: true });
+    await fs.writeFile(path.join(dir, 'winter set.rcsetlist'), '{}', 'utf8');
+    const file = await renamePackage(dir, 'winter set.rcsetlist', 'Winter Set');
+    assert.equal(file, 'Winter Set.rcsetlist');
+    assert.ok((await fs.readdir(dir)).includes('Winter Set.rcsetlist'));
+  } finally {
+    await fs.rm(root, { recursive: true, force: true });
+  }
+});
+
 test('a package renamed to the name it has stays as it is', async () => {
   const root = await tempRoot();
   try {

@@ -367,3 +367,43 @@ test('the setlist of the main computer crosses the link into the second computer
     await fs.rm(root, { recursive: true, force: true });
   }
 });
+
+test('the pieces wait for room on the socket and stop when it is gone', async () => {
+  const root = await tempRoot();
+  try {
+    const master = fakeManager(path.join(root, 'master'));
+    await master.create('Waiting Set');
+    const sent = [];
+    let asks = 0;
+    await answerSetlistRequest(
+      'abcd',
+      (piece) => {
+        sent.push(piece);
+        return true;
+      },
+      master,
+      'Master Project',
+      () => {
+        asks += 1;
+        return asks > 2;
+      },
+    );
+    assert.ok(asks >= 3, 'the socket was asked until it had room');
+    assert.ok(sent.length >= 1 && sent[0].total >= 1, 'the setlist went once there was room');
+
+    const none = [];
+    await answerSetlistRequest(
+      'abce',
+      (piece) => {
+        none.push(piece);
+        return true;
+      },
+      master,
+      'Master Project',
+      () => null,
+    );
+    assert.deepEqual(none, [], 'nothing is written to a socket that is gone');
+  } finally {
+    await fs.rm(root, { recursive: true, force: true });
+  }
+});

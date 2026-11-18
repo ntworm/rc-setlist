@@ -69,3 +69,26 @@ export function canWriteNow(socket: WebSocket | null, type: string): boolean {
   if (!socket) return false;
   return socket.bufferedAmount < STALLED_SOCKET_BYTES || type === 'stop' || type === 'set_panic';
 }
+
+/**
+ * Whether the socket has room for one more large frame: a piece of a setlist
+ * waits until what was written before it has gone out.
+ */
+export function roomOnSocket(socket: WebSocket | null): boolean | null {
+  if (!socket || socket.readyState !== socket.OPEN) return null;
+  return socket.bufferedAmount < STALLED_SOCKET_BYTES / 2;
+}
+
+/** Whether two pairings name the same computer with the same credential. */
+export function sameConfig(
+  a: { host: string; port: number; peerToken: string; fingerprint: string; keyPin?: string },
+  b: { host: string; port: number; peerToken: string; fingerprint: string; keyPin?: string },
+): boolean {
+  return (
+    a.host === b.host &&
+    a.port === b.port &&
+    a.peerToken === b.peerToken &&
+    a.fingerprint === b.fingerprint &&
+    a.keyPin === b.keyPin
+  );
+}

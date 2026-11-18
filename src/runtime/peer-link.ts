@@ -19,13 +19,7 @@ import { WebSocket } from 'ws';
 import { bridgeState, broadcastState } from './bridge-state.js';
 import { fingerprintFromSocket, publicKeyPinFromSocket } from './pairing.js';
 import { peerLinkTiming, watchPeerSocket, type PeerWatchdog } from './peer-liveness.js';
-import {
-  canWriteNow,
-  isRecord,
-  parseMessage,
-  payloadFields,
-  peerCommandId,
-} from './peer-message.js';
+import { canWriteNow, roomOnSocket, sameConfig, isRecord, parseMessage } from './peer-message.js';
 import { answerSetlistRequest } from './peer-setlist.js';
 import {
   aggregatePeerStatus,
@@ -37,6 +31,7 @@ import { peerKey, type PeerConfig } from '../preferences.js';
 import type { ShowCommand } from '../types.js';
 import { log } from '../util/log.js';
 import { startPeerClock } from './peer-follow-runtime.js';
+import { buildPeerMessage } from './peer-relay-message.js';
 
 export { resetPeerLinkTiming, setPeerLinkTiming } from './peer-liveness.js';
 
@@ -159,49 +154,6 @@ function recheckMarkersMatch(target: PeerLink): void {
   setLinkState(target, { markersMatch: remote !== null && remote === localCuesFingerprint() });
 }
 
-/** The beat a jump lands on, and the level it lands on. */
-function localJumpBeat(payload: unknown): { time: number; section: boolean } | null {
-  const state = bridgeState.manager?.getState();
-  if (!state || !isRecord(payload)) return null;
-  const songIndex = payload.songIndex;
-  if (typeof songIndex !== 'number') return null;
-  const song = state.songs[songIndex];
-  if (!song) return null;
-  const sectionIndex = payload.sectionIndex;
-  if (typeof sectionIndex === 'number' && sectionIndex >= 0) {
-    // A section that does not exist fails here too, so it must not travel.
-    const section = song.sections[sectionIndex];
-    return section ? { time: section.time, section: true } : null;
-  }
-  return { time: song.time, section: false };
-}
-
-function buildPeerMessage(command: ShowCommand<unknown>): Record<string, unknown> | null {
-  const commandId = peerCommandId(command.commandId);
-  if (command.type === 'jump') {
-    // The paired computer may hold the same songs in another order, so the
-    // jump travels as the beat it lands on, not as an index into a list. The
-    // level travels with it: a section and the song that shares its beat are
-    // not the same jump.
-    const beat = localJumpBeat(command.payload);
-    if (!beat) return null;
-    // An immediate jump lands at once on this computer, so it must land at
-    // once on the other one too.
-    const immediate =
-      isRecord(command.payload) && typeof command.payload.immediate === 'boolean'
-        ? command.payload.immediate
-        : undefined;
-    return {
-      type: 'jump_time',
-      time: beat.time,
-      section: beat.section,
-      ...(immediate === undefined ? {} : { immediate }),
-      commandId,
-    };
-  }
-  return { type: command.type, ...payloadFields(command.payload), commandId };
-}
-
 function sendToPeer(target: PeerLink, message: unknown): boolean {
   const socket = target.socket;
   if (!socket || socket.readyState !== WebSocket.OPEN) return false;
@@ -234,7 +186,15 @@ function handlePeerMessage(target: PeerLink, data: WebSocket.Data): void {
   }
   if (message.type === 'setlist_request' && typeof message.requestId === 'string') {
     // The second computer asks for the setlist of this one.
-    void answerSetlistRequest(message.requestId, (msg) => sendToPeer(target, msg));
+    // The pieces wait for room on the socket: a full socket would drop the
+    // transport commands and the clock that share it.
+    void answerSetlistRequest(
+      message.requestId,
+      (msg) => sendToPeer(target, msg),
+      undefined,
+      undefined,
+      () => roomOnSocket(target.socket),
+    );
     return;
   }
   if (message.type === 'error') handlePeerError(target, message.code);
@@ -309,6 +269,8 @@ function openPeerSocket(target: PeerLink, secureSocket: tls.TLSSocket): void {
       options,
     );
   } catch {
+    destroyQuietly(secureSocket);
+    if (target.secureSocket === secureSocket) target.secureSocket = null;
     scheduleReconnect(target);
     return;
   }
@@ -418,29 +380,27 @@ function teardownLink(target: PeerLink): void {
   target.socket = null;
   target.secureSocket = null;
   target.synchronized = false;
-  try {
-    // The listeners stay: a socket that still has its own error handling is
-    // a socket that cannot raise an unhandled error on the way out.
-    socket?.close();
-    secureSocket?.destroy();
-  } catch {
-    // swallow: nothing to do here on purpose.
-  }
+  // The listeners stay: a socket that still has its own error handling is
+  // a socket that cannot raise an unhandled error on the way out.
+  if (socket) closePeerSocket(socket);
+  if (secureSocket) destroyQuietly(secureSocket);
 }
 
 /**
- * Starts the links to the paired computers. Every link that is up goes down
- * first: the list of pairings is the truth.
+ * Starts the links to the paired computers. The list of pairings is the
+ * truth: a link whose pairing is unchanged stays up, so pairing or unpairing
+ * one slave never drops the others; the rest goes down or comes up.
  */
 export function startPeerLinks(configs: PeerConfig[]): void {
-  for (const target of [...links.values()]) teardownLink(target);
-  for (const config of configs) {
-    const key = peerKey(config);
-    const previous = links.get(key);
-    // A pairing that stands twice at the same address is one link: the one
-    // that comes last wins, and the one it replaces goes down.
-    if (previous) teardownLink(previous);
-    links.set(key, {
+  const wanted = new Map(configs.map((config) => [peerKey(config), config]));
+  for (const target of [...links.values()]) {
+    const config = wanted.get(target.key);
+    if (config && sameConfig(config, target.config)) wanted.delete(target.key);
+    else teardownLink(target);
+  }
+  const fresh: PeerLink[] = [];
+  for (const [key, config] of wanted) {
+    const link: PeerLink = {
       key,
       config,
       socket: null,
@@ -455,10 +415,12 @@ export function startPeerLinks(configs: PeerConfig[]): void {
       lastRemoteFingerprint: null,
       clockTimer: null,
       state: { connected: false, markersMatch: true, fingerprintMismatch: false },
-    });
+    };
+    links.set(key, link);
+    fresh.push(link);
   }
   publishPeerStatus();
-  for (const target of links.values()) connectPeer(target);
+  for (const target of fresh) connectPeer(target);
 }
 
 /** Starts the link to the paired computer, if there is one. */

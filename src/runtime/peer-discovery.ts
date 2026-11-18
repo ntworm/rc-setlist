@@ -187,6 +187,11 @@ function openSocket(): void {
   const sock = createSocket(SOCKET_OPTIONS);
   sock.on('error', (err) => {
     tellSocketError(err);
+    // A socket that failed is never written to again.
+    if (socket === sock) {
+      socket = null;
+      listening = false;
+    }
     closeSocket(sock);
   });
   sock.on('message', (buffer, remote) => {
