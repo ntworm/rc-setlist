@@ -7,12 +7,14 @@
 import { bridgeState, broadcastState } from './bridge-state.js';
 import {
   PeerFollower,
+  movesTransport,
   type FollowAction,
   type LocalTransport,
   type PeerClock,
 } from './peer-follow.js';
 import { WebSocket } from 'ws';
 import { log } from '../util/log.js';
+import { STALLED_SOCKET_BYTES } from './peer-message.js';
 
 function beatsPerBar(numerator: number, denominator: number): number {
   if (!(numerator > 0) || !(denominator > 0)) return 4;
@@ -39,7 +41,9 @@ const PEER_CLOCK_INTERVAL_MS = 500;
 /** The main computer's transport, as the second computer reads it. */
 function localPeerClock(): Record<string, unknown> | null {
   const state = bridgeState.manager?.getState();
-  if (!state) return null;
+  // A Live that stopped answering leaves an old playhead behind: no clock
+  // is better than one the second computer would correct against.
+  if (!state || bridgeState.oscClient?.isConnected !== true) return null;
   return {
     type: 'peer_clock',
     isPlaying: state.isPlaying,
@@ -59,7 +63,8 @@ export function startPeerClock(socket: () => WebSocket | null): NodeJS.Timeout {
   const timer = setInterval(() => {
     const target = socket();
     // A clock behind a full socket would be old by the time it is read.
-    if (!target || target.readyState !== WebSocket.OPEN || target.bufferedAmount > 0) return;
+    if (!target || target.readyState !== WebSocket.OPEN) return;
+    if (target.bufferedAmount >= STALLED_SOCKET_BYTES) return;
     const clock = localPeerClock();
     if (!clock) return;
     try {
@@ -100,9 +105,9 @@ function getFollower(): PeerFollower {
   return follower;
 }
 
-/** A relayed transport command arrived from the main computer. */
-export function notePeerCommand(): void {
-  getFollower().noteCommand();
+/** A relayed command arrived from the main computer. */
+export function notePeerCommand(type: string): void {
+  if (movesTransport(type)) getFollower().noteCommand();
 }
 
 /** A clock arrived from the main computer. */

@@ -585,7 +585,7 @@ export async function startServer(options: StartServerOptions = {}): Promise<voi
         handlePeerClock(msg);
         return;
       }
-      if (isPeerConnection) notePeerCommand();
+      if (isPeerConnection) notePeerCommand(msg.type);
 
       const readOnlyTypes = new Set(['get_lyrics', 'profiles_get', 'preflight_check']);
       if (!readOnlyTypes.has(msg.type) && !isController && !isPeerConnection) {

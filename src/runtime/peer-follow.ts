@@ -70,6 +70,30 @@ export const SETTLE_AFTER_COMMAND_MS = 2_500;
 export const SETTLE_AFTER_CORRECTION_MS = 3_000;
 /** Two tempos closer than this are the same tempo. */
 const SAME_TEMPO_BPM = 0.5;
+/**
+ * How late a position reading may be, in ms: the poll of each side is up to
+ * a tenth of a second old, and a clock waits on the network too.
+ */
+export const READING_JITTER_MS = 150;
+
+interface Sample {
+  time: number;
+  at: number;
+}
+
+/**
+ * Whether a playing transport moved as far as its tempo says since the last
+ * clock. A transport that froze (Live stopped answering while the server
+ * still runs) or that just jumped is not a reading to correct against.
+ */
+function advancesAtTempo(prev: Sample | null, time: number, tempo: number, at: number): boolean {
+  if (!prev || at <= prev.at) return false;
+  const expected = ((at - prev.at) / 60_000) * tempo;
+  // The tolerance stays below the movement itself, so a frozen playhead
+  // never passes for a moving one, even at a slow tempo.
+  const tolerance = (READING_JITTER_MS / 60_000) * tempo + 0.05;
+  return Math.abs(time - prev.time - expected) <= tolerance;
+}
 
 /**
  * Decides what one clock asks for, without any memory of the ones before.
@@ -104,6 +128,15 @@ function sameAction(a: FollowAction, b: FollowAction): boolean {
   return true;
 }
 
+/**
+ * Whether a relayed command moves the transport: the two sides differ for a
+ * moment after one of them. A metronome or a quantization change moves
+ * nothing, so it must not hold the follower back.
+ */
+export function movesTransport(type: string): boolean {
+  return type === 'play' || type === 'stop' || type === 'jump_time' || type === 'trigger_count_in';
+}
+
 /** What the follower does to this computer's Live. */
 export interface FollowEffects {
   moveTo(beat: number): void;
@@ -120,6 +153,8 @@ export class PeerFollower {
   private streak = 0;
   private quietUntil = 0;
   private reportedMismatch = false;
+  private lastRemote: Sample | null = null;
+  private lastLocal: Sample | null = null;
 
   constructor(
     private readonly effects: FollowEffects,
@@ -140,7 +175,17 @@ export class PeerFollower {
 
   /** Reads one clock and acts when its case has held long enough. */
   onClock(remote: PeerClock, local: LocalTransport): FollowAction {
+    const at = this.now();
+    const steady = this.steady(remote, local, at);
+    this.lastRemote = { time: remote.songTime, at };
+    this.lastLocal = { time: local.songTime, at };
     const action = assessPeerClock(remote, local);
+    // A playhead that did not move at its tempo since the last clock is not
+    // a reading to correct against: only a stop goes on without it.
+    if (!steady && action.kind !== 'stop' && action.kind !== 'none') {
+      this.reset();
+      return { kind: 'none' };
+    }
     // A stop waits too: right after a relayed Play the main computer may not
     // have reported its own Play yet, and the relayed Stop itself is what
     // stops this side in the normal case.
@@ -161,6 +206,13 @@ export class PeerFollower {
     if (this.streak < STABLE_CLOCKS) return { kind: 'none' };
     this.reset();
     return this.apply(action);
+  }
+
+  private steady(remote: PeerClock, local: LocalTransport, at: number): boolean {
+    if (!remote.isPlaying || remote.loopActive) return remote.isPlaying === false;
+    if (!advancesAtTempo(this.lastRemote, remote.songTime, remote.tempo, at)) return false;
+    if (!local.isPlaying || local.loopActive) return true;
+    return advancesAtTempo(this.lastLocal, local.songTime, local.tempo, at);
   }
 
   private apply(action: FollowAction): FollowAction {

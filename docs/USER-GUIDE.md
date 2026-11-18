@@ -379,7 +379,9 @@ second, and the second computer corrects what it can tell for sure:
 
 Each case has to hold for about a second and a half before anything happens.
 Nothing moves while a jump waits for its grid, while a loop runs, during panic
-or a lock, or in the seconds after a relayed command. A gap that is not whole
+or a lock, in the seconds after a relayed Play, Stop, jump or count-in, or
+while either playhead is not moving at its tempo (a Live that stopped
+answering is never followed). A gap that is not whole
 beats means the two are not on the same beat; the second computer reports it
 and asks to check Link, without moving. Every correction is written to the log
 of the second computer.

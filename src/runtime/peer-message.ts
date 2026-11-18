@@ -52,13 +52,20 @@ export function parseMessage(data: WebSocket.Data): Record<string, unknown> | nu
 }
 
 /**
+ * How many bytes waiting on the socket make it a socket nobody reads. A frame
+ * of the link is a few hundred bytes, and the one written a moment ago may
+ * still be on its way out: that is a socket at work, not a stalled one.
+ */
+export const STALLED_SOCKET_BYTES = 16 * 1024;
+
+/**
  * Whether a command may be written to the socket right now.
  *
- * A socket that still holds what was written to it is a socket nobody is
- * reading, so a command is dropped rather than queued behind the others. Stop
- * and panic go anyway: a second computer left playing is the worse failure.
+ * A socket that holds more than a few frames is a socket nobody is reading,
+ * so a command is dropped rather than queued behind the others. Stop and
+ * panic go anyway: a second computer left playing is the worse failure.
  */
 export function canWriteNow(socket: WebSocket | null, type: string): boolean {
   if (!socket) return false;
-  return socket.bufferedAmount === 0 || type === 'stop' || type === 'set_panic';
+  return socket.bufferedAmount < STALLED_SOCKET_BYTES || type === 'stop' || type === 'set_panic';
 }

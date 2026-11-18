@@ -221,16 +221,26 @@ test('critical lock prevents jump from being relayed to peer', async () => {
 
 test('a second computer left stopped while the main one plays starts on the next bar', async () => {
   const beforeCount = readLogCalls(childLogFile).length;
-  bridgeState.manager.updateTransport(65.3, true);
+  // The main computer plays at its tempo: the follower trusts only a
+  // playhead that moves.
+  const startedAt = Date.now();
+  const tempo = bridgeState.manager.getState().tempo;
+  const advance = () =>
+    bridgeState.manager.updateTransport(64 + ((Date.now() - startedAt) / 60_000) * tempo, true);
+  advance();
+  const timer = setInterval(advance, 100);
   try {
     const started = await waitFor(() => {
       const calls = readLogCalls(childLogFile).slice(beforeCount);
-      const at = calls.indexOf('setCurrentSongTime:68');
-      return at >= 0 && calls.slice(at + 1).includes('startPlaying');
+      const at = calls.findIndex((c) => c.startsWith('setCurrentSongTime:'));
+      if (at < 0) return false;
+      const beat = Number(calls[at].split(':')[1]);
+      return beat % 4 === 0 && calls.slice(at + 1).includes('startPlaying');
     }, 10000);
-    assert.equal(started, true, 'the follower must move to the next bar line and start');
+    assert.equal(started, true, 'the follower must move to a bar line and start');
   } finally {
-    bridgeState.manager.updateTransport(65.3, false);
+    clearInterval(timer);
+    bridgeState.manager.updateTransport(64, false);
   }
 });
 

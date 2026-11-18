@@ -127,10 +127,27 @@ after(async () => {
   }
 });
 
-test('stop and set_panic are sent when bufferedAmount > 0 and play is dropped', async () => {
+test('a frame still on its way out does not hold back the next command', async () => {
   const orig = Object.getOwnPropertyDescriptor(WebSocket.prototype, 'bufferedAmount');
   Object.defineProperty(WebSocket.prototype, 'bufferedAmount', {
-    get: () => 1024,
+    get: () => 300,
+    configurable: true,
+  });
+  try {
+    peerComputer.actions.length = 0;
+    relayToPeer(makeCommand('play', 'small-buffer-play'));
+    await waitFor(() => peerComputer.actions.length > 0);
+    assert.equal(peerComputer.actions[0]?.type, 'play');
+  } finally {
+    if (orig) Object.defineProperty(WebSocket.prototype, 'bufferedAmount', orig);
+    else delete WebSocket.prototype.bufferedAmount;
+  }
+});
+
+test('stop and set_panic are sent through a stalled socket and play is dropped', async () => {
+  const orig = Object.getOwnPropertyDescriptor(WebSocket.prototype, 'bufferedAmount');
+  Object.defineProperty(WebSocket.prototype, 'bufferedAmount', {
+    get: () => 64 * 1024,
     configurable: true,
   });
   try {
