@@ -1166,3 +1166,22 @@ test('MCP path promotion waits for an in-flight legacy lyric recovery', async (t
     bridgeState.legacyRecoveryPromise = previous.legacyRecoveryPromise;
   }
 });
+
+test('the title of Live is read on macOS too, through System Events', async () => {
+  const { windowTitleCommand, MAC_WINDOW_TITLE_SCRIPT, projectIdentityFromWindowTitle } =
+    await import('../src/core/project-identity.ts');
+  assert.strictEqual(windowTitleCommand('win32')?.file, 'powershell.exe');
+  const mac = windowTitleCommand('darwin');
+  assert.strictEqual(mac?.file, 'osascript');
+  assert.deepStrictEqual(mac?.args, ['-e', MAC_WINDOW_TITLE_SCRIPT]);
+  assert.match(MAC_WINDOW_TITLE_SCRIPT, /AXMain/);
+  assert.strictEqual(windowTitleCommand('linux'), null);
+  // The same Set gives the same key with or without the unsaved mark, so a
+  // Mac finds its setlists again after Live restarts.
+  const saved = projectIdentityFromWindowTitle('SOPRU SHOW');
+  const edited = projectIdentityFromWindowTitle('SOPRU SHOW*');
+  assert.ok(saved && edited);
+  assert.strictEqual(saved.key, edited.key);
+  assert.strictEqual(saved.persistent, true);
+  assert.strictEqual(projectIdentityFromWindowTitle('Untitled'), null);
+});

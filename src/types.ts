@@ -104,6 +104,8 @@ export interface SetlistState {
   cuesFingerprint?: string;
   /** State of the link to the paired computer, when there is one. */
   peerStatus?: PeerStatus;
+  /** Whether the setlists are being moved to another Live Set right now. */
+  profileScopeSwitching?: boolean;
 
   // Reliability Core state fields
   stateVersion: number;
