@@ -42,11 +42,11 @@ import { registerOscListeners } from './osc/registration.js';
 import { executeCommandAction } from './commands/handlers/index.js';
 import { immediateJumpRefused } from './commands/handlers/transport.js';
 import { peerCommandRejection, resolvePeerJump } from './commands/handlers/peer.js';
-import { relayToPeer, startPeerLink, stopPeerLink } from './runtime/peer-link.js';
+import { relayToPeer, startPeerLinks, stopPeerLink } from './runtime/peer-link.js';
 import { handlePeerClock, notePeerCommand } from './runtime/peer-follow-runtime.js';
 import { getOrGeneratePeerToken } from './runtime/pairing.js';
 import { startEventLoopWatch, warnIfSlow } from './runtime/event-loop-watch.js';
-import { readPeerConfig } from './preferences.js';
+import { readPeerConfigs } from './preferences.js';
 import { applyJumpTargetTempo } from './commands/jump-tempo.js';
 import type { ClientMessage, ShowCommand } from './types.js';
 import {
@@ -509,8 +509,8 @@ export async function startServer(options: StartServerOptions = {}): Promise<voi
     // its own, next to the server that answers.
     if (tlsOptions !== null) startCaDownloadServer();
 
-    // The paired computer, if there is one, follows from here on.
-    startPeerLink(readPeerConfig());
+    // The paired computers, if there are any, follow from here on.
+    startPeerLinks(readPeerConfigs());
 
     bridgeState.wsServer.on('client_message', (msg: ClientMessage, ws: AugmentedWebSocket) => {
       if (!bridgeState.manager) return;

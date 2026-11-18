@@ -52,6 +52,22 @@ export interface PeerStatus {
   fingerprintMismatch: boolean;
 }
 
+/**
+ * What one paired computer looks like from this one.
+ *
+ * There is one of these for every computer this one is paired with, and the
+ * summary in `PeerStatus` is what they add up to.
+ */
+export interface PeerLinkStatus {
+  /** The address of the computer. */
+  host: string;
+  /** The port the computer serves on. */
+  port: number;
+  connected: boolean;
+  markersMatch: boolean;
+  fingerprintMismatch: boolean;
+}
+
 export interface SetlistState {
   protocolVersion?: 3;
   setlistVersion?: number;

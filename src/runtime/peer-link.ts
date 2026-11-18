@@ -2,17 +2,17 @@
 // SPDX-License-Identifier: PolyForm-Noncommercial-1.0.0
 // Source: https://github.com/ntworm/ableton-rc-setlist
 //
-// The link to the paired computer.
+// The links to the paired computers.
 //
-// The main computer forwards what the operator asks for to the second one,
-// and its clock twice a second. The link is one client per process. Nothing
-// is queued: a command that lands late is worse than one that never lands,
-// and the clock lets the second computer catch up on what it missed.
+// The main computer forwards what the operator asks for to every computer it
+// is paired with, and its clock twice a second. Each link is one client per
+// process. Nothing is queued: a command that lands late is worse than one
+// that never lands, and the clock lets the second computer catch up on what
+// it missed.
 //
-// The certificate is pinned. The TLS connection is opened first and the
-// fingerprint the socket presents is compared against the one the pairing
-// wrote down before a single byte goes out: a computer that presents another
-// certificate is never talked to, and never even sees the credential.
+// The certificate is pinned: the fingerprint the socket presents is compared
+// against the one the pairing wrote down before a single byte goes out, so a
+// computer that presents another certificate is never talked to.
 
 import * as tls from 'node:tls';
 import { WebSocket } from 'ws';
@@ -26,8 +26,14 @@ import {
   payloadFields,
   peerCommandId,
 } from './peer-message.js';
-import type { PeerConfig } from '../preferences.js';
-import type { PeerStatus, ShowCommand } from '../types.js';
+import {
+  aggregatePeerStatus,
+  peerStatusRows,
+  samePeerStatusRows,
+  type PeerLinkState,
+} from './peer-status-list.js';
+import { peerKey, type PeerConfig } from '../preferences.js';
+import type { ShowCommand } from '../types.js';
 import { log } from '../util/log.js';
 import { startPeerClock } from './peer-follow-runtime.js';
 
@@ -36,8 +42,7 @@ export { resetPeerLinkTiming, setPeerLinkTiming } from './peer-liveness.js';
 /**
  * The command types the main computer forwards to the paired computer.
  *
- * Everything else stays here: an edit to the setlist is the operator's
- * business on this machine, and the second computer has its own copy.
+ * Everything else stays here: the setlist is the operator's business here.
  */
 export const PEER_RELAY_TYPES: ReadonlySet<string> = new Set([
   'play',
@@ -54,6 +59,8 @@ export const PEER_RELAY_TYPES: ReadonlySet<string> = new Set([
 const PEER_CLIENT_ID = 'rc-peer';
 
 interface PeerLink {
+  /** The key that tells this computer from another one. */
+  key: string;
   config: PeerConfig;
   socket: WebSocket | null;
   secureSocket: tls.TLSSocket | null;
@@ -66,21 +73,20 @@ interface PeerLink {
   stopped: boolean;
   lastRemoteFingerprint: string | null;
   clockTimer: NodeJS.Timeout | null;
+  /** What this computer looks like from here. */
+  state: PeerLinkState;
 }
 
-let link: PeerLink | null = null;
+/** Every computer this one is paired with, by the key that tells them apart. */
+const links = new Map<string, PeerLink>();
 
-/**
- * Stops a timer and hands back the empty slot it sat in.
- */
+/** Stops a timer and hands back the empty slot it sat in. */
 function stopTimer(timer: NodeJS.Timeout | null): null {
   if (timer) clearTimeout(timer);
   return null;
 }
 
-/**
- * Stops every timer of the current attempt.
- */
+/** Stops every timer of the current attempt. */
 function stopAttemptTimers(target: PeerLink): void {
   target.clockTimer = stopTimer(target.clockTimer);
   target.connectTimer = stopTimer(target.connectTimer);
@@ -89,9 +95,7 @@ function stopAttemptTimers(target: PeerLink): void {
   target.watchdog = null;
 }
 
-/**
- * Takes a socket down, whether it is still handshaking or already open.
- */
+/** Takes a socket down, whether it is still handshaking or already open. */
 function closePeerSocket(socket: WebSocket): void {
   try {
     // A socket that is still handshaking has no stream to destroy yet: the
@@ -105,48 +109,53 @@ function closePeerSocket(socket: WebSocket): void {
 
 /**
  * Whether a link was replaced or stopped, cleaning up what it left running.
- *
- * Every callback of a socket starts here: a link that is no longer the current
- * one must never touch the status of the one that replaced it.
+ * A stale link must never touch the status of the one that replaced it.
  */
 function dropIfStale(target: PeerLink): boolean {
-  if (!target.stopped && link === target) return false;
+  if (!target.stopped && links.get(target.key) === target) return false;
   stopAttemptTimers(target);
   return true;
 }
 
-function setPeerStatus(patch: Partial<PeerStatus>): void {
+/**
+ * Writes down what every paired computer looks like from here. The summary
+ * the page reads is what the computers add up to, so it is computed here.
+ */
+function publishPeerStatus(): void {
+  const rows = peerStatusRows([...links.values()]);
+  const next = aggregatePeerStatus(rows);
   const current = bridgeState.peerStatus;
-  const next: PeerStatus = { ...current, ...patch };
-  if (
-    current.paired === next.paired &&
-    current.connected === next.connected &&
-    current.markersMatch === next.markersMatch &&
-    current.fingerprintMismatch === next.fingerprintMismatch
-  )
-    return;
+  const changed =
+    current.paired !== next.paired ||
+    current.connected !== next.connected ||
+    current.markersMatch !== next.markersMatch ||
+    current.fingerprintMismatch !== next.fingerprintMismatch ||
+    !samePeerStatusRows(bridgeState.peerStatuses, rows);
+  if (!changed) return;
   bridgeState.peerStatus = next;
+  bridgeState.peerStatuses = rows;
   broadcastState();
+}
+
+/** Records what one computer looks like from here. */
+function setLinkState(target: PeerLink, patch: Partial<PeerLinkState>): void {
+  target.state = { ...target.state, ...patch };
+  publishPeerStatus();
 }
 
 function localCuesFingerprint(): string {
   return bridgeState.manager?.getState().cuesFingerprint ?? '';
 }
 
-function remoteCuesFingerprint(state: unknown): string | null {
-  if (!isRecord(state)) return null;
-  const fingerprint = state.cuesFingerprint;
-  return typeof fingerprint === 'string' ? fingerprint : null;
-}
-
 function updateMarkersMatch(target: PeerLink, state: unknown): void {
-  target.lastRemoteFingerprint = remoteCuesFingerprint(state);
+  const remote = isRecord(state) ? state.cuesFingerprint : null;
+  target.lastRemoteFingerprint = typeof remote === 'string' ? remote : null;
   recheckMarkersMatch(target);
 }
 
 function recheckMarkersMatch(target: PeerLink): void {
   const remote = target.lastRemoteFingerprint;
-  setPeerStatus({ markersMatch: remote !== null && remote === localCuesFingerprint() });
+  setLinkState(target, { markersMatch: remote !== null && remote === localCuesFingerprint() });
 }
 
 /** The beat a jump lands on, and the level it lands on. */
@@ -206,25 +215,22 @@ function sendToPeer(target: PeerLink, message: unknown): boolean {
 function handlePeerMessage(target: PeerLink, data: WebSocket.Data): void {
   const message = parseMessage(data);
   if (!message) return;
-
   if (message.type === 'handshake_ack') {
     const version = typeof message.stateVersion === 'number' ? message.stateVersion : 0;
     updateMarkersMatch(target, message.state);
     sendToPeer(target, { type: 'sync_confirm', stateVersion: version });
     target.synchronized = true;
-    setPeerStatus({ connected: true });
+    setLinkState(target, { connected: true });
     stopTimer(target.clockTimer);
     target.clockTimer = startPeerClock(() =>
       dropIfStale(target) || !target.synchronized ? null : target.socket,
     );
     return;
   }
-
   if (message.type === 'state') {
     updateMarkersMatch(target, message.state);
     return;
   }
-
   if (message.type === 'error') handlePeerError(target, message.code);
 }
 
@@ -234,7 +240,7 @@ function handlePeerError(target: PeerLink, code: unknown): void {
     // confirmation. A peer that says otherwise refuses every command, so the
     // link goes down and handshakes again instead of showing a green dot.
     target.synchronized = false;
-    setPeerStatus({ connected: false });
+    setLinkState(target, { connected: false });
     if (target.socket) closePeerSocket(target.socket);
     return;
   }
@@ -248,13 +254,13 @@ function handlePeerError(target: PeerLink, code: unknown): void {
 }
 
 function scheduleReconnect(target: PeerLink): void {
-  if (target.stopped || link !== target || target.reconnectTimer) return;
+  if (target.stopped || links.get(target.key) !== target || target.reconnectTimer) return;
   const timing = peerLinkTiming();
   const delay = target.reconnectDelayMs;
   target.reconnectDelayMs = Math.min(delay * 2, timing.reconnectMaxMs);
   target.reconnectTimer = setTimeout(() => {
     target.reconnectTimer = null;
-    connectPeer();
+    connectPeer(target);
   }, delay);
   target.reconnectTimer.unref?.();
 }
@@ -265,7 +271,7 @@ function onPeerClosed(target: PeerLink): void {
   target.secureSocket = null;
   target.synchronized = false;
   stopAttemptTimers(target);
-  setPeerStatus({ connected: false });
+  setLinkState(target, { connected: false });
   scheduleReconnect(target);
 }
 
@@ -273,7 +279,7 @@ function abortOnFingerprintMismatch(target: PeerLink): void {
   if (dropIfStale(target)) return;
   target.stopped = true;
   target.synchronized = false;
-  setPeerStatus({ connected: false, fingerprintMismatch: true });
+  setLinkState(target, { connected: false, fingerprintMismatch: true });
   const socket = target.socket;
   target.socket = null;
   stopAttemptTimers(target);
@@ -281,9 +287,7 @@ function abortOnFingerprintMismatch(target: PeerLink): void {
   log.warn('peer', 'The paired computer presented a different certificate; the link stopped.');
 }
 
-/**
- * Opens the WebSocket on the socket whose certificate was just verified.
- */
+/** Opens the WebSocket on the socket whose certificate was just verified. */
 function openPeerSocket(target: PeerLink, secureSocket: tls.TLSSocket): void {
   const { host, port, peerToken } = target.config;
   let socket: WebSocket;
@@ -302,14 +306,11 @@ function openPeerSocket(target: PeerLink, secureSocket: tls.TLSSocket): void {
     scheduleReconnect(target);
     return;
   }
-
   target.socket = socket;
-
   target.handshakeTimer = setTimeout(() => {
     closePeerSocket(socket);
   }, peerLinkTiming().handshakeTimeoutMs);
   target.handshakeTimer.unref?.();
-
   listenToPeerSocket(target, socket);
 }
 
@@ -323,32 +324,25 @@ function listenToPeerSocket(target: PeerLink, socket: WebSocket): void {
     });
     sendToPeer(target, { type: 'handshake', clientId: PEER_CLIENT_ID });
   });
-
   socket.on('message', (data: WebSocket.Data) => {
     if (dropIfStale(target)) return;
     handlePeerMessage(target, data);
   });
-
   socket.on('pong', () => {
     if (dropIfStale(target)) return;
     recheckMarkersMatch(target);
   });
-
   socket.on('close', () => {
     if (dropIfStale(target)) return;
     onPeerClosed(target);
   });
-
   socket.on('error', () => {
     // The close handler owns the reconnect; an error without a close would
     // otherwise leave the link waiting for a socket that is already gone.
   });
 }
 
-/**
- * Opens the TLS connection and checks the certificate before anything is
- * said to the paired computer.
- */
+/** Opens the TLS connection and checks the certificate before anything. */
 function destroyQuietly(socket: tls.TLSSocket): void {
   try {
     socket.destroy();
@@ -357,11 +351,9 @@ function destroyQuietly(socket: tls.TLSSocket): void {
   }
 }
 
-function connectPeer(): void {
-  const target = link;
-  if (!target || target.stopped) return;
+function connectPeer(target: PeerLink): void {
+  if (target.stopped || links.get(target.key) !== target) return;
   const { host, port, fingerprint, keyPin } = target.config;
-
   let secureSocket: tls.TLSSocket;
   try {
     secureSocket = tls.connect({ host, port, rejectUnauthorized: false });
@@ -370,7 +362,6 @@ function connectPeer(): void {
     return;
   }
   target.secureSocket = secureSocket;
-
   let givenUp = false;
   const giveUp = (): void => {
     if (givenUp) return;
@@ -378,17 +369,14 @@ function connectPeer(): void {
     stopAttemptTimers(target);
     destroyQuietly(secureSocket);
     if (target.secureSocket === secureSocket) target.secureSocket = null;
-    if (target.stopped || link !== target) return;
+    if (target.stopped || links.get(target.key) !== target) return;
     // A socket that is already open owns the reconnect: it closes with the
     // stream that died under it.
     if (!target.socket) scheduleReconnect(target);
   };
-
   target.connectTimer = setTimeout(giveUp, peerLinkTiming().connectTimeoutMs);
   target.connectTimer.unref?.();
-
   secureSocket.on('error', giveUp);
-
   secureSocket.on('secureConnect', () => {
     if (dropIfStale(target)) {
       destroyQuietly(secureSocket);
@@ -415,10 +403,8 @@ function connectPeer(): void {
   });
 }
 
-function teardownLink(): void {
-  const target = link;
-  link = null;
-  if (!target) return;
+function teardownLink(target: PeerLink): void {
+  if (links.get(target.key) === target) links.delete(target.key);
   target.stopped = true;
   target.reconnectTimer = stopTimer(target.reconnectTimer);
   stopAttemptTimers(target);
@@ -437,63 +423,69 @@ function teardownLink(): void {
 }
 
 /**
- * Starts the link to the paired computer, if there is one.
+ * Starts the links to the paired computers. Every link that is up goes down
+ * first: the list of pairings is the truth.
  */
-export function startPeerLink(config: PeerConfig | null): void {
-  teardownLink();
-  if (!config) {
-    setPeerStatus({
-      paired: false,
-      connected: false,
-      markersMatch: true,
-      fingerprintMismatch: false,
+export function startPeerLinks(configs: PeerConfig[]): void {
+  for (const target of [...links.values()]) teardownLink(target);
+  for (const config of configs) {
+    const key = peerKey(config);
+    const previous = links.get(key);
+    // A pairing that stands twice at the same address is one link: the one
+    // that comes last wins, and the one it replaces goes down.
+    if (previous) teardownLink(previous);
+    links.set(key, {
+      key,
+      config,
+      socket: null,
+      secureSocket: null,
+      watchdog: null,
+      reconnectTimer: null,
+      connectTimer: null,
+      handshakeTimer: null,
+      reconnectDelayMs: peerLinkTiming().reconnectBaseMs,
+      synchronized: false,
+      stopped: false,
+      lastRemoteFingerprint: null,
+      clockTimer: null,
+      state: { connected: false, markersMatch: true, fingerprintMismatch: false },
     });
-    return;
   }
-  link = {
-    config,
-    socket: null,
-    secureSocket: null,
-    watchdog: null,
-    reconnectTimer: null,
-    connectTimer: null,
-    handshakeTimer: null,
-    reconnectDelayMs: peerLinkTiming().reconnectBaseMs,
-    synchronized: false,
-    stopped: false,
-    lastRemoteFingerprint: null,
-    clockTimer: null,
-  };
-  setPeerStatus({ paired: true, connected: false, markersMatch: true, fingerprintMismatch: false });
-  connectPeer();
+  publishPeerStatus();
+  for (const target of links.values()) connectPeer(target);
 }
 
-/**
- * Stops the link to the paired computer.
- */
+/** Starts the link to the paired computer, if there is one. */
+export function startPeerLink(config: PeerConfig | null): void {
+  startPeerLinks(config ? [config] : []);
+}
+
+/** Stops the links to the paired computers. */
 export function stopPeerLink(): void {
-  teardownLink();
-  setPeerStatus({ connected: false });
+  for (const target of [...links.values()]) teardownLink(target);
+  publishPeerStatus();
 }
 
 /**
- * Forwards a command to the paired computer.
- *
- * Never throws and never rejects: a link that is down must not change what
- * happens on this machine.
+ * Forwards a command to the paired computers. Never throws and never
+ * rejects: a link that is down must not change what happens on this machine.
  */
 export function relayToPeer(command: ShowCommand<unknown>): void {
   try {
-    const target = link;
-    if (!target || !target.synchronized) return;
+    const targets = [...links.values()].filter((target) => target.synchronized);
+    if (targets.length === 0) return;
     if (!PEER_RELAY_TYPES.has(command.type)) return;
     // A command this computer already refused, a full queue among the
-    // reasons, must not run on the other one: the two would part ways.
+    // reasons, must not run on the other ones: the two would part ways.
     if (command.status === 'failed') return;
     if (bridgeState.commandBus?.wouldRejectForSafety(command.type)) return;
     const message = buildPeerMessage(command);
     if (!message) return;
-    if (canWriteNow(target.socket, command.type)) sendToPeer(target, message);
+    for (const target of targets) {
+      // Every link has a socket of its own: one that is busy is dropped
+      // here and not for the others.
+      if (canWriteNow(target.socket, command.type)) sendToPeer(target, message);
+    }
   } catch {
     // swallow: a relay failure must never reach the local command.
   }

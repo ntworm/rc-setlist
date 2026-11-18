@@ -32,7 +32,7 @@ import {
 } from '../core/project-profile-scope.js';
 import type { ProjectIdentity } from '../core/project-identity.js';
 import type { ProfileManagerOptions } from '../core/profile-manager.js';
-import type { PeerStatus } from '../types.js';
+import type { PeerLinkStatus, PeerStatus } from '../types.js';
 import { log } from '../util/log.js';
 import { atomicWriteFileSync } from '../util/atomic-write.js';
 import { isPlainObject, isStringArray, parseJson } from '../util/json.js';
@@ -88,6 +88,8 @@ export interface BridgeState {
   peerToken: string;
   /** What the paired computer looks like from here. */
   peerStatus: PeerStatus;
+  /** What every paired computer looks like from here, one row each. */
+  peerStatuses: PeerLinkStatus[];
   globalPersistenceDir: string;
   projectIdentity: ProjectIdentity | null;
   profileScopeSwitching: boolean;
@@ -132,6 +134,7 @@ export const bridgeState: BridgeState = {
     markersMatch: true,
     fingerprintMismatch: false,
   },
+  peerStatuses: [],
   globalPersistenceDir: '',
   projectIdentity: null,
   profileScopeSwitching: false,
