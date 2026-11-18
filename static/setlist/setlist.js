@@ -43,6 +43,9 @@ const t = (key, params) => i18n.t(key, params);
 const controllerRuntime = RcSetlistControllerRuntime;
 const languageSelect = document.getElementById('languageSelect');
 i18n.bindSelector(languageSelect);
+const stageMode = globalThis.RcStageMode;
+let currentStageMode = stageMode.readMode(localStorage);
+stageMode.applyMode(document.body, currentStageMode);
 globalThis.RcAppBarFit?.install(
   document.querySelector('header.app-bar'),
   document.getElementById('profileSelect'),
@@ -148,6 +151,10 @@ const songFold = window.RcSongFold.createFoldState({
   getSongs: () => lastState?.songs || [],
   translate: (key) => t(key),
   onChange: () => updateFoldAllButton(),
+});
+const stageModeFollower = stageMode.createFollower({
+  container: songListDiv,
+  getMode: () => currentStageMode,
 });
 const markerEditTracker = new Map(); // commandId -> { songIndex, sectionIndex, originalName, time }
 /**
@@ -2029,6 +2036,7 @@ function updateFoldAllButton() {
 function mountSongFoldControls() {
   const songIndexOf = (element) => Number(element.closest('.song-item')?.dataset.song);
   const dotsOf = (event) => {
+    if (currentStageMode === 'show') return null;
     const dots = event.target?.closest?.('.song-reorder-handle');
     return dots && songListDiv.contains(dots) ? dots : null;
   };
@@ -2048,6 +2056,22 @@ function mountSongFoldControls() {
   });
 
   foldAllSongsButton?.addEventListener('click', () => songFold.toggleAll());
+}
+
+/**
+ * Wires the Edit and Show mode switch buttons in the top bar.
+ */
+function mountStageModeControls() {
+  document.querySelectorAll('[data-stage-mode]').forEach((button) => {
+    button.addEventListener('click', () => {
+      currentStageMode = stageMode.parseMode(button.dataset.stageMode);
+      stageMode.writeMode(localStorage, currentStageMode);
+      stageMode.applyMode(document.body, currentStageMode);
+      requestAnimationFrame(() => {
+        stageModeFollower.follow(lastState?.activeSongIndex ?? -1, true);
+      });
+    });
+  });
 }
 
 function renderSongList(state) {
@@ -2086,6 +2110,7 @@ function renderSongList(state) {
 
   if (structureUnchanged) {
     updateActiveClasses(state.activeSongIndex, state.activeSectionIndex);
+    stageModeFollower.follow(state.activeSongIndex, false);
     return;
   }
 
@@ -2138,6 +2163,7 @@ function renderSongList(state) {
     // Something upstream changed its mind about the version, but nothing the
     // user can see changed. Leave the DOM alone.
     updateActiveClasses(state.activeSongIndex, state.activeSectionIndex);
+    stageModeFollower.follow(state.activeSongIndex, false);
     return;
   }
 
@@ -2150,6 +2176,7 @@ function renderSongList(state) {
   updateFoldAllButton();
   activeClassController.reset();
   activeClassController.update(state.activeSongIndex, state.activeSectionIndex);
+  stageModeFollower.follow(state.activeSongIndex, true);
 }
 
 function updateActiveClasses(activeSongIdx, activeSectionIdx) {
@@ -2965,6 +2992,7 @@ globalThis.setlistStageRuntime = StageRuntime.mount({ i18n });
 mountTransportControls();
 mountSetlistTargetControls();
 mountSongFoldControls();
+mountStageModeControls();
 songFold.load();
 updateFoldAllButton();
 connect();

@@ -253,6 +253,40 @@ body {
   white-space: nowrap;
 }
 
+.stage-mode-switch {
+  display: inline-flex;
+  align-items: center;
+  flex: 0 0 auto;
+  gap: 0;
+}
+
+.app-bar .stage-mode-switch .ui-button {
+  padding-inline: 0.48rem;
+}
+
+.stage-mode-switch .ui-button + .ui-button {
+  margin-left: -1px;
+}
+
+.stage-mode-switch .ui-button[aria-pressed='false'] {
+  background: var(--ui-surface);
+  color: var(--ui-muted);
+}
+
+.stage-mode-switch .ui-button[aria-pressed='false']:hover {
+  border-color: var(--ui-border-strong);
+  background: var(--ui-surface-soft);
+  color: var(--ui-text);
+}
+
+.stage-mode-switch .ui-button[aria-pressed='true'] {
+  position: relative;
+  z-index: 1;
+  border-color: var(--ui-accent);
+  background: var(--ui-accent-soft);
+  color: var(--ui-accent-strong);
+}
+
 /*
  * Above the stacked layout the bar keeps one row, in every language: the
  * longer words shrink the bar's text instead of pushing the buttons to a
@@ -261,18 +295,25 @@ body {
 @media (min-width: 1181px) {
   .app-bar {
     flex-wrap: nowrap;
+    gap: calc(0.8rem * var(--app-bar-scale, 1));
+  }
+  .app-brand {
+    min-width: calc(9.5rem * var(--app-bar-scale, 1));
+    gap: calc(0.6rem * var(--app-bar-scale, 1));
   }
   .app-bar-actions {
     flex: 0 1 auto;
+    gap: calc(0.55rem * var(--app-bar-scale, 1));
   }
   .app-bar-actions > * {
     flex-shrink: 0;
   }
   .profile-header-group {
     flex: 1 1 0;
+    gap: calc(0.6rem * var(--app-bar-scale, 1));
   }
   .profile-select-control {
-    min-width: 13rem;
+    min-width: calc(13rem * var(--app-bar-scale, 1));
   }
   .app-bar .ui-button,
   .app-bar .tools-menu > summary,
@@ -285,6 +326,9 @@ body {
   .app-bar .tools-menu > summary,
   .app-bar .status-badge {
     padding-inline: calc(0.65rem * var(--app-bar-scale, 1));
+  }
+  .app-bar .stage-mode-switch .ui-button {
+    padding-inline: calc(0.3rem * var(--app-bar-scale, 1));
   }
   .profile-select-control > span {
     font-size: calc(var(--t-stage-micro) * var(--app-bar-scale, 1));
@@ -1701,6 +1745,11 @@ body {
     gap: 0.35rem;
   }
 
+  /* On the second row the mode switch sits on the left, under the setlist. */
+  .stage-mode-switch {
+    margin-right: auto;
+  }
+
   .profile-header-group {
     grid-template-columns: minmax(7rem, 10rem) auto;
   }
@@ -1752,6 +1801,10 @@ body {
     width: 100%;
     flex-wrap: wrap;
     justify-content: flex-start;
+  }
+
+  .stage-mode-switch {
+    margin-right: 0;
   }
 
   .profile-header-group {
@@ -2161,4 +2214,42 @@ body {
 .marker-sections[hidden],
 .marker-editor[hidden] {
   display: none !important;
+}
+
+/* ===== Show mode =====
+   Hides setup controls, collapses non-active songs without touching Edit
+   mode's stored fold list, and keeps the control pane compact around the HUD. */
+
+body.show-mode #btnManageProfiles,
+body.show-mode .tools-menu,
+body.show-mode .secondary-controls,
+body.show-mode .log-drawer,
+body.show-mode #btnFoldAllSongs {
+  display: none;
+}
+
+body.show-mode .song-item:not(.active) .song-sections {
+  display: none;
+}
+
+body.show-mode .song-item.active.sections-folded .song-sections {
+  display: flex;
+}
+
+/* Room after the last song, so the songs at the end of the set can also reach
+   the top of the list. */
+@media (min-width: 900px) {
+  body.show-mode .song-list::after {
+    content: '';
+    display: block;
+    height: 70vh;
+    flex: 0 0 auto;
+  }
+}
+
+body.show-mode .control-column,
+body.show-mode .control-pane {
+  height: auto;
+  min-height: 0;
+  align-self: start;
 }
