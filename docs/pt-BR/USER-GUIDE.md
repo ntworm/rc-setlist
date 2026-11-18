@@ -363,6 +363,25 @@ conexão:
 - **sem ponto**: não há segundo computador pareado, e nada é enviado para
   lugar nenhum.
 
+### Master, slaves e como achá-los
+
+O computador principal é o **master**; cada computador cujo código ele digitou é
+um **slave**. Um master pode parear vários slaves: o cartão **Segundo
+computador** lista cada um com seu estado e seu próprio **Desfazer**, e todo
+comando de transporte vai para todos. A barra de baixo do painel diz o papel
+deste computador, Master com quantos slaves estão conectados, ou Slave e se o
+master está falando com ele, e o slave lembra do master depois de reiniciar.
+
+Enquanto mostra um código de pareamento, o slave se anuncia na rede local, na
+porta UDP `4447`. O master o lista em **Prontos para parear**; um clique
+preenche o endereço, e só falta digitar o código. O anúncio leva o nome e a
+porta do computador, nunca o código. Uma rede que bloqueia broadcast entre
+aparelhos deixa o campo de endereço como caminho.
+
+No slave, **Trazer do master** no cartão **Import** traz o setlist ativo do
+master, com ordem, notas, cores e letras, como um setlist novo do slave. O Live
+precisa estar parado no slave.
+
 ### O que chega ao segundo computador
 
 Viajam para o computador pareado: **Play**, **Stop**, **salto** (como o beat

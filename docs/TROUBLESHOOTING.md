@@ -22,7 +22,7 @@
 
 ## The panel starts but OSC controls or playhead do not respond
 
-- Choose **Check OSC** in the RC Setlist panel.
+- Click the OSC status at the bottom of the RC Setlist panel to run **Check OSC**.
 - `Live connected` means replies from the remote script are reaching RC Setlist.
 - `Waiting for AbletonOSC` means the local server is running, but no reply has
   arrived. Recheck the exact folder above, the Control Surface selection and

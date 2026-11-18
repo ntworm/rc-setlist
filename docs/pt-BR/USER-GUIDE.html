@@ -532,6 +532,27 @@ Música B [bpm 96]</code></pre>
       <li><strong>sem ponto</strong>: não há segundo computador pareado, e nada é enviado para</li>
     </ul>
     <p>lugar nenhum.</p>
+    <h3 id="master-slaves-e-como-ach-los">Master, slaves e como achá-los</h3>
+    <p>
+      O computador principal é o <strong>master</strong>; cada computador cujo código ele digitou é
+      um <strong>slave</strong>. Um master pode parear vários slaves: o cartão
+      <strong>Segundo computador</strong> lista cada um com seu estado e seu próprio
+      <strong>Desfazer</strong>, e todo comando de transporte vai para todos. A barra de baixo do
+      painel diz o papel deste computador, Master com quantos slaves estão conectados, ou Slave e se
+      o master está falando com ele, e o slave lembra do master depois de reiniciar.
+    </p>
+    <p>
+      Enquanto mostra um código de pareamento, o slave se anuncia na rede local, na porta UDP
+      <code>4447</code>. O master o lista em <strong>Prontos para parear</strong>; um clique
+      preenche o endereço, e só falta digitar o código. O anúncio leva o nome e a porta do
+      computador, nunca o código. Uma rede que bloqueia broadcast entre aparelhos deixa o campo de
+      endereço como caminho.
+    </p>
+    <p>
+      No slave, <strong>Trazer do master</strong> no cartão <strong>Import</strong> traz o setlist
+      ativo do master, com ordem, notas, cores e letras, como um setlist novo do slave. O Live
+      precisa estar parado no slave.
+    </p>
     <h3 id="o-que-chega-ao-segundo-computador">O que chega ao segundo computador</h3>
     <p>
       Viajam para o computador pareado: <strong>Play</strong>, <strong>Stop</strong>,

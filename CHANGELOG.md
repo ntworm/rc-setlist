@@ -10,6 +10,18 @@ All notable public changes to Ableton RC Setlist are recorded here.
   its playhead twice a second, and the second computer moves by whole beats
   when a launch landed a bar late, starts when it missed a Play and stops when
   it missed a Stop.
+- **Several slaves**: one master pairs several second computers; the Second
+  computer card lists each with its state and its own Unpair, and the bar at
+  the bottom of the panel says Master or Slave and who is connected.
+- **Bring from master**: a slave brings the active setlist of its master over
+  the link, as a new setlist.
+- **Ready to pair**: a slave with a pairing code announces itself on the local
+  network (UDP 4447), and the master lists it so the address is one click.
+- **Rename a package** of the Import list with a double click.
+
+### Changed
+
+- **Check OSC** runs from the OSC status in the bar at the bottom of the panel.
 
 ## [1.1.0] - 2026-11-06
 

@@ -748,6 +748,25 @@ The Stage Control page shows a second dot beside the connection dot:
 - **no dot**: there is no second computer paired, and nothing is sent
   anywhere.
 
+### Master, slaves and finding them
+
+The main computer is the **master**; every computer whose code it typed is a
+**slave**. A master may pair several slaves: the **Second computer** card lists
+each one with its state and its own **Unpair**, and every transport command goes
+to all of them. The bar at the bottom of the panel says the role of this
+computer, Master with how many slaves are connected, or Slave and whether the
+master is talking, and a slave remembers its master after a restart.
+
+While a slave shows a pairing code it announces itself on the local network, on
+UDP port `4447`. The master lists it under **Ready to pair**; a click fills the
+address, and only the code is left to type. The announcement carries the name
+and the port of the computer, never the code. A network that blocks broadcasts
+between devices leaves the address field as the way in.
+
+On a slave, **Bring from master** in the **Import** card brings the active
+setlist of the master, with its order, notes, colours and lyrics, as a new
+setlist of the slave. Live has to be stopped on the slave.
+
 ### What reaches the second computer
 
 These travel to the paired computer: **Play**, **Stop**, **jump** (as the beat
@@ -1032,7 +1051,7 @@ the Arrangement has no tempo automation.
 
 ## The panel starts but OSC controls or playhead do not respond
 
-- Choose **Check OSC** in the RC Setlist panel.
+- Click the OSC status at the bottom of the RC Setlist panel to run **Check OSC**.
 - `Live connected` means replies from the remote script are reaching RC Setlist.
 - `Waiting for AbletonOSC` means the local server is running, but no reply has
   arrived. Recheck the exact folder above, the Control Surface selection and

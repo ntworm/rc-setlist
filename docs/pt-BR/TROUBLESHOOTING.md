@@ -22,7 +22,7 @@
 
 ## O painel inicia, mas os controles OSC ou o playhead não respondem
 
-- Escolha **Verificar OSC** no painel do RC Setlist.
+- Clique no estado do OSC na barra de baixo do painel do RC Setlist para rodar **Verificar OSC**.
 - `Live conectado` significa que as respostas do remote script estão chegando
   ao RC Setlist.
 - `Aguardando o AbletonOSC` significa que o servidor local está rodando, mas
