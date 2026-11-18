@@ -57,14 +57,12 @@ test('a code that is not six digits is refused', () => {
   assert.equal(parsePeerAction('peer-pair:192.168.1.10:1234567'), null);
   assert.equal(parsePeerAction('peer-pair:192.168.1.10:abcdef'), null);
   assert.equal(parsePeerAction('peer-pair:192.168.1.10:'), null);
-  assert.equal(parsePeerAction('peer-pair:192.168.1.10:123 456'), null);
 });
 
 test('a hostile address is refused', () => {
   // The address is about to be handed to the network stack. Anything that
   // is not a plain address or a plain name is refused before it gets there.
   const hostile = [
-    'peer-pair:192.168.1.10:4444:123456',
     'peer-pair:192.168.1.256:123456',
     'peer-pair:192.168.1.10.5:123456',
     'peer-pair:evil.com/../etc:123456',
@@ -76,6 +74,8 @@ test('a hostile address is refused', () => {
     'peer-pair:evil.com|:123456',
     'peer-pair:evil.com\n:123456',
     'peer-pair::123456',
+    'peer-pair:https://evil.com/../etc:123456',
+    'peer-pair:192.168.1.10:4444/x:123456',
   ];
   for (const action of hostile) {
     assert.equal(parsePeerAction(action), null, `${action} must be refused`);
@@ -243,4 +243,23 @@ test('runPeerAction pairs with a computer on a port of its own, and always asser
     clearExtensionContext();
     fs.rmSync(storageDir, { recursive: true, force: true });
   }
+});
+
+test('parsePeerAction reads the address and code the way people type them', () => {
+  const want = { kind: 'pair', host: '192.168.1.10', code: '123456' };
+  assert.deepEqual(parsePeerAction('peer-pair:192.168.1.10:4444:123456'), want);
+  assert.deepEqual(parsePeerAction('peer-pair:https://192.168.1.10:4444/:123456'), want);
+  assert.deepEqual(parsePeerAction('peer-pair: 192.168.1.10 :123 456'), want);
+  assert.deepEqual(parsePeerAction('peer-pair:192.168.1.10:123-456'), want);
+  assert.deepEqual(parsePeerAction('peer-pair:１９２.168.1.10:１２３456'), want);
+  assert.deepEqual(parsePeerAction('peer-pair:Studio.Local:123456'), { kind: 'pair', host: 'studio.local', code: '123456' });
+  assert.equal(parsePeerAction('peer-pair:192168110:123456'), null);
+  assert.equal(parsePeerAction('peer-pair:192.168.1.10:12345'), null);
+});
+
+test('a refused pairing says what it read without the code itself', async () => {
+  const outcome = await runPeerAction('peer-pair:19216811:654321', 'en');
+  assert.equal(outcome.ok, false);
+  assert.match(outcome.message, /Read: address "19216811", code with 6 digits\./);
+  assert.doesNotMatch(outcome.message, /654321/);
 });

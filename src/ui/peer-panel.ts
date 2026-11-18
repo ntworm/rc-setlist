@@ -225,14 +225,28 @@ export function parsePeerAction(action: string): PeerAction | null {
   if (action === 'peer-unpair') return { kind: 'unpair' };
   if (action === 'peer-code') return { kind: 'code' };
   if (!action.startsWith(PAIR_PREFIX)) return null;
-  const rest = action.slice(PAIR_PREFIX.length);
-  const separator = rest.lastIndexOf(':');
-  if (separator <= 0) return null;
-  const host = rest.slice(0, separator);
-  const code = rest.slice(separator + 1);
+  const read = readPairInput(action.slice(PAIR_PREFIX.length));
+  if (!read) return null;
+  const { host, code } = read;
   if (!isValidPeerHost(host)) return null;
   if (!/^[0-9]{6}$/.test(code)) return null;
   return { kind: 'pair', host, code };
+}
+
+/**
+ * The address and the code as the operator meant them.
+ *
+ * The card shows the address of the second computer with its port, and people
+ * type what they read: a link with its scheme, the port, spaces in the code or digits
+ * from another keyboard layout. All of these name the same computer and code.
+ */
+export function readPairInput(rest: string): { host: string; code: string } | null {
+  const separator = rest.lastIndexOf(':');
+  if (separator <= 0) return null;
+  const code = rest.slice(separator + 1).normalize('NFKC').replace(/[\s.-]/g, '');
+  let host = rest.slice(0, separator).normalize('NFKC').replace(/^ +| +$/g, '').toLowerCase();
+  host = host.replace(/^https?:\/\//, '').replace(/\/$/, '').replace(/:[0-9]{1,5}$/, '');
+  return { host, code };
 }
 
 /**
@@ -252,11 +266,14 @@ function pairFailureText(host: string, detail: string, locale: UiLocale): string
 /**
  * The sentence shown when the address or the code was not accepted.
  */
-function invalidInputText(locale: UiLocale): string {
+function invalidInputText(action: string, locale: UiLocale): string {
+  const read = readPairInput(action.slice(PAIR_PREFIX.length));
+  const host = read ? read.host.slice(0, 64) : '';
+  const digits = read ? read.code.replace(/[^0-9]/g, '').length : 0;
+  const others = read ? read.code.length - digits : 0;
   const templates: Record<UiLocale, string> = {
-    en: 'That address or code was not accepted. The address is a plain IP or host name, and the code is six digits.',
-    'pt-BR':
-      'Esse endereço ou código não foi aceito. O endereço é um IP ou nome de host simples, e o código tem seis dígitos.',
+    en: `That address or code was not accepted. The address is a plain IP or host name, and the code is six digits. Read: address "${host}", code with ${digits} digits${others ? ` and ${others} other characters` : ''}.`,
+    'pt-BR': `Esse endereço ou código não foi aceito. O endereço é um IP ou nome de host simples, e o código tem seis dígitos. Lido: endereço "${host}", código com ${digits} dígitos${others ? ` e ${others} outros caracteres` : ''}.`,
   };
   return templates[locale];
 }
@@ -309,7 +326,7 @@ export async function runPeerAction(
   const parsed = parsePeerAction(action);
   if (!parsed) {
     return action.startsWith(PAIR_PREFIX)
-      ? { ok: false, message: invalidInputText(locale) }
+      ? { ok: false, message: invalidInputText(action, locale) }
       : { ok: false };
   }
   if (parsed.kind === 'code') {
