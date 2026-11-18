@@ -1,4 +1,4 @@
-RC SETLIST 1.1.0 — INSTALLATION KIT / KIT DE INSTALAÇÃO
+RC SETLIST 1.2.0 — INSTALLATION KIT / KIT DE INSTALAÇÃO
 ========================================================
 
 START HERE / COMECE AQUI

@@ -4,24 +4,30 @@ All notable public changes to Ableton RC Setlist are recorded here.
 
 ## [Unreleased]
 
+## [1.2.0] - 2026-11-18
+
 ### Added
 
-- **The second computer keeps itself on the beat**: the main computer sends
-  its playhead twice a second, and the second computer moves by whole beats
-  when a launch landed a bar late, starts when it missed a Play and stops when
-  it missed a Stop.
-- **Several slaves**: one master pairs several second computers; the Second
-  computer card lists each with its state and its own Unpair, and the bar at
-  the bottom of the panel says Master or Slave and who is connected.
-- **Bring from master**: a slave brings the active setlist of its master over
-  the link, as a new setlist.
+- **Several second computers**: one master pairs several slaves; the Second
+  computer card lists each with its state and its own Unpair, and every
+  transport command goes to all of them.
+- **Master and slave in the panel**: the bar at the bottom of the Live panel
+  says Master with how many slaves are connected, or Slave and whether the
+  master is talking; a slave remembers its master after a restart.
+- **The slave keeps the beat of the master**: the master sends its playhead
+  twice a second, and a slave moves by whole beats when a launch landed a bar
+  late, starts when it missed a Play and stops when it missed a Stop.
 - **Ready to pair**: a slave with a pairing code announces itself on the local
   network (UDP 4447), and the master lists it so the address is one click.
+- **Bring from master**: a slave brings the active setlist of its master over
+  the link, as a new setlist.
+- **Show mode**: a switch in the Stage Control top bar hides the setup
+  controls and keeps the active song pinned on every screen.
+- **Next Song Now and Previous Song Now**: MIDI and keyboard actions that jump
+  at once while playing, without waiting for the quantization grid.
+- **Time signature changes**: the bar display counts each stretch of the set in
+  its own time signature.
 - **Rename a package** of the Import list with a double click.
-
-### Changed
-
-- **Check OSC** runs from the OSC status in the bar at the bottom of the panel.
 
 ### Fixed
 
@@ -31,6 +37,15 @@ All notable public changes to Ableton RC Setlist are recorded here.
 - **Manage setlists** says why it is locked (not connected, read-only page,
   Live playing, Live Set changing) instead of always asking to stop Live, and a
   refused setlist command no longer leaves the window waiting.
+- **Pairing** accepts the address with its port and a code typed with spaces.
+- A relayed command is dropped only when the link is stalled.
+- A command sent again with the same id gets its saved status back.
+- Token files and `peer.json` stay owner-only, and user data is written
+  atomically.
+
+### Changed
+
+- **Check OSC** runs from the OSC status in the bar at the bottom of the panel.
 
 ## [1.1.0] - 2026-11-06
 
