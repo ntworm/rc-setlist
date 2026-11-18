@@ -193,6 +193,17 @@ export type ClientMessage =
       jumpPending: boolean;
       loopActive: boolean;
     })
+  | (ClientMessageBase & {
+      type: 'setlist_chunk';
+      /** The request the pieces belong to. */
+      requestId: string;
+      /** Which piece of the setlist this is. */
+      index: number;
+      /** How many pieces the setlist is sent in. */
+      total: number;
+      /** The text of this piece. */
+      data: string;
+    })
   | (ClientMessageBase & { type: 'reorder'; songTitles: string[] })
   | (ClientMessageBase & { type: 'save_lyrics'; song: string; text: string })
   | (ClientMessageBase & { type: 'click_preview'; bpm?: number; beats?: number })

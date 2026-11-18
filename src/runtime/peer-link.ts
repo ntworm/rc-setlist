@@ -26,6 +26,7 @@ import {
   payloadFields,
   peerCommandId,
 } from './peer-message.js';
+import { answerSetlistRequest } from './peer-setlist.js';
 import {
   aggregatePeerStatus,
   peerStatusRows,
@@ -229,6 +230,11 @@ function handlePeerMessage(target: PeerLink, data: WebSocket.Data): void {
   }
   if (message.type === 'state') {
     updateMarkersMatch(target, message.state);
+    return;
+  }
+  if (message.type === 'setlist_request' && typeof message.requestId === 'string') {
+    // The second computer asks for the setlist of this one.
+    void answerSetlistRequest(message.requestId, (msg) => sendToPeer(target, msg));
     return;
   }
   if (message.type === 'error') handlePeerError(target, message.code);

@@ -17,6 +17,8 @@ const MAX_SONG_NOTES_LENGTH = 200;
 const MAX_SONG_TITLE_LENGTH = 255;
 const MAX_LYRICS_LENGTH = 96 * 1024;
 const MAX_REORDER_SONGS = 4096;
+const MAX_SETLIST_CHUNKS = 600;
+const MAX_SETLIST_CHUNK_CHARS = 48 * 1024 + 16;
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -192,6 +194,26 @@ export function decodeClientMessage(input: unknown): DecodeResult {
         tempo: input.tempo,
         jumpPending: input.jumpPending,
         loopActive: input.loopActive,
+      });
+    case 'setlist_chunk':
+      if (typeof input.requestId !== 'string' || !/^[0-9a-f]{1,64}$/.test(input.requestId)) {
+        return fail('Invalid requestId for setlist_chunk.');
+      }
+      if (!isFiniteInteger(input.index, 0, MAX_SETLIST_CHUNKS)) {
+        return fail('Invalid index for setlist_chunk.');
+      }
+      if (!isFiniteInteger(input.total, 0, MAX_SETLIST_CHUNKS)) {
+        return fail('Invalid total for setlist_chunk.');
+      }
+      if (typeof input.data !== 'string' || input.data.length > MAX_SETLIST_CHUNK_CHARS) {
+        return fail('Invalid data for setlist_chunk.');
+      }
+      return success({
+        type: 'setlist_chunk',
+        requestId: input.requestId,
+        index: input.index,
+        total: input.total,
+        data: input.data,
       });
     case 'reorder':
       if (

@@ -38,7 +38,8 @@ export function isPeerCommandType(type: string): boolean {
     type === 'handshake' ||
     type === 'sync_confirm' ||
     type === 'jump_time' ||
-    type === 'peer_clock'
+    type === 'peer_clock' ||
+    type === 'setlist_chunk'
   )
     return true;
   return PEER_RELAY_TYPES.has(type) && type !== 'jump';
@@ -65,6 +66,12 @@ export function peerCommandRejection(
     return {
       code: 'unauthorized',
       message: 'Unauthorized: only a peer connection may send its clock.',
+    };
+  }
+  if (msg.type === 'setlist_chunk' && !isPeer) {
+    return {
+      code: 'unauthorized',
+      message: 'Unauthorized: only a peer connection may send a setlist.',
     };
   }
   if (isPeer && !isPeerCommandType(msg.type)) {

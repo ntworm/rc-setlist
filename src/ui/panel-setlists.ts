@@ -24,9 +24,9 @@ import {
   importPackage,
   listPackages,
   packagesDirectory,
-  renamePackage,
   type PackageFileEntry,
 } from '../core/setlist-package.js';
+import { renamePackage } from '../core/package-rename.js';
 import type { PanelEnvelope } from './panel-session.js';
 
 /** What the page says after an action. */

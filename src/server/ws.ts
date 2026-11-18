@@ -453,6 +453,13 @@ export class SetlistWSServer extends EventEmitter {
     return count;
   }
 
+  /**
+   * The open connections of the paired computers.
+   */
+  public peerSockets(): AugmentedWebSocket[] {
+    return [...this.clients].filter((ws) => ws.readyState === WebSocket.OPEN && ws.isPeer === true);
+  }
+
   public stop(): void {
     if (this.heartbeatInterval) {
       this.clearIntervalFn(this.heartbeatInterval);

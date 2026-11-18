@@ -135,30 +135,6 @@ export async function listPackages(dir: string): Promise<PackageFileEntry[]> {
 }
 
 /**
- * Reads a file, or nothing when it is not there.
- */
-async function readOptional(file: string): Promise<string | null> {
-  try {
-    return await fs.readFile(file, 'utf8');
-  } catch {
-    return null;
-  }
-}
-
-/**
- * Reads a list of strings, or nothing when the text is not one.
- */
-function readOrder(text: string | null): string[] | null {
-  if (text === null) return null;
-  try {
-    const value: unknown = JSON.parse(text);
-    return isOrder(value) ? value : null;
-  } catch {
-    return null;
-  }
-}
-
-/**
  * Whether a value is a custom order the setlist can load.
  */
 function isOrder(value: unknown): value is string[] {
@@ -193,6 +169,30 @@ async function readLyrics(dir: string): Promise<{ file: string; text: string }[]
     }
   }
   return lyrics;
+}
+
+/**
+ * Reads a file, or nothing when it is not there.
+ */
+async function readOptional(file: string): Promise<string | null> {
+  try {
+    return await fs.readFile(file, 'utf8');
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Reads a list of strings, or nothing when the text is not one.
+ */
+function readOrder(text: string | null): string[] | null {
+  if (text === null) return null;
+  try {
+    const value: unknown = JSON.parse(text);
+    return isOrder(value) ? value : null;
+  } catch {
+    return null;
+  }
 }
 
 /**
@@ -241,6 +241,13 @@ function stamp(date: Date): string {
 }
 
 /**
+ * The package of a list of setlists.
+ */
+function packageOf(setlists: PackagedSetlist[], projectName: string, at: string): SetlistPackage {
+  return { format: PACKAGE_FORMAT, version: 1, exportedAt: at, projectName, setlists };
+}
+
+/**
  * Writes every setlist of the project into one package of the folder.
  *
  * Returns the name of the file it wrote.
@@ -252,16 +259,9 @@ export async function exportPackage(
   const now = options.now ?? new Date();
   const setlists: PackagedSetlist[] = [];
   for (const profile of manager.list()) setlists.push(await readSetlist(manager, profile));
-  const pack: SetlistPackage = {
-    format: PACKAGE_FORMAT,
-    version: 1,
-    exportedAt: now.toISOString(),
-    projectName: options.projectName,
-    setlists,
-  };
+  const text = JSON.stringify(packageOf(setlists, options.projectName, now.toISOString()), null, 2);
   await fs.mkdir(options.dir, { recursive: true });
   const base = `${fileSafe(options.projectName)} ${stamp(now)}`;
-  const text = JSON.stringify(pack, null, 2);
   // A package the import would refuse is never written.
   if (Buffer.byteLength(text, 'utf8') > MAX_PACKAGE_BYTES) {
     throw new PackageError('The setlists are too large for one package.');
@@ -278,36 +278,20 @@ export async function exportPackage(
 }
 
 /**
- * Renames a package file of the folder: the name is the one without the
- * extension, 1 to 120 characters, written as a file name may be written.
+ * The package of one setlist, as the text of a package.
+ *
+ * It is the package the export writes, with that one setlist in it: the
+ * second computer pulls the setlist of the first one over the link.
  */
-export async function renamePackage(dir: string, file: string, newName: string): Promise<string> {
-  const name = typeof newName === 'string' ? newName.normalize('NFKC').trim() : '';
-  // eslint-disable-next-line no-control-regex -- a file name holds no control character.
-  const unsafe = /[\\/:*?"<>|\u0000-\u001f\u007f-\u009f]/;
-  if (!isPackageFileName(file) || !name || name.length > 120 || unsafe.test(name)) {
-    throw new PackageError('Invalid package name.');
-  }
-  const target = `${name}${PACKAGE_EXTENSION}`;
-  if (target === file) return file;
-  if (await exists(path.join(dir, target))) {
-    throw new PackageError('A package with that name is already in the folder.');
-  }
-  const source = path.join(dir, file);
-  const stat = await fs.stat(source).catch(() => null);
-  if (!stat || !stat.isFile()) throw new PackageError('The package is not in the folder.');
-  await fs.rename(source, path.join(dir, target));
-  return target;
-}
-
-/**
- * The name of a setlist, read out of a package.
- */
-function parseSetlistName(value: unknown): string {
-  if (typeof value !== 'string' || !value.trim() || value.length > 200) {
-    throw new PackageError('A setlist has no valid name.');
-  }
-  return value.trim();
+export async function exportSetlistText(
+  manager: PackageProfileManager,
+  profileId: string,
+  projectName: string,
+): Promise<string> {
+  const profile = manager.list().find((candidate) => candidate.id === profileId);
+  if (!profile) throw new PackageError('The setlist is not in the project.');
+  const setlists = [await readSetlist(manager, profile)];
+  return JSON.stringify(packageOf(setlists, projectName, new Date().toISOString()), null, 2);
 }
 
 /**
@@ -320,42 +304,33 @@ function parseSetlistOrder(value: unknown, name: string): string[] | null {
 }
 
 /**
- * One lyric of a setlist, read out of a package.
- */
-function parseLyric(value: unknown, name: string): { file: string; text: string } {
-  const lyric = (value ?? {}) as Record<string, unknown>;
-  if (typeof lyric.file !== 'string' || !LYRIC_FILE.test(lyric.file)) {
-    throw new PackageError(`A lyric of "${name}" has an invalid file name.`);
-  }
-  if (typeof lyric.text !== 'string' || lyric.text.length > MAX_LYRIC_BYTES) {
-    throw new PackageError(`A lyric of "${name}" is malformed.`);
-  }
-  return { file: path.basename(lyric.file), text: lyric.text };
-}
-
-/**
- * The lyrics of a setlist, read out of a package.
- */
-function parseSetlistLyrics(value: unknown, name: string): { file: string; text: string }[] {
-  const lyrics = value ?? [];
-  if (!Array.isArray(lyrics) || lyrics.length > MAX_LYRICS) {
-    throw new PackageError(`The lyrics of "${name}" are malformed.`);
-  }
-  return lyrics.map((entry: unknown) => parseLyric(entry, name));
-}
-
-/**
  * Reads one setlist of a package, refusing what the extension cannot load.
  */
 function parseSetlist(value: unknown): PackagedSetlist {
   if (!value || typeof value !== 'object') throw new PackageError('A setlist is malformed.');
   const record = value as Record<string, unknown>;
-  const name = parseSetlistName(record.name);
+  if (typeof record.name !== 'string' || !record.name.trim() || record.name.length > 200) {
+    throw new PackageError('A setlist has no valid name.');
+  }
+  const name = record.name.trim();
+  const lyrics = record.lyrics ?? [];
+  if (!Array.isArray(lyrics) || lyrics.length > MAX_LYRICS) {
+    throw new PackageError(`The lyrics of "${name}" are malformed.`);
+  }
   return {
     name,
     customOrder: parseSetlistOrder(record.customOrder, name),
     songBook: record.songBook ?? null,
-    lyrics: parseSetlistLyrics(record.lyrics, name),
+    lyrics: lyrics.map((entry: unknown) => {
+      const lyric = (entry ?? {}) as Record<string, unknown>;
+      if (typeof lyric.file !== 'string' || !LYRIC_FILE.test(lyric.file)) {
+        throw new PackageError(`A lyric of "${name}" has an invalid file name.`);
+      }
+      if (typeof lyric.text !== 'string' || lyric.text.length > MAX_LYRIC_BYTES) {
+        throw new PackageError(`A lyric of "${name}" is malformed.`);
+      }
+      return { file: path.basename(lyric.file), text: lyric.text };
+    }),
   };
 }
 
@@ -418,9 +393,7 @@ function freeName(manager: PackageProfileManager, name: string): string {
 /**
  * Brings the setlists of a package of the folder into the project.
  *
- * The setlists join the ones the project has: none is replaced, and a name
- * that is taken gets a number. The active setlist does not change. Returns
- * how many setlists came in.
+ * Returns how many setlists came in.
  */
 export async function importPackage(
   manager: PackageProfileManager,
@@ -431,7 +404,25 @@ export async function importPackage(
   const stat = await fs.stat(full).catch(() => null);
   if (!stat || !stat.isFile()) throw new PackageError('The package is not in the folder.');
   if (stat.size > MAX_PACKAGE_BYTES) throw new PackageError('The package is too large.');
-  const setlists = parsePackage(await fs.readFile(full, 'utf8'));
+  const names = await importPackageText(manager, await fs.readFile(full, 'utf8'));
+  return names.count;
+}
+
+/**
+ * Brings the setlists of a package of text into the project.
+ *
+ * The setlists join the ones the project has: none is replaced, and a name
+ * that is taken gets a number. The active setlist does not change. Returns
+ * the names of the setlists that came in.
+ */
+export async function importPackageText(
+  manager: PackageProfileManager,
+  text: string,
+): Promise<{ count: number; names: string[] }> {
+  if (Buffer.byteLength(text, 'utf8') > MAX_PACKAGE_BYTES) {
+    throw new PackageError('The package is too large.');
+  }
+  const setlists = parsePackage(text);
   // Everything is read and checked before the first setlist is created.
   const books = setlists.map((setlist) =>
     setlist.songBook === null ? null : parseSongBook(setlist.songBook),
@@ -453,7 +444,7 @@ export async function importPackage(
     }
     throw err;
   }
-  return setlists.length;
+  return { count: setlists.length, names: created.map((profile) => profile.name) };
 }
 
 /**

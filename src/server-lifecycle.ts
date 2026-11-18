@@ -43,6 +43,7 @@ import { executeCommandAction } from './commands/handlers/index.js';
 import { immediateJumpRefused } from './commands/handlers/transport.js';
 import { peerCommandRejection, resolvePeerJump } from './commands/handlers/peer.js';
 import { relayToPeer, startPeerLinks, stopPeerLink } from './runtime/peer-link.js';
+import { receiveSetlistChunk } from './runtime/peer-setlist.js';
 import { handlePeerClock, notePeerCommand } from './runtime/peer-follow-runtime.js';
 import { getOrGeneratePeerToken } from './runtime/pairing.js';
 import { startEventLoopWatch, warnIfSlow } from './runtime/event-loop-watch.js';
@@ -583,6 +584,12 @@ export async function startServer(options: StartServerOptions = {}): Promise<voi
       // unless this computer has fallen off the main computer's beat.
       if (msg.type === 'peer_clock') {
         handlePeerClock(msg);
+        return;
+      }
+      // The setlist of the main computer travels in pieces: it is a setlist
+      // of its own here, not a command of this computer.
+      if (msg.type === 'setlist_chunk') {
+        receiveSetlistChunk(msg);
         return;
       }
       if (isPeerConnection) notePeerCommand(msg.type);
