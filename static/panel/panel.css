@@ -1036,6 +1036,33 @@ select {
   color: var(--p-warn);
 }
 
+.status-osc {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+
+.status-osc:hover:not(:disabled) .status-text,
+.status-osc:focus-visible .status-text {
+  text-decoration: underline;
+}
+
+.status-osc:focus-visible {
+  outline: 1px solid var(--p-text-2);
+  outline-offset: 2px;
+}
+
+.status-osc:disabled {
+  cursor: default;
+}
+
 .status-port {
   color: var(--p-text-3);
 }

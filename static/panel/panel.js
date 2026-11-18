@@ -70,11 +70,11 @@
     const start = el('btnStart');
     const stop = el('btnStop');
     const restart = el('btnRestart');
-    const diagnose = el('btnDiagnoseOsc');
+    const oscCheck = el('btnOscCheck');
     if (start) start.disabled = isRunning;
     if (stop) stop.disabled = !isRunning;
     if (restart) restart.disabled = !isRunning;
-    if (diagnose) diagnose.disabled = !isRunning;
+    if (oscCheck) oscCheck.disabled = !isRunning;
   }
 
   /**

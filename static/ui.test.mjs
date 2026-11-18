@@ -354,7 +354,7 @@ test('Static UI Panel: separates server status from actionable OSC diagnostics',
     .map((file) => fs.readFileSync(path.join(__dirname, 'panel', file), 'utf8'))
     .join('\n');
 
-  for (const marker of ['oscStatusDot', 'oscStatusText', 'btnDiagnoseOsc']) {
+  for (const marker of ['oscStatusDot', 'oscStatusText', 'btnOscCheck']) {
     assert.match(panelHtml, new RegExp(`id="${marker}"`));
   }
   for (const state of ['stopped', 'port-conflict', 'no-reply', 'responding', 'stale']) {
