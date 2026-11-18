@@ -32,6 +32,7 @@ import {
 import { startPeerLink, startPeerLinks } from '../runtime/peer-link.js';
 import { bridgeState, readPeerRole, type PeerRole } from '../runtime/bridge-state.js';
 import { getLanAddresses, pickLanIps } from '../util/helpers.js';
+import { roleText } from './peer-role-text.js';
 import type { PeerLinkStatus, PeerStatus } from '../types.js';
 
 /** The prefix every peer action carries. */
@@ -274,9 +275,19 @@ export function parsePeerAction(action: string): PeerAction | null {
 export function readPairInput(rest: string): { host: string; code: string } | null {
   const separator = rest.lastIndexOf(':');
   if (separator <= 0) return null;
-  const code = rest.slice(separator + 1).normalize('NFKC').replace(/[\s.-]/g, '');
-  let host = rest.slice(0, separator).normalize('NFKC').replace(/^ +| +$/g, '').toLowerCase();
-  host = host.replace(/^https?:\/\//, '').replace(/\/$/, '').replace(/:[0-9]{1,5}$/, '');
+  const code = rest
+    .slice(separator + 1)
+    .normalize('NFKC')
+    .replace(/[\s.-]/g, '');
+  let host = rest
+    .slice(0, separator)
+    .normalize('NFKC')
+    .replace(/^ +| +$/g, '')
+    .toLowerCase();
+  host = host
+    .replace(/^https?:\/\//, '')
+    .replace(/\/$/, '')
+    .replace(/:[0-9]{1,5}$/, '');
   return { host, code };
 }
 
@@ -436,25 +447,6 @@ export interface PeerPanelOptions {
   locale?: UiLocale;
   /** The address other computers reach this one at. */
   localIp?: string;
-}
-
-/** The sentence the panel shows for the role of this computer. */
-function roleText(role: PeerRole, locale: UiLocale, peers: readonly PeerPanelPeer[]): string {
-  if (role === 'none') return '';
-  const up = peers.filter((peer) => peer.connected).length;
-  if (role === 'master') {
-    const master: Record<UiLocale, string> = {
-      en: `Master \xB7 ${up} of ${peers.length} slaves connected`,
-      'pt-BR': `Master \xB7 ${up} de ${peers.length} slaves conectados`,
-    };
-    return master[locale];
-  }
-  const masterConnected = (bridgeState.wsServer?.peerConnectionCount() ?? 0) > 0;
-  const slave: Record<UiLocale, string> = {
-    en: masterConnected ? 'Slave \xB7 connected to the master' : 'Slave \xB7 master not connected',
-    'pt-BR': masterConnected ? 'Slave \xB7 conectado ao master' : 'Slave \xB7 master desconectado',
-  };
-  return slave[locale];
 }
 
 /**

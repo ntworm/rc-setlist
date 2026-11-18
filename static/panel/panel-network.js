@@ -329,17 +329,15 @@
   }
 
   /**
-   * The code of the second computer and the buttons of its card.
+   * The code of the second computer and the button that asks for it.
    */
   function renderPeerCode(peer) {
     const activeCode = el('peerActiveCode');
     const codeHint = el('peerCodeHint');
     const codeButton = el('btnPeerCode');
-    const unpairButton = el('btnPeerUnpair');
     if (activeCode) activeCode.textContent = peer.code || '';
     if (codeHint) codeHint.textContent = peer.codeHint || '';
     if (codeButton) codeButton.disabled = !peer.canGenerateCode;
-    if (unpairButton) unpairButton.disabled = !peer.paired;
   }
 
   /**

@@ -347,7 +347,9 @@
               Show
             </button>
           </div>
+          <div class="hint" id="peerMasterLine" hidden></div>
           <div class="hint" id="peerCodeHint"></div>
+          <ul class="peer-list" id="peerList" hidden></ul>
           <div class="fold-body" id="peerDetails" hidden>
             <div class="peer-field-row">
               <label class="peer-field">
@@ -381,15 +383,6 @@
                 data-i18n="panel.peerPair"
               >
                 Pair
-              </button>
-              <button
-                class="btn"
-                id="btnPeerUnpair"
-                type="button"
-                data-rc-action="peer-unpair"
-                data-i18n="panel.peerUnpair"
-              >
-                Unpair
               </button>
             </div>
             <div class="peer-local-row">
@@ -473,6 +466,8 @@
           <span id="oscStatusText" class="status-text">Start the server to test AbletonOSC</span>
         </button>
         <span id="oscBridgeText" class="status-port" hidden></span>
+        <span class="status-sep" id="peerRoleSep" aria-hidden="true" hidden>&middot;</span>
+        <span id="peerRoleText" class="status-text" hidden></span>
       </span>
       <span class="tab-bar-gap"></span>
       <button

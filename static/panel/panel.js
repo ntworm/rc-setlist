@@ -258,6 +258,88 @@
   }
 
   /**
+   * The computers paired with this one, one row each.
+   *
+   * The card of the network tab says how the link is; this says who is on
+   * the other side of it. Every computer of the list has its own Unpair:
+   * one of them leaves, the others stay.
+   */
+  function renderPeerList(peer) {
+    const list = el('peerList');
+    if (!list) return;
+    const peers = peer.peers || [];
+    list.textContent = '';
+    list.hidden = peers.length === 0;
+    for (const row of peers) {
+      const item = document.createElement('li');
+      const address = document.createElement('span');
+      address.className = 'peer-list-address';
+      address.textContent = `${row.host}:${row.port}`;
+      const status = document.createElement('span');
+      const good = Boolean(row.connected) && Boolean(row.markersMatch);
+      status.className = `peer-list-status ${good ? 'active' : 'warning'}`;
+      status.textContent = row.statusText || '';
+      const unpair = document.createElement('button');
+      unpair.className = 'btn small';
+      unpair.type = 'button';
+      unpair.textContent = shell.text('panel.peerUnpair');
+      unpair.addEventListener('click', () => {
+        shell.sendAction(`peer-unpair:${row.host}:${row.port}`);
+      });
+      item.append(address, status, unpair);
+      list.appendChild(item);
+    }
+  }
+
+  /**
+   * The role of this computer in the pair, and the master it follows.
+   *
+   * The footer says the role when there is one: nothing about the role of a
+   * computer that is paired with nobody.
+   */
+  function renderPeerRole(peer) {
+    const words = peer.roleText || '';
+    const text = el('peerRoleText');
+    const separator = el('peerRoleSep');
+    if (text) {
+      text.textContent = words;
+      text.hidden = !words;
+      text.className = `status-text ${peerRoleGood(peer) ? 'active' : 'warning'}`;
+    }
+    if (separator) separator.hidden = !words;
+    const line = el('peerMasterLine');
+    if (line) {
+      const address = peer.role === 'slave' ? peer.masterAddress || '' : '';
+      line.textContent = address ? shell.text('panel.peerSlaveOf', { address }) : '';
+      line.hidden = !address;
+    }
+  }
+
+  /**
+   * Whether the role of this computer is in good shape.
+   *
+   * The master is in good shape when every slave is talking; the slave is in
+   * good shape when the master is talking to it.
+   */
+  function peerRoleGood(peer) {
+    if (peer.role === 'master') {
+      const peers = peer.peers || [];
+      return peers.length > 0 && peers.every((row) => Boolean(row.connected));
+    }
+    if (peer.role === 'slave') return peer.slaveConnected === true;
+    return false;
+  }
+
+  /**
+   * The second computer: the computers behind it, and the role of this one.
+   */
+  function renderPeers() {
+    const peer = window.INITIAL_PEER || {};
+    renderPeerList(peer);
+    renderPeerRole(peer);
+  }
+
+  /**
    * Asks the extension to pair a second computer.
    */
   function sendPeerPair() {
@@ -315,6 +397,7 @@
     renderToggles();
     renderNotice();
     renderLanguage();
+    renderPeers();
     Panel.main.render();
     Panel.project.render();
     Panel.network.render();
