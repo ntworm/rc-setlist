@@ -256,8 +256,15 @@ test('a phone on the second computer drives the main one, and each computer runs
       statuses.some((m) => m.status !== 'sent' && m.status !== 'failed'),
       'the phone sees its own command settle on the second computer',
     );
+  } finally {
+    phone.close();
+  }
+});
 
-    // A jump goes up by beat: the songs sit in another order here.
+test('a jump of a phone on the second computer goes up by beat and lands once on each', async () => {
+  const phone = await connectSynced(childPort, childToken);
+  try {
+    // The songs sit in another order here, so the jump goes up by beat.
     const jumpMainBefore = mainOscCalls.length;
     const jumpChildBefore = readLogCalls(childLogFile).length;
     phone.send(JSON.stringify({ type: 'jump', songIndex: 0, commandId: 'phone-jump' }));
