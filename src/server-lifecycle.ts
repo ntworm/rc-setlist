@@ -52,6 +52,7 @@ import {
 } from './runtime/peer-link.js';
 import {
   adoptUpstreamEcho,
+  failAdoptedEcho,
   forwardToMaster,
   handleUpstreamRefusal,
   noteRanWithoutMaster,
@@ -715,6 +716,13 @@ export async function startServer(options: StartServerOptions = {}): Promise<voi
       const incoming = isPeerConnection ? adoptUpstreamEcho(msg) : msg;
       const peerJump = resolvePeerJump(incoming, bridgeState.manager.getState());
       if (peerJump.kind === 'error') {
+        // The phone that handed the jump up learns it did not land here.
+        if (incoming !== msg && incoming.commandId) {
+          failAdoptedEcho(
+            incoming.commandId,
+            `The jump did not land on this computer: ${peerJump.message}`,
+          );
+        }
         ws.send(
           JSON.stringify({
             type: 'error',

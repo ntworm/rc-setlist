@@ -282,3 +282,18 @@ test('a try that ends after the stop changes nothing', async () => {
   await control.settle();
   realAddresses();
 });
+
+test('only addresses on a network of this computer are tried', async () => {
+  const control = controlledProbe([]);
+  freshAddresses(control.probe);
+  handleDiscoveryDatagram(
+    announcement({ hosts: ['203.0.113.5', '198.51.100.255', '198.51.100.38'] }),
+    '198.51.100.200',
+    NOW,
+  );
+  const [entry] = listDiscoveredPeerEntries(NOW);
+  assert.deepEqual(entry.addresses, ['198.51.100.200', '198.51.100.38']);
+  assert.ok(!control.seen.some((seen) => seen.startsWith('203.0.113.5')), 'no knock elsewhere');
+  await control.settle();
+  realAddresses();
+});

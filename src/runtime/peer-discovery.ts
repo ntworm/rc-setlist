@@ -162,6 +162,13 @@ function sameSubnet(address: string, local: LocalInterface): boolean {
     return (byte & bits) === ((other[index] ?? 0) & bits);
   });
 }
+/** Whether an address sits on a network of this computer, and is not its broadcast. */
+function onLocalSubnet(address: string): boolean {
+  return localInterfaces().some(
+    (local) =>
+      sameSubnet(address, local) && broadcastAddress(local.address, local.netmask) !== address,
+  );
+}
 /** The interfaces of this computer that face a network. */
 function localInterfaces(): LocalInterface[] {
   if (interfacesOverride) return interfacesOverride;
@@ -243,6 +250,9 @@ function readHosts(value: unknown): string[] {
     if (typeof entry !== 'string') continue;
     const usable = usableHost(entry);
     if (!usable || own.includes(usable) || hosts.includes(usable)) continue;
+    // Only an address on a network of this computer is tried: a datagram
+    // nobody signed must not send this computer knocking elsewhere.
+    if (!onLocalSubnet(usable)) continue;
     hosts.push(usable);
     if (hosts.length >= MAX_HOSTS) break;
   }

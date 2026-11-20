@@ -6,8 +6,13 @@
 // that tells which address of a computer answers.
 
 import assert from 'node:assert/strict';
+import * as fs from 'node:fs';
 import { createServer } from 'node:net';
-import { test, afterEach } from 'node:test';
+import { tmpdir } from 'node:os';
+import * as path from 'node:path';
+import { test, after, afterEach, before } from 'node:test';
+import { clearExtensionContext, setExtensionContext } from '../src/context.ts';
+import { clearPeerConfig, writeSlaveRole } from '../src/preferences.ts';
 import { bridgeState } from '../src/runtime/bridge-state.ts';
 import { peerCommandId } from '../src/runtime/peer-message.ts';
 import {
@@ -39,6 +44,19 @@ function fakeServer({ masterInSync = true } = {}) {
 }
 
 const saved = { wsServer: bridgeState.wsServer, commandBus: bridgeState.commandBus };
+let storageDir = '';
+
+before(() => {
+  // This computer is the second one: it handed out its code to a main one.
+  storageDir = fs.mkdtempSync(path.join(tmpdir(), 'rc-upstream-'));
+  setExtensionContext({ environment: { storageDirectory: storageDir } });
+  writeSlaveRole({ masterAddress: '192.0.2.1', pairedAt: new Date(0).toISOString() });
+});
+
+after(() => {
+  clearExtensionContext();
+  fs.rmSync(storageDir, { recursive: true, force: true });
+});
 
 afterEach(() => {
   resetPeerUpstream();
@@ -77,6 +95,36 @@ test('without a main computer in sync, or for a command that stays here, nothing
   assert.deepEqual(server.sent, []);
 });
 
+test('a link with no room fails the command instead of running it here alone', () => {
+  const server = fakeServer();
+  server.peerSockets()[0].bufferedAmount = 1024 * 1024;
+  bridgeState.wsServer = server;
+  bridgeState.commandBus = null;
+  assert.equal(forwardToMaster({ type: 'play' }, 'phone-busy'), true, 'taken care of');
+  assert.deepEqual(server.sent, [], 'nothing went up');
+  const failed = server.broadcasts.find((m) => m.status === 'failed');
+  assert.equal(failed?.commandId, 'phone-busy');
+});
+
+test('a main computer hands nothing up, even to a computer it was once the second of', () => {
+  const server = fakeServer();
+  bridgeState.wsServer = server;
+  bridgeState.commandBus = null;
+  writeSlaveRole({ masterAddress: '192.0.2.1', pairedAt: new Date(0).toISOString() });
+  fs.writeFileSync(
+    path.join(storageDir, 'peer.json'),
+    JSON.stringify({
+      peers: [{ host: '192.0.2.9', port: 4444, peerToken: 't', fingerprint: 'f' }],
+    }),
+  );
+  try {
+    assert.equal(forwardToMaster({ type: 'play' }, 'master-play'), false);
+    assert.deepEqual(server.sent, []);
+  } finally {
+    clearPeerConfig();
+  }
+});
+
 test('a refusal of the main computer settles the command of the phone as failed', () => {
   const server = fakeServer();
   bridgeState.wsServer = server;
@@ -102,6 +150,9 @@ test('a command the main computer never sends back fails after three seconds', a
   assert.equal(failed?.commandId, 'phone-lost');
   assert.equal(failed?.reason, 'timeout');
   assert.match(server.logs[0].message, /did not answer/);
+  // The main computer ran it after all: the late echo still takes the id of the phone.
+  const lateEcho = adoptUpstreamEcho({ type: 'refresh', commandId: peerCommandId('phone-lost') });
+  assert.equal(lateEcho.commandId, 'phone-lost');
 });
 
 test('the probe tells an address that answers from one that does not', async () => {

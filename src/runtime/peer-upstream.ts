@@ -23,9 +23,13 @@ import type { AugmentedWebSocket, ClientMessage, ShowCommand } from '../types.js
 /** How long the main computer has to send a command back, and how many may wait. */
 const UPSTREAM_TIMEOUT_MS = 3000;
 const MAX_PENDING = 64;
+/** How long a command that timed out still takes its own id when it comes back late. */
+const LATE_ECHO_MS = 60_000;
 
 /** The commands handed up, by the id the main computer sends them back with. */
 const pending = new Map<string, { original: string; timer: NodeJS.Timeout }>();
+/** The commands that timed out: the main computer may still have run them. */
+const late = new Map<string, { original: string; at: number }>();
 
 /** What the main computer answers when it refuses a command handed up to it. */
 export interface UpstreamRefusal {
@@ -60,46 +64,81 @@ function forget(key: string): string | null {
   return entry.original;
 }
 
-/** Whether this computer would refuse the command itself, or cannot send it now. */
-function refusedHere(msg: ClientMessage, socket: AugmentedWebSocket): boolean {
-  if (!canWriteNow(socket, msg.type)) return true;
+/**
+ * Whether this computer refuses the command itself. Such a command takes the
+ * path it always took here, and is refused there the same way.
+ */
+function refusedHere(msg: ClientMessage): boolean {
   if (bridgeState.commandBus?.wouldRejectForSafety(msg.type)) return true;
-  if (bridgeState.profileScopeSwitching) return true;
   return msg.type === 'jump' && immediateJumpRefused(msg);
 }
 
 /**
+ * The link a command of this type goes up, when this computer is a second
+ * computer whose main computer is there: a computer that is the main one
+ * itself hands nothing up, even to a computer it was once the second of.
+ */
+function upstreamSocket(type: string): AugmentedWebSocket | null {
+  if (!PEER_RELAY_TYPES.has(type)) return null;
+  if (readPeerRole().role !== 'slave') return null;
+  return masterSocket();
+}
+
+/** Remembers a command that timed out, so a late echo still takes its id. */
+function rememberLate(key: string, original: string, now: number): void {
+  for (const [lateKey, entry] of late) {
+    if (now - entry.at >= LATE_ECHO_MS || late.size >= MAX_PENDING) late.delete(lateKey);
+  }
+  late.set(key, { original, at: now });
+}
+
+/** Sends the command up and starts the clock it has to come back within. */
+function sendUp(socket: AugmentedWebSocket, msg: ClientMessage, commandId: string): boolean {
+  const built = buildPeerMessage({ commandId, type: msg.type, payload: msg } as ShowCommand);
+  if (!built) return false;
+  socket.send(JSON.stringify({ type: 'peer_upstream', command: { ...built, commandId } }));
+  const key = peerCommandId(commandId);
+  const timer = setTimeout(() => {
+    if (forget(key) === null) return;
+    rememberLate(key, commandId, Date.now());
+    settleFailed(commandId, 'timeout', 'The main computer did not answer in time.');
+  }, UPSTREAM_TIMEOUT_MS);
+  timer.unref?.();
+  pending.set(key, { original: commandId, timer });
+  bridgeState.wsServer?.broadcast({ type: 'command_status', commandId, status: 'sent' });
+  return true;
+}
+
+/**
  * Hands a command of a phone or of the panel up to the main computer.
- * Returns true when the main computer has it, and false when it must run
- * here as before. Never throws.
+ *
+ * Returns true when the command is taken care of: it went up, or the link
+ * to the main computer could not carry it and the command failed here
+ * rather than run on this computer alone. Returns false when it must run
+ * here as before: no main computer, or a command this computer refuses
+ * anyway. Never throws.
  */
 export function forwardToMaster(msg: ClientMessage, commandId: string): boolean {
+  const socket = upstreamSocket(msg.type);
+  if (!socket) return false;
+  // A retry of a command already handed up waits for the first one.
+  if (pending.has(peerCommandId(commandId))) return true;
+  if (refusedHere(msg)) return false;
   try {
-    if (!PEER_RELAY_TYPES.has(msg.type)) return false;
-    const socket = masterSocket();
-    if (!socket) return false;
-    const key = peerCommandId(commandId);
-    // A retry of a command already handed up waits for the first one.
-    if (pending.has(key)) return true;
-    if (pending.size >= MAX_PENDING || refusedHere(msg, socket)) return false;
-    const built = buildPeerMessage({ commandId, type: msg.type, payload: msg } as ShowCommand);
-    if (!built) return false;
-    socket.send(JSON.stringify({ type: 'peer_upstream', command: { ...built, commandId } }));
-    const timer = setTimeout(() => {
-      if (forget(key) === null) return;
-      settleFailed(
-        commandId,
-        'timeout',
-        'The main computer did not answer; the command did not run.',
-      );
-    }, UPSTREAM_TIMEOUT_MS);
-    timer.unref?.();
-    pending.set(key, { original: commandId, timer });
-    bridgeState.wsServer?.broadcast({ type: 'command_status', commandId, status: 'sent' });
-    return true;
+    if (pending.size < MAX_PENDING && canWriteNow(socket, msg.type)) {
+      if (sendUp(socket, msg, commandId)) return true;
+      // A jump to a marker this computer does not have fails here as before.
+      if (msg.type === 'jump') return false;
+    }
   } catch {
-    return false;
+    // The link broke under the send: the command fails below.
   }
+  settleFailed(
+    commandId,
+    'execution_failed',
+    'The link to the main computer is busy; the command did not run.',
+  );
+  return true;
 }
 
 /**
@@ -108,8 +147,18 @@ export function forwardToMaster(msg: ClientMessage, commandId: string): boolean 
  */
 export function adoptUpstreamEcho(msg: ClientMessage): ClientMessage {
   if (!msg.commandId) return msg;
-  const original = forget(msg.commandId);
+  let original = forget(msg.commandId);
+  if (original === null) {
+    // A late echo: the main computer ran it, so this computer follows.
+    original = late.get(msg.commandId)?.original ?? null;
+    late.delete(msg.commandId);
+  }
   return original === null ? msg : { ...msg, commandId: original };
+}
+
+/** Tells the phone that a command that came back down could not land here. */
+export function failAdoptedEcho(commandId: string, error: string): void {
+  settleFailed(commandId, 'execution_failed', error);
 }
 
 /** The main computer refused a command handed up from here. */
@@ -119,7 +168,7 @@ export function handleUpstreamRefusal(refusal: UpstreamRefusal): void {
   settleFailed(
     refusal.commandId,
     'execution_failed',
-    `The main computer refused the command (${refusal.reason}); it did not run.`,
+    `The main computer refused the command (${refusal.reason}).`,
   );
 }
 
@@ -139,4 +188,5 @@ export function noteRanWithoutMaster(type: string): void {
 /** Forgets every command handed up; the server is going down. */
 export function resetPeerUpstream(): void {
   for (const key of [...pending.keys()]) forget(key);
+  late.clear();
 }
