@@ -1,7 +1,7 @@
 # RC Setlist
 
 [![PolyForm Noncommercial](https://img.shields.io/badge/licença-PolyForm%20Noncommercial-orange)](LICENSE)
-[![Versão](https://img.shields.io/badge/versão-1.2.0-f97316)](CHANGELOG.md)
+[![Versão](https://img.shields.io/badge/versão-1.2.1-f97316)](CHANGELOG.md)
 [![CI](https://github.com/ntworm/rc-setlist/actions/workflows/ci.yml/badge.svg)](https://github.com/ntworm/rc-setlist/actions/workflows/ci.yml)
 
 [English](README.md) · **Português (Brasil)**
@@ -29,7 +29,7 @@ experimental até ser validado em hardware Apple físico dedicado.
 
 ## Instalação
 
-1. Baixe o `RC-Setlist-1.2.0.ablx` e o kit de instalação na
+1. Baixe o `RC-Setlist-1.2.1.ablx` e o kit de instalação na
    [versão mais recente](https://github.com/ntworm/rc-setlist/releases/latest).
 2. Instale o RC Bridge a partir do kit: execute o `Install-RC-Bridge.cmd`
    (Windows) ou `Install RC Bridge.command` (macOS) e selecione RCBridge como
@@ -104,6 +104,19 @@ Todos os exemplos neste repositório são fictícios. Consulte
   navegação pelo teclado numérico ou alfanumérico.
 - Sem necessidade de contas, sincronização em nuvem, analytics ou telemetria.
 
+## O que há de novo na 1.2.1
+
+Detalhes em [notas da versão 1.2.1](docs/pt-BR/NOTAS-DA-VERSAO-1.2.1.md).
+
+- **Prontos para parear mostra um endereço que responde.** Quando um slave tem
+  duas interfaces de rede na mesma sub-rede, o anúncio leva os endereços de LAN
+  e o master lista o primeiro que responde na porta anunciada.
+- **Um celular num slave comanda o show inteiro.** Com o master conectado,
+  comandos de transporte, salto, metrônomo, quantização, contagem, atualizar e
+  pânico vindos de um celular ou do painel no slave sobem para o master, que
+  executa e envia a todos os slaves; sem o master, o slave executa sozinho e
+  registra no log.
+
 ## O que há de novo na 1.2.0
 
 Detalhes em [notas da versão 1.2.0](docs/pt-BR/NOTAS-DA-VERSAO-1.2.0.md).
@@ -142,6 +155,7 @@ Detalhes em [notas da versão 1.2.0](docs/pt-BR/NOTAS-DA-VERSAO-1.2.0.md).
 - [Guia do usuário](docs/pt-BR/USER-GUIDE.md)
 - [Solução de problemas](docs/pt-BR/TROUBLESHOOTING.md)
 - [Perguntas frequentes (FAQ)](docs/pt-BR/FAQ.md)
+- [O que há de novo na versão 1.2.1](docs/pt-BR/NOTAS-DA-VERSAO-1.2.1.md)
 - [O que há de novo na versão 1.2.0](docs/pt-BR/NOTAS-DA-VERSAO-1.2.0.md)
 - [Privacidade](PRIVACY.md)
 - [Segurança](SECURITY.md)
@@ -165,7 +179,7 @@ Compilar a partir do código-fonte exige Node.js 24.16.0 ou superior, na linha
 Node 24 LTS; quem instala o `.ablx` não precisa do Node.js.
 
 O kit de instalação é gerado por `npm run package:kit`. O comando produz o
-arquivo `release-candidates/RC-Setlist-1.2.0-Installation-Kit.zip` com o
+arquivo `release-candidates/RC-Setlist-1.2.1-Installation-Kit.zip` com o
 `.ablx`, a página `START-HERE.html`, o `README.txt` de instruções, os
 instaladores em `RC-Bridge/`, os scripts de migração da 0.x e as pastas de
 documentação `en/` e `pt-BR/`.

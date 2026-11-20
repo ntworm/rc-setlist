@@ -1,6 +1,6 @@
 {
   "name": "rc-setlist",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "private": true,
   "description": "RC Setlist: source-available setlist extension for Ableton Live.",
   "author": "ntworm",

@@ -1,4 +1,4 @@
-# Release checklist — RC Setlist 1.2.0
+# Release checklist — RC Setlist 1.2.1
 
 Use a copy of a Live Set and a **trusted local network / LAN**. Do not perform
 the first test during a real show.
@@ -14,9 +14,9 @@ the first test during a real show.
       `via RC Bridge 1.0.0 on port 11020`.
 - [ ] With a stock AbletonOSC selected instead, the OSC line reads
       `via AbletonOSC on port 11000` and the transport still works.
-- [ ] `RC-Setlist-1.2.0.ablx` installs without errors.
+- [ ] `RC-Setlist-1.2.1.ablx` installs without errors.
 - [ ] With clean data, the first **Start** creates the default profile and starts the server without a persistence error.
-- [ ] **Extensions > RC Setlist** opens the correct panel and shows version 1.2.0.
+- [ ] **Extensions > RC Setlist** opens the correct panel and shows version 1.2.1.
 
 ## Language
 
@@ -76,6 +76,13 @@ TEST 02 > CHORUS
 - [ ] **Check OSC** distinguishes stopped, waiting, connected, interrupted and
       OSC return-port-busy states with a compact label.
 - [ ] The full controller token appears in no public screenshot.
+
+## Two computers
+
+- [ ] When a slave has two network interfaces on the same subnet, **Ready to
+      pair** shows an address that answers.
+- [ ] With master and slave connected, a command from a phone or the panel on
+      the slave moves the master and every slave once each.
 
 ## Approval
 

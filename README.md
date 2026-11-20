@@ -1,7 +1,7 @@
 # RC Setlist
 
 [![PolyForm Noncommercial](https://img.shields.io/badge/license-PolyForm%20Noncommercial-orange)](LICENSE)
-[![Version](https://img.shields.io/badge/version-1.2.0-f97316)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-1.2.1-f97316)](CHANGELOG.md)
 [![CI](https://github.com/ntworm/rc-setlist/actions/workflows/ci.yml/badge.svg)](https://github.com/ntworm/rc-setlist/actions/workflows/ci.yml)
 
 **English** · [Português (Brasil)](README.pt-BR.md)
@@ -31,7 +31,7 @@ until it is exercised on real macOS hardware.
 
 ## Install
 
-1. Download `RC-Setlist-1.2.0.ablx` and the installation kit from the
+1. Download `RC-Setlist-1.2.1.ablx` and the installation kit from the
    [latest release](https://github.com/ntworm/rc-setlist/releases/latest).
 2. Install RC Bridge from the kit: run `Install-RC-Bridge.cmd` (Windows) or
    `Install RC Bridge.command` (macOS), then choose RCBridge as a Control
@@ -101,6 +101,19 @@ All examples in this repository are fictional. See
   keys.
 - No account, cloud sync, analytics or telemetry.
 
+## What is new in 1.2.1
+
+Full details in the [1.2.1 release notes](docs/RELEASE-NOTES-1.2.1.md).
+
+- **Ready to pair shows an address that answers.** When a slave has two network
+  interfaces on the same subnet, the announcement carries its LAN addresses and
+  the master lists the first one that answers on the announced port.
+- **A phone on a slave drives the whole show.** With the master connected,
+  transport, jump, metronome, quantization, count-in, refresh and panic
+  commands from a phone or the Live panel on a slave go up to the master, which
+  runs them and sends them to every slave; without the master, the slave runs
+  them alone and says so in the log.
+
 ## What is new in 1.2.0
 
 Full details in the [1.2.0 release notes](docs/RELEASE-NOTES-1.2.0.md).
@@ -137,6 +150,7 @@ Full details in the [1.2.0 release notes](docs/RELEASE-NOTES-1.2.0.md).
 - [User guide](docs/USER-GUIDE.md)
 - [Troubleshooting](docs/TROUBLESHOOTING.md)
 - [Frequently asked questions](docs/FAQ.md)
+- [What is new in 1.2.1](docs/RELEASE-NOTES-1.2.1.md)
 - [What is new in 1.2.0](docs/RELEASE-NOTES-1.2.0.md)
 - [Privacy](PRIVACY.md)
 - [Security](SECURITY.md)
@@ -160,7 +174,7 @@ Building from source needs Node.js 24.16.0 or newer, in the Node 24 LTS line;
 end users install the `.ablx` and do not need Node.js.
 
 The installation kit is built with `npm run package:kit`. It writes
-`release-candidates/RC-Setlist-1.2.0-Installation-Kit.zip` with the `.ablx`,
+`release-candidates/RC-Setlist-1.2.1-Installation-Kit.zip` with the `.ablx`,
 the `START-HERE.html` page, the `README.txt` instructions, the `RC-Bridge/`
 installers, the 0.x migration scripts and the documentation folders `en/` and
 `pt-BR/`.

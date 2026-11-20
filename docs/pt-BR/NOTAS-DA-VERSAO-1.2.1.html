@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Notas da versão RC Setlist 1.2.1 — Ableton Live</title>
+    <meta
+      name="description"
+      content="Notas da versão RC Setlist 1.2.1: documentação do RC Setlist, a extensão de setlist, letra e tela de palco para o Ableton Live."
+    />
+    <link
+      rel="canonical"
+      href="https://ntworm.github.io/rc-setlist/pt-BR/NOTAS-DA-VERSAO-1.2.1.html"
+    />
+    <link rel="alternate" type="text/markdown" href="./NOTAS-DA-VERSAO-1.2.1.md" />
+    <link rel="describedby" href="../llms.txt" />
+    <meta property="og:type" content="article" />
+    <meta property="og:site_name" content="RC Setlist" />
+    <meta property="og:locale" content="pt_BR" />
+    <meta property="og:title" content="Notas da versão RC Setlist 1.2.1 — Ableton Live" />
+    <meta
+      property="og:description"
+      content="Notas da versão RC Setlist 1.2.1: documentação do RC Setlist, a extensão de setlist, letra e tela de palco para o Ableton Live."
+    />
+    <meta
+      property="og:url"
+      content="https://ntworm.github.io/rc-setlist/pt-BR/NOTAS-DA-VERSAO-1.2.1.html"
+    />
+    <meta property="og:image" content="https://ntworm.github.io/rc-setlist/og-image.png" />
+    <style>
+      body {
+        font:
+          16px/1.55 system-ui,
+          sans-serif;
+        max-width: 920px;
+        margin: 2rem auto;
+        padding: 0 1rem;
+        color: #f2f2f2;
+        background: #0e0e0e;
+      }
+      h1,
+      h2,
+      h3,
+      h4 {
+        line-height: 1.25;
+      }
+      h1 {
+        font-size: 2.2rem;
+        margin-top: 0;
+      }
+      h2 {
+        margin-top: 2rem;
+        padding-top: 1rem;
+        border-top: 1px solid #333;
+      }
+      h3 {
+        margin-top: 1.5rem;
+      }
+      code {
+        font:
+          0.92em ui-monospace,
+          Consolas,
+          monospace;
+        background: #1a1a1a;
+        padding: 0.1em 0.35em;
+        border-radius: 0;
+      }
+      pre {
+        background: #1a1a1a;
+        padding: 0.8rem 1rem;
+        overflow-x: auto;
+        border: 1px solid #333;
+      }
+      pre code {
+        background: transparent;
+        padding: 0;
+      }
+      a {
+        color: #ffa133;
+      }
+      ul,
+      ol {
+        padding-left: 1.2em;
+      }
+      blockquote {
+        border-left: 4px solid #ffa133;
+        margin: 1em 0;
+        padding: 0.5em 1em;
+        color: #a0a0a0;
+      }
+      .crumbs {
+        font-size: 0.85em;
+        color: #a0a0a0;
+        margin-bottom: 1rem;
+      }
+      .crumbs a {
+        color: #a0a0a0;
+        text-decoration: none;
+      }
+      .crumbs a:hover {
+        color: #f2f2f2;
+      }
+      .source {
+        font-size: 0.78em;
+        color: #a0a0a0;
+        margin-top: 2rem;
+        border-top: 1px solid #333;
+        padding-top: 0.5rem;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="crumbs"><a href="./">RC Setlist</a> · <a href="./README.html">Documentação</a></div>
+    <h1 id="notas-da-vers-o-rc-setlist-1-2-1">Notas da versão RC Setlist 1.2.1</h1>
+    <p>
+      <strong>Data de lançamento:</strong> 2026-11-20 <strong>Linha de versões suportada:</strong>
+      <code>1.2.x</code> <strong>Também disponível em inglês:</strong>
+      <a href="../RELEASE-NOTES-1.2.1.md"><code>../RELEASE-NOTES-1.2.1.md</code></a>
+    </p>
+    <h2 id="corre-es">Correções</h2>
+    <ul>
+      <li>
+        <strong>Prontos para parear mostra um endereço que responde.</strong> Quando o segundo
+      </li>
+    </ul>
+    <p>
+      computador (o slave) tem duas interfaces de rede na mesma sub-rede, a lista
+      <strong>Prontos para parear</strong> podia mostrar um endereço que o computador principal (o
+      master) não alcança. O anúncio na rede agora leva os endereços de LAN do slave, e o master
+      testa cada um na porta anunciada e lista o primeiro que responde.
+    </p>
+    <ul>
+      <li><strong>Um celular num slave comanda o show inteiro.</strong> Quando o master está</li>
+    </ul>
+    <p>
+      conectado, os comandos dados por um celular ou pelo painel do Live num slave — play, stop,
+      saltos, metrônomo, quantização, contagem, atualizar e pânico — sobem para o master, que
+      executa cada um e envia para todos os slaves. Sem o master conectado, o slave executa tudo
+      sozinho, como antes, e registra isso no log.
+    </p>
+    <h2 id="atualizando">Atualizando</h2>
+    <p>
+      O Live recusa instalar por cima de uma pasta de extensão existente: remova o RC Setlist nas
+      configurações de extensões do Live antes (a pasta de dados fica) e depois troque o
+      <code>.ablx</code> em cada computador. O Remote Script RC Bridge não mudou, então não é
+      preciso reinstalá-lo. O master e todos os slaves precisam estar na 1.2.1 para o controle pelo
+      celular num slave funcionar: um master na 1.2.0 ignora o que um slave na 1.2.1 envia para
+      cima, e o slave acusa o tempo esgotado.
+    </p>
+    <div class="source">
+      Rendered from <code>docs\pt-BR\NOTAS-DA-VERSAO-1.2.1.md</code> on 2026-11-20.
+    </div>
+  </body>
+</html>

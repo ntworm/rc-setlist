@@ -4,6 +4,8 @@ All notable public changes to Ableton RC Setlist are recorded here.
 
 ## [Unreleased]
 
+## [1.2.1] - 2026-11-20
+
 ### Fixed
 
 - **Ready to pair shows an address that answers**: a slave with two network

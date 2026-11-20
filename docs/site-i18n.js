@@ -12,7 +12,7 @@
       'Extensão de setlist para Ableton Live 12, grátis para uso não comercial: o RC Setlist lê os locators do Arrangement de um Live Set e mostra um setlist para quem opera e uma tela de palco com letra sincronizada para a banda, no celular ou tablet.',
 
     skip: 'Pular para o conteúdo',
-    'top.ver': 'Versão 1.2.0',
+    'top.ver': 'Versão 1.2.1',
     'top.req': 'Live 12.4.5+ Suite',
     'top.language': 'Idioma',
     'top.navAria': 'Seções',
@@ -35,7 +35,7 @@
     'about.spec4': 'Grátis para uso não comercial',
     'about.download': 'Baixar .ablx',
     'about.docs': 'Ler a documentação',
-    'about.new': 'O que há de novo na 1.2.0',
+    'about.new': 'O que há de novo na 1.2.1',
     'about.source': 'Código-fonte',
     'about.figCap': 'As duas telas',
     'about.figAlt':
@@ -223,7 +223,7 @@
     'install.title': 'Instalação',
     'install.s1': 'Baixe',
     'install.s1d':
-      '<code>RC-Setlist-1.2.0.ablx</code> e o kit de instalação, na <a href="https://github.com/ntworm/rc-setlist/releases/latest">versão mais recente</a>.',
+      '<code>RC-Setlist-1.2.1.ablx</code> e o kit de instalação, na <a href="https://github.com/ntworm/rc-setlist/releases/latest">versão mais recente</a>.',
     'install.s2': 'Instale o RC Bridge',
     'install.s2d':
       'Rode <code>Install-RC-Bridge.cmd</code> (Windows) ou <code>Install RC Bridge.command</code> (macOS), que vêm no kit. No Live, abra <b>Settings › Link, Tempo &amp; MIDI</b> e escolha <b>RCBridge</b> como Control Surface.',
@@ -294,7 +294,7 @@
     'docs.guide': 'Guia do usuário',
     'docs.trouble': 'Solução de problemas',
     'docs.faq': 'Perguntas frequentes',
-    'docs.notes': 'O que há de novo na 1.2.0',
+    'docs.notes': 'O que há de novo na 1.2.1',
     'docs.notesPrevious': 'O que havia de novo na 1.0.0',
     'docs.security': 'Segurança · privacidade',
 
@@ -317,7 +317,7 @@
     'docs.lGuide': 'Ler o guia do usuário',
     'docs.lTrouble': 'Ler a solução de problemas',
     'docs.lFaq': 'Ler as perguntas frequentes',
-    'docs.lNotes': 'Ler as notas da 1.2.0',
+    'docs.lNotes': 'Ler as notas da 1.2.1',
     'docs.lNotesPrevious': 'Ler as notas da 1.0.0',
   };
 

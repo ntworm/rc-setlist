@@ -1,4 +1,4 @@
-# Checklist de lançamento — RC Setlist 1.2.0
+# Checklist de lançamento — RC Setlist 1.2.1
 
 Use uma cópia de um Live Set e uma **rede local confiável / LAN**. Não faça o
 primeiro teste durante um show real.
@@ -14,9 +14,9 @@ primeiro teste durante um show real.
       `via RC Bridge 1.0.0 na porta 11020`.
 - [ ] Com um AbletonOSC comum selecionado no lugar, a linha OSC diz
       `via AbletonOSC na porta 11000` e o transporte continua funcionando.
-- [ ] `RC-Setlist-1.2.0.ablx` instala sem erro.
+- [ ] `RC-Setlist-1.2.1.ablx` instala sem erro.
 - [ ] Em dados limpos, o primeiro **Iniciar** cria o perfil padrão e sobe o servidor sem erro de persistência.
-- [ ] **Extensões > RC Setlist** abre o painel correto e mostra a versão 1.2.0.
+- [ ] **Extensões > RC Setlist** abre o painel correto e mostra a versão 1.2.1.
 
 ## Idioma
 
@@ -77,6 +77,13 @@ TESTE 02 > REFRÃO
 - [ ] **Verificar OSC** distingue parado, aguardando, conectado, interrompido e
       porta de retorno OSC ocupada com um rótulo compacto.
 - [ ] O token completo do controle não aparece em nenhuma captura pública.
+
+## Dois computadores
+
+- [ ] Com o slave em duas interfaces de rede na mesma sub-rede, **Prontos para
+      parear** mostra um endereço que responde.
+- [ ] Com master e slave conectados, um comando vindo de um celular ou do painel
+      no slave move o master e cada slave uma única vez.
 
 ## Aprovação
 
