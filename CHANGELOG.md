@@ -4,6 +4,17 @@ All notable public changes to Ableton RC Setlist are recorded here.
 
 ## [Unreleased]
 
+### Fixed
+
+- **Ready to pair shows an address that answers**: a slave with two network
+  interfaces on the same subnet could be listed at the one the master cannot
+  reach. The announcement now carries the slave's LAN addresses, and the
+  master lists the first one that answers on the announced port.
+- **A phone on a slave drives the whole show**: with the master connected,
+  transport and jump commands from a phone or the panel on a slave go up to
+  the master, which runs them and sends them to every slave. Without the
+  master the slave runs them alone, as before, and says so in the log.
+
 ## [1.2.0] - 2026-11-18
 
 ### Added

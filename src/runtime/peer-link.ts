@@ -43,11 +43,7 @@ import { receivePeerUpstream } from './peer-upstream-master.js';
 
 export { resetPeerLinkTiming, setPeerLinkTiming } from './peer-liveness.js';
 export { PEER_RELAY_TYPES } from './peer-message.js';
-export {
-  setPeerUpstreamHandler,
-  type PeerUpstreamHandler,
-  type PeerUpstreamReply,
-} from './peer-upstream-master.js';
+export { setPeerUpstreamHandler, type PeerUpstreamReply } from './peer-upstream-master.js';
 
 /** The client id this side announces itself with. */
 const PEER_CLIENT_ID = 'rc-peer';
