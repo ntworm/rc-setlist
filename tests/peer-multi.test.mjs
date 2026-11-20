@@ -14,6 +14,7 @@ import { startServer, stopServer } from '../src/index.ts';
 import { bridgeState } from '../src/runtime/bridge-state.ts';
 import { relayToPeer, startPeerLinks, stopPeerLink } from '../src/runtime/peer-link.ts';
 import { aggregatePeerStatus } from '../src/runtime/peer-status-list.ts';
+import { peerCommandId } from '../src/runtime/peer-message.ts';
 import { readPeerConfigs, writePeerConfigs } from '../src/preferences.ts';
 import {
   MAIN_CUES,
@@ -135,6 +136,63 @@ test('a relayed play reaches both computers', async () => {
   await waitFor(() => peerOne.actions.length > 0 && peerTwo.actions.length > 0);
   assert.equal(peerOne.actions[0].source, 'play');
   assert.equal(peerTwo.actions[0].source, 'play');
+});
+
+/** Sends a message from a second computer up the link the main one holds with it. */
+function sendUp(computer, message) {
+  const [socket] = computer.wsServer.peerSockets();
+  assert.ok(socket, 'the main computer holds a link with this computer');
+  socket.send(JSON.stringify(message));
+}
+
+test('a command handed up by one computer runs here and reaches both computers', async () => {
+  peerOne.actions.length = 0;
+  peerTwo.actions.length = 0;
+  const before = oscCalls.length;
+  sendUp(peerOne, {
+    type: 'peer_upstream',
+    command: { type: 'set_quantization', value: 2, commandId: 'up-quant' },
+  });
+  await waitFor(() => peerOne.actions.length > 0 && peerTwo.actions.length > 0);
+  assert.ok(oscCalls.slice(before).includes('setQuantization:2'), 'the main computer runs it');
+  const id = peerCommandId('up-quant');
+  assert.equal(peerOne.actions[0].source, 'set_quantization');
+  assert.equal(peerOne.actions[0].id, id, 'the computer that handed it up gets it back');
+  assert.equal(peerTwo.actions[0].source, 'set_quantization');
+  assert.equal(peerTwo.actions[0].id, id);
+  // The same command handed up again is not run twice.
+  sendUp(peerOne, {
+    type: 'peer_upstream',
+    command: { type: 'set_quantization', value: 2, commandId: 'up-quant' },
+  });
+  await delay(300);
+  assert.equal(oscCalls.slice(before).filter((c) => c === 'setQuantization:2').length, 1);
+  assert.equal(peerTwo.actions.length, 1);
+});
+
+test('a command handed up that does not travel is refused and runs nowhere', async () => {
+  peerOne.messages.length = 0;
+  peerTwo.actions.length = 0;
+  const before = oscCalls.length;
+  sendUp(peerOne, {
+    type: 'peer_upstream',
+    command: { type: 'reorder', songTitles: ['Song B'], commandId: 'up-reorder' },
+  });
+  sendUp(peerOne, {
+    type: 'peer_upstream',
+    command: { type: 'jump', songIndex: 0, commandId: 'up-index-jump' },
+  });
+  const refused = await waitFor(
+    () => peerOne.messages.filter((m) => m.type === 'peer_upstream_result').length === 2,
+  );
+  assert.ok(refused, 'both are answered with a refusal');
+  for (const answer of peerOne.messages.filter((m) => m.type === 'peer_upstream_result')) {
+    assert.equal(answer.ok, false);
+    assert.equal(answer.reason, 'invalid');
+  }
+  await delay(100);
+  assert.equal(oscCalls.length, before, 'nothing runs on the main computer');
+  assert.equal(peerTwo.actions.length, 0, 'nothing travels down');
 });
 
 test('starting the same pairings again keeps the links that are up', () => {

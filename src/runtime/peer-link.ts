@@ -19,7 +19,14 @@ import { WebSocket } from 'ws';
 import { bridgeState, broadcastState } from './bridge-state.js';
 import { fingerprintFromSocket, publicKeyPinFromSocket } from './pairing.js';
 import { peerLinkTiming, watchPeerSocket, type PeerWatchdog } from './peer-liveness.js';
-import { canWriteNow, roomOnSocket, sameConfig, isRecord, parseMessage } from './peer-message.js';
+import {
+  PEER_RELAY_TYPES,
+  canWriteNow,
+  roomOnSocket,
+  sameConfig,
+  isRecord,
+  parseMessage,
+} from './peer-message.js';
 import { answerSetlistRequest } from './peer-setlist.js';
 import {
   aggregatePeerStatus,
@@ -32,24 +39,15 @@ import type { ShowCommand } from '../types.js';
 import { log } from '../util/log.js';
 import { startPeerClock } from './peer-follow-runtime.js';
 import { buildPeerMessage } from './peer-relay-message.js';
+import { receivePeerUpstream } from './peer-upstream-master.js';
 
 export { resetPeerLinkTiming, setPeerLinkTiming } from './peer-liveness.js';
-
-/**
- * The command types the main computer forwards to the paired computer.
- *
- * Everything else stays here: the setlist is the operator's business here.
- */
-export const PEER_RELAY_TYPES: ReadonlySet<string> = new Set([
-  'play',
-  'stop',
-  'jump',
-  'metronome',
-  'set_quantization',
-  'trigger_count_in',
-  'refresh',
-  'set_panic',
-]);
+export { PEER_RELAY_TYPES } from './peer-message.js';
+export {
+  setPeerUpstreamHandler,
+  type PeerUpstreamHandler,
+  type PeerUpstreamReply,
+} from './peer-upstream-master.js';
 
 /** The client id this side announces itself with. */
 const PEER_CLIENT_ID = 'rc-peer';
@@ -195,6 +193,10 @@ function handlePeerMessage(target: PeerLink, data: WebSocket.Data): void {
       undefined,
       () => roomOnSocket(target.socket),
     );
+    return;
+  }
+  if (message.type === 'peer_upstream') {
+    receivePeerUpstream(message.command, target.synchronized, (reply) => sendToPeer(target, reply));
     return;
   }
   if (message.type === 'error') handlePeerError(target, message.code);
@@ -434,27 +436,36 @@ export function stopPeerLink(): void {
   publishPeerStatus();
 }
 
+/** Sends one message to every link that has room for it; whether one got it. */
+function sendToTargets(targets: PeerLink[], type: string, message: unknown): boolean {
+  let sent = false;
+  for (const target of targets) {
+    // Every link has a socket of its own: one that is busy is dropped
+    // here and not for the others.
+    if (canWriteNow(target.socket, type) && sendToPeer(target, message)) sent = true;
+  }
+  return sent;
+}
+
 /**
  * Forwards a command to the paired computers. Never throws and never
  * rejects: a link that is down must not change what happens on this machine.
+ * Returns whether at least one computer got it.
  */
-export function relayToPeer(command: ShowCommand<unknown>): void {
+export function relayToPeer(command: ShowCommand<unknown>): boolean {
   try {
     const targets = [...links.values()].filter((target) => target.synchronized);
-    if (targets.length === 0) return;
-    if (!PEER_RELAY_TYPES.has(command.type)) return;
+    if (targets.length === 0) return false;
+    if (!PEER_RELAY_TYPES.has(command.type)) return false;
     // A command this computer already refused, a full queue among the
     // reasons, must not run on the other ones: the two would part ways.
-    if (command.status === 'failed') return;
-    if (bridgeState.commandBus?.wouldRejectForSafety(command.type)) return;
+    if (command.status === 'failed') return false;
+    if (bridgeState.commandBus?.wouldRejectForSafety(command.type)) return false;
     const message = buildPeerMessage(command);
-    if (!message) return;
-    for (const target of targets) {
-      // Every link has a socket of its own: one that is busy is dropped
-      // here and not for the others.
-      if (canWriteNow(target.socket, command.type)) sendToPeer(target, message);
-    }
+    if (!message) return false;
+    return sendToTargets(targets, command.type, message);
   } catch {
     // swallow: a relay failure must never reach the local command.
+    return false;
   }
 }

@@ -83,7 +83,15 @@ async function runChildNode() {
   const address = bridgeState.server?.address();
   const port = address && typeof address === 'object' ? address.port : 0;
 
-  const payload = { type: 'ready', port, pairingCode, storageDir, logFile };
+  // The token lets a test open a phone on the second computer.
+  const payload = {
+    type: 'ready',
+    port,
+    pairingCode,
+    storageDir,
+    logFile,
+    authToken: bridgeState.authToken,
+  };
   if (process.send) process.send(payload);
 }
 

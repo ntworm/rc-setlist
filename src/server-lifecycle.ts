@@ -42,7 +42,21 @@ import { registerOscListeners } from './osc/registration.js';
 import { executeCommandAction } from './commands/handlers/index.js';
 import { immediateJumpRefused } from './commands/handlers/transport.js';
 import { peerCommandRejection, resolvePeerJump } from './commands/handlers/peer.js';
-import { relayToPeer, startPeerLinks, stopPeerLink } from './runtime/peer-link.js';
+import {
+  PEER_RELAY_TYPES,
+  relayToPeer,
+  setPeerUpstreamHandler,
+  startPeerLinks,
+  stopPeerLink,
+  type PeerUpstreamReply,
+} from './runtime/peer-link.js';
+import {
+  adoptUpstreamEcho,
+  forwardToMaster,
+  handleUpstreamRefusal,
+  noteRanWithoutMaster,
+  resetPeerUpstream,
+} from './runtime/peer-upstream.js';
 import { receiveSetlistChunk } from './runtime/peer-setlist.js';
 import { handlePeerClock, notePeerCommand } from './runtime/peer-follow-runtime.js';
 import { getOrGeneratePeerToken } from './runtime/pairing.js';
@@ -299,6 +313,44 @@ function refusedByThisComputer(command: ShowCommand<ClientMessage>): boolean {
 }
 
 /**
+ * Runs a command a second computer handed up, as if a page of this computer
+ * had sent it: every lock of this computer applies, and the command goes down
+ * to every paired computer, the one that handed it up included. A command
+ * that does not go down is refused, so the second computer tells its phone.
+ */
+function runUpstreamCommand(message: ClientMessage, refuse: PeerUpstreamReply): void {
+  const manager = bridgeState.manager;
+  const bus = bridgeState.commandBus;
+  if (!manager || !bus) {
+    refuse({ reason: 'not_ready' });
+    return;
+  }
+  const peerJump = resolvePeerJump(message, manager.getState());
+  if (peerJump.kind === 'error') {
+    refuse({ reason: peerJump.code });
+    return;
+  }
+  const effectiveMsg = peerJump.kind === 'jump' ? peerJump.message : message;
+  const commandId = effectiveMsg.commandId;
+  if (!commandId || bus.isDuplicate(commandId)) {
+    refuse({ reason: 'duplicate' });
+    return;
+  }
+  const command = bus.registerCommand(
+    commandId,
+    effectiveMsg.type,
+    effectiveMsg,
+    'rc-peer-upstream',
+  );
+  bus.dispatch(command, async () => {
+    await executeCommandAction(command);
+  });
+  if (refusedByThisComputer(command) || !relayToPeer(command)) {
+    refuse({ reason: command.reason ?? 'refused' });
+  }
+}
+
+/**
  * The port the server listens on right now.
  *
  * The port may be one the system chose (port 0 asks for a free one), so the
@@ -524,6 +576,8 @@ export async function startServer(options: StartServerOptions = {}): Promise<voi
 
     // The paired computers, if there are any, follow from here on.
     startPeerLinks(readPeerConfigs());
+    // A phone on a second computer drives the show through this one.
+    setPeerUpstreamHandler(runUpstreamCommand);
 
     // The computers of the network announce themselves, so the main one
     // finds them without an address to type.
@@ -608,6 +662,13 @@ export async function startServer(options: StartServerOptions = {}): Promise<voi
         receiveSetlistChunk(msg);
         return;
       }
+      // The main computer refused a command this one handed up.
+      if (msg.type === 'peer_upstream_result') {
+        if (!msg.ok && msg.commandId) {
+          handleUpstreamRefusal({ commandId: msg.commandId, reason: msg.reason ?? 'refused' });
+        }
+        return;
+      }
       if (isPeerConnection) notePeerCommand(msg.type);
 
       const readOnlyTypes = new Set(['get_lyrics', 'profiles_get', 'preflight_check']);
@@ -649,7 +710,10 @@ export async function startServer(options: StartServerOptions = {}): Promise<voi
 
       // A jump that arrived by beat becomes a jump of this computer before it
       // is registered: the marker it names is the one under the playhead here.
-      const peerJump = resolvePeerJump(msg, bridgeState.manager.getState());
+      // A command the main computer sends back down carries the id the phone
+      // of this computer gave it, when it was handed up from here.
+      const incoming = isPeerConnection ? adoptUpstreamEcho(msg) : msg;
+      const peerJump = resolvePeerJump(incoming, bridgeState.manager.getState());
       if (peerJump.kind === 'error') {
         ws.send(
           JSON.stringify({
@@ -660,7 +724,7 @@ export async function startServer(options: StartServerOptions = {}): Promise<voi
         );
         return;
       }
-      const effectiveMsg = peerJump.kind === 'jump' ? peerJump.message : msg;
+      const effectiveMsg = peerJump.kind === 'jump' ? peerJump.message : incoming;
 
       const commandId =
         effectiveMsg.commandId || `legacy-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
@@ -681,6 +745,14 @@ export async function startServer(options: StartServerOptions = {}): Promise<voi
           );
         }
         return;
+      }
+
+      // On a second computer the show is driven by the main one: the command
+      // goes up, and lands here when it comes back down. Without the main
+      // computer it runs here alone, as before.
+      if (!isPeerConnection && PEER_RELAY_TYPES.has(effectiveMsg.type)) {
+        if (forwardToMaster(effectiveMsg, commandId)) return;
+        noteRanWithoutMaster(effectiveMsg.type);
       }
 
       const command = bridgeState.commandBus?.registerCommand(
@@ -847,6 +919,8 @@ export async function stopServer(): Promise<void> {
   }
 
   stopPeerLink();
+  setPeerUpstreamHandler(null);
+  resetPeerUpstream();
 
   // The computers of the network stop saying hello with the server.
   stopPeerDiscovery();

@@ -317,3 +317,39 @@ test('set_song_notes carries one line of bounded text, or null to clear', () => 
   );
   assert.equal(decodeClientMessage({ type: 'set_song_notes', time: -1, notes: 'x' }).ok, false);
 });
+
+test('decoder reads the answer of the main computer to a command handed up', () => {
+  const refused = decodeClientMessage({
+    type: 'peer_upstream_result',
+    commandId: 'phone-1',
+    ok: false,
+    reason: 'peer_no_marker',
+  });
+  assert.equal(refused.ok, true);
+  assert.deepEqual(refused.message, {
+    type: 'peer_upstream_result',
+    commandId: 'phone-1',
+    ok: false,
+    reason: 'peer_no_marker',
+  });
+  for (const bad of [
+    { type: 'peer_upstream_result', ok: false },
+    { type: 'peer_upstream_result', commandId: 'phone-1', ok: 'no' },
+    { type: 'peer_upstream_result', commandId: 'phone-1', ok: false, reason: 'x'.repeat(65) },
+    { type: 'peer_upstream_result', commandId: 'phone-1', ok: false, reason: 7 },
+  ]) {
+    assert.equal(decodeClientMessage(bad).ok, false, JSON.stringify(bad).slice(0, 80));
+  }
+});
+
+test('only a paired computer may answer a command handed up', async () => {
+  const { peerCommandRejection } = await import('../src/commands/handlers/peer.ts');
+  const decoded = decodeClientMessage({
+    type: 'peer_upstream_result',
+    commandId: 'phone-2',
+    ok: false,
+  });
+  assert.equal(decoded.ok, true);
+  assert.equal(peerCommandRejection(decoded.message, true), null);
+  assert.equal(peerCommandRejection(decoded.message, false)?.code, 'unauthorized');
+});

@@ -39,11 +39,20 @@ export function isPeerCommandType(type: string): boolean {
     type === 'sync_confirm' ||
     type === 'jump_time' ||
     type === 'peer_clock' ||
+    type === 'peer_upstream_result' ||
     type === 'setlist_chunk'
   )
     return true;
   return PEER_RELAY_TYPES.has(type) && type !== 'jump';
 }
+
+/** What only a peer connection may send, and how a page that tries is told. */
+const PEER_ONLY_REFUSALS: Readonly<Record<string, string>> = {
+  jump_time: 'Unauthorized: only a peer connection may send a jump by beat.',
+  peer_clock: 'Unauthorized: only a peer connection may send its clock.',
+  peer_upstream_result: 'Unauthorized: only a peer connection may answer a command handed up.',
+  setlist_chunk: 'Unauthorized: only a peer connection may send a setlist.',
+};
 
 /**
  * Reports why a peer connection may not run this message, or null when it
@@ -53,27 +62,10 @@ export function peerCommandRejection(
   msg: ClientMessage,
   isPeer: boolean,
 ): PeerCommandRejection | null {
-  if (msg.type === 'jump_time') {
-    if (!isPeer) {
-      return {
-        code: 'unauthorized',
-        message: 'Unauthorized: only a peer connection may send a jump by beat.',
-      };
-    }
-    return null;
-  }
-  if (msg.type === 'peer_clock' && !isPeer) {
-    return {
-      code: 'unauthorized',
-      message: 'Unauthorized: only a peer connection may send its clock.',
-    };
-  }
-  if (msg.type === 'setlist_chunk' && !isPeer) {
-    return {
-      code: 'unauthorized',
-      message: 'Unauthorized: only a peer connection may send a setlist.',
-    };
-  }
+  const peerOnly = Object.prototype.hasOwnProperty.call(PEER_ONLY_REFUSALS, msg.type)
+    ? PEER_ONLY_REFUSALS[msg.type]
+    : undefined;
+  if (peerOnly !== undefined && !isPeer) return { code: 'unauthorized', message: peerOnly };
   if (isPeer && !isPeerCommandType(msg.type)) {
     return {
       code: 'unauthorized',

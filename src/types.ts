@@ -188,6 +188,12 @@ export type ClientMessage =
       immediate?: boolean;
     })
   | (ClientMessageBase & {
+      /** The main computer refused a command a second computer handed up. */
+      type: 'peer_upstream_result';
+      ok: boolean;
+      reason?: string;
+    })
+  | (ClientMessageBase & {
       type: 'peer_clock';
       isPlaying: boolean;
       songTime: number;

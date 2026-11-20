@@ -180,6 +180,16 @@ export function decodeClientMessage(input: unknown): DecodeResult {
         ...(input.section === undefined ? {} : { section: input.section }),
         ...(input.immediate === undefined ? {} : { immediate: input.immediate }),
       });
+    case 'peer_upstream_result':
+      if (!commandId) return fail('Invalid commandId for peer_upstream_result.');
+      if (typeof input.ok !== 'boolean') return fail('Invalid ok for peer_upstream_result.');
+      if (input.reason !== undefined && !isBoundedText(input.reason, 64))
+        return fail('Invalid reason for peer_upstream_result.');
+      return success({
+        type: 'peer_upstream_result',
+        ok: input.ok,
+        ...(input.reason === undefined ? {} : { reason: input.reason }),
+      });
     case 'peer_clock':
       if (typeof input.isPlaying !== 'boolean') return fail('Invalid isPlaying for peer_clock.');
       if (!isBoundedNumber(input.songTime, 0, 1_000_000))

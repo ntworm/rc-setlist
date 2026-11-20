@@ -92,3 +92,19 @@ export function sameConfig(
     a.keyPin === b.keyPin
   );
 }
+
+/**
+ * The command types the main computer forwards to the paired computer.
+ *
+ * Everything else stays here: the setlist is the operator's business here.
+ */
+export const PEER_RELAY_TYPES: ReadonlySet<string> = new Set([
+  'play',
+  'stop',
+  'jump',
+  'metronome',
+  'set_quantization',
+  'trigger_count_in',
+  'refresh',
+  'set_panic',
+]);

@@ -13,6 +13,7 @@ import { startServer, stopServer } from '../src/index.ts';
 import { bridgeState } from '../src/runtime/bridge-state.ts';
 import { startPeerLink, stopPeerLink } from '../src/runtime/peer-link.ts';
 import { pair } from '../src/runtime/pairing.ts';
+import { readPeerConfigs } from '../src/preferences.ts';
 import { createFakeOsc } from './helpers/peer-link-harness.mjs';
 import { MAIN_CUES, readLogCalls, spawnPeerChild } from './helpers/peer-e2e-node.mjs';
 
@@ -22,6 +23,7 @@ let childLogFile = '';
 let childProcess = null;
 let childPort = 0;
 let childCode = '';
+let childToken = '';
 let controller = null;
 const mainOscCalls = [];
 
@@ -99,6 +101,7 @@ before(async () => {
   const ready = await peer.readyPromise;
   childPort = ready.port;
   childCode = ready.pairingCode;
+  childToken = ready.authToken;
 
   setExtensionContext({
     environment: { storageDirectory: mainStorageDir },
@@ -217,6 +220,109 @@ test('critical lock prevents jump from being relayed to peer', async () => {
     'critical lock must block jump relay',
   );
   bridgeState.manager.setCriticalCommandsLocked(false);
+});
+
+/** How many times a call shows up in a list of calls. */
+function countOf(calls, line) {
+  return calls.filter((call) => call === line).length;
+}
+
+test('a phone on the second computer drives the main one, and each computer runs it once', async () => {
+  const phone = await connectSynced(childPort, childToken);
+  const phoneMessages = collect(phone);
+  try {
+    const mainBefore = mainOscCalls.length;
+    const childBefore = readLogCalls(childLogFile).length;
+    phone.send(JSON.stringify({ type: 'metronome', value: false, commandId: 'phone-metro' }));
+    const onMain = await waitFor(
+      () => mainOscCalls.slice(mainBefore).includes('setMetronome:false'),
+      3000,
+    );
+    assert.equal(onMain, true, 'the main computer runs the command of the phone');
+    const onChild = await waitForChildCall(childLogFile, (l) => l === 'setMetronome:false');
+    assert.ok(onChild, 'the command comes back down to the second computer');
+    // No echo and no loop: wait, then count again.
+    await delay(500);
+    assert.equal(countOf(mainOscCalls.slice(mainBefore), 'setMetronome:false'), 1);
+    assert.equal(countOf(readLogCalls(childLogFile).slice(childBefore), 'setMetronome:false'), 1);
+    const statuses = phoneMessages.filter(
+      (m) => m.type === 'command_status' && m.commandId === 'phone-metro',
+    );
+    assert.ok(
+      statuses.some((m) => m.status === 'sent'),
+      'the phone learns the command went up',
+    );
+    assert.ok(
+      statuses.some((m) => m.status !== 'sent' && m.status !== 'failed'),
+      'the phone sees its own command settle on the second computer',
+    );
+
+    // A jump goes up by beat: the songs sit in another order here.
+    const jumpMainBefore = mainOscCalls.length;
+    const jumpChildBefore = readLogCalls(childLogFile).length;
+    phone.send(JSON.stringify({ type: 'jump', songIndex: 0, commandId: 'phone-jump' }));
+    const mainJump = await waitFor(
+      () => mainOscCalls.slice(jumpMainBefore).some((c) => c.startsWith('jumpToCuePoint:')),
+      3000,
+    );
+    assert.equal(mainJump, true, 'the main computer jumps');
+    const childJump = await waitFor(
+      () =>
+        readLogCalls(childLogFile)
+          .slice(jumpChildBefore)
+          .some((c) => c === 'jumpToCuePoint:2'),
+      3000,
+    );
+    assert.equal(childJump, true, 'the second computer lands on the same song');
+    await delay(500);
+    assert.equal(
+      mainOscCalls.slice(jumpMainBefore).filter((c) => c.startsWith('jumpToCuePoint:')).length,
+      1,
+    );
+    assert.equal(
+      readLogCalls(childLogFile)
+        .slice(jumpChildBefore)
+        .filter((c) => c.startsWith('jumpToCuePoint:')).length,
+      1,
+    );
+  } finally {
+    phone.close();
+  }
+});
+
+test('with the main computer gone, a phone on the second computer drives it alone', async () => {
+  stopPeerLink();
+  const gone = await waitFor(() => bridgeState.peerStatus.connected === false, 5000);
+  assert.equal(gone, true);
+  await delay(200);
+  const phone = await connectSynced(childPort, childToken);
+  const phoneMessages = collect(phone);
+  try {
+    const mainBefore = mainOscCalls.length;
+    const childBefore = readLogCalls(childLogFile).length;
+    phone.send(JSON.stringify({ type: 'metronome', value: true, commandId: 'phone-alone' }));
+    const onChild = await waitFor(
+      () => readLogCalls(childLogFile).slice(childBefore).includes('setMetronome:true'),
+      3000,
+    );
+    assert.equal(onChild, true, 'the second computer runs the command itself');
+    await delay(300);
+    assert.equal(
+      countOf(mainOscCalls.slice(mainBefore), 'setMetronome:true'),
+      0,
+      'nothing reaches the main computer',
+    );
+    const told = phoneMessages.some(
+      (m) => m.type === 'log' && /ran on this computer only/.test(m.message),
+    );
+    assert.equal(told, true, 'the phone is told the command ran here alone');
+  } finally {
+    phone.close();
+  }
+  // The link comes back for the tests that follow.
+  startPeerLink(readPeerConfigs()[0]);
+  const back = await waitFor(() => bridgeState.peerStatus.connected === true, 10000);
+  assert.equal(back, true);
 });
 
 test('a second computer left stopped while the main one plays starts on the next bar', async () => {
