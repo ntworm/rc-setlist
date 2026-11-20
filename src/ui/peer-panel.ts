@@ -30,7 +30,7 @@ import {
   pair,
 } from '../runtime/pairing.js';
 import { startPeerLink, startPeerLinks } from '../runtime/peer-link.js';
-import { listDiscoveredPeers, type DiscoveredPeer } from '../runtime/peer-discovery.js';
+import { listDiscoveredPeerEntries, type DiscoveredPeer } from '../runtime/peer-discovery.js';
 import { bridgeState, readPeerRole, type PeerRole } from '../runtime/bridge-state.js';
 import { getLanAddresses, pickLanIps } from '../util/helpers.js';
 import { roleText } from './peer-role-text.js';
@@ -464,9 +464,11 @@ export function peerPanelModel(options: PeerPanelOptions = {}): PeerPanelModel {
   const code = currentPairingCode();
   const { role, masterAddress } = readPeerRole();
   // A computer that is paired already is not to be paired again.
-  const discovered = listDiscoveredPeers().filter(
-    (peer) => !configs.some((config) => config.host === peer.host),
-  );
+  // Any address the computer listed counts: it may have been paired at
+  // another one than the address that answers now.
+  const discovered = listDiscoveredPeerEntries()
+    .filter((peer) => !configs.some((config) => peer.addresses.includes(config.host)))
+    .map(({ host, name, port }) => ({ host, name, port }));
   const peers = bridgeState.peerStatuses.map((row) => ({
     ...row,
     statusText: peerStateText(peerPanelState({ paired: true, ...row }), locale),
