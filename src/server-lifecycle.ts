@@ -44,12 +44,21 @@ import { immediateJumpRefused } from './commands/handlers/transport.js';
 import { peerCommandRejection, resolvePeerJump } from './commands/handlers/peer.js';
 import {
   PEER_RELAY_TYPES,
+  handlePeerHealthAck,
+  publishPeerStatus,
   relayToPeer,
   setPeerUpstreamHandler,
   startPeerLinks,
   stopPeerLink,
   type PeerUpstreamReply,
 } from './runtime/peer-link.js';
+import {
+  onInboundPeerClosed,
+  onInboundPeerMessage,
+  onInboundPeerSyncConfirm,
+  resetInboundPeerState,
+  syncInboundSlaveRole,
+} from './runtime/peer-inbound.js';
 import {
   adoptUpstreamEcho,
   failAdoptedEcho,
@@ -504,6 +513,7 @@ export async function startServer(options: StartServerOptions = {}): Promise<voi
           type: 'osc_connected',
           message: 'OSC connection to Ableton Live established',
         });
+        publishPeerStatus();
       });
 
       bridgeState.oscClient.on('disconnect', () => {
@@ -519,6 +529,7 @@ export async function startServer(options: StartServerOptions = {}): Promise<voi
           type: 'osc_disconnected',
           message: 'OSC connection to Ableton Live lost',
         });
+        publishPeerStatus();
       });
 
       await bridgeState.oscClient.start();
@@ -534,6 +545,8 @@ export async function startServer(options: StartServerOptions = {}): Promise<voi
       peerToken: bridgeState.peerToken,
     });
     bridgeState.wsServer.init();
+    bridgeState.wsServer.on('peer_closed', (ws: AugmentedWebSocket) => onInboundPeerClosed(ws));
+    syncInboundSlaveRole();
 
     if (!options.skipCerts) {
       await loadCerts();
@@ -613,7 +626,11 @@ export async function startServer(options: StartServerOptions = {}): Promise<voi
           JSON.stringify({
             type: 'handshake_ack',
             stateVersion: state.stateVersion,
-            state: { ...state, peerStatus: bridgeState.peerStatus },
+            state: {
+              ...state,
+              peerStatus: bridgeState.peerStatus,
+              peerStatuses: bridgeState.peerStatuses,
+            },
           }),
         );
         if (isController) {
@@ -626,6 +643,7 @@ export async function startServer(options: StartServerOptions = {}): Promise<voi
         if (msg.stateVersion === ws.handshakeStateVersion) {
           ws.synchronized = true;
           delete ws.handshakeStateVersion;
+          if (isPeerConnection) onInboundPeerSyncConfirm(ws);
           bridgeState.eventLogger?.log({
             type: 'client_synchronized',
             clientId: ws.clientId,
@@ -670,7 +688,11 @@ export async function startServer(options: StartServerOptions = {}): Promise<voi
         }
         return;
       }
-      if (isPeerConnection) notePeerCommand(msg.type);
+      if (msg.type === 'peer_hb' || msg.type === 'peer_hb_ack') {
+        onInboundPeerMessage(ws, msg);
+        return;
+      }
+      if (isPeerConnection && msg.type !== 'peer_health_ack') notePeerCommand(msg.type);
 
       const readOnlyTypes = new Set(['get_lyrics', 'profiles_get', 'preflight_check']);
       if (!readOnlyTypes.has(msg.type) && !isController && !isPeerConnection) {
@@ -684,6 +706,11 @@ export async function startServer(options: StartServerOptions = {}): Promise<voi
             message: 'Unauthorized: controller permission is required.',
           }),
         );
+        return;
+      }
+
+      if (msg.type === 'peer_health_ack') {
+        handlePeerHealthAck(msg.peerKey, isPeerConnection);
         return;
       }
 
@@ -926,6 +953,7 @@ export async function stopServer(): Promise<void> {
     bridgeState.wsServer = null;
   }
 
+  resetInboundPeerState();
   stopPeerLink();
   setPeerUpstreamHandler(null);
   resetPeerUpstream();

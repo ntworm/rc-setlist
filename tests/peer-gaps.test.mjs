@@ -392,7 +392,12 @@ test('a peer that refuses the confirmation drops the link instead of staying gre
     }
     // The confirmation never takes on this side, so every command after it
     // is refused the way the server refuses a client that is not in sync.
-    if (message.type === 'sync_confirm') return;
+    if (
+      message.type === 'sync_confirm' ||
+      message.type === 'peer_hb' ||
+      message.type === 'peer_hb_ack'
+    )
+      return;
     ws.send(
       JSON.stringify({
         type: 'error',

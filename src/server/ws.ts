@@ -278,6 +278,7 @@ export class SetlistWSServer extends EventEmitter {
 
       ws.on('close', () => {
         this.clients.delete(ws);
+        if (ws.isPeer) this.emit('peer_closed', ws);
         log.info('ws', 'Client disconnected');
       });
 

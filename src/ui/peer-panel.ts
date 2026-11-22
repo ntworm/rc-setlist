@@ -17,6 +17,7 @@
 
 import {
   clearPeerConfig,
+  clearSlaveRole,
   getUiLocale,
   readPeerConfigs,
   removePeerConfig,
@@ -29,6 +30,7 @@ import {
   generatePairingCode,
   pair,
 } from '../runtime/pairing.js';
+import { syncInboundSlaveRole } from '../runtime/peer-inbound.js';
 import { startPeerLink, startPeerLinks } from '../runtime/peer-link.js';
 import { listDiscoveredPeerEntries, type DiscoveredPeer } from '../runtime/peer-discovery.js';
 import { bridgeState, readPeerRole, type PeerRole } from '../runtime/bridge-state.js';
@@ -393,10 +395,11 @@ export async function runPeerAction(
     return { ok: true };
   }
   if (parsed.kind === 'unpair') {
-    // A pairing still on disk comes back on the next start of the server, so
-    // the link stays as it is and the operator is told rather than shown a
-    // "not paired" that would not last.
+    // A pairing still on disk returns on restart, so keep the link and report
+    // the failure rather than showing a "not paired" state that will not last.
     if (!clearPeerConfig()) return { ok: false, message: unpairFailureText(locale) };
+    clearSlaveRole();
+    syncInboundSlaveRole();
     startPeerLink(null);
     return { ok: true };
   }

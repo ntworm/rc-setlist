@@ -22,6 +22,7 @@ import type { TLSSocket } from 'node:tls';
 import { httpsOptions } from '../server/cert.js';
 import { writePeerConfig, type PeerConfig } from '../preferences.js';
 import { bridgeState } from './bridge-state.js';
+import { syncInboundSlaveRole } from './peer-inbound.js';
 import { log } from '../util/log.js';
 import { atomicWriteFileSync } from '../util/atomic-write.js';
 
@@ -172,6 +173,9 @@ export function attemptPairing(
   }
 
   activeCode = null;
+  queueMicrotask(() => {
+    syncInboundSlaveRole();
+  });
   return { status: 'accepted' };
 }
 

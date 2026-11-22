@@ -12,6 +12,7 @@
 // The timings live here as well, and they are injectable: a test need not sit
 // through five real seconds to watch a link die.
 
+import type * as tls from 'node:tls';
 import { WebSocket } from 'ws';
 
 /**
@@ -111,4 +112,40 @@ export function watchPeerSocket(socket: WebSocket, onDead: () => void): PeerWatc
       socket.off('pong', armPongTimeout);
     },
   };
+}
+
+/** Clears a timeout handle if active and returns null. */
+export function stopTimer(timer: NodeJS.Timeout | null): null {
+  if (timer) clearTimeout(timer);
+  return null;
+}
+
+/** Takes a peer WebSocket down whether still handshaking or already open. */
+export function closePeerSocket(socket: WebSocket): void {
+  try {
+    if (socket.readyState === WebSocket.CONNECTING) socket.close();
+    else socket.terminate();
+  } catch {
+    // socket already closing
+  }
+}
+
+/** Destroys a TLS socket without throwing. */
+export function destroyQuietly(socket: tls.TLSSocket): void {
+  try {
+    socket.destroy();
+  } catch {
+    // socket already closed
+  }
+}
+
+/** Sends a JSON frame on an open peer socket without throwing. */
+export function sendPeerJson(socket: WebSocket | null, message: unknown): boolean {
+  if (!socket || socket.readyState !== WebSocket.OPEN) return false;
+  try {
+    socket.send(JSON.stringify(message));
+    return true;
+  } catch {
+    return false;
+  }
 }

@@ -125,6 +125,24 @@ function describeAction(message, original, manager) {
   };
 }
 
+const IGNORED_PEER_TYPES = new Set(['peer_clock', 'peer_hb_ack', 'peer_health_ack']);
+
+function replyPeerHeartbeat(message, ws, manager) {
+  const t1 = performance.now();
+  const view = {
+    linkHealth: 'ok',
+    canAcknowledge: false,
+    oscConnected: true,
+    liveReady: true,
+    cuesFingerprint: manager.getState().cuesFingerprint ?? '',
+    outOfStep: false,
+  };
+  const t2 = performance.now();
+  ws.send(
+    JSON.stringify({ type: 'peer_hb_ack', hbId: message.hbId, t0: message.t0, t1, t2, view }),
+  );
+}
+
 function handlePeerMessage(message, ws, manager, actions) {
   const rejection = peerCommandRejection(message, ws.isPeer === true);
   if (rejection) {
@@ -142,8 +160,12 @@ function handlePeerMessage(message, ws, manager, actions) {
     ws.synchronized = true;
     return;
   }
-  // The clock of the main computer is not a command the second one runs.
-  if (message.type === 'peer_clock') return;
+  if (message.type === 'peer_hb') {
+    replyPeerHeartbeat(message, ws, manager);
+    return;
+  }
+  // Heartbeat acknowledgements and the main computer's clock are not show commands.
+  if (IGNORED_PEER_TYPES.has(message.type)) return;
   const jump = resolvePeerJump(message, manager.getState());
   if (jump.kind === 'error') {
     ws.send(JSON.stringify({ type: 'error', code: jump.code, message: jump.message }));

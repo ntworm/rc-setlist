@@ -9,8 +9,12 @@ import { tmpdir } from 'node:os';
 import { fileURLToPath } from 'node:url';
 import { setExtensionContext } from '../../src/context.ts';
 import { startServer } from '../../src/index.ts';
+import { clearSlaveRole } from '../../src/preferences.ts';
 import { bridgeState } from '../../src/runtime/bridge-state.ts';
 import { generatePairingCode } from '../../src/runtime/pairing.ts';
+import { setPeerHealthTiming } from '../../src/runtime/peer-health.ts';
+import { syncInboundSlaveRole } from '../../src/runtime/peer-inbound.ts';
+import { publishPeerStatus } from '../../src/runtime/peer-link.ts';
 
 export const MAIN_CUES = [
   { name: 'Song A', time: 0, cueIndex: 0 },
@@ -64,17 +68,88 @@ export function createChildFakeOsc(logFile) {
   };
 }
 
+let peerHealthAckCount = 0;
+let contextSong = null;
+
+function replyAck(msg) {
+  if (msg.requestId !== undefined) {
+    process.send?.({ type: 'ack', requestId: msg.requestId });
+  }
+}
+
+const IPC_HANDLERS = {
+  freeze(msg) {
+    if (typeof msg.ms !== 'number') return;
+    const end = performance.now() + msg.ms;
+    while (performance.now() < end) {
+      // intentionally block the event loop while keeping TCP open
+    }
+  },
+  get_peer_status(msg) {
+    process.send?.({
+      type: 'peer_status',
+      requestId: msg.requestId,
+      peerStatus: bridgeState.peerStatus,
+      peerStatuses: bridgeState.peerStatuses,
+      peerHealthAckCount,
+    });
+  },
+  set_health_timing(msg) {
+    if (msg.timing && typeof msg.timing === 'object') setPeerHealthTiming(msg.timing);
+    replyAck(msg);
+  },
+  set_osc_connected(msg) {
+    if (bridgeState.oscClient) bridgeState.oscClient.isConnected = Boolean(msg.connected);
+    publishPeerStatus();
+    replyAck(msg);
+  },
+  clear_slave_role(msg) {
+    clearSlaveRole();
+    syncInboundSlaveRole();
+    replyAck(msg);
+  },
+  update_cues(msg) {
+    if (Array.isArray(msg.cues)) {
+      if (contextSong) contextSong.cuePoints = msg.cues;
+      bridgeState.manager?.updateCues(msg.cues);
+    }
+    publishPeerStatus();
+    replyAck(msg);
+  },
+  drop_peer_sockets(msg) {
+    for (const ws of bridgeState.wsServer?.peerSockets() ?? []) {
+      ws.terminate();
+    }
+    replyAck(msg);
+  },
+  async flush_events(msg) {
+    await bridgeState.eventLogger?.flush();
+    replyAck(msg);
+  },
+};
+
+function handleChildIpc(msg) {
+  if (!msg || typeof msg !== 'object') return;
+  const handler = IPC_HANDLERS[msg.type];
+  if (handler) void handler(msg);
+}
+
 async function runChildNode() {
   const storageDir = process.argv[3] || fs.mkdtempSync(path.join(tmpdir(), 'rc-peer-child-'));
   const logFile = process.argv[2] || path.join(storageDir, 'osc-calls.log');
   fs.writeFileSync(logFile, '', 'utf8');
 
+  contextSong = { handle: { id: 99 }, tempo: 120, cuePoints: PEER_CUES };
   setExtensionContext({
     environment: { storageDirectory: storageDir },
-    application: { song: { handle: { id: 99 }, tempo: 120, cuePoints: PEER_CUES } },
+    application: { song: contextSong },
   });
 
   await startServer({ port: 0, skipOsc: true, skipProjectDetector: true });
+  bridgeState.wsServer?.on('client_message', (msg) => {
+    if (msg?.type === 'peer_health_ack') peerHealthAckCount += 1;
+  });
+  process.on('message', handleChildIpc);
   bridgeState.oscClient = createChildFakeOsc(logFile);
   bridgeState.manager.updateCues(PEER_CUES);
   bridgeState.manager.setCustomOrder(PEER_ORDER);
