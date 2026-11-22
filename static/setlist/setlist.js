@@ -52,6 +52,18 @@ globalThis.RcAppBarFit?.install(
   i18n,
   window,
 );
+const peerHealthUi = window.RcPeerHealthUi?.createPeerHealthController({
+  sendAcknowledge: (peerKey) => {
+    if (ws && ws.readyState === 1 && isController) {
+      ws.send(
+        JSON.stringify(
+          peerKey ? { type: 'peer_health_ack', peerKey } : { type: 'peer_health_ack' },
+        ),
+      );
+    }
+  },
+  canSendAck: () => isController,
+});
 
 let ws;
 
@@ -1320,7 +1332,7 @@ function connect() {
     statusDot.className = 'status-dot';
     statusText.textContent = t(lastState ? 'status.reconnecting' : 'status.disconnected');
     // Without the main computer this page knows nothing about the second one.
-    window.RcPeerStatus?.applyPeerStatus(null);
+    peerHealthUi?.reset();
     isController = false;
     isSynchronized = false;
     transportHoldControllers.forEach((controller) => controller.reset());
@@ -1356,7 +1368,7 @@ function connect() {
         if (payload.state) {
           barDisplayStabilizer.observeState(lastState, payload.state);
           lastState = payload.state;
-          window.RcPeerStatus?.applyPeerStatus(lastState.peerStatus);
+          peerHealthUi?.observeState(lastState);
           renderPreRoll();
           quantizationConfirmation.observe(lastState.clipTriggerQuantization);
           jumpConfirmation.observeState(lastState);
@@ -1370,7 +1382,7 @@ function connect() {
         const prevActiveIdx = lastState ? lastState.activeSongIndex : -1;
         barDisplayStabilizer.observeState(lastState, payload.state);
         lastState = payload.state;
-        window.RcPeerStatus?.applyPeerStatus(lastState.peerStatus);
+        peerHealthUi?.observeState(lastState);
         renderPreRoll();
         if (profileState.profiles.length > 0) {
           // The server's rule, read from the frame: Live stopped and the
@@ -1443,6 +1455,7 @@ function connect() {
           appendLog(t('feedback.controller'), 'info');
         }
         updateTransportAvailability();
+        if (lastState) peerHealthUi?.observeState(lastState);
         if (isSynchronized) requestProfiles();
         renderProfileState();
       } else if (payload.type === 'profiles_state') {
@@ -1495,6 +1508,8 @@ function connect() {
         }
       } else if (payload.type === 'count_in_started') {
         playCountInStarted(payload.sendPlayOffsetMs);
+      } else if (payload.type === 'peer_health') {
+        peerHealthUi?.observePeerHealthEvent(payload);
       } else if (payload.type === 'error') {
         lyricsSaveTracker.failAll('server_error');
         // A refused setlist command never gets a status of its own: the list
@@ -3009,6 +3024,7 @@ i18n.subscribe(() => {
   updateLockVisuals();
   renderMidiMappings();
   renderProfileState();
+  peerHealthUi?.onLocaleChange();
   if (lastState) {
     // A language change can alter text inside the list, so forget the markup
     // as well as the version — otherwise the identical-HTML guard would keep

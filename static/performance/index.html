@@ -37,6 +37,15 @@
           </label>
           <div id="statusOverlay" class="stage-status" aria-live="polite">
             <span id="statusDot" class="status-dot"></span>
+            <span
+              id="peerStatusDot"
+              class="status-dot"
+              hidden
+              title="Second computer"
+              aria-label="Second computer"
+              data-i18n-title="peer.dotLabel"
+              data-i18n-aria-label="peer.dotLabel"
+            ></span>
             <span id="statusText" data-i18n="status.offline">OFFLINE</span>
           </div>
           <button
@@ -50,6 +59,8 @@
           </button>
         </div>
       </header>
+
+      <div id="peerHealthBar" class="peer-health-bar" role="status" aria-live="polite" hidden></div>
 
       <main class="stage-grid">
         <section
@@ -148,10 +159,38 @@
 
     <div id="stageNotice" class="ui-notice" role="status" aria-live="polite" hidden></div>
 
+    <div
+      id="peerAlarmOverlay"
+      class="peer-alarm-overlay"
+      role="alertdialog"
+      aria-modal="true"
+      aria-labelledby="peerAlarmTitle"
+      hidden
+    >
+      <div class="peer-alarm-box">
+        <h2 id="peerAlarmTitle" data-i18n="peer.alarm.title">SECOND COMPUTER LINK DOWN</h2>
+        <p id="peerAlarmReason" class="peer-alarm-reason"></p>
+        <p id="peerAlarmBody" data-i18n="peer.alarm.body">
+          Commands are not reaching the paired computer. Check the network link or dismiss to keep
+          operating with the red badge.
+        </p>
+        <button
+          id="btnPeerAlarmDismiss"
+          class="ui-button peer-alarm-dismiss"
+          type="button"
+          data-i18n="peer.alarm.dismiss"
+        >
+          Dismiss alarm
+        </button>
+      </div>
+    </div>
+
     <script src="../shared/lyrics-timing.js"></script>
     <script src="../shared/i18n.js"></script>
     <script src="../shared/stage-runtime.js"></script>
     <script src="../setlist/transport-runtime.js"></script>
+    <script src="../setlist/peer-status.js"></script>
+    <script src="../setlist/peer-health-ui.js"></script>
     <script src="./performance.js"></script>
   </body>
 </html>

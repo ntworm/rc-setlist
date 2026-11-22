@@ -255,9 +255,51 @@ const marketingLyricsMessage = {
   ],
 };
 
+function peerDownPlayingState() {
+  const lastDropAt = Date.now() - 5000;
+  const row = {
+    key: '192.168.1.20:4444',
+    role: 'outbound',
+    host: '192.168.1.20',
+    port: 4444,
+    connected: false,
+    markersMatch: true,
+    fingerprintMismatch: false,
+    versionMismatch: false,
+    health: 'down',
+    reason: 'link_down',
+    canAcknowledge: false,
+    rttP95Ms: null,
+    drops5m: 2,
+    lastDropAt,
+  };
+  return {
+    type: 'state',
+    state: {
+      ...stateMessage.state,
+      isPlaying: true,
+      peerStatus: {
+        paired: true,
+        connected: false,
+        markersMatch: true,
+        fingerprintMismatch: false,
+        versionMismatch: false,
+        health: 'down',
+        reason: 'link_down',
+        canAcknowledge: false,
+        rttP95Ms: null,
+        drops5m: 2,
+        lastDropAt,
+      },
+      peerStatuses: [row],
+    },
+  };
+}
+
 function stateForScenario(scenario) {
   if (scenario === 'relative-first') return relativeShowState(0);
   if (scenario === 'relative-later') return relativeShowState(1);
+  if (scenario === 'peer-down-playing') return peerDownPlayingState();
   return scenario === 'marketing' ? marketingStateMessage : stateMessage;
 }
 

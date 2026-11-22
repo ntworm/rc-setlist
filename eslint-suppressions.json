@@ -282,7 +282,7 @@
       "count": 2
     },
     "max-lines-per-function": {
-      "count": 3
+      "count": 2
     }
   },
   "static/setlist/controller-runtime.js": {

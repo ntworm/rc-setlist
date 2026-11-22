@@ -152,6 +152,8 @@
       </div>
     </header>
 
+    <div id="peerHealthBar" class="peer-health-bar" role="status" aria-live="polite" hidden></div>
+
     <!-- Help Modal -->
     <div id="helpModal" class="modal-overlay" onclick="closeHelp(event)">
       <div class="modal-content" onclick="event.stopPropagation()">
@@ -1297,6 +1299,14 @@ A quiet pulse becomes our guide..."
           </details>
         </aside>
 
+        <div
+          id="peerTransportBadge"
+          class="peer-transport-badge"
+          role="status"
+          aria-live="polite"
+          hidden
+        ></div>
+
         <nav
           class="transport-dock"
           aria-label="Main transport"
@@ -1440,6 +1450,32 @@ A quiet pulse becomes our guide..."
     <div id="operationToast" class="operation-toast" role="status" aria-live="polite" hidden></div>
 
     <div
+      id="peerAlarmOverlay"
+      class="peer-alarm-overlay"
+      role="alertdialog"
+      aria-modal="true"
+      aria-labelledby="peerAlarmTitle"
+      hidden
+    >
+      <div class="peer-alarm-box">
+        <h2 id="peerAlarmTitle" data-i18n="peer.alarm.title">SECOND COMPUTER LINK DOWN</h2>
+        <p id="peerAlarmReason" class="peer-alarm-reason"></p>
+        <p id="peerAlarmBody" data-i18n="peer.alarm.body">
+          Commands are not reaching the paired computer. Check the network link or dismiss to keep
+          operating with the red badge.
+        </p>
+        <button
+          id="btnPeerAlarmDismiss"
+          class="ui-button peer-alarm-dismiss"
+          type="button"
+          data-i18n="peer.alarm.dismiss"
+        >
+          Dismiss alarm
+        </button>
+      </div>
+    </div>
+
+    <div
       id="markerEditor"
       class="marker-editor"
       hidden
@@ -1538,6 +1574,7 @@ A quiet pulse becomes our guide..."
 
     <script src="./count-in.js"></script>
     <script src="./peer-status.js"></script>
+    <script src="./peer-health-ui.js"></script>
     <script src="./marker-editor.js"></script>
     <script src="./controller-runtime.js"></script>
     <script src="./app-bar-fit.js"></script>

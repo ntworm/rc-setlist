@@ -21,6 +21,10 @@ function escapeHtml(unsafe) {
 const i18n = RcSetlistI18n;
 const t = (key, params) => i18n.t(key, params);
 i18n.bindSelector(document.getElementById('languageSelect'));
+const peerHealthUi = window.RcPeerHealthUi?.createPeerHealthController({
+  canSendAck: () => false,
+  isPerformance: true,
+});
 
 let ws;
 const port = window.location.port || '4444';
@@ -68,6 +72,53 @@ function showConnectionFailure() {
   overlay.classList.add('visible');
 }
 
+/**
+ * Applies an incoming show state payload on the Performance Display.
+ */
+function applyPerformanceState(nextState) {
+  lastState = nextState;
+  lastReceivedTime = performance.now();
+  document.body.classList.remove('connection-stale');
+  document.body.classList.remove('connection-empty');
+  document.getElementById('networkErrorOverlay').classList.remove('visible');
+  updateUINonTimeSensitive(lastState);
+  peerHealthUi?.observeState(lastState);
+
+  // Fetch lyrics if the active song changed and doesn't match currentLyrics
+  const activeSong = lastState.songs[lastState.activeSongIndex];
+  if (activeSong && activeSong.title !== currentLyrics.song && !lyricsFetchInFlight) {
+    lyricsFetchInFlight = true;
+    ws.send(JSON.stringify({ type: 'get_lyrics' }));
+    setTimeout(() => {
+      lyricsFetchInFlight = false;
+    }, 250);
+  }
+}
+
+/**
+ * Dispatches a parsed WebSocket payload on the Performance Display.
+ */
+function handlePerformanceMessage(payload) {
+  if (payload.type === 'handshake_ack') {
+    // Send sync_confirm
+    ws.send(JSON.stringify({ type: 'sync_confirm', stateVersion: payload.stateVersion }));
+    ws.send(JSON.stringify({ type: 'get_lyrics' }));
+    if (payload.state) {
+      lastState = payload.state;
+      updateUINonTimeSensitive(lastState);
+      peerHealthUi?.observeState(lastState);
+    }
+    return;
+  }
+  if (payload.type === 'state') {
+    applyPerformanceState(payload.state);
+  } else if (payload.type === 'lyrics') {
+    displayLyrics(payload.song, payload.lines, payload.format);
+  } else if (payload.type === 'peer_health') {
+    peerHealthUi?.observePeerHealthEvent(payload);
+  }
+}
+
 function connect() {
   const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
   const url = `${protocol}//${window.location.hostname}:${port}/ws`;
@@ -101,46 +152,14 @@ function connect() {
     console.log('[WS] closed:', event.code, event.reason || '(no reason)');
     statusDot.className = 'status-dot';
     statusText.textContent = t(lastState ? 'status.reconnectingUpper' : 'status.offline');
+    peerHealthUi?.reset();
     showConnectionFailure();
     setTimeout(connect, 3000);
   };
 
   ws.onmessage = (e) => {
     try {
-      const payload = JSON.parse(e.data);
-      if (payload.type === 'handshake_ack') {
-        // Send sync_confirm
-        ws.send(JSON.stringify({ type: 'sync_confirm', stateVersion: payload.stateVersion }));
-        ws.send(JSON.stringify({ type: 'get_lyrics' }));
-        if (payload.state) {
-          lastState = payload.state;
-          updateUINonTimeSensitive(lastState);
-        }
-        return;
-      }
-      if (payload.type === 'state') {
-        lastState = payload.state;
-        lastReceivedTime = performance.now();
-        document.body.classList.remove('connection-stale');
-        document.body.classList.remove('connection-empty');
-        document.getElementById('networkErrorOverlay').classList.remove('visible');
-        updateUINonTimeSensitive(lastState);
-
-        // Fetch lyrics if the active song changed and doesn't match currentLyrics
-        const activeSong = lastState.songs[lastState.activeSongIndex];
-        if (activeSong && activeSong.title !== currentLyrics.song && !lyricsFetchInFlight) {
-          lyricsFetchInFlight = true;
-          ws.send(JSON.stringify({ type: 'get_lyrics' }));
-          setTimeout(() => {
-            lyricsFetchInFlight = false;
-          }, 250);
-        }
-      } else if (payload.type === 'lyrics') {
-        displayLyrics(payload.song, payload.lines, payload.format);
-      } else if (payload.type === 'jump_executed') {
-        // Performance view is display-only — no clickable sections to flash.
-        // The setlist view handles the visual confirmation.
-      }
+      handlePerformanceMessage(JSON.parse(e.data));
     } catch (err) {
       console.error(err);
     }
@@ -457,6 +476,7 @@ requestAnimationFrame(tick);
 
 i18n.subscribe(() => {
   if (lastState) updateUINonTimeSensitive(lastState);
+  peerHealthUi?.onLocaleChange();
   displayLyrics(currentLyrics.song, currentLyrics.lines, currentLyrics.format);
   if (document.getElementById('networkErrorOverlay').classList.contains('visible')) {
     showConnectionFailure();
