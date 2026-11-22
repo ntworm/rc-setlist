@@ -55,7 +55,7 @@ import {
 import { peerKey, type PeerConfig } from '../preferences.js';
 import type { ShowCommand } from '../types.js';
 import { log } from '../util/log.js';
-import { startPeerClock } from './peer-follow-runtime.js';
+import { setPeerOutOfStepListener, startPeerTarget } from './peer-follow-runtime.js';
 
 export { resetPeerLinkTiming, setPeerLinkTiming } from './peer-liveness.js';
 export { PEER_RELAY_TYPES } from './peer-message.js';
@@ -69,7 +69,7 @@ interface PeerLink extends PeerCommandTarget {
   connectTimer: NodeJS.Timeout | null;
   handshakeTimer: NodeJS.Timeout | null;
   reconnectDelayMs: number;
-  clockTimer: NodeJS.Timeout | null;
+  targetTimer: NodeJS.Timeout | null;
   health: PeerLinkHealth;
   state: PeerLinkState;
 }
@@ -89,10 +89,14 @@ const healthBroadcaster = createLastSeenBroadcaster((): LastSeenEntry[] => {
 });
 
 setInboundStatusListener(() => publishPeerStatus());
+setPeerOutOfStepListener(() => {
+  nudgeInboundHeartbeat();
+  publishPeerStatus();
+});
 
 /** Stops every timer of the current attempt. */
 function stopAttemptTimers(target: PeerLink): void {
-  target.clockTimer = stopTimer(target.clockTimer);
+  target.targetTimer = stopTimer(target.targetTimer);
   target.connectTimer = stopTimer(target.connectTimer);
   target.handshakeTimer = stopTimer(target.handshakeTimer);
   target.watchdog?.stop();
@@ -190,8 +194,8 @@ function onPeerHandshakeAck(
   });
   updateMarkersMatch(target, message.state);
   setLinkState(target, { connected: true, versionMismatch: false });
-  stopTimer(target.clockTimer);
-  target.clockTimer = startPeerClock(() =>
+  stopTimer(target.targetTimer);
+  target.targetTimer = startPeerTarget(() =>
     isStaleSocket(target, socket) || !target.synchronized ? null : target.socket,
   );
   onPeerPendingReconnect(target);
@@ -396,7 +400,7 @@ function createPeerLink(key: string, config: PeerConfig): PeerLink {
     reconnectDelayMs: peerLinkTiming().reconnectBaseMs,
     synchronized: false,
     stopped: false,
-    clockTimer: null,
+    targetTimer: null,
     pending: createPeerPendingTable(),
     pendingTimer: null,
     health,

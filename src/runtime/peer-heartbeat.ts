@@ -7,6 +7,7 @@
 import { decodePeerHb, decodePeerHbAck } from '../server/peer-client-message.js';
 import type { PeerHealthReason, PeerHealthTier, PeerHealthView } from '../types.js';
 import { bridgeState } from './bridge-state.js';
+import { isPeerOutOfStep } from './peer-follow-runtime.js';
 import { computeShownHealth, PeerHealthTracker, peerHealthTiming } from './peer-health.js';
 import type { PeerLinkState } from './peer-status-list.js';
 
@@ -77,7 +78,8 @@ export function localHealthSignals(): {
  */
 export function localHealthViewKey(): string {
   const s = localHealthSignals();
-  return `${s.oscConnected ? 1 : 0}:${s.liveReady ? 1 : 0}:${s.cuesFingerprint}`;
+  const out = isPeerOutOfStep() ? 1 : 0;
+  return `${s.oscConnected ? 1 : 0}:${s.liveReady ? 1 : 0}:${out}:${s.cuesFingerprint}`;
 }
 
 /**
@@ -85,7 +87,7 @@ export function localHealthViewKey(): string {
  */
 export function buildLocalHealthView(
   tracker: PeerHealthTracker,
-  outOfStep = false,
+  outOfStep = isPeerOutOfStep(),
 ): PeerHealthView {
   const local = tracker.localSnapshot();
   const signals = localHealthSignals();
@@ -217,6 +219,7 @@ export function evaluatePeerLinkHealth(
   remoteView: PeerHealthView | null,
   markersMatch: boolean,
   prevLogged: string,
+  localOutOfStep = false,
 ): { patch: Partial<PeerLinkState>; logged: string } {
   const local = tracker.localSnapshot();
   const signals = localHealthSignals();
@@ -224,7 +227,7 @@ export function evaluatePeerLinkHealth(
     local,
     localOscConnected: signals.oscConnected,
     localLiveReady: signals.liveReady,
-    localOutOfStep: false,
+    localOutOfStep,
     markersMatch,
     remoteView,
   });

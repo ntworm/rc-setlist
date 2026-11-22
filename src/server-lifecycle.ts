@@ -83,11 +83,15 @@ import {
   resetPeerUpstream,
 } from './runtime/peer-upstream.js';
 import { receiveSetlistChunk } from './runtime/peer-setlist.js';
-import { handlePeerClock, notePeerCommand } from './runtime/peer-follow-runtime.js';
+import {
+  handlePeerTarget,
+  notePeerCommand,
+  resetPeerFollowRuntime,
+} from './runtime/peer-follow-runtime.js';
 import { getOrGeneratePeerToken } from './runtime/pairing.js';
 import { startPeerDiscovery, stopPeerDiscovery } from './runtime/peer-discovery.js';
 import { startEventLoopWatch, warnIfSlow } from './runtime/event-loop-watch.js';
-import { readPeerConfigs } from './preferences.js';
+import { getPeerAutoCorrect, readPeerConfigs } from './preferences.js';
 import { applyJumpTargetTempo } from './commands/jump-tempo.js';
 import type { ClientMessage, ShowCommand } from './types.js';
 import {
@@ -555,6 +559,7 @@ export async function startServer(options: StartServerOptions = {}): Promise<voi
     setHttpAuthToken(bridgeState.authToken);
     bridgeState.peerToken = getOrGeneratePeerToken();
     setPeerToken(bridgeState.peerToken);
+    bridgeState.peerAutoCorrect = getPeerAutoCorrect();
 
     const fallbackSessionId = bridgeState.projectSessionId || newProjectSessionId();
     bridgeState.projectSessionId = projectSessionIdForSong(
@@ -810,10 +815,11 @@ export async function startServer(options: StartServerOptions = {}): Promise<voi
         return;
       }
 
-      // The clock of the main computer is not a command: it changes nothing
-      // unless this computer has fallen off the main computer's beat.
-      if (msg.type === 'peer_clock') {
-        handlePeerClock(msg);
+      // The target of the main computer is not a command: it changes nothing
+      // unless this computer has fallen off the main computer's beat or needs
+      // stopped-state convergence.
+      if (msg.type === 'peer_target') {
+        handlePeerTarget(msg);
         return;
       }
       // The setlist of the main computer travels in pieces: it is a setlist
@@ -1099,6 +1105,7 @@ export async function stopServer(): Promise<void> {
   }
 
   resetInboundPeerState();
+  resetPeerFollowRuntime();
   resetSlaveCommandState();
   resetMasterRelayIntent();
   stopPeerLink();
@@ -1106,6 +1113,7 @@ export async function stopServer(): Promise<void> {
   resetPeerUpstream();
   bridgeState.masterTransportSeq = 0;
   bridgeState.peerAlerts = {};
+  bridgeState.peerAutoCorrect = true;
 
   // The computers of the network stop saying hello with the server.
   stopPeerDiscovery();

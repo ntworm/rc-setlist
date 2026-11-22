@@ -71,6 +71,11 @@ export interface BridgeState {
    * arrangement stops following its envelope until Re-Enable Automation.
    */
   writeTempoOnJump: boolean;
+  /**
+   * Whether the second computer automatically reconciles its playhead while
+   * stopped. Loaded from `peer-auto-correct` on startup (defaults to `true`).
+   */
+  peerAutoCorrect: boolean;
   /** Cached song book for the active profile. */
   songBook: SongBook | null;
   serverRunning: boolean;
@@ -128,6 +133,7 @@ export const bridgeState: BridgeState = {
   transportClockSource: null,
 
   writeTempoOnJump: false,
+  peerAutoCorrect: true,
   songBook: null,
   serverRunning: false,
   serverUsesTls: false,

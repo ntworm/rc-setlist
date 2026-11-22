@@ -40,7 +40,6 @@ const PEER_COMMAND_TYPES: ReadonlySet<string> = new Set([
   'handshake',
   'sync_confirm',
   'jump_time',
-  'peer_clock',
   'peer_upstream_result',
   'setlist_chunk',
   'peer_hb',
@@ -64,7 +63,6 @@ export function isPeerCommandType(type: string): boolean {
 /** What only a peer connection may send, and how a page that tries is told. */
 const PEER_ONLY_REFUSALS: Readonly<Record<string, string>> = {
   jump_time: 'Unauthorized: only a peer connection may send a jump by beat.',
-  peer_clock: 'Unauthorized: only a peer connection may send its clock.',
   peer_upstream_result: 'Unauthorized: only a peer connection may answer a command handed up.',
   setlist_chunk: 'Unauthorized: only a peer connection may send a setlist.',
   peer_hb: 'Unauthorized: only a peer connection may send a peer heartbeat.',

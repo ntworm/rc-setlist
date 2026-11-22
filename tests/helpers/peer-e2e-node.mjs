@@ -11,9 +11,10 @@ import { fileURLToPath } from 'node:url';
 import { WebSocket, WebSocketServer } from 'ws';
 import { setExtensionContext } from '../../src/context.ts';
 import { startServer } from '../../src/index.ts';
-import { clearSlaveRole } from '../../src/preferences.ts';
-import { bridgeState } from '../../src/runtime/bridge-state.ts';
+import { clearSlaveRole, getPeerAutoCorrect, setPeerAutoCorrect } from '../../src/preferences.ts';
+import { bridgeState, broadcastState } from '../../src/runtime/bridge-state.ts';
 import { generatePairingCode } from '../../src/runtime/pairing.ts';
+import { isPeerOutOfStep, setPeerFollowTiming } from '../../src/runtime/peer-follow-runtime.ts';
 import { setPeerHealthTiming } from '../../src/runtime/peer-health.ts';
 import { syncInboundSlaveRole } from '../../src/runtime/peer-inbound.ts';
 import { publishPeerStatus } from '../../src/runtime/peer-link.ts';
@@ -114,6 +115,9 @@ const IPC_HANDLERS = {
       peerStatus: bridgeState.peerStatus,
       peerStatuses: bridgeState.peerStatuses,
       peerHealthAckCount,
+      outOfStep: isPeerOutOfStep(),
+      currentSongTime: bridgeState.manager?.getState().currentSongTime ?? 0,
+      autoCorrect: bridgeState.peerAutoCorrect,
       safety: bridgeState.manager?.getState().safety ?? null,
     });
   },
@@ -126,6 +130,23 @@ const IPC_HANDLERS = {
   },
   set_health_timing(msg) {
     if (msg.timing && typeof msg.timing === 'object') setPeerHealthTiming(msg.timing);
+    replyAck(msg);
+  },
+  set_follow_timing(msg) {
+    if (msg.timing && typeof msg.timing === 'object') setPeerFollowTiming(msg.timing);
+    replyAck(msg);
+  },
+  set_peer_auto_correct(msg) {
+    setPeerAutoCorrect(Boolean(msg.enabled));
+    bridgeState.peerAutoCorrect = getPeerAutoCorrect();
+    replyAck(msg);
+  },
+  set_transport(msg) {
+    const songTime = Number(msg.songTime ?? 0);
+    const playing = Boolean(msg.isPlaying);
+    const tempo = typeof msg.tempo === 'number' ? msg.tempo : undefined;
+    bridgeState.manager?.updateTransport(songTime, playing, tempo);
+    broadcastState();
     replyAck(msg);
   },
   set_osc_connected(msg) {

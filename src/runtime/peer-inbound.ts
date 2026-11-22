@@ -7,6 +7,7 @@
 import { WebSocket } from 'ws';
 import { readPeerConfigs, readSlaveRole } from '../preferences.js';
 import type { AugmentedWebSocket, ClientMessage, PeerHealthView } from '../types.js';
+import { isPeerOutOfStep, resetPeerFollowRuntime } from './peer-follow-runtime.js';
 import { PeerHealthTracker } from './peer-health.js';
 import {
   buildLocalHealthView,
@@ -73,6 +74,7 @@ function clearInboundRecord(): void {
   synchronized = false;
   versionMismatch = false;
   lastLogged = '';
+  resetPeerFollowRuntime();
 }
 
 /**
@@ -118,12 +120,13 @@ export function onInboundPeerSyncConfirm(ws: AugmentedWebSocket): void {
   synchronized = true;
   remoteView = null;
   versionMismatch = false;
+  resetPeerFollowRuntime();
   const activeTracker = tracker;
   const isCurrent = (): boolean => myGen === generation && activeSocket === ws;
   heartbeat = startPeerHeartbeat({
     tracker: activeTracker,
     send: (msg) => (isCurrent() ? sendOnSocket(ws, msg) : false),
-    getLocalView: () => buildLocalHealthView(activeTracker, false),
+    getLocalView: () => buildLocalHealthView(activeTracker, isPeerOutOfStep()),
     onRemoteView: (view) => {
       if (!isCurrent()) return;
       remoteView = view;
@@ -171,6 +174,7 @@ export function onInboundPeerClosed(ws: AugmentedWebSocket): void {
   heartbeat = null;
   remoteView = null;
   tracker?.onDisconnected(wasSync);
+  resetPeerFollowRuntime();
   if (!hasStandaloneSlaveRole()) {
     tracker = null;
     lastLogged = '';
@@ -225,6 +229,7 @@ export function getInboundPeerSummary(): PeerLinkSummary | null {
     remoteView,
     markersMatch,
     lastLogged,
+    isPeerOutOfStep(),
   );
   lastLogged = logged;
   return {

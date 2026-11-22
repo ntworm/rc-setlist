@@ -125,7 +125,7 @@ function describeAction(message, original, manager) {
   };
 }
 
-const IGNORED_PEER_TYPES = new Set(['peer_clock', 'peer_hb_ack', 'peer_health_ack']);
+const IGNORED_PEER_TYPES = new Set(['peer_target', 'peer_hb_ack', 'peer_health_ack']);
 
 function replyPeerHeartbeat(message, ws, manager) {
   const t1 = performance.now();
@@ -202,7 +202,7 @@ function handlePeerMessage(message, ws, manager, actions) {
     handlePeerCommandEnvelope(message, ws, manager, actions);
     return;
   }
-  // Heartbeat acknowledgements and the main computer's clock are not show commands.
+  // Heartbeat acknowledgements and the main computer's target are not show commands.
   if (IGNORED_PEER_TYPES.has(message.type)) return;
   const jump = resolvePeerJump(message, manager.getState());
   if (jump.kind === 'error') {

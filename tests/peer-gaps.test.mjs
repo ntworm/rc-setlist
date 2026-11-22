@@ -403,7 +403,8 @@ test('a peer that refuses the confirmation drops the link instead of staying gre
     if (
       message.type === 'sync_confirm' ||
       message.type === 'peer_hb' ||
-      message.type === 'peer_hb_ack'
+      message.type === 'peer_hb_ack' ||
+      message.type === 'peer_target'
     )
       return;
     ws.send(

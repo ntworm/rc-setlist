@@ -7,6 +7,7 @@ const SETLIST_DIR = '.setlist';
 const AUTO_START_FILE = 'auto-start';
 const UI_LOCALE_FILE = 'ui-locale';
 const WRITE_TEMPO_ON_JUMP_FILE = 'write-tempo-on-jump';
+const PEER_AUTO_CORRECT_FILE = 'peer-auto-correct';
 const PEER_CONFIG_FILE = 'peer.json';
 const PEER_ROLE_FILE = 'peer-role.json';
 
@@ -157,6 +158,22 @@ export function getWriteTempoOnJump(): boolean {
  */
 export function setWriteTempoOnJump(on: boolean): boolean {
   return writePreference(WRITE_TEMPO_ON_JUMP_FILE, on ? 'true' : 'false');
+}
+
+/**
+ * Whether the second computer automatically reconciles its playhead to match
+ * the main computer while stopped. Defaults to `true`.
+ */
+export function getPeerAutoCorrect(): boolean {
+  return readPreference(PEER_AUTO_CORRECT_FILE)?.toLowerCase() !== 'false';
+}
+
+/**
+ * Sets whether the second computer automatically reconciles its playhead to
+ * match the main computer while stopped.
+ */
+export function setPeerAutoCorrect(on: boolean): boolean {
+  return writePreference(PEER_AUTO_CORRECT_FILE, on ? 'true' : 'false');
 }
 
 /**

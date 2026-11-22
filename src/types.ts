@@ -254,14 +254,6 @@ export type ClientMessage =
       reason?: string;
     })
   | (ClientMessageBase & {
-      type: 'peer_clock';
-      isPlaying: boolean;
-      songTime: number;
-      tempo: number;
-      jumpPending: boolean;
-      loopActive: boolean;
-    })
-  | (ClientMessageBase & {
       type: 'peer_hb';
       hbId: number;
       t0: number;

@@ -62,7 +62,6 @@ test('isPeerRelayWireType allows relayed wire commands and rejects control frame
     'peer_target',
     'peer_health_ack',
     'peer_command',
-    'peer_clock',
     'peer_upstream_result',
     'setlist_chunk',
     'reorder',
@@ -77,7 +76,6 @@ test('isPeerCommandType and peerCommandRejection enforce peer and controller rul
     'handshake',
     'sync_confirm',
     'jump_time',
-    'peer_clock',
     'peer_upstream_result',
     'setlist_chunk',
     'peer_hb',
@@ -94,7 +92,6 @@ test('isPeerCommandType and peerCommandRejection enforce peer and controller rul
   }
   const peerOnly = [
     'jump_time',
-    'peer_clock',
     'peer_upstream_result',
     'setlist_chunk',
     'peer_hb',
