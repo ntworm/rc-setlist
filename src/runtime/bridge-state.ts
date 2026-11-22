@@ -32,12 +32,13 @@ import {
 } from '../core/project-profile-scope.js';
 import type { ProjectIdentity } from '../core/project-identity.js';
 import type { ProfileManagerOptions } from '../core/profile-manager.js';
-import type { PeerLinkStatus, PeerStatus } from '../types.js';
+import type { PeerCommandAlert, PeerLinkStatus, PeerStatus } from '../types.js';
 import { readPeerConfigs, readSlaveRole } from '../preferences.js';
 import { log } from '../util/log.js';
 import { atomicWriteFileSync } from '../util/atomic-write.js';
 import { isPlainObject, isStringArray, parseJson } from '../util/json.js';
 import { warnIfSlow } from './event-loop-watch.js';
+import { createMasterSessionId } from './peer-protocol.js';
 
 export interface BridgeState {
   manager: SetlistManager | null;
@@ -91,6 +92,12 @@ export interface BridgeState {
   peerStatus: PeerStatus;
   /** What every paired computer looks like from here, one row each. */
   peerStatuses: PeerLinkStatus[];
+  /** Master session token regenerated on every server start. */
+  masterSessionId: string;
+  /** Monotonic master transport command sequence reset on every server start. */
+  masterTransportSeq: number;
+  /** Latest delivery alerts keyed by peer link key. */
+  peerAlerts: Record<string, PeerCommandAlert>;
   globalPersistenceDir: string;
   projectIdentity: ProjectIdentity | null;
   profileScopeSwitching: boolean;
@@ -143,6 +150,9 @@ export const bridgeState: BridgeState = {
     lastDropAt: null,
   },
   peerStatuses: [],
+  masterSessionId: createMasterSessionId(),
+  masterTransportSeq: 0,
+  peerAlerts: {},
   globalPersistenceDir: '',
   projectIdentity: null,
   profileScopeSwitching: false,

@@ -245,7 +245,14 @@ test('auth frame on isPeer connection is rejected without touching isController'
   const authResult = await waitFor(() => messages.find((m) => m.type === 'auth_result'));
   assert.equal(authResult?.success, false);
 
-  ws.send(JSON.stringify({ type: 'handshake', clientId: 'peer-auth-test' }));
+  ws.send(
+    JSON.stringify({
+      type: 'handshake',
+      clientId: 'peer-auth-test',
+      linkProtocol: 2,
+      extensionVersion: '1.2.1',
+    }),
+  );
   const ack = await waitFor(() => messages.find((m) => m.type === 'handshake_ack'));
   if (ack) ws.send(JSON.stringify({ type: 'sync_confirm', stateVersion: ack.stateVersion }));
   await delay(50);
@@ -387,7 +394,8 @@ test('a peer that refuses the confirmation drops the link instead of staying gre
   wsServer.on('client_message', (message, ws) => {
     received.push(message);
     if (message.type === 'handshake') {
-      ws.send(JSON.stringify({ type: 'handshake_ack', stateVersion: 7, state: {} }));
+      const ack = { type: 'handshake_ack', stateVersion: 7, linkProtocol: 2, state: {} };
+      ws.send(JSON.stringify(ack));
       return;
     }
     // The confirmation never takes on this side, so every command after it
@@ -422,7 +430,7 @@ test('a peer that refuses the confirmation drops the link instead of staying gre
   const connected = await waitFor(() => bridgeState.peerStatus.connected === true, 8000);
   assert.ok(connected, 'the link to the second computer must come up');
   relayToPeer(makeCommand('play', 'refused-by-the-peer'));
-  await waitFor(() => received.some((message) => message.type === 'play'), 3000);
+  await waitFor(() => received.some((m) => m.command?.type === 'play'), 3000);
   const dropped = await waitFor(() => bridgeState.peerStatus.connected === false, 3000);
   assert.ok(dropped, 'a peer that is not in sync must not be reported as connected');
   stopPeerLink();

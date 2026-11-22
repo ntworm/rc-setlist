@@ -143,6 +143,32 @@ function replyPeerHeartbeat(message, ws, manager) {
   );
 }
 
+function sendPeerAck(ws, commandId, result, reason = '') {
+  ws.send(
+    JSON.stringify({
+      type: 'peer_ack',
+      commandId,
+      result,
+      reason,
+      isPlaying: false,
+      beat: 0,
+    }),
+  );
+}
+
+function handlePeerCommandEnvelope(message, ws, manager, actions) {
+  const inner = { ...message.command, commandId: message.commandId };
+  const jump = resolvePeerJump(inner, manager.getState());
+  if (jump.kind === 'error') {
+    ws.send(JSON.stringify({ type: 'error', code: jump.code, message: jump.message }));
+    sendPeerAck(ws, message.commandId, 'failed', jump.code);
+    return;
+  }
+  const effective = jump.kind === 'jump' ? jump.message : inner;
+  actions.push(describeAction(effective, inner, manager));
+  sendPeerAck(ws, message.commandId, 'confirmed');
+}
+
 function handlePeerMessage(message, ws, manager, actions) {
   const rejection = peerCommandRejection(message, ws.isPeer === true);
   if (rejection) {
@@ -153,7 +179,15 @@ function handlePeerMessage(message, ws, manager, actions) {
     const state = manager.getState();
     ws.clientId = message.clientId;
     ws.handshakeStateVersion = state.stateVersion;
-    ws.send(JSON.stringify({ type: 'handshake_ack', stateVersion: state.stateVersion, state }));
+    ws.send(
+      JSON.stringify({
+        type: 'handshake_ack',
+        stateVersion: state.stateVersion,
+        linkProtocol: 2,
+        extensionVersion: '1.2.1',
+        state,
+      }),
+    );
     return;
   }
   if (message.type === 'sync_confirm') {
@@ -162,6 +196,10 @@ function handlePeerMessage(message, ws, manager, actions) {
   }
   if (message.type === 'peer_hb') {
     replyPeerHeartbeat(message, ws, manager);
+    return;
+  }
+  if (message.type === 'peer_command') {
+    handlePeerCommandEnvelope(message, ws, manager, actions);
     return;
   }
   // Heartbeat acknowledgements and the main computer's clock are not show commands.

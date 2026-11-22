@@ -111,6 +111,15 @@ export interface PeerLinkStatus {
   remoteLinkHealth?: PeerHealthTier | null;
 }
 
+/** Latest delivery alert recorded for a paired computer. */
+export interface PeerCommandAlert {
+  commandId: string;
+  commandType: string;
+  status: string;
+  reason?: string;
+  at: number;
+}
+
 export interface SetlistState {
   protocolVersion?: 3;
   setlistVersion?: number;

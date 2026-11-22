@@ -67,7 +67,15 @@ async function startPeer(tlsOptions) {
   });
   wsServer.on('client_message', (message, ws) => {
     if (message.type === 'handshake') {
-      ws.send(JSON.stringify({ type: 'handshake_ack', stateVersion: 0, state: {} }));
+      ws.send(
+        JSON.stringify({
+          type: 'handshake_ack',
+          stateVersion: 0,
+          state: {},
+          linkProtocol: 2,
+          extensionVersion: '1.2.1',
+        }),
+      );
     }
   });
   const port = await listen(server);

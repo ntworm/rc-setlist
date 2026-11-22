@@ -91,7 +91,7 @@ async function connectSynced(port, token) {
   });
   const messages = collect(ws);
   await openSocket(ws);
-  ws.send(JSON.stringify({ type: 'handshake', clientId: 'test-client' }));
+  ws.send(JSON.stringify({ type: 'handshake', clientId: 'test-client', linkProtocol: 2 }));
   const ack = await waitForMessage(messages, (message) => message.type === 'handshake_ack');
   if (ack) ws.send(JSON.stringify({ type: 'sync_confirm', stateVersion: ack.stateVersion }));
   await delay(50);
@@ -259,7 +259,8 @@ test('a peer that stops answering pings is dropped, and the next command is disc
   wsServer.on('client_message', (message, ws) => {
     received.push(message);
     if (message.type === 'handshake') {
-      ws.send(JSON.stringify({ type: 'handshake_ack', stateVersion: 0, state: {} }));
+      const ack = { type: 'handshake_ack', stateVersion: 0, linkProtocol: 2, state: {} };
+      ws.send(JSON.stringify(ack));
     }
   });
   const server = https.createServer(peerComputer.tls, createHttpRequestListener());
@@ -283,7 +284,7 @@ test('a peer that stops answering pings is dropped, and the next command is disc
   assert.ok(dropped, 'a peer that stops answering must be dropped');
   relayToPeer(makeCommand('play', 'after-the-drop'));
   await delay(300);
-  assert.strictEqual(received.filter((message) => message.type === 'play').length, 0);
+  assert.strictEqual(received.filter((m) => m.type === 'peer_command').length, 0);
   stopPeerLink();
   resetPeerLinkTiming();
   wsServer.stop();
@@ -316,8 +317,8 @@ test('a jump to a section travels with its level', async () => {
   peerComputer.messages.length = 0;
   peerComputer.actions.length = 0;
   relayToPeer(makeCommand('jump', 'cmd-section', { type: 'jump', songIndex: 1, sectionIndex: 0 }));
-  await waitFor(() => peerComputer.messages.some((message) => message.type === 'jump_time'));
-  const jump = peerComputer.messages.find((message) => message.type === 'jump_time');
+  await waitFor(() => peerComputer.messages.some((m) => m.command?.type === 'jump_time'));
+  const jump = peerComputer.messages.find((m) => m.command?.type === 'jump_time').command;
   assert.strictEqual(jump.time, 100);
   assert.strictEqual(jump.section, true);
   await waitFor(() => peerComputer.actions.length > 0);
@@ -326,8 +327,8 @@ test('a jump to a section travels with its level', async () => {
   peerComputer.messages.length = 0;
   peerComputer.actions.length = 0;
   relayToPeer(makeCommand('jump', 'cmd-song', { type: 'jump', songIndex: 1 }));
-  await waitFor(() => peerComputer.messages.some((message) => message.type === 'jump_time'));
-  const song = peerComputer.messages.find((message) => message.type === 'jump_time');
+  await waitFor(() => peerComputer.messages.some((m) => m.command?.type === 'jump_time'));
+  const song = peerComputer.messages.find((m) => m.command?.type === 'jump_time').command;
   assert.strictEqual(song.time, 100);
   assert.strictEqual(song.section, false);
   await waitFor(() => peerComputer.actions.length > 0);
@@ -341,7 +342,7 @@ test('a jump to a section that does not exist does not travel', async () => {
   );
   await delay(100);
   assert.strictEqual(
-    peerComputer.messages.some((message) => message.type === 'jump_time'),
+    peerComputer.messages.some((m) => m.command?.type === 'jump_time'),
     false,
   );
 });

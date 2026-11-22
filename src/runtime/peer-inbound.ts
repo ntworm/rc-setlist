@@ -200,11 +200,21 @@ export function nudgeInboundHeartbeat(): void {
 }
 
 /**
+ * Records or clears an inbound link protocol version mismatch, persisting above down until
+ * a matching protocol handshake, unpair, or server reset.
+ */
+export function markInboundVersionMismatch(mismatch: boolean): void {
+  versionMismatch = mismatch;
+  if (mismatch && !tracker) tracker = new PeerHealthTracker();
+  onStatusChange?.();
+}
+
+/**
  * Builds the merged inbound PeerLinkSummary row when paired as slave or connected to a master.
  */
 export function getInboundPeerSummary(): PeerLinkSummary | null {
   const role = readSlaveRole();
-  if (!activeSocket && (!role || readPeerConfigs().length > 0)) return null;
+  if (!activeSocket && !versionMismatch && (!role || readPeerConfigs().length > 0)) return null;
   if (!tracker) tracker = new PeerHealthTracker();
   const signals = localHealthSignals();
   const markersMatch =

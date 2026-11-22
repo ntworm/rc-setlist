@@ -3,6 +3,7 @@ import * as https from 'node:https';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { randomBytes } from 'node:crypto';
+import { WebSocket } from 'ws';
 import type { StartServerOptions, AugmentedWebSocket } from './types.js';
 import {
   bridgeState,
@@ -53,12 +54,26 @@ import {
   type PeerUpstreamReply,
 } from './runtime/peer-link.js';
 import {
+  markInboundVersionMismatch,
   onInboundPeerClosed,
   onInboundPeerMessage,
   onInboundPeerSyncConfirm,
   resetInboundPeerState,
   syncInboundSlaveRole,
 } from './runtime/peer-inbound.js';
+import { resetMasterRelayIntent } from './runtime/peer-link-commands.js';
+import {
+  createMasterSessionId,
+  EXTENSION_VERSION,
+  LINK_PROTOCOL_VERSION,
+} from './runtime/peer-protocol.js';
+import {
+  onPeerHandshakeSession,
+  receivePeerCommand,
+  resetSlaveCommandState,
+  type PeerCommandEnvelope,
+  type SlaveCommandExecutionResult,
+} from './runtime/peer-slave-commands.js';
 import {
   adoptUpstreamEcho,
   failAdoptedEcho,
@@ -360,6 +375,144 @@ function runUpstreamCommand(message: ClientMessage, refuse: PeerUpstreamReply): 
   }
 }
 
+function handleClientHandshake(
+  msg: Extract<ClientMessage, { type: 'handshake' }>,
+  ws: AugmentedWebSocket,
+  isController: boolean,
+  isPeerConnection: boolean,
+): void {
+  if (!bridgeState.manager) return;
+  if (isPeerConnection) {
+    const remoteProtocol = msg.linkProtocol ?? 1;
+    if (remoteProtocol !== LINK_PROTOCOL_VERSION) {
+      markInboundVersionMismatch(true);
+      ws.send(
+        JSON.stringify({
+          type: 'error',
+          code: 'version_mismatch',
+          message: 'Link protocol mismatch.',
+          linkProtocol: LINK_PROTOCOL_VERSION,
+          extensionVersion: EXTENSION_VERSION,
+        }),
+      );
+      ws.close(4002, 'version_mismatch');
+      return;
+    }
+    markInboundVersionMismatch(false);
+    onPeerHandshakeSession(msg.sessionId);
+  }
+  ws.clientId = msg.clientId;
+  ws.synchronized = false;
+  const state = bridgeState.manager.getState();
+  ws.handshakeStateVersion = state.stateVersion;
+  ws.send(
+    JSON.stringify({
+      type: 'handshake_ack',
+      stateVersion: state.stateVersion,
+      extensionVersion: EXTENSION_VERSION,
+      linkProtocol: LINK_PROTOCOL_VERSION,
+      state: {
+        ...state,
+        peerStatus: bridgeState.peerStatus,
+        peerStatuses: bridgeState.peerStatuses,
+      },
+    }),
+  );
+  if (isController) {
+    ws.send(JSON.stringify(profileStatePayload()));
+  }
+}
+
+function resolvePeerSenderId(ws: AugmentedWebSocket): string {
+  return ws.clientId || ws.remoteAddress || 'unknown';
+}
+
+function duplicatePeerOutcome(bus: CommandBus, commandId: string): SlaveCommandExecutionResult {
+  const saved = bus.getStatus(commandId);
+  if (!saved) return { result: 'confirmed' };
+  const failed =
+    saved.status === 'failed' || saved.status === 'expired' || saved.status === 'cancelled';
+  if (failed) return { result: 'failed', reason: saved.reason ?? saved.status };
+  return { result: 'confirmed' };
+}
+
+function reportPeerJumpError(
+  ws: AugmentedWebSocket,
+  outerCommandId: string,
+  inner: ClientMessage,
+  peerJump: { code: string; message: string },
+): SlaveCommandExecutionResult {
+  if (inner.commandId && inner.commandId !== outerCommandId) {
+    failAdoptedEcho(inner.commandId, `The jump did not land on this computer: ${peerJump.message}`);
+  }
+  if (ws.readyState === WebSocket.OPEN) {
+    ws.send(JSON.stringify({ type: 'error', code: peerJump.code, message: peerJump.message }));
+  }
+  return { result: 'failed', reason: peerJump.code };
+}
+
+function dispatchPeerLocalCommand(
+  command: ShowCommand<ClientMessage>,
+  ws: AugmentedWebSocket,
+): Promise<SlaveCommandExecutionResult> {
+  const bus = bridgeState.commandBus;
+  if (!bus) return Promise.resolve({ result: 'failed', reason: 'not_ready' });
+  return new Promise<SlaveCommandExecutionResult>((resolve) => {
+    let settled = false;
+    const finish = (outcome: SlaveCommandExecutionResult): void => {
+      if (settled) return;
+      settled = true;
+      bus.off('command_settled', onSettled);
+      resolve(outcome);
+    };
+    const onSettled = (cmd: { commandId: string; status: string; reason?: string }): void => {
+      if (cmd.commandId !== command.commandId) return;
+      finish(
+        cmd.status === 'confirmed'
+          ? { result: 'confirmed' }
+          : { result: 'failed', reason: cmd.reason ?? cmd.status },
+      );
+    };
+    bus.on('command_settled', onSettled);
+    bus.dispatch(command, async () => {
+      await executeCommandAction(command, ws);
+      finish({ result: 'confirmed' });
+    });
+  });
+}
+
+function executeInboundPeerInner(
+  ws: AugmentedWebSocket,
+  outerCommandId: string,
+  inner: ClientMessage,
+): Promise<SlaveCommandExecutionResult> {
+  const manager = bridgeState.manager;
+  const bus = bridgeState.commandBus;
+  if (!manager || !bus) return Promise.resolve({ result: 'failed', reason: 'not_ready' });
+  const peerJump = resolvePeerJump(inner, manager.getState());
+  if (peerJump.kind === 'error') {
+    return Promise.resolve(reportPeerJumpError(ws, outerCommandId, inner, peerJump));
+  }
+  const effectiveMsg = peerJump.kind === 'jump' ? peerJump.message : inner;
+  const commandId = effectiveMsg.commandId || outerCommandId;
+  if (bus.isDuplicate(commandId)) {
+    return Promise.resolve(duplicatePeerOutcome(bus, commandId));
+  }
+  const command = bus.registerCommand(
+    commandId,
+    effectiveMsg.type,
+    effectiveMsg,
+    resolvePeerSenderId(ws),
+  );
+  return dispatchPeerLocalCommand(command, ws);
+}
+
+function handleInboundPeerCommand(ws: AugmentedWebSocket, msg: PeerCommandEnvelope): Promise<void> {
+  return receivePeerCommand(ws, msg, (inner) =>
+    executeInboundPeerInner(ws, msg.commandId, inner),
+  ).then(() => undefined);
+}
+
 /**
  * The port the server listens on right now.
  *
@@ -380,6 +533,11 @@ export async function startServer(options: StartServerOptions = {}): Promise<voi
   const listenPort = options.port ?? PORT;
 
   try {
+    bridgeState.masterSessionId = createMasterSessionId();
+    bridgeState.masterTransportSeq = 0;
+    bridgeState.peerAlerts = {};
+    resetMasterRelayIntent();
+    resetSlaveCommandState();
     bridgeState.manager = new SetlistManager();
     bridgeState.lastCuesFingerprint = '__init__';
     bridgeState.scheduler = new JumpScheduler();
@@ -618,24 +776,7 @@ export async function startServer(options: StartServerOptions = {}): Promise<voi
       }
 
       if (msg.type === 'handshake') {
-        ws.clientId = msg.clientId;
-        ws.synchronized = false;
-        const state = bridgeState.manager.getState();
-        ws.handshakeStateVersion = state.stateVersion;
-        ws.send(
-          JSON.stringify({
-            type: 'handshake_ack',
-            stateVersion: state.stateVersion,
-            state: {
-              ...state,
-              peerStatus: bridgeState.peerStatus,
-              peerStatuses: bridgeState.peerStatuses,
-            },
-          }),
-        );
-        if (isController) {
-          ws.send(JSON.stringify(profileStatePayload()));
-        }
+        handleClientHandshake(msg, ws, isController, isPeerConnection);
         return;
       }
 
@@ -690,6 +831,10 @@ export async function startServer(options: StartServerOptions = {}): Promise<voi
       }
       if (msg.type === 'peer_hb' || msg.type === 'peer_hb_ack') {
         onInboundPeerMessage(ws, msg);
+        return;
+      }
+      if (msg.type === 'peer_command') {
+        void handleInboundPeerCommand(ws, msg);
         return;
       }
       if (isPeerConnection && msg.type !== 'peer_health_ack') notePeerCommand(msg.type);
@@ -954,9 +1099,13 @@ export async function stopServer(): Promise<void> {
   }
 
   resetInboundPeerState();
+  resetSlaveCommandState();
+  resetMasterRelayIntent();
   stopPeerLink();
   setPeerUpstreamHandler(null);
   resetPeerUpstream();
+  bridgeState.masterTransportSeq = 0;
+  bridgeState.peerAlerts = {};
 
   // The computers of the network stop saying hello with the server.
   stopPeerDiscovery();

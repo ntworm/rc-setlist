@@ -151,7 +151,14 @@ async function connectPeer(port, token) {
   socket.on('error', () => {
     // the socket is closed at the end of the test
   });
-  socket.send(JSON.stringify({ type: 'handshake', clientId: 'test-master' }));
+  socket.send(
+    JSON.stringify({
+      type: 'handshake',
+      clientId: 'test-master',
+      linkProtocol: 2,
+      extensionVersion: '1.2.1',
+    }),
+  );
   const deadline = Date.now() + 5000;
   while (Date.now() < deadline && !messages.some((message) => message.type === 'handshake_ack')) {
     await delay(25);

@@ -452,7 +452,14 @@ test('A3.2: superseded inbound socket adds a drop and its close keeps live link 
     attachPeerHbResponder(replacement, cuesFingerprint);
     try {
       await openSocket(replacement);
-      replacement.send(JSON.stringify({ type: 'handshake', clientId: 'superseding-peer' }));
+      replacement.send(
+        JSON.stringify({
+          type: 'handshake',
+          clientId: 'superseding-peer',
+          linkProtocol: 2,
+          extensionVersion: '1.2.1',
+        }),
+      );
       const ack = await waitFor(() => messages.find((m) => m.type === 'handshake_ack'), 5000);
       assert.ok(ack, 'replacement peer handshake_ack must arrive');
       replacement.send(JSON.stringify({ type: 'sync_confirm', stateVersion: ack.stateVersion }));
