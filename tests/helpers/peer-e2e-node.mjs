@@ -4,9 +4,11 @@
 
 import { fork } from 'node:child_process';
 import * as fs from 'node:fs';
+import * as https from 'node:https';
 import * as path from 'node:path';
 import { tmpdir } from 'node:os';
 import { fileURLToPath } from 'node:url';
+import { WebSocket, WebSocketServer } from 'ws';
 import { setExtensionContext } from '../../src/context.ts';
 import { startServer } from '../../src/index.ts';
 import { clearSlaveRole } from '../../src/preferences.ts';
@@ -15,6 +17,8 @@ import { generatePairingCode } from '../../src/runtime/pairing.ts';
 import { setPeerHealthTiming } from '../../src/runtime/peer-health.ts';
 import { syncInboundSlaveRole } from '../../src/runtime/peer-inbound.ts';
 import { publishPeerStatus } from '../../src/runtime/peer-link.ts';
+import { createHttpRequestListener } from '../../src/server/http.ts';
+import { createFakeOsc, makeTlsOptions } from './peer-link-harness.mjs';
 
 export const MAIN_CUES = [
   { name: 'Song A', time: 0, cueIndex: 0 },
@@ -70,11 +74,29 @@ export function createChildFakeOsc(logFile) {
 
 let peerHealthAckCount = 0;
 let contextSong = null;
+const executedCommands = [];
 
 function replyAck(msg) {
   if (msg.requestId !== undefined) {
     process.send?.({ type: 'ack', requestId: msg.requestId });
   }
+}
+
+function wrapChildCommandBus() {
+  const bus = bridgeState.commandBus;
+  if (!bus) return;
+  const origDispatch = bus.dispatch.bind(bus);
+  bus.dispatch = (command, executeFn) => {
+    origDispatch(command, async () => {
+      executedCommands.push({
+        commandId: command.commandId,
+        type: command.type,
+        sourceClientId: command.sourceClientId,
+        at: performance.now(),
+      });
+      await executeFn();
+    });
+  };
 }
 
 const IPC_HANDLERS = {
@@ -92,6 +114,14 @@ const IPC_HANDLERS = {
       peerStatus: bridgeState.peerStatus,
       peerStatuses: bridgeState.peerStatuses,
       peerHealthAckCount,
+      safety: bridgeState.manager?.getState().safety ?? null,
+    });
+  },
+  get_executed_commands(msg) {
+    process.send?.({
+      type: 'executed_commands',
+      requestId: msg.requestId,
+      commands: [...executedCommands],
     });
   },
   set_health_timing(msg) {
@@ -146,6 +176,7 @@ async function runChildNode() {
   });
 
   await startServer({ port: 0, skipOsc: true, skipProjectDetector: true });
+  wrapChildCommandBus();
   bridgeState.wsServer?.on('client_message', (msg) => {
     if (msg?.type === 'peer_health_ack') peerHealthAckCount += 1;
   });
@@ -168,6 +199,191 @@ async function runChildNode() {
     authToken: bridgeState.authToken,
   };
   if (process.send) process.send(payload);
+}
+
+export function delay(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+export async function waitFor(predicate, timeoutMs = 5000, stepMs = 20) {
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
+    const value = await predicate();
+    if (value) return value;
+    await delay(stepMs);
+  }
+  return predicate();
+}
+
+let nextChildIpcId = 0;
+
+export function ipcRequest(child, payload, expectedType = 'ack', timeoutMs = 5000) {
+  const requestId = ++nextChildIpcId;
+  return new Promise((resolve, reject) => {
+    const onMessage = (msg) => {
+      if (!msg || msg.type !== expectedType || msg.requestId !== requestId) return;
+      clearTimeout(timer);
+      child.off('message', onMessage);
+      resolve(msg);
+    };
+    const timer = setTimeout(() => {
+      child.off('message', onMessage);
+      reject(new Error(`IPC ${payload.type} timed out after ${timeoutMs}ms`));
+    }, timeoutMs);
+    timer.unref?.();
+    child.on('message', onMessage);
+    child.send({ ...payload, requestId });
+  });
+}
+
+export function collectJson(ws) {
+  const messages = [];
+  ws.on('message', (data) => {
+    try {
+      messages.push(JSON.parse(data.toString()));
+    } catch {
+      // ignore non-JSON frames
+    }
+  });
+  return messages;
+}
+
+export async function openSocket(ws) {
+  await new Promise((resolve, reject) => {
+    ws.once('open', resolve);
+    ws.once('error', reject);
+  });
+}
+
+export async function connectSyncedWs(port, token, clientId = 'e2e-client') {
+  const ws = new WebSocket(`wss://127.0.0.1:${port}/ws?token=${encodeURIComponent(token)}`, {
+    rejectUnauthorized: false,
+  });
+  const messages = collectJson(ws);
+  await openSocket(ws);
+  ws.send(JSON.stringify({ type: 'handshake', clientId }));
+  const ack = await waitFor(() => messages.find((m) => m.type === 'handshake_ack'), 5000);
+  if (!ack) throw new Error('handshake_ack did not arrive');
+  ws.send(JSON.stringify({ type: 'sync_confirm', stateVersion: ack.stateVersion }));
+  await delay(30);
+  return ws;
+}
+
+export function serverPort() {
+  const address = bridgeState.server?.address();
+  return address && typeof address === 'object' ? address.port : 0;
+}
+
+export async function setupMasterNode(mainDir, oscCalls = []) {
+  setExtensionContext({
+    environment: { storageDirectory: mainDir },
+    application: { song: { handle: { id: 42 }, tempo: 120, cuePoints: MAIN_CUES } },
+  });
+  await startServer({ port: 0, skipOsc: true, skipProjectDetector: true });
+  const osc = createFakeOsc(oscCalls);
+  osc.setCurrentSongTime = (value) => oscCalls.push(`setCurrentSongTime:${value}`);
+  bridgeState.oscClient = osc;
+  bridgeState.manager.updateCues(MAIN_CUES);
+}
+
+function closeSockets(...sockets) {
+  for (const ws of sockets) {
+    try {
+      ws.terminate();
+    } catch {
+      // socket already closing
+    }
+  }
+}
+
+export function tryParseJson(raw) {
+  try {
+    return JSON.parse(raw);
+  } catch {
+    return null;
+  }
+}
+
+function wireProxyEvents(clientWs, upstreamWs, pairs) {
+  const pair = { client: clientWs, upstream: upstreamWs };
+  pairs.add(pair);
+  const closeBoth = () => {
+    pairs.delete(pair);
+    closeSockets(clientWs, upstreamWs);
+  };
+  for (const ws of [clientWs, upstreamWs]) {
+    ws.on('close', closeBoth);
+    ws.on('error', closeBoth);
+  }
+  clientWs.on('ping', (d) => upstreamWs.readyState === WebSocket.OPEN && upstreamWs.ping(d));
+  clientWs.on('pong', (d) => upstreamWs.readyState === WebSocket.OPEN && upstreamWs.pong(d));
+  upstreamWs.on('ping', (d) => clientWs.readyState === WebSocket.OPEN && clientWs.ping(d));
+  upstreamWs.on('pong', (d) => clientWs.readyState === WebSocket.OPEN && clientWs.pong(d));
+}
+
+function bridgePair(clientWs, upstreamWs, state, pairs, onFrame) {
+  const early = [];
+  wireProxyEvents(clientWs, upstreamWs, pairs);
+  upstreamWs.on('open', () => {
+    if (state.paused || clientWs.readyState !== WebSocket.OPEN) return;
+    for (const frame of early.splice(0)) onFrame('c2s', frame, upstreamWs);
+  });
+  clientWs.on('message', (data) => {
+    const text = data.toString('utf8');
+    if (upstreamWs.readyState === WebSocket.CONNECTING) {
+      early.push(text);
+    } else if (upstreamWs.readyState === WebSocket.OPEN) {
+      onFrame('c2s', text, upstreamWs);
+    }
+  });
+  upstreamWs.on('message', (data) => {
+    if (clientWs.readyState === WebSocket.OPEN) {
+      onFrame('s2c', data.toString('utf8'), clientWs);
+    }
+  });
+}
+
+export async function createWsTlsProxy(targetPort, onFrame) {
+  const tls = await makeTlsOptions();
+  const wss = new WebSocketServer({ noServer: true, perMessageDeflate: false });
+  const pairs = new Set();
+  const state = { paused: false };
+  const server = https.createServer(tls, createHttpRequestListener());
+  server.on('upgrade', (req, socket, head) => {
+    if (state.paused) {
+      socket.destroy();
+      return;
+    }
+    wss.handleUpgrade(req, socket, head, (clientWs) => {
+      const url = `wss://127.0.0.1:${targetPort}${req.url ?? '/ws'}`;
+      const up = new WebSocket(url, { rejectUnauthorized: false });
+      bridgePair(clientWs, up, state, pairs, onFrame);
+    });
+  });
+  await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
+  const dropAll = () => {
+    for (const p of [...pairs]) closeSockets(p.client, p.upstream);
+    pairs.clear();
+  };
+  return {
+    port: server.address()?.port ?? 0,
+    tls,
+    sendUpstream: (frame) => {
+      const target = [...pairs].find((p) => p.upstream.readyState === WebSocket.OPEN)?.upstream;
+      target?.send(frame);
+    },
+    setPaused: (paused) => {
+      state.paused = paused;
+      if (paused) dropAll();
+    },
+    close: async () => {
+      state.paused = true;
+      dropAll();
+      wss.close();
+      server.closeAllConnections?.();
+      await new Promise((resolve) => server.close(() => resolve()));
+    },
+  };
 }
 
 export function spawnPeerChild(logFile, storageDir) {
