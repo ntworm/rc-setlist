@@ -236,6 +236,68 @@
       en: 'The second computer changed its certificate — pair again',
       'pt-BR': 'O segundo computador trocou o certificado — pareie de novo',
     },
+    'peer.state.ok': { en: 'OK', 'pt-BR': 'OK' },
+    'peer.state.unstable': { en: 'UNSTABLE', 'pt-BR': 'INST\u00c1VEL' },
+    'peer.state.down': { en: 'DOWN', 'pt-BR': 'CA\u00cdDO' },
+    'peer.state.versionMismatch': { en: 'DIFFERENT VERSIONS', 'pt-BR': 'VERS\u00d5ES DIFERENTES' },
+    'peer.state.certificateChanged': { en: 'CERTIFICATE CHANGED', 'pt-BR': 'CERTIFICADO MUDOU' },
+    'peer.reason.ok': { en: 'Link healthy', 'pt-BR': 'Link est\u00e1vel' },
+    'peer.reason.link_down': { en: 'Link down', 'pt-BR': 'Link ca\u00eddo' },
+    'peer.reason.remote_link_down': {
+      en: 'Remote link down',
+      'pt-BR': 'Link ca\u00eddo no outro computador',
+    },
+    'peer.reason.local_osc_live_unready': {
+      en: 'Local Live/OSC unavailable',
+      'pt-BR': 'Live/OSC local indispon\u00edvel',
+    },
+    'peer.reason.remote_osc_live_unready': {
+      en: 'Remote Live/OSC unavailable',
+      'pt-BR': 'Live/OSC remoto indispon\u00edvel',
+    },
+    'peer.reason.link_oscillating': {
+      en: 'Link oscillating (5 min hold)',
+      'pt-BR': 'Link oscilando (trava 5 min)',
+    },
+    'peer.reason.warming_up': { en: 'Warming up (20 s)', 'pt-BR': 'Aquecendo (20 s)' },
+    'peer.reason.recent_drop': { en: 'Recent drop', 'pt-BR': 'Queda recente' },
+    'peer.reason.heartbeat_lost': { en: 'Heartbeat lost', 'pt-BR': 'Heartbeat perdido' },
+    'peer.reason.high_rtt': { en: 'High latency (RTT)', 'pt-BR': 'Lat\u00eancia alta (RTT)' },
+    'peer.reason.remote_unstable': {
+      en: 'Unstable on other computer',
+      'pt-BR': 'Inst\u00e1vel no outro computador',
+    },
+    'peer.reason.markers_differ': { en: 'Markers differ', 'pt-BR': 'Marcadores diferentes' },
+    'peer.reason.out_of_step': { en: 'Out of step', 'pt-BR': 'Fora de passo' },
+    'peer.versionMismatch': {
+      en: 'Different versions \u2014 update both computers',
+      'pt-BR': 'Vers\u00f5es diferentes \u2014 atualize os dois computadores',
+    },
+    'peer.acknowledge': { en: 'Acknowledge', 'pt-BR': 'Confirmar' },
+    'peer.metric.rtt': { en: 'RTT {ms} ms', 'pt-BR': 'RTT {ms} ms' },
+    'peer.metric.drops5m': { en: '{count} drops (5m)', 'pt-BR': '{count} quedas (5m)' },
+    'peer.metric.lastDropAgo': {
+      en: 'last drop {ago} ago',
+      'pt-BR': '\u00faltima queda h\u00e1 {ago}',
+    },
+    'peer.metric.lastSeenAgo': { en: 'seen {ago} ago', 'pt-BR': 'visto h\u00e1 {ago}' },
+    'peer.alarm.title': {
+      en: 'SECOND COMPUTER LINK DOWN',
+      'pt-BR': 'LINK DO SEGUNDO COMPUTADOR CA\u00cdDO',
+    },
+    'peer.alarm.body': {
+      en: 'Commands are not reaching the paired computer. Check the network link or dismiss to keep operating with the red badge.',
+      'pt-BR':
+        'Os comandos n\u00e3o est\u00e3o chegando ao computador pareado. Verifique o link de rede ou dispense para continuar operando com o alerta vermelho.',
+    },
+    'peer.alarm.dismiss': { en: 'Dismiss alarm', 'pt-BR': 'Dispensar alarme' },
+    'peer.transportBadge.unstable': { en: 'LINK UNSTABLE', 'pt-BR': 'LINK INST\u00c1VEL' },
+    'peer.transportBadge.down': { en: 'LINK DOWN', 'pt-BR': 'LINK CA\u00cdDO' },
+    'peer.transportBadge.versionMismatch': {
+      en: 'DIFFERENT VERSIONS',
+      'pt-BR': 'VERS\u00d5ES DIFERENTES',
+    },
+    'peer.transportBadge.certificateChanged': { en: 'CERT MISMATCH', 'pt-BR': 'CERTIFICADO MUDOU' },
 
     'performance.name': { en: 'Performance', 'pt-BR': 'Performance' },
     'performance.brandAria': { en: 'RC Setlist Performance', 'pt-BR': 'Performance do RC Setlist' },
