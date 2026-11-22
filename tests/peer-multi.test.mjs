@@ -13,7 +13,7 @@ import { setExtensionContext, clearExtensionContext } from '../src/context.ts';
 import { startServer, stopServer } from '../src/index.ts';
 import { bridgeState } from '../src/runtime/bridge-state.ts';
 import { relayToPeer, startPeerLinks, stopPeerLink } from '../src/runtime/peer-link.ts';
-import { aggregatePeerStatus } from '../src/runtime/peer-status-list.ts';
+import { aggregatePeerStatus, peerStatusRows } from '../src/runtime/peer-status-list.ts';
 import { peerCommandId } from '../src/runtime/peer-message.ts';
 import { readPeerConfigs, writePeerConfigs } from '../src/preferences.ts';
 import {
@@ -242,18 +242,173 @@ test('the state of the link is what the computers add up to', () => {
     connected: false,
     markersMatch: true,
     fingerprintMismatch: false,
+    versionMismatch: false,
+    health: 'ok',
+    reason: 'ok',
+    canAcknowledge: false,
+    rttP95Ms: null,
+    drops5m: 0,
+    lastDropAt: null,
     ...status,
   });
 
   assert.deepEqual(aggregatePeerStatus([]), expected({}));
   assert.deepEqual(aggregatePeerStatus([up]), expected({ paired: true, connected: true }));
-  assert.deepEqual(aggregatePeerStatus([up, down]), expected({ paired: true, connected: false }));
+  assert.deepEqual(
+    aggregatePeerStatus([up, down]),
+    expected({ paired: true, connected: false, health: 'down', reason: 'link_down' }),
+  );
   assert.deepEqual(
     aggregatePeerStatus([up, other]),
-    expected({ paired: true, connected: true, markersMatch: false }),
+    expected({
+      paired: true,
+      connected: true,
+      markersMatch: false,
+      health: 'unstable',
+      reason: 'markers_differ',
+    }),
   );
   assert.deepEqual(
     aggregatePeerStatus([up, changed]),
-    expected({ paired: true, connected: false, fingerprintMismatch: true }),
+    expected({
+      paired: true,
+      connected: false,
+      fingerprintMismatch: true,
+      health: 'down',
+      reason: 'link_down',
+    }),
   );
+});
+
+function statusRow(host, overrides = {}) {
+  return {
+    host,
+    port: 4444,
+    connected: true,
+    markersMatch: true,
+    fingerprintMismatch: false,
+    ...overrides,
+  };
+}
+
+test('aggregatePeerStatus picks worst health, first matching reason, and max telemetry', () => {
+  const okRow = statusRow('10.0.0.2', {
+    health: 'ok',
+    reason: 'ok',
+    rttP95Ms: 12,
+    drops5m: 0,
+    lastDropAt: null,
+  });
+  const unstableAck = statusRow('10.0.0.3', {
+    health: 'unstable',
+    reason: 'high_rtt',
+    canAcknowledge: true,
+    rttP95Ms: 85,
+    drops5m: 2,
+    lastDropAt: 1_000,
+    versionMismatch: true,
+  });
+  const unstableLater = statusRow('10.0.0.4', {
+    health: 'unstable',
+    reason: 'recent_drop',
+    canAcknowledge: false,
+    rttP95Ms: 40,
+    drops5m: 4,
+    lastDropAt: 2_500,
+  });
+  const downFirst = statusRow('10.0.0.5', {
+    connected: false,
+    health: 'down',
+    reason: 'heartbeat_lost',
+    rttP95Ms: null,
+    drops5m: 1,
+    lastDropAt: 2_000,
+  });
+  const downSecond = statusRow('10.0.0.6', {
+    connected: false,
+    health: 'down',
+    reason: 'link_down',
+  });
+
+  const unstableAgg = aggregatePeerStatus([okRow, unstableAck, unstableLater]);
+  assert.equal(unstableAgg.health, 'unstable');
+  assert.equal(unstableAgg.reason, 'high_rtt');
+  assert.equal(unstableAgg.canAcknowledge, true);
+  assert.equal(unstableAgg.versionMismatch, true);
+  assert.equal(unstableAgg.rttP95Ms, 85);
+  assert.equal(unstableAgg.drops5m, 4);
+  assert.equal(unstableAgg.lastDropAt, 2_500);
+
+  const downAgg = aggregatePeerStatus([unstableAck, downFirst, downSecond]);
+  assert.equal(downAgg.health, 'down');
+  assert.equal(downAgg.reason, 'heartbeat_lost');
+  assert.equal(downAgg.canAcknowledge, false);
+});
+
+test('peerStatusRows populates defaults when metadata is omitted', () => {
+  const rows = peerStatusRows([
+    {
+      config: { host: 'Studio-Two.Local', port: 4444 },
+      state: { connected: true, markersMatch: false, fingerprintMismatch: false },
+    },
+  ]);
+
+  assert.deepEqual(rows[0], {
+    key: 'studio-two.local:4444',
+    role: 'outbound',
+    host: 'Studio-Two.Local',
+    port: 4444,
+    connected: true,
+    markersMatch: false,
+    fingerprintMismatch: false,
+    versionMismatch: false,
+    health: 'unstable',
+    reason: 'markers_differ',
+    canAcknowledge: false,
+    rttP95Ms: null,
+    drops5m: 0,
+    lastDropAt: null,
+    remoteLinkHealth: null,
+  });
+});
+
+test('peerStatusRows preserves explicit health and role metadata', () => {
+  const rows = peerStatusRows([
+    {
+      key: 'inbound:slave-1',
+      role: 'inbound',
+      config: { host: '10.0.0.8', port: 5555 },
+      state: {
+        connected: false,
+        markersMatch: true,
+        fingerprintMismatch: false,
+        versionMismatch: true,
+        health: 'down',
+        reason: 'heartbeat_lost',
+        canAcknowledge: false,
+        rttP95Ms: 42,
+        drops5m: 3,
+        lastDropAt: 9_000,
+        remoteLinkHealth: 'unstable',
+      },
+    },
+  ]);
+
+  assert.deepEqual(rows[0], {
+    key: 'inbound:slave-1',
+    role: 'inbound',
+    host: '10.0.0.8',
+    port: 5555,
+    connected: false,
+    markersMatch: true,
+    fingerprintMismatch: false,
+    versionMismatch: true,
+    health: 'down',
+    reason: 'heartbeat_lost',
+    canAcknowledge: false,
+    rttP95Ms: 42,
+    drops5m: 3,
+    lastDropAt: 9_000,
+    remoteLinkHealth: 'unstable',
+  });
 });

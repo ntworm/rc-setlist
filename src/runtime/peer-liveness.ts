@@ -37,8 +37,8 @@ const DEFAULT_TIMING: PeerLinkTiming = {
   pongTimeoutMs: 5_000,
   connectTimeoutMs: 5_000,
   handshakeTimeoutMs: 5_000,
-  reconnectBaseMs: 1_000,
-  reconnectMaxMs: 30_000,
+  reconnectBaseMs: 500,
+  reconnectMaxMs: 5_000,
 };
 
 let timing: PeerLinkTiming = { ...DEFAULT_TIMING };

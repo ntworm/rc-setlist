@@ -1,10 +1,15 @@
 import type { ClientMessage } from '../types.js';
+import {
+  decodeHandshakeExtras,
+  decodePeerCommand,
+  decodePeerHb,
+  decodePeerHbAck,
+  decodePeerHealthAck,
+  decodePeerTarget,
+  type PeerDecodeResult,
+} from './peer-client-message.js';
 
-export type { ClientMessage } from '../types.js';
-
-export type DecodeResult =
-  | { ok: true; message: ClientMessage }
-  | { ok: false; code: 'invalid_message'; message: string; commandId?: string };
+export type DecodeResult = PeerDecodeResult;
 
 const COMMAND_ID_PATTERN = /^[A-Za-z0-9._:-]+$/;
 const MESSAGE_TYPE_PATTERN = /^[a-z][a-z0-9_]{0,63}$/;
@@ -113,9 +118,16 @@ export function decodeClientMessage(input: unknown): DecodeResult {
   const requireText = (field: string, max: number): boolean => isBoundedText(input[field], max);
 
   switch (input.type) {
-    case 'handshake':
+    case 'handshake': {
       if (!requireText('clientId', MAX_CLIENT_ID_LENGTH)) return fail('Invalid clientId.');
-      return success({ type: 'handshake', clientId: input.clientId as string });
+      const extras = decodeHandshakeExtras(input);
+      if (!extras.ok) return fail(extras.message);
+      return success({
+        type: 'handshake',
+        clientId: input.clientId as string,
+        ...extras.extras,
+      });
+    }
     case 'sync_confirm':
       if (!isFiniteInteger(input.stateVersion, 0, Number.MAX_SAFE_INTEGER))
         return fail('Invalid stateVersion.');
@@ -205,6 +217,16 @@ export function decodeClientMessage(input: unknown): DecodeResult {
         jumpPending: input.jumpPending,
         loopActive: input.loopActive,
       });
+    case 'peer_hb':
+      return decodePeerHb(input, commandId);
+    case 'peer_hb_ack':
+      return decodePeerHbAck(input, commandId);
+    case 'peer_health_ack':
+      return decodePeerHealthAck(input, commandId);
+    case 'peer_target':
+      return decodePeerTarget(input, commandId);
+    case 'peer_command':
+      return decodePeerCommand(input, decodeClientMessage, commandId);
     case 'setlist_chunk':
       if (typeof input.requestId !== 'string' || !/^[0-9a-f]{1,64}$/.test(input.requestId)) {
         return fail('Invalid requestId for setlist_chunk.');

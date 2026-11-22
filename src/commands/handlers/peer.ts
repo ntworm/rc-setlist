@@ -9,7 +9,7 @@
 // and the receiving side finds the marker that sits there.
 
 import type { ClientMessage, SetlistState } from '../../types.js';
-import { PEER_RELAY_TYPES } from '../../runtime/peer-link.js';
+import { PEER_RELAY_TYPES } from '../../runtime/peer-message.js';
 
 export interface PeerCommandRejection {
   code: string;
@@ -27,6 +27,30 @@ export type PeerJumpResolution =
   | { kind: 'error'; code: string; message: string };
 
 /**
+ * Whether a command type travels on the peer wire as a relayed show command.
+ *
+ * `jump` travels as `jump_time` (by beat rather than list index), so `jump`
+ * itself is excluded and `jump_time` is included.
+ */
+export function isPeerRelayWireType(type: string): boolean {
+  return type === 'jump_time' || (PEER_RELAY_TYPES.has(type) && type !== 'jump');
+}
+
+const PEER_COMMAND_TYPES: ReadonlySet<string> = new Set([
+  'handshake',
+  'sync_confirm',
+  'jump_time',
+  'peer_clock',
+  'peer_upstream_result',
+  'setlist_chunk',
+  'peer_hb',
+  'peer_hb_ack',
+  'peer_target',
+  'peer_command',
+  'peer_health_ack',
+]);
+
+/**
  * The command types a peer connection may run.
  *
  * The handshake and the confirmation belong to the connection itself, and
@@ -34,16 +58,7 @@ export type PeerJumpResolution =
  * the list: an index into a list means nothing on the other side.
  */
 export function isPeerCommandType(type: string): boolean {
-  if (
-    type === 'handshake' ||
-    type === 'sync_confirm' ||
-    type === 'jump_time' ||
-    type === 'peer_clock' ||
-    type === 'peer_upstream_result' ||
-    type === 'setlist_chunk'
-  )
-    return true;
-  return PEER_RELAY_TYPES.has(type) && type !== 'jump';
+  return PEER_COMMAND_TYPES.has(type) || isPeerRelayWireType(type);
 }
 
 /** What only a peer connection may send, and how a page that tries is told. */
@@ -52,6 +67,10 @@ const PEER_ONLY_REFUSALS: Readonly<Record<string, string>> = {
   peer_clock: 'Unauthorized: only a peer connection may send its clock.',
   peer_upstream_result: 'Unauthorized: only a peer connection may answer a command handed up.',
   setlist_chunk: 'Unauthorized: only a peer connection may send a setlist.',
+  peer_hb: 'Unauthorized: only a peer connection may send a peer heartbeat.',
+  peer_hb_ack: 'Unauthorized: only a peer connection may send a peer heartbeat acknowledgement.',
+  peer_target: 'Unauthorized: only a peer connection may send a peer target.',
+  peer_command: 'Unauthorized: only a peer connection may send a peer command.',
 };
 
 /**

@@ -38,6 +38,32 @@ export interface Setlist {
   hidden: { name: string; time: number }[];
 }
 
+export type PeerHealthTier = 'ok' | 'unstable' | 'down';
+
+export type PeerHealthReason =
+  | 'ok'
+  | 'link_down'
+  | 'remote_link_down'
+  | 'local_osc_live_unready'
+  | 'remote_osc_live_unready'
+  | 'link_oscillating'
+  | 'warming_up'
+  | 'recent_drop'
+  | 'heartbeat_lost'
+  | 'high_rtt'
+  | 'remote_unstable'
+  | 'markers_differ'
+  | 'out_of_step';
+
+export interface PeerHealthView {
+  linkHealth: PeerHealthTier;
+  canAcknowledge: boolean;
+  oscConnected: boolean;
+  liveReady: boolean;
+  cuesFingerprint: string;
+  outOfStep: boolean;
+}
+
 /**
  * What the paired computer looks like from this one.
  *
@@ -50,6 +76,13 @@ export interface PeerStatus {
   connected: boolean;
   markersMatch: boolean;
   fingerprintMismatch: boolean;
+  versionMismatch?: boolean;
+  health?: PeerHealthTier;
+  reason?: PeerHealthReason;
+  canAcknowledge?: boolean;
+  rttP95Ms?: number | null;
+  drops5m?: number;
+  lastDropAt?: number | null;
 }
 
 /**
@@ -59,6 +92,8 @@ export interface PeerStatus {
  * summary in `PeerStatus` is what they add up to.
  */
 export interface PeerLinkStatus {
+  key?: string;
+  role?: 'outbound' | 'inbound';
   /** The address of the computer. */
   host: string;
   /** The port the computer serves on. */
@@ -66,6 +101,14 @@ export interface PeerLinkStatus {
   connected: boolean;
   markersMatch: boolean;
   fingerprintMismatch: boolean;
+  versionMismatch?: boolean;
+  health?: PeerHealthTier;
+  reason?: PeerHealthReason;
+  canAcknowledge?: boolean;
+  rttP95Ms?: number | null;
+  drops5m?: number;
+  lastDropAt?: number | null;
+  remoteLinkHealth?: PeerHealthTier | null;
 }
 
 export interface SetlistState {
@@ -120,6 +163,8 @@ export interface SetlistState {
   cuesFingerprint?: string;
   /** State of the link to the paired computer, when there is one. */
   peerStatus?: PeerStatus;
+  /** Per-link states of the paired computers, when there are any. */
+  peerStatuses?: PeerLinkStatus[];
   /** Whether the setlists are being moved to another Live Set right now. */
   profileScopeSwitching?: boolean;
 
@@ -156,7 +201,13 @@ type ClientMessageBase = {
 };
 
 export type ClientMessage =
-  | (ClientMessageBase & { type: 'handshake'; clientId: string })
+  | (ClientMessageBase & {
+      type: 'handshake';
+      clientId: string;
+      extensionVersion?: string;
+      linkProtocol?: number;
+      sessionId?: string;
+    })
   | (ClientMessageBase & { type: 'sync_confirm'; stateVersion: number })
   | (ClientMessageBase & { type: 'get_lyrics'; song?: string })
   | (ClientMessageBase & { type: 'profiles_get' })
@@ -200,6 +251,38 @@ export type ClientMessage =
       tempo: number;
       jumpPending: boolean;
       loopActive: boolean;
+    })
+  | (ClientMessageBase & {
+      type: 'peer_hb';
+      hbId: number;
+      t0: number;
+      view: PeerHealthView;
+    })
+  | (ClientMessageBase & {
+      type: 'peer_hb_ack';
+      hbId: number;
+      t0: number;
+      t1: number;
+      t2: number;
+      view: PeerHealthView;
+    })
+  | (ClientMessageBase & { type: 'peer_health_ack'; peerKey?: string })
+  | (ClientMessageBase & {
+      type: 'peer_target';
+      transportSeq: number;
+      beat: number;
+      section: boolean;
+      isPlaying: boolean;
+      tempo: number;
+      jumpPending: boolean;
+      loopActive: boolean;
+    })
+  | (ClientMessageBase & {
+      type: 'peer_command';
+      commandId: string;
+      ttlMs: number | null;
+      transportSeq: number | null;
+      command: ClientMessage;
     })
   | (ClientMessageBase & {
       type: 'setlist_chunk';

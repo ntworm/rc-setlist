@@ -134,6 +134,13 @@ export const bridgeState: BridgeState = {
     connected: false,
     markersMatch: true,
     fingerprintMismatch: false,
+    versionMismatch: false,
+    health: 'ok',
+    reason: 'ok',
+    canAcknowledge: false,
+    rttP95Ms: null,
+    drops5m: 0,
+    lastDropAt: null,
   },
   peerStatuses: [],
   globalPersistenceDir: '',
@@ -195,6 +202,7 @@ export function broadcastState(): void {
       songColors,
       songNotes,
       peerStatus: bridgeState.peerStatus,
+      peerStatuses: bridgeState.peerStatuses,
       profileScopeSwitching: bridgeState.profileScopeSwitching,
     });
     warnIfSlow('ws', 'state broadcast', startedAt);

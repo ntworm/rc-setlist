@@ -307,6 +307,17 @@ export function removePeerConfig(host: string, port: number): boolean {
   return writePeerConfigs(remaining);
 }
 
+function clearPreferenceFile(fileName: string): boolean {
+  const preferenceFile = preferencePath(fileName);
+  if (!preferenceFile) return true;
+  try {
+    fs.rmSync(preferenceFile, { force: true });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 /**
  * Forgets every pairing.
  *
@@ -315,14 +326,7 @@ export function removePeerConfig(host: string, port: number): boolean {
  * pairing the next start of the server would bring back.
  */
 export function clearPeerConfig(): boolean {
-  const preferenceFile = preferencePath(PEER_CONFIG_FILE);
-  if (!preferenceFile) return true;
-  try {
-    fs.rmSync(preferenceFile, { force: true });
-    return true;
-  } catch {
-    return false;
-  }
+  return clearPreferenceFile(PEER_CONFIG_FILE);
 }
 
 /**
@@ -358,4 +362,15 @@ export function writeSlaveRole(role: SlaveRole): boolean {
   } catch {
     return false;
   }
+}
+
+/**
+ * Forgets the role of this computer.
+ *
+ * Reports whether no role file is left on disk: with no place to store one
+ * there is nothing to forget, and a file that could not be removed leaves the
+ * role behind on disk.
+ */
+export function clearSlaveRole(): boolean {
+  return clearPreferenceFile(PEER_ROLE_FILE);
 }
