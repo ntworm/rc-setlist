@@ -28,6 +28,8 @@ test('the actions the panel has always sent are still understood', () => {
     'set-language:pt-BR',
     'peer-code',
     'peer-unpair',
+    'peer-ack',
+    'peer-ack:192.168.1.5:4444',
     'peer-pair:192.168.1.5:123456',
   ];
   for (const action of actions) {

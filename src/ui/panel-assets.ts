@@ -19,6 +19,7 @@ export const PANEL_SCRIPT_FILES: readonly string[] = [
   'panel-network.js',
   'panel-project.js',
   'panel-main.js',
+  'panel-peer-health.js',
   'panel.js',
 ];
 

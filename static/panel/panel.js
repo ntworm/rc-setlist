@@ -265,30 +265,7 @@
    * one of them leaves, the others stay.
    */
   function renderPeerList(peer) {
-    const list = el('peerList');
-    if (!list) return;
-    const peers = peer.peers || [];
-    list.textContent = '';
-    list.hidden = peers.length === 0;
-    for (const row of peers) {
-      const item = document.createElement('li');
-      const address = document.createElement('span');
-      address.className = 'peer-list-address';
-      address.textContent = `${row.host}:${row.port}`;
-      const status = document.createElement('span');
-      const good = Boolean(row.connected) && Boolean(row.markersMatch);
-      status.className = `peer-list-status ${good ? 'active' : 'warning'}`;
-      status.textContent = row.statusText || '';
-      const unpair = document.createElement('button');
-      unpair.className = 'btn small';
-      unpair.type = 'button';
-      unpair.textContent = shell.text('panel.peerUnpair');
-      unpair.addEventListener('click', () => {
-        shell.sendAction(`peer-unpair:${row.host}:${row.port}`);
-      });
-      item.append(address, status, unpair);
-      list.appendChild(item);
-    }
+    if (Panel.peerHealth) Panel.peerHealth.renderPeerList(peer);
   }
 
   /**
@@ -304,7 +281,8 @@
     if (text) {
       text.textContent = words;
       text.hidden = !words;
-      text.className = `status-text ${peerRoleGood(peer) ? 'active' : 'warning'}`;
+      const roleClass = Panel.peerHealth ? Panel.peerHealth.peerRoleClass(peer) : 'warning';
+      text.className = `status-text ${roleClass}`;
     }
     if (separator) separator.hidden = !words;
     const line = el('peerMasterLine');
@@ -313,21 +291,6 @@
       line.textContent = address ? shell.text('panel.peerSlaveOf', { address }) : '';
       line.hidden = !address;
     }
-  }
-
-  /**
-   * Whether the role of this computer is in good shape.
-   *
-   * The master is in good shape when every slave is talking; the slave is in
-   * good shape when the master is talking to it.
-   */
-  function peerRoleGood(peer) {
-    if (peer.role === 'master') {
-      const peers = peer.peers || [];
-      return peers.length > 0 && peers.every((row) => Boolean(row.connected));
-    }
-    if (peer.role === 'slave') return peer.slaveConnected === true;
-    return false;
   }
 
   /**

@@ -62,6 +62,7 @@ const PLAIN_ACTIONS: ReadonlySet<string> = new Set([
   'pull-master-setlist',
   'peer-code',
   'peer-unpair',
+  'peer-ack',
 ]);
 
 /** The actions that carry their argument in the action itself. */
@@ -72,6 +73,9 @@ const PAIR_PREFIX = 'peer-pair:';
 
 /** The prefix of the action that unpairs one second computer. */
 const UNPAIR_PREFIX = 'peer-unpair:';
+
+/** The prefix of the action that acknowledges one second computer's health warning. */
+const ACK_PREFIX = 'peer-ack:';
 
 /** What a profile id may look like: a uuid, or something close to one. */
 const PROFILE_ID = /^[A-Za-z0-9_-]{1,64}$/;
@@ -127,7 +131,11 @@ export function createPanelSession(): PanelSession {
 export function isKnownAction(action: string): boolean {
   if (PLAIN_ACTIONS.has(action)) return true;
   if (LOCALE_ACTIONS.has(action)) return true;
-  if (action.startsWith(PAIR_PREFIX) || action.startsWith(UNPAIR_PREFIX)) {
+  if (
+    action.startsWith(PAIR_PREFIX) ||
+    action.startsWith(UNPAIR_PREFIX) ||
+    action.startsWith(ACK_PREFIX)
+  ) {
     return action.length <= MAX_ACTION_LENGTH;
   }
   return false;

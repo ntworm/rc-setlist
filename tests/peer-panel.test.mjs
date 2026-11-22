@@ -14,6 +14,13 @@ import {
   runPeerAction,
   sanitizePanelAction,
 } from '../src/ui/peer-panel.ts';
+import {
+  parsePeerAckAction,
+  peerHealthBadgeText,
+  peerReasonText,
+  peerRowDisplay,
+} from '../src/ui/peer-panel-health.ts';
+import { roleText } from '../src/ui/peer-role-text.ts';
 import { bridgeState } from '../src/runtime/bridge-state.ts';
 import {
   generatePairingCode,
@@ -35,21 +42,22 @@ import { createPeerComputer, fingerprintOf, PEER_TOKEN } from './helpers/peer-li
 test('the panel reads the three peer actions', () => {
   assert.deepEqual(parsePeerAction('peer-unpair'), { kind: 'unpair' });
   assert.deepEqual(parsePeerAction('peer-code'), { kind: 'code' });
-  assert.deepEqual(parsePeerAction('peer-pair:192.168.1.10:123456'), {
-    kind: 'pair',
-    host: '192.168.1.10',
-    code: '123456',
+  assert.deepEqual(parsePeerAction('peer-ack'), { kind: 'ack' });
+  assert.deepEqual(parsePeerAction('peer-ack:192.168.1.20:4444'), {
+    kind: 'ack',
+    peerKey: '192.168.1.20:4444',
   });
-  assert.deepEqual(parsePeerAction('peer-pair:studio.local:123456'), {
-    kind: 'pair',
-    host: 'studio.local',
-    code: '123456',
+  assert.deepEqual(parsePeerAction('peer-ack:inbound:master'), {
+    kind: 'ack',
+    peerKey: 'inbound:master',
   });
-  assert.deepEqual(parsePeerAction('peer-pair:localhost:123456'), {
-    kind: 'pair',
-    host: 'localhost',
-    code: '123456',
-  });
+  for (const host of ['192.168.1.10', 'studio.local', 'localhost']) {
+    assert.deepEqual(parsePeerAction(`peer-pair:${host}:123456`), {
+      kind: 'pair',
+      host,
+      code: '123456',
+    });
+  }
 });
 
 test('an action the panel does not know is not a peer action', () => {
@@ -57,13 +65,15 @@ test('an action the panel does not know is not a peer action', () => {
   assert.equal(parsePeerAction('peer-nonsense'), null);
   assert.equal(parsePeerAction(''), null);
   assert.equal(parsePeerAction('peer-unpair-please'), null);
+  assert.equal(parsePeerAction('peer-ack:'), null);
+  assert.equal(parsePeerAction('peer-ack:bad key'), null);
+  assert.equal(parsePeerAckAction('peer-ack:evil/path'), null);
 });
 
 test('a code that is not six digits is refused', () => {
-  assert.equal(parsePeerAction('peer-pair:192.168.1.10:12345'), null);
-  assert.equal(parsePeerAction('peer-pair:192.168.1.10:1234567'), null);
-  assert.equal(parsePeerAction('peer-pair:192.168.1.10:abcdef'), null);
-  assert.equal(parsePeerAction('peer-pair:192.168.1.10:'), null);
+  for (const bad of ['12345', '1234567', 'abcdef', '']) {
+    assert.equal(parsePeerAction(`peer-pair:192.168.1.10:${bad}`), null);
+  }
 });
 
 test('a hostile address is refused', () => {
@@ -99,20 +109,26 @@ test('the address rules are the ones the panel advertises', () => {
   assert.equal(isValidPeerHost('evil.com/path'), false);
 });
 
-test('the panel tells the five states of the link apart', () => {
-  const base = { paired: true, connected: true, markersMatch: true, fingerprintMismatch: false };
-  assert.equal(peerPanelState({ ...base, paired: false }), 'not_paired');
-  assert.equal(peerPanelState(base), 'connected');
-  assert.equal(peerPanelState({ ...base, markersMatch: false }), 'markers_differ');
-  assert.equal(peerPanelState({ ...base, connected: false }), 'offline');
-  assert.equal(
-    peerPanelState({ ...base, connected: false, fingerprintMismatch: true }),
-    'certificate_changed',
-  );
+test('the panel tells the link states apart with health precedence', () => {
+  const b = { paired: true, connected: true, markersMatch: true, fingerprintMismatch: false };
+  const at = (patch) => peerPanelState({ ...b, ...patch });
+  assert.equal(at({ paired: false }), 'not_paired');
+  assert.equal(at({}), 'connected');
+  assert.equal(at({ markersMatch: false }), 'markers_differ');
+  assert.equal(at({ connected: false }), 'offline');
+  assert.equal(at({ versionMismatch: true, health: 'down' }), 'version_mismatch');
+  assert.equal(at({ fingerprintMismatch: true, versionMismatch: true }), 'certificate_changed');
+  assert.equal(at({ connected: true, health: 'down' }), 'offline');
+  assert.equal(at({ health: 'unstable', reason: 'recent_drop' }), 'unstable');
+  assert.equal(at({ health: 'unstable', reason: 'markers_differ' }), 'markers_differ');
+  assert.equal(at({ connected: false, health: 'ok' }), 'connected');
 });
 
 test('every state says something in both languages', () => {
-  const states = ['not_paired', 'connected', 'markers_differ', 'offline', 'certificate_changed'];
+  const states =
+    'not_paired,connected,markers_differ,unstable,offline,version_mismatch,certificate_changed'.split(
+      ',',
+    );
   for (const state of states) {
     const english = peerStateText(state, 'en');
     const portuguese = peerStateText(state, 'pt-BR');
@@ -154,9 +170,11 @@ test('the panel model follows the state of the link', () => {
   }
 });
 
-test('sanitizePanelAction masks peer-pair actions and preserves others', () => {
+test('sanitizePanelAction masks peer-pair and peer-ack actions and preserves others', () => {
   assert.equal(sanitizePanelAction('peer-pair:192.168.1.10:123456'), 'peer-pair');
   assert.equal(sanitizePanelAction('peer-pair:studio.local:654321'), 'peer-pair');
+  assert.equal(sanitizePanelAction('peer-ack:192.168.1.20:4444'), 'peer-ack');
+  assert.equal(sanitizePanelAction('peer-ack'), 'peer-ack');
   assert.equal(sanitizePanelAction('start'), 'start');
   assert.equal(sanitizePanelAction('peer-unpair'), 'peer-unpair');
   assert.equal(sanitizePanelAction('peer-code'), 'peer-code');
@@ -290,15 +308,11 @@ test('the panel reads the action that unpairs one computer', () => {
 });
 
 test('an unpair action that names no computer is refused', () => {
-  const refused = [
-    'peer-unpair:',
-    'peer-unpair:192.168.1.10',
-    'peer-unpair:192.168.1.10:',
-    'peer-unpair:192.168.1.10:0',
-    'peer-unpair:192.168.1.10:65536',
-    'peer-unpair:192.168.1.10:port',
-    'peer-unpair:evil.com/path:4444',
-  ];
+  const refused = (
+    'peer-unpair:,peer-unpair:192.168.1.10,peer-unpair:192.168.1.10:,' +
+    'peer-unpair:192.168.1.10:0,peer-unpair:192.168.1.10:65536,' +
+    'peer-unpair:192.168.1.10:port,peer-unpair:evil.com/path:4444'
+  ).split(',');
   for (const action of refused) {
     assert.equal(parsePeerAction(action), null, `${action} must be refused`);
   }
@@ -319,22 +333,9 @@ async function waitFor(predicate, timeoutMs = 10000) {
   return predicate();
 }
 
-function listen(server) {
-  return new Promise((resolve) => {
-    server.listen(0, '127.0.0.1', () => resolve(server.address().port));
-  });
-}
-
-function closeServer(server) {
-  return new Promise((resolve) => {
-    server.close(() => resolve());
-  });
-}
-
-/** The row of one computer in the list of the paired computers. */
-function rowOf(port) {
-  return bridgeState.peerStatuses.find((row) => row.port === port);
-}
+const listen = (s) => new Promise((r) => s.listen(0, '127.0.0.1', () => r(s.address().port)));
+const closeServer = (s) => new Promise((r) => s.close(() => r()));
+const rowOf = (port) => bridgeState.peerStatuses.find((row) => row.port === port);
 
 /** What the panel shows about one paired computer. */
 function peerRow(host, connected) {
@@ -391,13 +392,8 @@ function withOwnStorage(run) {
 }
 
 /** The pairing of one computer, written down by hand. */
-function pairingOf(computer, port) {
-  return {
-    host: '127.0.0.1',
-    port,
-    peerToken: PEER_TOKEN,
-    fingerprint: fingerprintOf(computer.tls),
-  };
+function pairingOf(peer, port) {
+  return { host: '127.0.0.1', port, peerToken: PEER_TOKEN, fingerprint: fingerprintOf(peer.tls) };
 }
 
 test('pairing a second computer keeps the first one linked, and unpairing one keeps the other', async () => {
@@ -462,5 +458,41 @@ test('the model says the second computer follows a master, and that nobody is no
     const here = peerPanelModel({ locale: 'en' });
     assert.equal(here.roleText, 'Slave \xB7 connected to the master');
     assert.equal(peerPanelModel({ locale: 'pt-BR' }).roleText, 'Slave \xB7 conectado ao master');
+  });
+});
+
+test('peer-panel health badges, reasons, row display, roleText, and peer-ack', async () => {
+  for (const s of ['ok', 'unstable', 'down', 'version_mismatch', 'certificate_changed']) {
+    assert.ok(peerHealthBadgeText(s, 'en') && peerHealthBadgeText(s, 'pt-BR'));
+  }
+  assert.equal(peerHealthBadgeText('unstable', 'pt-BR'), 'INST\u00c1VEL');
+  assert.equal(peerHealthBadgeText('down', 'pt-BR'), 'CA\u00cdDO');
+  assert.equal(peerHealthBadgeText('version_mismatch', 'pt-BR'), 'VERS\u00d5ES DIFERENTES');
+  const reasons = (
+    'ok,link_down,remote_link_down,local_osc_live_unready,remote_osc_live_unready,' +
+    'link_oscillating,warming_up,recent_drop,heartbeat_lost,high_rtt,remote_unstable,' +
+    'markers_differ,out_of_step'
+  ).split(',');
+  for (const r of reasons) assert.ok(peerReasonText(r, 'en') && peerReasonText(r, 'pt-BR'));
+  assert.equal(peerReasonText(undefined, 'en'), '');
+  const row = { ...peerRow('10.0.0.2', true), health: 'down', canAcknowledge: true };
+  assert.equal(peerRowDisplay(row, 'en', 9_000).canAcknowledge, false);
+  const u = { ...row, connected: false, health: 'unstable', reason: 'recent_drop' };
+  const ack = peerRowDisplay(u, 'pt-BR', 9_000);
+  assert.deepEqual(
+    [ack.badgeText, ack.canAcknowledge, ack.lastSeenAt],
+    ['INST\u00c1VEL', true, 9_000],
+  );
+  assert.equal(roleText('master', 'en', [u]), 'Master \xB7 0 of 1 slaves healthy');
+  assert.equal(roleText('slave', 'pt-BR', [u]), 'Slave \xB7 link inst\u00e1vel');
+  assert.equal((await runPeerAction('peer-ack:10.0.0.2:4444')).ok, true);
+  withOwnStorage(() => {
+    const p = { ...row, key: '10.0.0.2:4444', health: 'ok', connected: false };
+    bridgeState.peerStatuses = [p];
+    const m = peerPanelModel({ locale: 'pt-BR', lastSeenByKey: { '10.0.0.2:4444': 777 } });
+    assert.deepEqual(
+      [typeof m.serverNow, m.peers[0].badgeText, m.peers[0].lastSeenAt],
+      ['number', 'OK', 777],
+    );
   });
 });

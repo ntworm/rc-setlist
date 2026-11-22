@@ -154,10 +154,14 @@ async function sentEnvelopes(page) {
 }
 
 // The panel as the extension hands it over, with this computer paired.
-async function pairedWith(page, peer) {
-  await page.addInitScript((overrides) => {
-    window.INITIAL_PEER = { ...window.INITIAL_PEER, ...overrides };
-  }, peer);
+async function pairedWith(page, peer, locale) {
+  await page.addInitScript(
+    ({ overrides, nextLocale }) => {
+      window.INITIAL_PEER = { ...window.INITIAL_PEER, ...overrides };
+      if (nextLocale) window.INITIAL_LOCALE = nextLocale;
+    },
+    { overrides: peer, nextLocale: locale },
+  );
   await page.reload();
 }
 
@@ -272,4 +276,188 @@ test('a second computer whose master is away brings nothing', async ({ page }) =
   await expect(button).toBeVisible();
   await expect(button).toBeDisabled();
   await expect(button).toHaveAttribute('title', 'The master is not connected');
+});
+
+const NOW_MS = 1_700_000_100_000;
+
+function healthRow(overrides) {
+  return {
+    key: '192.168.0.10:4444',
+    role: 'outbound',
+    host: '192.168.0.10',
+    port: 4444,
+    connected: true,
+    markersMatch: true,
+    fingerprintMismatch: false,
+    versionMismatch: false,
+    health: 'ok',
+    reason: 'ok',
+    canAcknowledge: false,
+    rttP95Ms: 12,
+    drops5m: 0,
+    lastDropAt: null,
+    lastSeenAt: NOW_MS - 2_000,
+    ...overrides,
+  };
+}
+
+const EN_HEALTH_PEERS = [
+  healthRow({ key: '192.168.0.10:4444', host: '192.168.0.10', connected: false, health: 'ok' }),
+  healthRow({
+    key: '192.168.0.11:4444',
+    host: '192.168.0.11',
+    health: 'unstable',
+    reason: 'recent_drop',
+    canAcknowledge: true,
+    rttP95Ms: 42,
+    drops5m: 1,
+    lastDropAt: NOW_MS - 5_000,
+  }),
+  healthRow({
+    key: '192.168.0.12:4444',
+    host: '192.168.0.12',
+    health: 'unstable',
+    reason: 'warming_up',
+    canAcknowledge: false,
+  }),
+  healthRow({
+    key: '192.168.0.13:4444',
+    host: '192.168.0.13',
+    connected: true,
+    health: 'down',
+    reason: 'link_down',
+    canAcknowledge: true,
+    rttP95Ms: null,
+    drops5m: 2,
+    lastDropAt: NOW_MS - 5_000,
+  }),
+  healthRow({ key: '192.168.0.14:4444', host: '192.168.0.14', versionMismatch: true }),
+  healthRow({ key: '192.168.0.15:4444', host: '192.168.0.15', fingerprintMismatch: true }),
+];
+
+const PT_HEALTH_PEERS = [
+  healthRow({
+    key: '192.168.0.21:4444',
+    host: '192.168.0.21',
+    health: 'unstable',
+    reason: 'recent_drop',
+    canAcknowledge: true,
+    rttP95Ms: 42,
+    drops5m: 1,
+    lastDropAt: NOW_MS - 5_000,
+  }),
+  healthRow({
+    key: '192.168.0.22:4444',
+    host: '192.168.0.22',
+    health: 'down',
+    reason: 'link_down',
+  }),
+  healthRow({ key: '192.168.0.23:4444', host: '192.168.0.23', versionMismatch: true }),
+  healthRow({ key: '192.168.0.24:4444', host: '192.168.0.24', fingerprintMismatch: true }),
+  healthRow({
+    key: 'inbound:master',
+    role: 'inbound',
+    host: '192.168.1.50',
+    health: 'unstable',
+    reason: 'remote_unstable',
+    canAcknowledge: true,
+  }),
+];
+
+async function expectRowBadge(row, text, tonePattern, metaParts) {
+  const status = row.locator('.peer-list-status');
+  await expect(status).toHaveText(text);
+  await expect(status).toHaveClass(tonePattern);
+  for (const part of metaParts) {
+    await expect(row).toContainText(part);
+  }
+}
+
+test('renders health badges, reasons, metrics, and canAcknowledge-gated Acknowledge in EN', async ({
+  page,
+}) => {
+  await openPanel(page);
+  await pairedWith(page, { serverNow: NOW_MS, peers: EN_HEALTH_PEERS }, 'en');
+  await page.locator('#tabNetwork').click();
+
+  const rows = page.locator('#peerList li');
+  await expect(rows).toHaveCount(6);
+  await expectRowBadge(rows.nth(0), 'OK', /active/, [
+    'Link healthy',
+    'RTT 12 ms',
+    '0 drops (5m)',
+    'seen 2s ago',
+  ]);
+  await expect(rows.nth(0).getByRole('button', { name: 'Acknowledge' })).toHaveCount(0);
+  await expectRowBadge(rows.nth(1), 'UNSTABLE', /warning/, [
+    'Recent drop',
+    'RTT 42 ms',
+    'last drop 5s ago',
+  ]);
+  await expect(rows.nth(2).getByRole('button', { name: 'Acknowledge' })).toHaveCount(0);
+  await expectRowBadge(rows.nth(3), 'DOWN', /error/, ['Link down']);
+  await expect(rows.nth(3).getByRole('button', { name: 'Acknowledge' })).toHaveCount(0);
+  await expectRowBadge(rows.nth(4), 'DIFFERENT VERSIONS', /error/, ['Different versions']);
+  await expectRowBadge(rows.nth(5), 'CERTIFICATE CHANGED', /error/, ['changed its certificate']);
+
+  await rows.nth(1).getByRole('button', { name: 'Acknowledge' }).click();
+  const envelopes = await sentEnvelopes(page);
+  expect(envelopes).toHaveLength(1);
+  expect(envelopes[0].action).toBe('peer-ack:192.168.0.11:4444');
+});
+
+test('renders health badges, metrics, Acknowledge, and inbound Unpair in pt-BR', async ({
+  page,
+}) => {
+  await openPanel(page);
+  await pairedWith(page, { serverNow: NOW_MS, peers: PT_HEALTH_PEERS }, 'pt-BR');
+  await page.locator('#tabNetwork').click();
+
+  const rows = page.locator('#peerList li');
+  await expect(rows).toHaveCount(5);
+  await expectRowBadge(rows.nth(0), 'INST\u00c1VEL', /warning/, [
+    'Queda recente',
+    '1 quedas (5m)',
+    '\u00faltima queda h\u00e1 5s',
+    'visto h\u00e1 2s',
+  ]);
+  await expectRowBadge(rows.nth(1), 'CA\u00cdDO', /error/, ['Link ca\u00eddo']);
+  await expectRowBadge(rows.nth(2), 'VERS\u00d5ES DIFERENTES', /error/, []);
+  await expectRowBadge(rows.nth(3), 'CERTIFICADO MUDOU', /error/, []);
+
+  await rows.nth(0).getByRole('button', { name: 'Confirmar' }).click();
+  await rows.nth(4).getByRole('button', { name: 'Confirmar' }).click();
+  await rows.nth(4).getByRole('button', { name: 'Desfazer' }).click();
+  const envelopes = await sentEnvelopes(page);
+  expect(envelopes.map((item) => item.action)).toEqual([
+    'peer-ack:192.168.0.21:4444',
+    'peer-ack:inbound:master',
+    'peer-unpair',
+  ]);
+});
+
+test('footer peerRoleText derives colour from peer health rather than raw connected', async ({
+  page,
+}) => {
+  await openPanel(page);
+  await pairedWith(page, {
+    role: 'master',
+    roleText: 'Master \xB7 0 of 1 slaves healthy',
+    peers: [healthRow({ connected: true, health: 'down' })],
+  });
+  await expect(page.locator('#peerRoleText')).toHaveClass(/error/);
+
+  await pairedWith(page, {
+    role: 'master',
+    roleText: 'Master \xB7 0 of 1 slaves healthy',
+    peers: [healthRow({ connected: true, health: 'unstable' })],
+  });
+  await expect(page.locator('#peerRoleText')).toHaveClass(/warning/);
+
+  await pairedWith(page, {
+    role: 'master',
+    roleText: 'Master \xB7 1 of 1 slaves healthy',
+    peers: [healthRow({ connected: false, health: 'ok' })],
+  });
+  await expect(page.locator('#peerRoleText')).toHaveClass(/active/);
 });

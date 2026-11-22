@@ -474,11 +474,14 @@ function sendToTargets(targets: PeerLink[], type: string, message: unknown): boo
   return sent;
 }
 
-/**
- * Forwards a command to the paired computers. Never throws and never
- * rejects: a link that is down must not change what happens on this machine.
- * Returns whether at least one computer got it.
- */
+/** Returns wall-clock last-seen timestamps keyed by peer link key. */
+export function getPeerLastSeenMap(): Map<string, number | null> {
+  const map = new Map<string, number | null>();
+  for (const link of links.values()) map.set(link.key, link.health.lastSeenAt());
+  return map;
+}
+
+/** Forwards a command to paired computers; returns whether at least one got it. */
 export function relayToPeer(command: ShowCommand<unknown>): boolean {
   try {
     const targets = [...links.values()].filter((target) => target.synchronized);

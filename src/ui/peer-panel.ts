@@ -30,13 +30,30 @@ import {
   generatePairingCode,
   pair,
 } from '../runtime/pairing.js';
-import { syncInboundSlaveRole } from '../runtime/peer-inbound.js';
-import { startPeerLink, startPeerLinks } from '../runtime/peer-link.js';
+import { getInboundLastSeen, syncInboundSlaveRole } from '../runtime/peer-inbound.js';
+import {
+  getPeerLastSeenMap,
+  handlePeerHealthAck,
+  startPeerLink,
+  startPeerLinks,
+} from '../runtime/peer-link.js';
 import { listDiscoveredPeerEntries, type DiscoveredPeer } from '../runtime/peer-discovery.js';
 import { bridgeState, readPeerRole, type PeerRole } from '../runtime/bridge-state.js';
 import { getLanAddresses, pickLanIps } from '../util/helpers.js';
 import { roleText } from './peer-role-text.js';
-import type { PeerLinkStatus, PeerStatus } from '../types.js';
+import {
+  buildPeerPanelRows,
+  parsePeerAckAction,
+  peerPanelState,
+  peerStateText,
+  type PeerAckAction,
+  type PeerLastSeenSource,
+  type PeerPanelState,
+  type PeerRowDisplay,
+} from './peer-panel-health.js';
+import type { PeerLinkStatus } from '../types.js';
+
+export { peerPanelState, peerStateText, type PeerPanelState };
 
 /** The prefix every peer action carries. */
 const PAIR_PREFIX = 'peer-pair:';
@@ -44,19 +61,19 @@ const PAIR_PREFIX = 'peer-pair:';
 /** The prefix of the action that unpairs one computer of the list. */
 const UNPAIR_PREFIX = 'peer-unpair:';
 
-/** The states the panel can show for the second computer. */
-export type PeerPanelState =
-  'not_paired' | 'connected' | 'markers_differ' | 'offline' | 'certificate_changed';
+/** The prefix of the action that acknowledges an unstable peer link. */
+const ACK_PREFIX = 'peer-ack:';
 
 /** What the panel asks the extension to do about the second computer. */
 export type PeerAction =
   | { kind: 'pair'; host: string; code: string }
   | { kind: 'unpair' }
   | { kind: 'unpair-one'; host: string; port: number }
-  | { kind: 'code' };
+  | { kind: 'code' }
+  | PeerAckAction;
 
 /** One paired computer, as the panel shows it. */
-export type PeerPanelPeer = PeerLinkStatus & { statusText: string };
+export type PeerPanelPeer = PeerLinkStatus & PeerRowDisplay;
 
 /** The outcome of a peer action. */
 export interface PeerActionResult {
@@ -92,6 +109,8 @@ export interface PeerPanelModel {
   canGenerateCode: boolean;
   /** Why the pairing code may or may not be asked for. */
   codeHint: string;
+  /** Server wall-clock timestamp when the model was built, for age formatting. */
+  serverNow?: number;
   /** The computers this one is paired with, one row each. */
   peers?: PeerPanelPeer[];
   /** The computers that answered on the network and are not paired yet. */
@@ -104,30 +123,6 @@ export interface PeerPanelModel {
   /** Whether the main computer is talking to this one right now. */
   slaveConnected?: boolean;
 }
-
-/** The sentence each state shows, in the two languages the panel speaks. */
-const STATE_TEXT: Record<PeerPanelState, Record<UiLocale, string>> = {
-  not_paired: {
-    en: 'Not paired with a second computer',
-    'pt-BR': 'Sem pareamento com um segundo computador',
-  },
-  connected: {
-    en: 'Second computer connected',
-    'pt-BR': 'Segundo computador conectado',
-  },
-  markers_differ: {
-    en: 'Connected, but the markers are different',
-    'pt-BR': 'Conectado, mas os marcadores são diferentes',
-  },
-  offline: {
-    en: 'The second computer is not answering',
-    'pt-BR': 'O segundo computador não responde',
-  },
-  certificate_changed: {
-    en: 'The certificate changed — pair again',
-    'pt-BR': 'O certificado mudou — pareie de novo',
-  },
-};
 
 /** Why a pairing was refused, in the two languages the panel speaks. */
 const FAILURE_TEXT: Record<string, Record<UiLocale, string>> = {
@@ -179,27 +174,6 @@ const FAILURE_HINTS: ReadonlyArray<readonly [string, string]> = [
 ];
 
 /**
- * The state the link to the second computer is in.
- *
- * A certificate that changed outranks everything else: the link stopped on
- * purpose, so "not answering" would be a lie about why.
- */
-export function peerPanelState(status: PeerStatus): PeerPanelState {
-  if (!status.paired) return 'not_paired';
-  if (status.fingerprintMismatch) return 'certificate_changed';
-  if (!status.connected) return 'offline';
-  if (!status.markersMatch) return 'markers_differ';
-  return 'connected';
-}
-
-/**
- * The sentence the panel shows for a state.
- */
-export function peerStateText(state: PeerPanelState, locale: UiLocale): string {
-  return STATE_TEXT[state][locale];
-}
-
-/**
  * Whether an address may be paired with.
  *
  * Only a plain IPv4 address or a plain host name: letters, digits, dots and
@@ -243,7 +217,16 @@ function isIpv4(host: string): boolean {
 export function sanitizePanelAction(action: string): string {
   if (action.startsWith(PAIR_PREFIX)) return 'peer-pair';
   if (action.startsWith(UNPAIR_PREFIX)) return 'peer-unpair';
+  if (action === 'peer-ack' || action.startsWith(ACK_PREFIX)) return 'peer-ack';
   return action;
+}
+
+function parsePairAction(rest: string): PeerAction | null {
+  const read = readPairInput(rest);
+  if (!read) return null;
+  const { host, code } = read;
+  if (!isValidPeerHost(host) || !/^[0-9]{6}$/.test(code)) return null;
+  return { kind: 'pair', host, code };
 }
 
 /**
@@ -256,18 +239,14 @@ export function sanitizePanelAction(action: string): string {
 export function parsePeerAction(action: string): PeerAction | null {
   if (action === 'peer-unpair') return { kind: 'unpair' };
   if (action === 'peer-code') return { kind: 'code' };
+  const ack = parsePeerAckAction(action);
+  if (ack) return ack;
   if (action.startsWith(UNPAIR_PREFIX)) {
     const read = readUnpairInput(action.slice(UNPAIR_PREFIX.length));
-    if (!read) return null;
-    return { kind: 'unpair-one', host: read.host, port: read.port };
+    return read ? { kind: 'unpair-one', host: read.host, port: read.port } : null;
   }
   if (!action.startsWith(PAIR_PREFIX)) return null;
-  const read = readPairInput(action.slice(PAIR_PREFIX.length));
-  if (!read) return null;
-  const { host, code } = read;
-  if (!isValidPeerHost(host)) return null;
-  if (!/^[0-9]{6}$/.test(code)) return null;
-  return { kind: 'pair', host, code };
+  return parsePairAction(action.slice(PAIR_PREFIX.length));
 }
 
 /**
@@ -367,6 +346,43 @@ async function pairAndLink(
   return { ok: true };
 }
 
+function unpairAllPeers(locale: UiLocale): PeerActionResult {
+  // A pairing still on disk returns on restart, so keep the link and report
+  // the failure rather than showing a "not paired" state that will not last.
+  if (!clearPeerConfig()) return { ok: false, message: unpairFailureText(locale) };
+  clearSlaveRole();
+  syncInboundSlaveRole();
+  startPeerLink(null);
+  return { ok: true };
+}
+
+function unpairOnePeer(host: string, port: number, locale: UiLocale): PeerActionResult {
+  // Only the computer that was named is forgotten: the others stay paired.
+  if (!removePeerConfig(host, port)) {
+    return { ok: false, message: unpairFailureText(locale) };
+  }
+  startPeerLinks(readPeerConfigs());
+  return { ok: true };
+}
+
+async function executePeerAction(
+  parsed: PeerAction,
+  locale: UiLocale,
+  port: number,
+): Promise<PeerActionResult> {
+  if (parsed.kind === 'code') {
+    generatePairingCode();
+    return { ok: true };
+  }
+  if (parsed.kind === 'ack') {
+    handlePeerHealthAck(parsed.peerKey, false);
+    return { ok: true };
+  }
+  if (parsed.kind === 'unpair') return unpairAllPeers(locale);
+  if (parsed.kind === 'unpair-one') return unpairOnePeer(parsed.host, parsed.port, locale);
+  return await pairAndLink(parsed.host, parsed.code, port, locale);
+}
+
 /**
  * Runs a peer action.
  *
@@ -390,58 +406,23 @@ export async function runPeerAction(
       ? { ok: false, message: invalidInputText(action, locale) }
       : { ok: false };
   }
-  if (parsed.kind === 'code') {
-    generatePairingCode();
-    return { ok: true };
-  }
-  if (parsed.kind === 'unpair') {
-    // A pairing still on disk returns on restart, so keep the link and report
-    // the failure rather than showing a "not paired" state that will not last.
-    if (!clearPeerConfig()) return { ok: false, message: unpairFailureText(locale) };
-    clearSlaveRole();
-    syncInboundSlaveRole();
-    startPeerLink(null);
-    return { ok: true };
-  }
-  if (parsed.kind === 'unpair-one') {
-    // Only the computer that was named is forgotten: the others stay paired.
-    if (!removePeerConfig(parsed.host, parsed.port)) {
-      return { ok: false, message: unpairFailureText(locale) };
-    }
-    startPeerLinks(readPeerConfigs());
-    return { ok: true };
-  }
-  return pairAndLink(parsed.host, parsed.code, port, locale);
+  return await executePeerAction(parsed, locale, port);
 }
 
-/**
- * Why the pairing code may not be asked for.
- *
- * An empty sentence when there is nothing to complain about: the row is one
- * line tall, and a reason nobody needs is noise.
- */
 function codeHint(serverRunning: boolean, tlsEnabled: boolean, locale: UiLocale): string {
   if (!serverRunning) {
-    const templates: Record<UiLocale, string> = {
-      en: 'Start the server to hand out a pairing code.',
-      'pt-BR': 'Inicie o servidor para gerar um código de pareamento.',
-    };
-    return templates[locale];
+    return locale === 'pt-BR'
+      ? 'Inicie o servidor para gerar um código de pareamento.'
+      : 'Start the server to hand out a pairing code.';
   }
   if (!tlsEnabled) {
-    const templates: Record<UiLocale, string> = {
-      en: 'The server has to run over HTTPS to hand out a pairing code.',
-      'pt-BR': 'O servidor precisa rodar em HTTPS para gerar um código de pareamento.',
-    };
-    return templates[locale];
+    return locale === 'pt-BR'
+      ? 'O servidor precisa rodar em HTTPS para gerar um código de pareamento.'
+      : 'The server has to run over HTTPS to hand out a pairing code.';
   }
   return '';
 }
 
-/**
- * The port this computer serves on: the one the server listens on while it
- * runs, and the default one otherwise.
- */
 function servingPort(): number {
   const address = getServer()?.address();
   return address && typeof address === 'object' ? address.port : DEFAULT_PEER_PORT;
@@ -453,6 +434,18 @@ export interface PeerPanelOptions {
   locale?: UiLocale;
   /** The address other computers reach this one at. */
   localIp?: string;
+  /** Optional wall-clock last-seen timestamps keyed by peer key. */
+  lastSeenByKey?: PeerLastSeenSource;
+}
+
+function unpairedDiscoveredPeers(configs: readonly { host: string }[]): DiscoveredPeer[] {
+  return listDiscoveredPeerEntries()
+    .filter((peer) => !configs.some((config) => peer.addresses.includes(config.host)))
+    .map(({ host, name, port }) => ({ host, name, port }));
+}
+
+function isSlaveConnected(role: PeerRole): boolean {
+  return role === 'slave' && (bridgeState.wsServer?.peerConnectionCount() ?? 0) > 0;
 }
 
 /**
@@ -466,16 +459,13 @@ export function peerPanelModel(options: PeerPanelOptions = {}): PeerPanelModel {
   const tlsEnabled = isServerTls();
   const code = currentPairingCode();
   const { role, masterAddress } = readPeerRole();
-  // A computer that is paired already is not to be paired again.
-  // Any address the computer listed counts: it may have been paired at
-  // another one than the address that answers now.
-  const discovered = listDiscoveredPeerEntries()
-    .filter((peer) => !configs.some((config) => peer.addresses.includes(config.host)))
-    .map(({ host, name, port }) => ({ host, name, port }));
-  const peers = bridgeState.peerStatuses.map((row) => ({
-    ...row,
-    statusText: peerStateText(peerPanelState({ paired: true, ...row }), locale),
-  }));
+  const inboundLastSeenAt = getInboundLastSeen()?.lastSeenAt ?? null;
+  const peers = buildPeerPanelRows(
+    bridgeState.peerStatuses,
+    locale,
+    options.lastSeenByKey ?? getPeerLastSeenMap(),
+    inboundLastSeenAt,
+  );
   return {
     state,
     statusText: peerStateText(state, locale),
@@ -489,11 +479,12 @@ export function peerPanelModel(options: PeerPanelOptions = {}): PeerPanelModel {
     code,
     canGenerateCode: serverRunning && tlsEnabled,
     codeHint: codeHint(serverRunning, tlsEnabled, locale),
+    serverNow: Date.now(),
     peers,
-    discovered,
+    discovered: unpairedDiscoveredPeers(configs),
     role,
     roleText: roleText(role, locale, peers),
     masterAddress,
-    slaveConnected: role === 'slave' && (bridgeState.wsServer?.peerConnectionCount() ?? 0) > 0,
+    slaveConnected: isSlaveConnected(role),
   };
 }

@@ -952,8 +952,9 @@ select {
 
 .peer-list li {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 8px;
+  gap: 6px 8px;
   font-size: 11px;
 }
 
@@ -963,7 +964,7 @@ select {
 }
 
 .peer-list-status {
-  flex: 1;
+  font-weight: 700;
   color: var(--p-text-2);
 }
 
@@ -973,6 +974,28 @@ select {
 
 .peer-list-status.active {
   color: var(--p-ok);
+}
+
+.peer-list-status.error {
+  color: var(--p-error);
+}
+
+.peer-list-meta {
+  flex: 1 1 180px;
+  color: var(--p-text-2);
+  font-size: 10px;
+}
+
+.peer-list-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: auto;
+}
+
+.peer-ack-btn {
+  border-color: var(--p-warn);
+  color: var(--p-warn);
 }
 
 .peer-found {
@@ -1091,6 +1114,10 @@ select {
 
 .status-text.warning {
   color: var(--p-warn);
+}
+
+.status-text.error {
+  color: var(--p-error);
 }
 
 .status-osc {
