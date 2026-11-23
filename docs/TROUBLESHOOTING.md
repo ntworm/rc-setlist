@@ -144,6 +144,49 @@ opens an empty, temporary list of setlists. Setlists made in such a temporary
 list stay on disk in their own folder for manual recovery; they are not moved
 to the Set once it is recognised.
 
+## Two-computer link states and alerts
+
+When two computers are paired, Stage Control, `/performance`, and the Live
+panel report the measured state of each link:
+
+- **UNSTABLE — Warming up (20 s)**: normal for the first `20 s` after a fresh
+  connection while heartbeats verify link stability. Wait for it to turn **OK**.
+- **UNSTABLE — Recent drop / Heartbeat lost / High latency (RTT)**: the link
+  had a drop within the last `60 s`, missed heartbeats (`> 1.5 s`), or measured
+  high latency (`p95 >= 250 ms` or sample `>= 500 ms`). Prefer wired Ethernet
+  between the two machines. Once the link is stable again, press
+  **Acknowledge** on Stage Control or in the Live panel to shorten recovery to
+  `10 s`.
+- **UNSTABLE — Link oscillating (5 min hold)**: the link dropped `3` or more
+  times within `5 min`. Check the Ethernet cable, switch, or Wi-Fi interference;
+  **Acknowledge** is disabled until the `5 min` hold expires without further
+  drops.
+- **UNSTABLE — Markers differ**: load the exact same `.als` arrangement locator
+  layout on both computers, or use **Bring from master** on the slave while
+  stopped.
+- **UNSTABLE — Out of step**: the slave playhead differed from the master for
+  `3 s` outside a pending quantized jump or active loop. Verify that Ableton
+  **Link** is **on** and **Start Stop Sync** is **off** on both computers, and
+  keep **Auto-correct playhead on slave** enabled in the Live panel's
+  **Network** tab.
+- **DOWN — Link down / Remote link down / Local or Remote Live/OSC
+  unavailable**: no frames arrived for `3 s` or AbletonOSC is not responding on
+  one of the machines. If the full-screen red alarm appears on stage, press
+  **Dismiss alarm** to continue operating with the red transport badge while
+  restoring the network cable or restarting RC Setlist on the offline machine.
+- **DIFFERENT VERSIONS**: the master and slave are on different RC Setlist link
+  protocols. Install the exact same RC Setlist release on both computers.
+- **CERTIFICATE CHANGED**: the slave generated a new TLS certificate. In the
+  Live panel's **Network** tab, press **Unpair**, generate a new six-digit code
+  on the slave, and pair again.
+- **`SLAVE DID NOT EXECUTE: <command>` / `Executed late: <command>`**: a
+  command missed its delivery deadline or failed on the slave. Check the link
+  health row and repeat the cue or transport action if needed.
+- **`SLAVE STILL NOT STOPPED`**: the master stopped or triggered panic while
+  the slave was unreachable for more than `1 s`. The stop command stays queued
+  and executes automatically as soon as the slave reconnects; if the link is
+  physically severed, stop the slave machine directly.
+
 ## What to include in a bug report
 
 Include OS, Live version/edition, RC Setlist version, browser, exact reproduction

@@ -299,12 +299,119 @@
       temporary list of setlists. Setlists made in such a temporary list stay on disk in their own
       folder for manual recovery; they are not moved to the Set once it is recognised.
     </p>
+    <h2 id="two-computer-link-states-and-alerts">Two-computer link states and alerts</h2>
+    <p>
+      When two computers are paired, Stage Control, <code>/performance</code>, and the Live panel
+      report the measured state of each link:
+    </p>
+    <ul>
+      <li>
+        <strong>UNSTABLE — Warming up (20 s)</strong>: normal for the first <code>20 s</code> after
+        a fresh
+      </li>
+    </ul>
+    <p>
+      connection while heartbeats verify link stability. Wait for it to turn <strong>OK</strong>.
+    </p>
+    <ul>
+      <li>
+        <strong>UNSTABLE — Recent drop / Heartbeat lost / High latency (RTT)</strong>: the link
+      </li>
+    </ul>
+    <p>
+      had a drop within the last <code>60 s</code>, missed heartbeats (<code>&gt; 1.5 s</code>), or
+      measured high latency (<code>p95 &gt;= 250 ms</code> or sample <code>&gt;= 500 ms</code>).
+      Prefer wired Ethernet between the two machines. Once the link is stable again, press
+      <strong>Acknowledge</strong> on Stage Control or in the Live panel to shorten recovery to
+      <code>10 s</code>.
+    </p>
+    <ul>
+      <li>
+        <strong>UNSTABLE — Link oscillating (5 min hold)</strong>: the link dropped
+        <code>3</code> or more
+      </li>
+    </ul>
+    <p>
+      times within <code>5 min</code>. Check the Ethernet cable, switch, or Wi-Fi interference;
+      <strong>Acknowledge</strong> is disabled until the <code>5 min</code> hold expires without
+      further drops.
+    </p>
+    <ul>
+      <li>
+        <strong>UNSTABLE — Markers differ</strong>: load the exact same
+        <code>.als</code> arrangement locator
+      </li>
+    </ul>
+    <p>
+      layout on both computers, or use <strong>Bring from master</strong> on the slave while
+      stopped.
+    </p>
+    <ul>
+      <li>
+        <strong>UNSTABLE — Out of step</strong>: the slave playhead differed from the master for
+      </li>
+    </ul>
+    <p>
+      <code>3 s</code> outside a pending quantized jump or active loop. Verify that Ableton
+      <strong>Link</strong> is <strong>on</strong> and <strong>Start Stop Sync</strong> is
+      <strong>off</strong> on both computers, and keep
+      <strong>Auto-correct playhead on slave</strong> enabled in the Live panel&#39;s
+      <strong>Network</strong> tab.
+    </p>
+    <ul>
+      <li>**DOWN — Link down / Remote link down / Local or Remote Live/OSC</li>
+    </ul>
+    <p>
+      unavailable<strong
+        >: no frames arrived for <code>3 s</code> or AbletonOSC is not responding on one of the
+        machines. If the full-screen red alarm appears on stage, press </strong
+      >Dismiss alarm** to continue operating with the red transport badge while restoring the
+      network cable or restarting RC Setlist on the offline machine.
+    </p>
+    <ul>
+      <li>
+        <strong>DIFFERENT VERSIONS</strong>: the master and slave are on different RC Setlist link
+      </li>
+    </ul>
+    <p>protocols. Install the exact same RC Setlist release on both computers.</p>
+    <ul>
+      <li>
+        <strong>CERTIFICATE CHANGED</strong>: the slave generated a new TLS certificate. In the
+      </li>
+    </ul>
+    <p>
+      Live panel&#39;s <strong>Network</strong> tab, press <strong>Unpair</strong>, generate a new
+      six-digit code on the slave, and pair again.
+    </p>
+    <ul>
+      <li>
+        <strong
+          ><code>SLAVE DID NOT EXECUTE: &lt;command&gt;</code> /
+          <code>Executed late: &lt;command&gt;</code></strong
+        >: a
+      </li>
+    </ul>
+    <p>
+      command missed its delivery deadline or failed on the slave. Check the link health row and
+      repeat the cue or transport action if needed.
+    </p>
+    <ul>
+      <li>
+        <strong><code>SLAVE STILL NOT STOPPED</code></strong
+        >: the master stopped or triggered panic while
+      </li>
+    </ul>
+    <p>
+      the slave was unreachable for more than <code>1 s</code>. The stop command stays queued and
+      executes automatically as soon as the slave reconnects; if the link is physically severed,
+      stop the slave machine directly.
+    </p>
     <h2 id="what-to-include-in-a-bug-report">What to include in a bug report</h2>
     <p>
       Include OS, Live version/edition, RC Setlist version, browser, exact reproduction and
       sanitized logs. Remove controller tokens, certificate material, local paths and real
       setlist/lyrics content. See <a href="../SUPPORT.md">SUPPORT.md</a>.
     </p>
-    <div class="source">Rendered from <code>docs\TROUBLESHOOTING.md</code> on 2026-11-18.</div>
+    <div class="source">Rendered from <code>docs\TROUBLESHOOTING.md</code> on 2026-11-23.</div>
   </body>
 </html>

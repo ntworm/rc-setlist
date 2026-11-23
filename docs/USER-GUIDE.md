@@ -353,6 +353,35 @@ The Stage Control page shows a second dot beside the connection dot:
 - **no dot**: there is no second computer paired, and nothing is sent
   anywhere.
 
+Stage Control (in both **Edit** and **Show** mode), `/performance`, and the Live
+panel also show a per-computer link health bar whenever a second computer is
+paired:
+
+- **OK** (green): bidirectional heartbeats are clean, markers match, and both
+  Ableton Live / OSC bridges are ready.
+- **UNSTABLE** (amber): the link is warming up (`20 s` after the first connect),
+  recovering from a recent drop or lost heartbeat (`60 s` clean window),
+  experiencing high latency (`RTT >= 250 ms` p95 or `>= 500 ms` sample),
+  holding the `5 min` penalty after an oscillating link (`3` or more drops in
+  `5 min`), reading different markers, or out of step.
+- **DOWN** (red): no frame has arrived for `3 s`, the socket closed, or Live /
+  OSC is unavailable on either computer. When the link enters **DOWN** (or a
+  page reloads while **DOWN** and playing), a full-screen red stage alarm
+  appears on Stage Control and `/performance`. **Dismiss alarm** hides the
+  overlay while keeping the red transport badge above the transport dock.
+- **DIFFERENT VERSIONS** (red): the two computers run incompatible link
+  protocol versions. Update both computers to the same RC Setlist build; no
+  commands are relayed while versions differ.
+- **CERTIFICATE CHANGED** (red): the second computer presented a different TLS
+  certificate and must be paired again.
+
+Each row prints the computer address, the current reason, `RTT`, `drops (5m)`,
+`last drop X ago`, and `seen X ago`. When a link is **UNSTABLE** after a
+transient drop or latency spike and has calmed down, an **Acknowledge** button
+appears for controllers and in the Live panel, shortening the clean recovery
+window to `10 s` on both computers (it never overrides the initial `20 s`
+warm-up or the `5 min` oscillating-link hold).
+
 ### Master, slaves and finding them
 
 The main computer is the **master**; every computer whose code it typed is a
@@ -378,6 +407,24 @@ These travel to the paired computer: **Play**, **Stop**, **jump** (as the beat
 it lands on), **metronome**, **quantization**, **count-in**, **refresh** and
 **panic**.
 
+Every relayed command is confirmed by the slave (`peer_ack`) and retried every
+`150 ms` until its deadline:
+
+- Stage Control shows a `3 s` per-computer tick (`Pending`, `Executed`, or
+  `Failed`).
+- If a command misses its deadline or fails on the slave, Stage Control and the
+  Live panel show **`SLAVE DID NOT EXECUTE: <command>`**. If a delayed
+  confirmation arrives afterwards, the alert updates to
+  **`Executed late: <command>`**.
+- Safety **Stop** and **Panic** commands never expire while the main computer
+  remains stopped or panicked: they are retried across reconnects, and if the
+  slave has not confirmed within `1 s`, Stage Control and the Live panel show
+  **`SLAVE STILL NOT STOPPED`** until confirmation arrives.
+- Transport commands carry a sequence number so a delayed `play` behind a newer
+  `stop` or `panic` is superseded and never executed out of order, while
+  non-transport commands (`metronome`, `quantization`, `refresh`) are never
+  superseded by transport changes.
+
 These stay on the main computer: setlist editing, marker editing, colours,
 notes, lyrics, profiles, ordering and the CSV export. The second computer
 keeps its own setlist and its own profiles.
@@ -387,9 +434,13 @@ keeps its own setlist and its own profiles.
 With Link on, Live starts Play and a quantized jump on the next bar line. A
 command that crosses the network while that bar line passes lands one bar late
 on the second computer, and a command sent while the link was down never
-arrives. So the main computer also sends where its playhead is, twice a
-second, and the second computer corrects what it can tell for sure:
+arrives. So the main computer also sends its desired transport target
+(`peer_target`), immediately upon synchronizing and twice a second thereafter,
+and the second computer corrects what it can tell for sure:
 
+- Both are stopped and the second computer is more than half a beat away for
+  three targets in a row: it jumps to the matching marker (or moves its
+  playhead to the exact beat between markers) within `2 s` of reconnecting.
 - Both play and the second one is a whole number of beats off: its playhead
   moves by that gap.
 - The main computer plays and the second one is stopped: it starts on the next
@@ -402,8 +453,12 @@ or a lock, in the seconds after a relayed Play, Stop, jump or count-in, or
 while either playhead is not moving at its tempo (a Live that stopped
 answering is never followed). A gap that is not whole
 beats means the two are not on the same beat; the second computer reports it
-and asks to check Link, without moving. Every correction is written to the log
-of the second computer.
+and asks to check Link, without moving. When a playhead mismatch holds for
+`3 s` outside a pending jump or active loop, both computers show **UNSTABLE**
+with reason **Out of step**. The **Auto-correct playhead on slave** checkbox in
+the Live panel's **Network** tab (`peer-auto-correct`, enabled by default) can
+be turned off to alert without moving the slave playhead. Every correction is
+written to the log of the second computer.
 
 ### A phone is not a second computer
 

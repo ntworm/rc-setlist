@@ -532,6 +532,61 @@ Música B [bpm 96]</code></pre>
       <li><strong>sem ponto</strong>: não há segundo computador pareado, e nada é enviado para</li>
     </ul>
     <p>lugar nenhum.</p>
+    <p>
+      O Controle de palco (tanto no modo <strong>Editar</strong> quanto no modo
+      <strong>Show</strong>), a tela <code>/performance</code> e o painel do Live também mostram uma
+      barra de saúde por computador sempre que houver pareamento:
+    </p>
+    <ul>
+      <li>
+        <strong>OK</strong> (verde): heartbeats bidirecionais estáveis, marcadores iguais e Live /
+      </li>
+    </ul>
+    <p>OSC prontos nos dois lados.</p>
+    <ul>
+      <li>
+        <strong>INSTÁVEL</strong> (amarelo): o link está aquecendo (<code>20 s</code> após
+        conectar), se
+      </li>
+    </ul>
+    <p>
+      recuperando de queda recente ou heartbeat perdido (<code>60 s</code> de janela limpa), com
+      latência alta (<code>RTT &gt;= 250 ms</code> p95 ou amostra <code>&gt;= 500 ms</code>), sob
+      trava de <code>5 min</code> por link oscilando (<code>3</code> ou mais quedas em
+      <code>5 min</code>), com marcadores diferentes ou fora de passo.
+    </p>
+    <ul>
+      <li>
+        <strong>CAÍDO</strong> (vermelho): nenhum frame chegou por <code>3 s</code>, o socket fechou
+        ou o
+      </li>
+    </ul>
+    <p>
+      Live / OSC ficou indisponível em um dos computadores. Ao entrar em <strong>CAÍDO</strong> (ou
+      ao recarregar a página durante <strong>CAÍDO</strong> com o Live tocando), um alarme vermelho
+      em tela cheia aparece no Controle de palco e em <code>/performance</code>.
+      <strong>Dispensar alarme</strong> fecha a sobreposição mantendo o alerta vermelho acima da
+      barra de transporte.
+    </p>
+    <ul>
+      <li><strong>VERSÕES DIFERENTES</strong> (vermelho): os dois computadores rodam versões</li>
+    </ul>
+    <p>
+      incompatíveis do protocolo do link. Atualize os dois para a mesma versão do RC Setlist; nenhum
+      comando é repassado enquanto as versões diferirem.
+    </p>
+    <ul>
+      <li><strong>CERTIFICADO MUDOU</strong> (vermelho): o segundo computador apresentou outro</li>
+    </ul>
+    <p>certificado TLS e precisa ser pareado de novo.</p>
+    <p>
+      Cada linha mostra o endereço do computador, o motivo atual, <code>RTT</code>,
+      <code>quedas (5m)</code>, <code>última queda há X</code> e <code>visto há X</code>. Quando o
+      link está <strong>INSTÁVEL</strong> após uma queda ou pico passageiro e já estabilizou, o
+      botão <strong>Confirmar</strong> aparece para controladores e no painel do Live, reduzindo a
+      janela de recuperação limpa para <code>10 s</code> nos dois computadores (sem nunca pular os
+      <code>20 s</code> de aquecimento inicial nem a trava de <code>5 min</code> de link oscilando).
+    </p>
     <h3 id="master-slaves-e-como-ach-los">Master, slaves e como achá-los</h3>
     <p>
       O computador principal é o <strong>master</strong>; cada computador cujo código ele digitou é
@@ -561,6 +616,46 @@ Música B [bpm 96]</code></pre>
       <strong>pânico</strong>.
     </p>
     <p>
+      Cada comando repassado é confirmado pelo slave (<code>peer_ack</code>) e reenviado a cada
+      <code>150 ms</code> até o prazo limite:
+    </p>
+    <ul>
+      <li>
+        O Controle de palco mostra por <code>3 s</code> um selo por computador
+        (<code>Pendente</code>,
+      </li>
+    </ul>
+    <p><code>Executou</code> ou <code>Falhou</code>).</p>
+    <ul>
+      <li>Se um comando perder o prazo ou falhar no slave, o Controle de palco e o</li>
+    </ul>
+    <p>
+      painel do Live exibem <strong><code>SLAVE NÃO EXECUTOU: &lt;comando&gt;</code></strong
+      >. Se a confirmação chegar atrasada depois do prazo, o alerta muda para
+      <strong><code>Executou atrasado: &lt;comando&gt;</code></strong
+      >.
+    </p>
+    <ul>
+      <li>
+        Comandos de segurança (<strong>Stop</strong> e <strong>Pânico</strong>) nunca expiram
+        enquanto o
+      </li>
+    </ul>
+    <p>
+      computador principal continuar parado ou em pânico: são reenviados ao reconectar e, se o slave
+      não confirmar em <code>1 s</code>, aparece
+      <strong><code>SLAVE AINDA NÃO PAROU</code></strong> até a confirmação chegar.
+    </p>
+    <ul>
+      <li>Comandos de transporte levam um número de sequência para que um <code>play</code></li>
+    </ul>
+    <p>
+      atrasado atrás de um <code>stop</code> ou <code>pânico</code> mais novo seja descartado
+      (<code>superseded</code>) e nunca toque fora de ordem, enquanto comandos fora do transporte
+      (<code>metrônomo</code>, <code>quantização</code>, <code>refresh</code>) nunca são descartados
+      por mudanças de transporte.
+    </p>
+    <p>
       Ficam no computador principal: edição do setlist, edição de marcadores, cores, notas, letras,
       perfis, ordenação e a exportação CSV. O segundo computador mantém o próprio setlist e os
       próprios perfis.
@@ -570,8 +665,16 @@ Música B [bpm 96]</code></pre>
       Com o Link ligado, o Live começa o Play e um salto quantizado na próxima barra. Um comando que
       atravessa a rede enquanto essa barra passa chega uma barra atrasado no segundo computador, e
       um comando enviado com o link caído nunca chega. Por isso o computador principal também manda
-      onde está a agulha, duas vezes por segundo, e o segundo computador corrige o que dá para saber
-      com certeza:
+      o alvo desejado de transporte (<code>peer_target</code>), imediatamente ao sincronizar e duas
+      vezes por segundo depois disso, e o segundo computador corrige o que dá para saber com
+      certeza:
+    </p>
+    <ul>
+      <li>Os dois estão parados e o segundo computador está a mais de meio beat de</li>
+    </ul>
+    <p>
+      distância por três alvos seguidos: ele pula para o marcador correspondente (ou move a agulha
+      para o beat exato entre marcadores) em até <code>2 s</code> após reconectar.
     </p>
     <ul>
       <li>Os dois tocam e o segundo está um número inteiro de beats fora: a agulha</li>
@@ -590,8 +693,12 @@ Música B [bpm 96]</code></pre>
       segundos depois de um Play, Stop, salto ou contagem repassados, ou enquanto uma das agulhas
       não anda no próprio tempo (um Live que parou de responder nunca é seguido). Uma diferença que
       não é de beats inteiros quer dizer que os dois não estão no mesmo tempo; o segundo computador
-      avisa e pede para conferir o Link, sem se mover. Toda correção fica no log do segundo
-      computador.
+      avisa e pede para conferir o Link, sem se mover. Quando uma divergência de agulha dura
+      <code>3 s</code> fora de salto pendente ou loop ativo, os dois computadores mostram
+      <strong>INSTÁVEL</strong> com motivo <strong>Fora de passo</strong>. A opção
+      <strong>Corrigir agulha automaticamente no slave</strong> na aba <strong>Rede</strong> do
+      painel do Live (<code>peer-auto-correct</code>, ligada por padrão) pode ser desligada para
+      apenas alertar sem mover a agulha do slave. Toda correção fica no log do segundo computador.
     </p>
     <h3 id="um-celular-n-o-um-segundo-computador">Um celular não é um segundo computador</h3>
     <p>
@@ -700,6 +807,6 @@ Música B [bpm 96]</code></pre>
       O raciocínio completo está em
       <a href="../architecture/song-identity.md">docs/architecture/song-identity.md</a>.
     </p>
-    <div class="source">Rendered from <code>docs\pt-BR\USER-GUIDE.md</code> on 2026-11-18.</div>
+    <div class="source">Rendered from <code>docs\pt-BR\USER-GUIDE.md</code> on 2026-11-23.</div>
   </body>
 </html>

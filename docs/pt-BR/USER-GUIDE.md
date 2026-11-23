@@ -363,6 +363,36 @@ conexão:
 - **sem ponto**: não há segundo computador pareado, e nada é enviado para
   lugar nenhum.
 
+O Controle de palco (tanto no modo **Editar** quanto no modo **Show**), a tela
+`/performance` e o painel do Live também mostram uma barra de saúde por
+computador sempre que houver pareamento:
+
+- **OK** (verde): heartbeats bidirecionais estáveis, marcadores iguais e Live /
+  OSC prontos nos dois lados.
+- **INSTÁVEL** (amarelo): o link está aquecendo (`20 s` após conectar), se
+  recuperando de queda recente ou heartbeat perdido (`60 s` de janela limpa),
+  com latência alta (`RTT >= 250 ms` p95 ou amostra `>= 500 ms`), sob trava de
+  `5 min` por link oscilando (`3` ou mais quedas em `5 min`), com marcadores
+  diferentes ou fora de passo.
+- **CAÍDO** (vermelho): nenhum frame chegou por `3 s`, o socket fechou ou o
+  Live / OSC ficou indisponível em um dos computadores. Ao entrar em **CAÍDO**
+  (ou ao recarregar a página durante **CAÍDO** com o Live tocando), um alarme
+  vermelho em tela cheia aparece no Controle de palco e em `/performance`.
+  **Dispensar alarme** fecha a sobreposição mantendo o alerta vermelho acima da
+  barra de transporte.
+- **VERSÕES DIFERENTES** (vermelho): os dois computadores rodam versões
+  incompatíveis do protocolo do link. Atualize os dois para a mesma versão do
+  RC Setlist; nenhum comando é repassado enquanto as versões diferirem.
+- **CERTIFICADO MUDOU** (vermelho): o segundo computador apresentou outro
+  certificado TLS e precisa ser pareado de novo.
+
+Cada linha mostra o endereço do computador, o motivo atual, `RTT`,
+`quedas (5m)`, `última queda há X` e `visto há X`. Quando o link está
+**INSTÁVEL** após uma queda ou pico passageiro e já estabilizou, o botão
+**Confirmar** aparece para controladores e no painel do Live, reduzindo a
+janela de recuperação limpa para `10 s` nos dois computadores (sem nunca pular
+os `20 s` de aquecimento inicial nem a trava de `5 min` de link oscilando).
+
 ### Master, slaves e como achá-los
 
 O computador principal é o **master**; cada computador cujo código ele digitou é
@@ -388,6 +418,25 @@ Viajam para o computador pareado: **Play**, **Stop**, **salto** (como o beat
 em que ele pousa), **metrônomo**, **quantização**, **contagem**, **refresh** e
 **pânico**.
 
+Cada comando repassado é confirmado pelo slave (`peer_ack`) e reenviado a cada
+`150 ms` até o prazo limite:
+
+- O Controle de palco mostra por `3 s` um selo por computador (`Pendente`,
+  `Executou` ou `Falhou`).
+- Se um comando perder o prazo ou falhar no slave, o Controle de palco e o
+  painel do Live exibem **`SLAVE NÃO EXECUTOU: <comando>`**. Se a confirmação
+  chegar atrasada depois do prazo, o alerta muda para
+  **`Executou atrasado: <comando>`**.
+- Comandos de segurança (**Stop** e **Pânico**) nunca expiram enquanto o
+  computador principal continuar parado ou em pânico: são reenviados ao
+  reconectar e, se o slave não confirmar em `1 s`, aparece
+  **`SLAVE AINDA NÃO PAROU`** até a confirmação chegar.
+- Comandos de transporte levam um número de sequência para que um `play`
+  atrasado atrás de um `stop` ou `pânico` mais novo seja descartado
+  (`superseded`) e nunca toque fora de ordem, enquanto comandos fora do
+  transporte (`metrônomo`, `quantização`, `refresh`) nunca são descartados por
+  mudanças de transporte.
+
 Ficam no computador principal: edição do setlist, edição de marcadores, cores,
 notas, letras, perfis, ordenação e a exportação CSV. O segundo computador
 mantém o próprio setlist e os próprios perfis.
@@ -397,10 +446,15 @@ mantém o próprio setlist e os próprios perfis.
 Com o Link ligado, o Live começa o Play e um salto quantizado na próxima
 barra. Um comando que atravessa a rede enquanto essa barra passa chega uma
 barra atrasado no segundo computador, e um comando enviado com o link caído
-nunca chega. Por isso o computador principal também manda onde está a agulha,
-duas vezes por segundo, e o segundo computador corrige o que dá para saber
+nunca chega. Por isso o computador principal também manda o alvo desejado de
+transporte (`peer_target`), imediatamente ao sincronizar e duas vezes por
+segundo depois disso, e o segundo computador corrige o que dá para saber
 com certeza:
 
+- Os dois estão parados e o segundo computador está a mais de meio beat de
+  distância por três alvos seguidos: ele pula para o marcador correspondente
+  (ou move a agulha para o beat exato entre marcadores) em até `2 s` após
+  reconectar.
 - Os dois tocam e o segundo está um número inteiro de beats fora: a agulha
   dele anda essa diferença.
 - O principal toca e o segundo está parado: ele começa na próxima barra da
@@ -414,7 +468,12 @@ contagem repassados, ou enquanto uma das agulhas não anda no próprio tempo (um
 Live que parou de responder nunca é seguido). Uma
 diferença que não é de beats inteiros quer dizer que os dois não estão no
 mesmo tempo; o segundo computador avisa e pede para conferir o Link, sem se
-mover. Toda correção fica no log do segundo computador.
+mover. Quando uma divergência de agulha dura `3 s` fora de salto pendente ou
+loop ativo, os dois computadores mostram **INSTÁVEL** com motivo **Fora de
+passo**. A opção **Corrigir agulha automaticamente no slave** na aba **Rede**
+do painel do Live (`peer-auto-correct`, ligada por padrão) pode ser desligada
+para apenas alertar sem mover a agulha do slave. Toda correção fica no log do
+segundo computador.
 
 ### Um celular não é um segundo computador
 

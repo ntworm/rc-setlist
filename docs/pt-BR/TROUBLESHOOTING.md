@@ -148,6 +148,52 @@ de setlists vazia e temporária. Os setlists feitos numa lista temporária ficam
 no disco, na pasta dela, para recuperação manual; eles não passam para o Set
 quando ele for reconhecido.
 
+## Estados e alertas do link entre dois computadores
+
+Quando dois computadores estão pareados, o Controle de palco, a tela
+`/performance` e o painel do Live mostram o estado medido de cada link:
+
+- **INSTÁVEL — Aquecendo (20 s)**: normal nos primeiros `20 s` após conectar,
+  enquanto os heartbeats validam a estabilidade do link. Aguarde mudar para
+  **OK**.
+- **INSTÁVEL — Queda recente / Heartbeat perdido / Latência alta (RTT)**: o
+  link sofreu uma queda nos últimos `60 s`, perdeu heartbeats (`> 1,5 s`) ou
+  mediu latência alta (`p95 >= 250 ms` ou amostra `>= 500 ms`). Prefira cabo de
+  rede Ethernet entre as duas máquinas. Quando o link estabilizar, aperte
+  **Confirmar** no Controle de palco ou no painel do Live para reduzir a
+  recuperação para `10 s`.
+- **INSTÁVEL — Link oscilando (trava 5 min)**: o link caiu `3` ou mais vezes em
+  `5 min`. Verifique cabo Ethernet, switch ou interferência no Wi-Fi; o botão
+  **Confirmar** fica indisponível até a trava de `5 min` terminar sem novas
+  quedas.
+- **INSTÁVEL — Marcadores diferentes**: abra o mesmo `.als` com os mesmos
+  locators nos dois computadores, ou use **Trazer do master** no slave com o
+  Live parado.
+- **INSTÁVEL — Fora de passo**: a agulha do slave divergiu do master por `3 s`
+  fora de salto quantizado pendente ou loop ativo. Confira se o **Link** do
+  Ableton está **ligado** e o **Start Stop Sync** está **desligado** nos dois
+  computadores, e mantenha **Corrigir agulha automaticamente no slave** marcado
+  na aba **Rede** do painel do Live.
+- **CAÍDO — Link caído / Link caído no outro computador / Live/OSC local ou
+  remoto indisponível**: nenhum frame chegou por `3 s` ou o AbletonOSC parou de
+  responder em uma das máquinas. Se o alarme vermelho em tela cheia abrir no
+  palco, aperte **Dispensar alarme** para continuar operando com o selo
+  vermelho no transporte enquanto restabelece o cabo de rede ou reinicia o RC
+  Setlist na máquina offline.
+- **VERSÕES DIFERENTES**: master e slave estão em versões incompatíveis do
+  protocolo do link. Instale exatamente a mesma versão do RC Setlist nos dois
+  computadores.
+- **CERTIFICADO MUDOU**: o slave gerou um novo certificado TLS. Na aba **Rede**
+  do painel do Live, aperte **Desfazer**, gere um novo código de seis dígitos
+  no slave e pareie novamente.
+- **`SLAVE NÃO EXECUTOU: <comando>` / `Executou atrasado: <comando>`**: um
+  comando perdeu o prazo de entrega ou falhou no slave. Verifique a barra de
+  saúde do link e repita o salto ou comando se necessário.
+- **`SLAVE AINDA NÃO PAROU`**: o master parou ou acionou pânico enquanto o
+  slave estava inacessível por mais de `1 s`. O comando de parada permanece na
+  fila e executa automaticamente assim que o slave reconectar; se o cabo foi
+  desconectado de vez, pare o slave diretamente na segunda máquina.
+
 ## O que incluir em um bug report
 
 Inclua sistema operacional, versão/edição do Live, versão do RC Setlist,
