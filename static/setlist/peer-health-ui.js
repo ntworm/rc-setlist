@@ -6,26 +6,22 @@
   'use strict';
 
   const TONE_CLASSES = ['is-ok', 'is-warning', 'is-error'];
+  const ALERT_STATUSES = new Set(['stop_unacked', 'expired', 'failed', 'late_confirmed']);
+  const STOP_CLEARING_COMMANDS = new Set(['stop', 'set_panic', 'play', 'trigger_count_in']);
 
-  /**
-   * Resolves a localized string via the global i18n catalog.
-   */
+  /** Resolves a localized string via the global i18n catalog. */
   function translate(key, params) {
     return globalScope.RcSetlistI18n?.t(key, params) || key;
   }
 
-  /**
-   * Maps a peerStatusView className to its semantic pill/bar tone class.
-   */
+  /** Maps a peerStatusView className to its semantic pill/bar tone class. */
   function toneClassForView(view) {
     if (view?.className === 'connected') return 'is-ok';
     if (view?.className === 'warning') return 'is-warning';
     return 'is-error';
   }
 
-  /**
-   * Updates semantic tone classes on an element while keeping layout classes intact.
-   */
+  /** Updates semantic tone classes on an element while keeping layout classes intact. */
   function applyToneClass(element, nextTone) {
     if (!element?.classList) return;
     for (const cls of TONE_CLASSES) {
@@ -33,9 +29,7 @@
     }
   }
 
-  /**
-   * Computes a stable row key for last-seen age lookup and peer_health_ack routing.
-   */
+  /** Computes a stable row key for last-seen age lookup and peer_health_ack routing. */
   function rowKeyFor(row) {
     if (typeof row?.key === 'string' && row.key.length > 0) return row.key;
     if (typeof row?.host === 'string' && row.host.length > 0) {
@@ -45,9 +39,7 @@
     return '';
   }
 
-  /**
-   * Formats the host label for a peer health row, falling back to the generic peer label.
-   */
+  /** Formats the host label for a peer health row, falling back to the generic peer label. */
   function rowHostLabel(row) {
     if (typeof row?.host === 'string' && row.host.length > 0) {
       return Number.isFinite(row.port) ? `${row.host}:${row.port}` : row.host;
@@ -55,9 +47,7 @@
     return translate('peer.dotLabel');
   }
 
-  /**
-   * Builds a single summary row from peerStatus when peerStatuses is empty while paired.
-   */
+  /** Builds a single summary row from peerStatus when peerStatuses is empty while paired. */
   function fallbackRowFromStatus(peerStatus) {
     return {
       key: '',
@@ -76,18 +66,14 @@
     };
   }
 
-  /**
-   * Selects the paired computer rows to render in `#peerHealthBar`.
-   */
+  /** Selects the paired computer rows to render in `#peerHealthBar`. */
   function resolveRows(peerStatus, peerStatuses) {
     if (!peerStatus?.paired) return [];
     if (Array.isArray(peerStatuses) && peerStatuses.length > 0) return peerStatuses;
     return [fallbackRowFromStatus(peerStatus)];
   }
 
-  /**
-   * Formats peer row telemetry parts into a single separator-joined string.
-   */
+  /** Formats peer row telemetry parts into a single separator-joined string. */
   function formatMetricsText(row, lastSeenByKey) {
     const formatMetrics = globalScope.RcPeerStatus?.formatRowMetrics;
     if (typeof formatMetrics !== 'function') return '';
@@ -158,7 +144,7 @@
     const view = globalScope.RcPeerStatus.peerStatusView(ctx.peerStatus);
     const reasonEl = ctx.doc.getElementById('peerAlarmReason');
     if (reasonEl) {
-      reasonEl.textContent = translate(view.reasonKey || 'peer.reason.link_down');
+      reasonEl.textContent = translate(view.reasonKey || view.textKey || 'peer.reason.link_down');
     }
   }
 
@@ -345,29 +331,49 @@
     renderCommandTicks(ctx);
   }
 
-  const ERROR_ALERT_STATUSES = new Set(['stop_unacked', 'expired', 'failed']);
+  /** Determines whether a settled command clears an active command alert. */
+  function shouldClearAlert(prev, commandId, commandType, status) {
+    if (!prev) return false;
+    if (prev.commandId === commandId) return true;
+    if (status !== 'confirmed') return false;
+    if (prev.status === 'stop_unacked') return STOP_CLEARING_COMMANDS.has(commandType);
+    return prev.commandType === commandType;
+  }
 
-  /**
-   * Updates `#peerCommandAlert` state for an incoming `peer_command_status` frame.
-   */
+  /** Updates `#peerCommandAlert` state for an incoming `peer_command_status` frame. */
   function updateAlertState(ctx, peerKey, payload) {
     const status = payload.status;
     const commandId = payload.commandId || '';
     const commandType = payload.commandType || 'command';
-    if (ERROR_ALERT_STATUSES.has(status) || status === 'late_confirmed') {
+    const prev = ctx.alertsByKey.get(peerKey);
+    if (ALERT_STATUSES.has(status)) {
+      if (prev?.status === 'stop_unacked' && status !== 'stop_unacked') return;
       ctx.alertsByKey.set(peerKey, { commandId, commandType, status });
-    } else if (status === 'confirmed') {
-      const prev = ctx.alertsByKey.get(peerKey);
-      if (prev?.status === 'stop_unacked' || prev?.commandId === commandId) {
-        ctx.alertsByKey.delete(peerKey);
-      }
+    } else if (
+      (status === 'confirmed' || status === 'superseded') &&
+      shouldClearAlert(prev, commandId, commandType, status)
+    ) {
+      ctx.alertsByKey.delete(peerKey);
     }
     renderCommandAlerts(ctx);
   }
 
-  /**
-   * Clears all command tick timers, ticks, and command alert banners.
-   */
+  /** Synchronizes `#peerCommandAlert` state from a server `state.peerAlerts` snapshot when present. */
+  function syncAlertsFromState(ctx, peerAlerts) {
+    if (!peerAlerts || typeof peerAlerts !== 'object') return;
+    ctx.alertsByKey.clear();
+    for (const [peerKey, alert] of Object.entries(peerAlerts)) {
+      if (!alert || typeof alert !== 'object') continue;
+      ctx.alertsByKey.set(peerKey, {
+        commandId: alert.commandId || '',
+        commandType: alert.commandType || 'command',
+        status: alert.status || 'expired',
+      });
+    }
+    renderCommandAlerts(ctx);
+  }
+
+  /** Clears all command tick timers, ticks, and command alert banners. */
   function clearCommandFeedback(ctx) {
     for (const item of ctx.ticksByKey.values()) {
       if (item.timer) clearTimeout(item.timer);
@@ -378,13 +384,23 @@
     renderCommandAlerts(ctx);
   }
 
-  /**
-   * Applies an incoming show state snapshot to the peer health UI controller context.
-   */
+  /** Extracts normalized peer status fields from an incoming show state object. */
+  function extractPeerSnapshot(state) {
+    return {
+      peerStatus: state?.peerStatus || null,
+      peerStatuses: Array.isArray(state?.peerStatuses) ? state.peerStatuses : [],
+      isPlaying: Boolean(state?.isPlaying),
+      peerAlerts: state?.peerAlerts,
+    };
+  }
+
+  /** Applies an incoming show state snapshot to the peer health UI controller context. */
   function observeControllerState(ctx, state) {
-    ctx.peerStatus = state?.peerStatus || null;
-    ctx.peerStatuses = Array.isArray(state?.peerStatuses) ? state.peerStatuses : [];
-    ctx.isPlaying = Boolean(state?.isPlaying);
+    const snap = extractPeerSnapshot(state);
+    ctx.peerStatus = snap.peerStatus;
+    ctx.peerStatuses = snap.peerStatuses;
+    ctx.isPlaying = snap.isPlaying;
+    syncAlertsFromState(ctx, snap.peerAlerts);
     globalScope.RcPeerStatus?.applyPeerStatus(ctx.peerStatus, { document: ctx.doc });
     ctx.alarm?.update({
       paired: Boolean(ctx.peerStatus?.paired),

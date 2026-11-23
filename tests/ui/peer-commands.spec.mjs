@@ -166,6 +166,20 @@ for (const locale of ['en', 'pt-BR']) {
     await expect(alert).toHaveText(c.stillNotStopped);
 
     await emitCommandStatus(request, {
+      commandId: 'other-jump-1',
+      commandType: 'jump',
+      status: 'confirmed',
+    });
+    await expect(alert).toHaveText(c.stillNotStopped);
+
+    await emitCommandStatus(request, {
+      commandId: 'other-jump-2',
+      commandType: 'jump',
+      status: 'expired',
+    });
+    await expect(alert).toHaveText(c.stillNotStopped);
+
+    await emitCommandStatus(request, {
       commandId: 'stop-1',
       commandType: 'stop',
       status: 'confirmed',

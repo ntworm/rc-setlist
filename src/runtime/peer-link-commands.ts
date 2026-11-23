@@ -6,7 +6,7 @@
 
 import type { WebSocket } from 'ws';
 import type { ShowCommand } from '../types.js';
-import { bridgeState } from './bridge-state.js';
+import { bridgeState, broadcastState } from './bridge-state.js';
 import { sendPeerJson, stopTimer } from './peer-liveness.js';
 import { isRecord, PEER_RELAY_TYPES, roomOnSocket } from './peer-message.js';
 import { answerSetlistRequest } from './peer-setlist.js';
@@ -14,7 +14,6 @@ import { receivePeerUpstream } from './peer-upstream-master.js';
 import {
   buildPeerCommandStatusEvent,
   PeerPendingTable,
-  RETRY_INTERVAL_MS,
   type PeerCommandStatus,
   type PendingEntry,
 } from './peer-pending.js';
@@ -31,6 +30,9 @@ import { buildPeerMessage } from './peer-relay-message.js';
 
 /** The client id this side announces itself with on peer handshakes. */
 const PEER_CLIENT_ID = 'rc-peer';
+
+/** Poll cadence for checking due 150 ms command retries and deadlines without interval aliasing. */
+const PENDING_FLUSH_POLL_MS = 30;
 
 /** Minimal link surface required to enqueue, flush, and acknowledge confirmed peer commands. */
 export interface PeerCommandTarget {
@@ -156,6 +158,10 @@ function recordAlert(
   status: PeerCommandStatus,
   reason?: string,
 ): void {
+  const existing = bridgeState.peerAlerts[peerKey];
+  if (existing?.status === 'stop_unacked' && status !== 'stop_unacked') {
+    return;
+  }
   bridgeState.peerAlerts[peerKey] = {
     commandId: entry.originalCommandId,
     commandType: entry.commandType,
@@ -163,21 +169,36 @@ function recordAlert(
     ...(reason ? { reason } : {}),
     at: Date.now(),
   };
+  broadcastState();
 }
 
-function clearAlertIfMatches(peerKey: string, entry: PendingEntry): void {
+function shouldClearStopUnacked(
+  existingCommandId: string,
+  entry: PendingEntry,
+  settledStatus: PeerCommandStatus,
+): boolean {
+  if (existingCommandId === entry.originalCommandId) return true;
+  if (settledStatus !== 'confirmed') return false;
+  return (
+    entry.safetyStop || entry.commandType === 'play' || entry.commandType === 'trigger_count_in'
+  );
+}
+
+function clearAlertIfMatches(
+  peerKey: string,
+  entry: PendingEntry,
+  settledStatus: PeerCommandStatus,
+): void {
   const existing = bridgeState.peerAlerts[peerKey];
   if (!existing) return;
-  if (existing.commandId === entry.originalCommandId) {
+  const shouldClear =
+    existing.status === 'stop_unacked'
+      ? shouldClearStopUnacked(existing.commandId, entry, settledStatus)
+      : existing.commandId === entry.originalCommandId ||
+        (settledStatus === 'confirmed' && existing.commandType === entry.commandType);
+  if (shouldClear) {
     delete bridgeState.peerAlerts[peerKey];
-    return;
-  }
-  if (
-    entry.safetyStop &&
-    existing.status === 'stop_unacked' &&
-    existing.commandType === entry.commandType
-  ) {
-    delete bridgeState.peerAlerts[peerKey];
+    broadcastState();
   }
 }
 
@@ -240,6 +261,10 @@ function flushPeerPending(target: PeerCommandTarget): void {
     masterIsStopped,
     masterIsPanicked,
   });
+  for (const entry of due.cancelled) {
+    clearAlertIfMatches(target.key, entry, 'superseded');
+    broadcastCommandStatus(target, entry, 'superseded');
+  }
   for (const entry of due.expired) {
     recordAlert(target.key, entry, 'expired', 'timeout');
     broadcastCommandStatus(target, entry, 'expired', 'timeout');
@@ -254,7 +279,7 @@ function flushPeerPending(target: PeerCommandTarget): void {
 }
 
 /**
- * Starts the 150 ms unref'd retry and expiry flush timer for a peer link.
+ * Starts the unref'd retry and expiry flush timer for a peer link.
  */
 export function startPendingFlushTimer(target: PeerCommandTarget): void {
   if (target.pendingTimer) return;
@@ -264,7 +289,7 @@ export function startPendingFlushTimer(target: PeerCommandTarget): void {
       return;
     }
     flushPeerPending(target);
-  }, RETRY_INTERVAL_MS);
+  }, PENDING_FLUSH_POLL_MS);
   target.pendingTimer.unref?.();
 }
 
@@ -274,7 +299,10 @@ export function startPendingFlushTimer(target: PeerCommandTarget): void {
 export function stopPendingCommandState(target: PeerCommandTarget): void {
   target.pendingTimer = stopTimer(target.pendingTimer);
   target.pending.clear();
-  delete bridgeState.peerAlerts[target.key];
+  if (bridgeState.peerAlerts[target.key]) {
+    delete bridgeState.peerAlerts[target.key];
+    broadcastState();
+  }
 }
 
 /**
@@ -300,7 +328,7 @@ function handlePeerAck(target: PeerCommandTarget, message: Record<string, unknow
   if (ack.result === 'failed' || ack.result === 'expired') {
     recordAlert(target.key, entry, ack.result, reason);
   } else {
-    clearAlertIfMatches(target.key, entry);
+    clearAlertIfMatches(target.key, entry, ack.result);
   }
   broadcastCommandStatus(target, entry, ack.result, reason);
 }
@@ -390,7 +418,8 @@ function prepareRelayCommand(command: ShowCommand<unknown>): PreparedRelayComman
 function enqueueForTarget(target: PeerCommandTarget, prepared: PreparedRelayCommand): boolean {
   const result = target.pending.enqueue(prepared);
   for (const cancelled of result.cancelled) {
-    clearAlertIfMatches(target.key, cancelled);
+    clearAlertIfMatches(target.key, cancelled, 'superseded');
+    broadcastCommandStatus(target, cancelled, 'superseded');
   }
   if (result.evicted) {
     recordAlert(target.key, result.evicted, 'expired', 'timeout');

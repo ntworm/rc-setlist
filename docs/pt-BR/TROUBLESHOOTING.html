@@ -316,105 +316,68 @@
     <ul>
       <li>
         <strong>INSTÁVEL — Aquecendo (20 s)</strong>: normal nos primeiros <code>20 s</code> após
-        conectar,
+        conectar, enquanto os heartbeats validam a estabilidade do link. Aguarde mudar para
+        <strong>OK</strong>.
       </li>
-    </ul>
-    <p>
-      enquanto os heartbeats validam a estabilidade do link. Aguarde mudar para <strong>OK</strong>.
-    </p>
-    <ul>
       <li>
-        <strong>INSTÁVEL — Queda recente / Heartbeat perdido / Latência alta (RTT)</strong>: o
+        <strong>INSTÁVEL — Queda recente / Heartbeat perdido / Latência alta (RTT)</strong>: o link
+        sofreu uma queda nos últimos <code>60 s</code>, perdeu heartbeats (<code>&gt; 1,5 s</code>)
+        ou mediu latência alta (<code>RTT p95 &gt; 150 ms</code>). Prefira cabo de rede Ethernet
+        entre as duas máquinas. Quando o link estabilizar, aperte <strong>Confirmar</strong> no
+        Controle de palco ou no painel do Live para reduzir a recuperação para <code>10 s</code>.
       </li>
-    </ul>
-    <p>
-      link sofreu uma queda nos últimos <code>60 s</code>, perdeu heartbeats (<code>&gt; 1,5 s</code
-      >) ou mediu latência alta (<code>p95 &gt;= 250 ms</code> ou amostra
-      <code>&gt;= 500 ms</code>). Prefira cabo de rede Ethernet entre as duas máquinas. Quando o
-      link estabilizar, aperte <strong>Confirmar</strong> no Controle de palco ou no painel do Live
-      para reduzir a recuperação para <code>10 s</code>.
-    </p>
-    <ul>
       <li>
         <strong>INSTÁVEL — Link oscilando (trava 5 min)</strong>: o link caiu <code>3</code> ou mais
-        vezes em
+        vezes em <code>5 min</code>. Verifique cabo Ethernet, switch ou interferência no Wi-Fi; o
+        botão <strong>Confirmar</strong> fica indisponível até a trava de
+        <code>5 min</code> terminar sem novas quedas.
       </li>
-    </ul>
-    <p>
-      <code>5 min</code>. Verifique cabo Ethernet, switch ou interferência no Wi-Fi; o botão
-      <strong>Confirmar</strong> fica indisponível até a trava de <code>5 min</code> terminar sem
-      novas quedas.
-    </p>
-    <ul>
       <li>
         <strong>INSTÁVEL — Marcadores diferentes</strong>: abra o mesmo <code>.als</code> com os
-        mesmos
+        mesmos locators nos dois computadores, ou use <strong>Trazer do master</strong> no slave com
+        o Live parado.
       </li>
-    </ul>
-    <p>
-      locators nos dois computadores, ou use <strong>Trazer do master</strong> no slave com o Live
-      parado.
-    </p>
-    <ul>
       <li>
         <strong>INSTÁVEL — Fora de passo</strong>: a agulha do slave divergiu do master por
-        <code>3 s</code>
+        <code>3 s</code> fora de salto quantizado pendente ou loop ativo. Confira se o
+        <strong>Link</strong> do Ableton está <strong>ligado</strong> e o
+        <strong>Start Stop Sync</strong> está <strong>desligado</strong> nos dois computadores, e
+        mantenha <strong>Corrigir agulha automaticamente no slave</strong> marcado na aba
+        <strong>Rede</strong> do painel do Live.
       </li>
-    </ul>
-    <p>
-      fora de salto quantizado pendente ou loop ativo. Confira se o <strong>Link</strong> do Ableton
-      está <strong>ligado</strong> e o <strong>Start Stop Sync</strong> está
-      <strong>desligado</strong> nos dois computadores, e mantenha
-      <strong>Corrigir agulha automaticamente no slave</strong> marcado na aba
-      <strong>Rede</strong> do painel do Live.
-    </p>
-    <ul>
-      <li>**CAÍDO — Link caído / Link caído no outro computador / Live/OSC local ou</li>
-    </ul>
-    <p>
-      remoto indisponível<strong
+      <li>
+        <strong
+          >CAÍDO — Link caído / Link caído no outro computador / Live/OSC local ou remoto
+          indisponível</strong
         >: nenhum frame chegou por <code>3 s</code> ou o AbletonOSC parou de responder em uma das
-        máquinas. Se o alarme vermelho em tela cheia abrir no palco, aperte </strong
-      >Dispensar alarme** para continuar operando com o selo vermelho no transporte enquanto
-      restabelece o cabo de rede ou reinicia o RC Setlist na máquina offline.
-    </p>
-    <ul>
-      <li><strong>VERSÕES DIFERENTES</strong>: master e slave estão em versões incompatíveis do</li>
-    </ul>
-    <p>protocolo do link. Instale exatamente a mesma versão do RC Setlist nos dois computadores.</p>
-    <ul>
+        máquinas. Se o alarme vermelho em tela cheia abrir no palco, aperte
+        <strong>Dispensar alarme</strong> para continuar operando com o selo vermelho no transporte
+        enquanto restabelece o cabo de rede ou reinicia o RC Setlist na máquina offline.
+      </li>
+      <li>
+        <strong>VERSÕES DIFERENTES</strong>: master e slave estão em versões incompatíveis do
+        protocolo do link. Instale exatamente a mesma versão do RC Setlist nos dois computadores.
+      </li>
       <li>
         <strong>CERTIFICADO MUDOU</strong>: o slave gerou um novo certificado TLS. Na aba
-        <strong>Rede</strong>
+        <strong>Rede</strong> do painel do Live, aperte <strong>Desfazer</strong>, gere um novo
+        código de seis dígitos no slave e pareie novamente.
       </li>
-    </ul>
-    <p>
-      do painel do Live, aperte <strong>Desfazer</strong>, gere um novo código de seis dígitos no
-      slave e pareie novamente.
-    </p>
-    <ul>
       <li>
         <strong
           ><code>SLAVE NÃO EXECUTOU: &lt;comando&gt;</code> /
           <code>Executou atrasado: &lt;comando&gt;</code></strong
-        >: um
+        >: um comando perdeu o prazo de entrega ou falhou no slave. Verifique a barra de saúde do
+        link e repita o salto ou comando se necessário.
       </li>
-    </ul>
-    <p>
-      comando perdeu o prazo de entrega ou falhou no slave. Verifique a barra de saúde do link e
-      repita o salto ou comando se necessário.
-    </p>
-    <ul>
       <li>
         <strong><code>SLAVE AINDA NÃO PAROU</code></strong
-        >: o master parou ou acionou pânico enquanto o
+        >: o master parou ou acionou pânico enquanto o slave estava inacessível por mais de
+        <code>1 s</code>. O comando de parada permanece na fila e executa automaticamente assim que
+        o slave reconectar; se o cabo foi desconectado de vez, pare o slave diretamente na segunda
+        máquina.
       </li>
     </ul>
-    <p>
-      slave estava inacessível por mais de <code>1 s</code>. O comando de parada permanece na fila e
-      executa automaticamente assim que o slave reconectar; se o cabo foi desconectado de vez, pare
-      o slave diretamente na segunda máquina.
-    </p>
     <h2 id="o-que-incluir-em-um-bug-report">O que incluir em um bug report</h2>
     <p>
       Inclua sistema operacional, versão/edição do Live, versão do RC Setlist, navegador, passos

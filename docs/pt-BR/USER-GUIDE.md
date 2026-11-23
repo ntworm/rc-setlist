@@ -367,24 +367,11 @@ O Controle de palco (tanto no modo **Editar** quanto no modo **Show**), a tela
 `/performance` e o painel do Live também mostram uma barra de saúde por
 computador sempre que houver pareamento:
 
-- **OK** (verde): heartbeats bidirecionais estáveis, marcadores iguais e Live /
-  OSC prontos nos dois lados.
-- **INSTÁVEL** (amarelo): o link está aquecendo (`20 s` após conectar), se
-  recuperando de queda recente ou heartbeat perdido (`60 s` de janela limpa),
-  com latência alta (`RTT >= 250 ms` p95 ou amostra `>= 500 ms`), sob trava de
-  `5 min` por link oscilando (`3` ou mais quedas em `5 min`), com marcadores
-  diferentes ou fora de passo.
-- **CAÍDO** (vermelho): nenhum frame chegou por `3 s`, o socket fechou ou o
-  Live / OSC ficou indisponível em um dos computadores. Ao entrar em **CAÍDO**
-  (ou ao recarregar a página durante **CAÍDO** com o Live tocando), um alarme
-  vermelho em tela cheia aparece no Controle de palco e em `/performance`.
-  **Dispensar alarme** fecha a sobreposição mantendo o alerta vermelho acima da
-  barra de transporte.
-- **VERSÕES DIFERENTES** (vermelho): os dois computadores rodam versões
-  incompatíveis do protocolo do link. Atualize os dois para a mesma versão do
-  RC Setlist; nenhum comando é repassado enquanto as versões diferirem.
-- **CERTIFICADO MUDOU** (vermelho): o segundo computador apresentou outro
-  certificado TLS e precisa ser pareado de novo.
+- **OK** (verde): heartbeats bidirecionais estáveis, marcadores iguais e Live / OSC prontos nos dois lados.
+- **INSTÁVEL** (amarelo): o link está aquecendo (`20 s` após conectar), se recuperando de queda recente ou heartbeat perdido (`60 s` de janela limpa), com latência alta (`RTT p95 > 150 ms`), sob trava de `5 min` por link oscilando (`3` ou mais quedas em `5 min`), com marcadores diferentes ou fora de passo.
+- **CAÍDO** (vermelho): nenhum frame chegou por `3 s`, o socket fechou ou o Live / OSC ficou indisponível em um dos computadores. Ao entrar em **CAÍDO** (ou ao recarregar a página durante **CAÍDO** com o Live tocando), um alarme vermelho em tela cheia aparece no Controle de palco e em `/performance`. **Dispensar alarme** fecha a sobreposição mantendo o alerta vermelho acima da barra de transporte.
+- **VERSÕES DIFERENTES** (vermelho): os dois computadores rodam versões incompatíveis do protocolo do link. Atualize os dois para a mesma versão do RC Setlist; nenhum comando é repassado enquanto as versões diferirem.
+- **CERTIFICADO MUDOU** (vermelho): o segundo computador apresentou outro certificado TLS e precisa ser pareado de novo.
 
 Cada linha mostra o endereço do computador, o motivo atual, `RTT`,
 `quedas (5m)`, `última queda há X` e `visto há X`. Quando o link está
@@ -421,21 +408,10 @@ em que ele pousa), **metrônomo**, **quantização**, **contagem**, **refresh** 
 Cada comando repassado é confirmado pelo slave (`peer_ack`) e reenviado a cada
 `150 ms` até o prazo limite:
 
-- O Controle de palco mostra por `3 s` um selo por computador (`Pendente`,
-  `Executou` ou `Falhou`).
-- Se um comando perder o prazo ou falhar no slave, o Controle de palco e o
-  painel do Live exibem **`SLAVE NÃO EXECUTOU: <comando>`**. Se a confirmação
-  chegar atrasada depois do prazo, o alerta muda para
-  **`Executou atrasado: <comando>`**.
-- Comandos de segurança (**Stop** e **Pânico**) nunca expiram enquanto o
-  computador principal continuar parado ou em pânico: são reenviados ao
-  reconectar e, se o slave não confirmar em `1 s`, aparece
-  **`SLAVE AINDA NÃO PAROU`** até a confirmação chegar.
-- Comandos de transporte levam um número de sequência para que um `play`
-  atrasado atrás de um `stop` ou `pânico` mais novo seja descartado
-  (`superseded`) e nunca toque fora de ordem, enquanto comandos fora do
-  transporte (`metrônomo`, `quantização`, `refresh`) nunca são descartados por
-  mudanças de transporte.
+- O Controle de palco mostra por `3 s` um selo por computador (`Pendente`, `Executou` ou `Falhou`).
+- Se um comando perder o prazo ou falhar no slave, o Controle de palco e o painel do Live exibem **`SLAVE NÃO EXECUTOU: <comando>`**. Se a confirmação chegar atrasada depois do prazo, o alerta muda para **`Executou atrasado: <comando>`**.
+- Comandos de segurança (**Stop** e **Pânico**) nunca expiram enquanto o computador principal continuar parado ou em pânico: são reenviados ao reconectar e, se o slave não confirmar em `1 s`, aparece **`SLAVE AINDA NÃO PAROU`** até a confirmação chegar.
+- Comandos de transporte levam um número de sequência para que um `play` atrasado atrás de um `stop` ou `pânico` mais novo seja descartado (`superseded`) e nunca toque fora de ordem, enquanto comandos fora do transporte (`metrônomo`, `quantização`, `refresh`) nunca são descartados por mudanças de transporte.
 
 Ficam no computador principal: edição do setlist, edição de marcadores, cores,
 notas, letras, perfis, ordenação e a exportação CSV. O segundo computador
@@ -451,14 +427,9 @@ transporte (`peer_target`), imediatamente ao sincronizar e duas vezes por
 segundo depois disso, e o segundo computador corrige o que dá para saber
 com certeza:
 
-- Os dois estão parados e o segundo computador está a mais de meio beat de
-  distância por três alvos seguidos: ele pula para o marcador correspondente
-  (ou move a agulha para o beat exato entre marcadores) em até `2 s` após
-  reconectar.
-- Os dois tocam e o segundo está um número inteiro de beats fora: a agulha
-  dele anda essa diferença.
-- O principal toca e o segundo está parado: ele começa na próxima barra da
-  posição do principal.
+- Os dois estão parados e o segundo computador está a mais de meio beat de distância por três alvos seguidos: ele pula para o marcador correspondente (ou move a agulha para o beat exato entre marcadores) em até `2 s` após reconectar.
+- Os dois tocam e o segundo está um número inteiro de beats fora: a agulha dele anda essa diferença.
+- O principal toca e o segundo está parado: ele começa na próxima barra da posição do principal.
 - O principal está parado e o segundo toca: ele para.
 
 Cada caso precisa durar cerca de um segundo e meio antes de qualquer ação.

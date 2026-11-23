@@ -357,23 +357,11 @@ Stage Control (in both **Edit** and **Show** mode), `/performance`, and the Live
 panel also show a per-computer link health bar whenever a second computer is
 paired:
 
-- **OK** (green): bidirectional heartbeats are clean, markers match, and both
-  Ableton Live / OSC bridges are ready.
-- **UNSTABLE** (amber): the link is warming up (`20 s` after the first connect),
-  recovering from a recent drop or lost heartbeat (`60 s` clean window),
-  experiencing high latency (`RTT >= 250 ms` p95 or `>= 500 ms` sample),
-  holding the `5 min` penalty after an oscillating link (`3` or more drops in
-  `5 min`), reading different markers, or out of step.
-- **DOWN** (red): no frame has arrived for `3 s`, the socket closed, or Live /
-  OSC is unavailable on either computer. When the link enters **DOWN** (or a
-  page reloads while **DOWN** and playing), a full-screen red stage alarm
-  appears on Stage Control and `/performance`. **Dismiss alarm** hides the
-  overlay while keeping the red transport badge above the transport dock.
-- **DIFFERENT VERSIONS** (red): the two computers run incompatible link
-  protocol versions. Update both computers to the same RC Setlist build; no
-  commands are relayed while versions differ.
-- **CERTIFICATE CHANGED** (red): the second computer presented a different TLS
-  certificate and must be paired again.
+- **OK** (green): bidirectional heartbeats are clean, markers match, and both Ableton Live / OSC bridges are ready.
+- **UNSTABLE** (amber): the link is warming up (`20 s` after the first connect), recovering from a recent drop or lost heartbeat (`60 s` clean window), experiencing high latency (`RTT p95 > 150 ms`), holding the `5 min` penalty after an oscillating link (`3` or more drops in `5 min`), reading different markers, or out of step.
+- **DOWN** (red): no frame has arrived for `3 s`, the socket closed, or Live / OSC is unavailable on either computer. When the link enters **DOWN** (or a page reloads while **DOWN** and playing), a full-screen red stage alarm appears on Stage Control and `/performance`. **Dismiss alarm** hides the overlay while keeping the red transport badge above the transport dock.
+- **DIFFERENT VERSIONS** (red): the two computers run incompatible link protocol versions. Update both computers to the same RC Setlist build; no commands are relayed while versions differ.
+- **CERTIFICATE CHANGED** (red): the second computer presented a different TLS certificate and must be paired again.
 
 Each row prints the computer address, the current reason, `RTT`, `drops (5m)`,
 `last drop X ago`, and `seen X ago`. When a link is **UNSTABLE** after a
@@ -410,20 +398,10 @@ it lands on), **metronome**, **quantization**, **count-in**, **refresh** and
 Every relayed command is confirmed by the slave (`peer_ack`) and retried every
 `150 ms` until its deadline:
 
-- Stage Control shows a `3 s` per-computer tick (`Pending`, `Executed`, or
-  `Failed`).
-- If a command misses its deadline or fails on the slave, Stage Control and the
-  Live panel show **`SLAVE DID NOT EXECUTE: <command>`**. If a delayed
-  confirmation arrives afterwards, the alert updates to
-  **`Executed late: <command>`**.
-- Safety **Stop** and **Panic** commands never expire while the main computer
-  remains stopped or panicked: they are retried across reconnects, and if the
-  slave has not confirmed within `1 s`, Stage Control and the Live panel show
-  **`SLAVE STILL NOT STOPPED`** until confirmation arrives.
-- Transport commands carry a sequence number so a delayed `play` behind a newer
-  `stop` or `panic` is superseded and never executed out of order, while
-  non-transport commands (`metronome`, `quantization`, `refresh`) are never
-  superseded by transport changes.
+- Stage Control shows a `3 s` per-computer tick (`Pending`, `Executed`, or `Failed`).
+- If a command misses its deadline or fails on the slave, Stage Control and the Live panel show **`SLAVE DID NOT EXECUTE: <command>`**. If a delayed confirmation arrives afterwards, the alert updates to **`Executed late: <command>`**.
+- Safety **Stop** and **Panic** commands never expire while the main computer remains stopped or panicked: they are retried across reconnects, and if the slave has not confirmed within `1 s`, Stage Control and the Live panel show **`SLAVE STILL NOT STOPPED`** until confirmation arrives.
+- Transport commands carry a sequence number so a delayed `play` behind a newer `stop` or `panic` is superseded and never executed out of order, while non-transport commands (`metronome`, `quantization`, `refresh`) are never superseded by transport changes.
 
 These stay on the main computer: setlist editing, marker editing, colours,
 notes, lyrics, profiles, ordering and the CSV export. The second computer
@@ -438,13 +416,9 @@ arrives. So the main computer also sends its desired transport target
 (`peer_target`), immediately upon synchronizing and twice a second thereafter,
 and the second computer corrects what it can tell for sure:
 
-- Both are stopped and the second computer is more than half a beat away for
-  three targets in a row: it jumps to the matching marker (or moves its
-  playhead to the exact beat between markers) within `2 s` of reconnecting.
-- Both play and the second one is a whole number of beats off: its playhead
-  moves by that gap.
-- The main computer plays and the second one is stopped: it starts on the next
-  bar line of the main computer's position.
+- Both are stopped and the second computer is more than half a beat away for three targets in a row: it jumps to the matching marker (or moves its playhead to the exact beat between markers) within `2 s` of reconnecting.
+- Both play and the second one is a whole number of beats off: its playhead moves by that gap.
+- The main computer plays and the second one is stopped: it starts on the next bar line of the main computer's position.
 - The main computer is stopped and the second one plays: it stops.
 
 Each case has to hold for about a second and a half before anything happens.

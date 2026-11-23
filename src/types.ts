@@ -174,6 +174,8 @@ export interface SetlistState {
   peerStatus?: PeerStatus;
   /** Per-link states of the paired computers, when there are any. */
   peerStatuses?: PeerLinkStatus[];
+  /** Active per-link command delivery alerts keyed by peer key. */
+  peerAlerts?: Record<string, PeerCommandAlert>;
   /** Whether the setlists are being moved to another Live Set right now. */
   profileScopeSwitching?: boolean;
 

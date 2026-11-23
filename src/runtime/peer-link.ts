@@ -20,6 +20,7 @@ import {
   getInboundPeerSummary,
   INBOUND_PEER_KEY,
   nudgeInboundHeartbeat,
+  setInboundHasOutboundPeers,
   setInboundStatusListener,
 } from './peer-inbound.js';
 import {
@@ -368,6 +369,7 @@ function connectPeer(target: PeerLink): void {
       abortLink(target, 'fingerprint');
       return;
     }
+    secureSocket.off('error', giveUp);
     openPeerSocket(target, secureSocket);
   });
 }
@@ -429,6 +431,7 @@ export function startPeerLinks(configs: PeerConfig[]): void {
     links.set(key, link);
     fresh.push(link);
   }
+  setInboundHasOutboundPeers(links.size > 0);
   publishPeerStatus();
   for (const target of fresh) connectPeer(target);
 }

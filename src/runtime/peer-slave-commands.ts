@@ -25,13 +25,20 @@ export interface SlaveTransportSnapshot {
 
 /** Settlement result returned by the local command pipeline executor. */
 export interface SlaveCommandExecutionResult {
-  result: 'confirmed' | 'failed';
+  result: 'confirmed' | 'failed' | 'expired';
   reason?: string;
+}
+
+/** Deadline metadata passed to the local command executor to detect queue-wait TTL expiry. */
+export interface SlaveCommandExecutionMeta {
+  readonly deadlineAt: number | null;
+  isExpired(): boolean;
 }
 
 /** Executor invoked once per accepted slave peer command. */
 export type SlaveCommandExecutor = (
   inner: ClientMessage,
+  meta?: SlaveCommandExecutionMeta,
 ) => SlaveCommandExecutionResult | Promise<SlaveCommandExecutionResult>;
 
 /** Minimal WebSocket surface required to transmit `peer_ack` frames. */
@@ -165,7 +172,8 @@ export class SlaveCommandTracker {
     if (msg.transportSeq !== null && msg.transportSeq > this.lastExecutedTransportSeq) {
       this.lastExecutedTransportSeq = msg.transportSeq;
     }
-    return this.runAndSettle(ws, msg, executeInner, this.generation);
+    const deadlineAt = msg.ttlMs === null ? null : now + msg.ttlMs;
+    return this.runAndSettle(ws, msg, executeInner, this.generation, deadlineAt);
   }
 
   /**
@@ -239,18 +247,29 @@ export class SlaveCommandTracker {
     msg: PeerCommandEnvelope,
     executeInner: SlaveCommandExecutor,
     myGen: number,
+    deadlineAt: number | null,
   ): Promise<PeerAckMessage | null> {
     let outcome: SlaveCommandExecutionResult;
+    const meta: SlaveCommandExecutionMeta = {
+      deadlineAt,
+      isExpired: () => deadlineAt !== null && this.now() >= deadlineAt,
+    };
     try {
       this.noteCommand(msg.command.type);
       const inner = this.adoptEcho({ ...msg.command, commandId: msg.commandId });
-      outcome = await executeInner(inner);
+      outcome = await executeInner(inner, meta);
     } catch {
       outcome = { result: 'failed', reason: 'execution_failed' };
     }
     if (myGen !== this.generation) return null;
     const settledAt = this.now();
-    const reason = outcome.reason ?? (outcome.result === 'failed' ? 'execution_failed' : '');
+    const defaultReason =
+      outcome.result === 'failed'
+        ? 'execution_failed'
+        : outcome.result === 'expired'
+          ? 'expired'
+          : '';
+    const reason = outcome.reason ?? defaultReason;
     const ack = makeAck(msg.commandId, outcome.result, reason, this.getTransportSnapshot());
     const inFlight = this.cache.get(msg.commandId);
     const targetSocket = inFlight?.status === 'in_flight' ? inFlight.latestSocket : ws;

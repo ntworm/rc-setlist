@@ -195,9 +195,7 @@ function isFollowSuppressed(remote: PeerTarget, local: LocalTransport): boolean 
 
 function hasRawMismatch(remote: PeerTarget, local: LocalTransport): boolean {
   if (remote.isPlaying !== local.isPlaying) return true;
-  if (Math.abs(remote.beat - local.songTime) <= STOPPED_BEAT_TOLERANCE) return false;
-  if (remote.isPlaying) return true;
-  return local.autoCorrect === false || local.transportLocked;
+  return Math.abs(remote.beat - local.songTime) > STOPPED_BEAT_TOLERANCE;
 }
 
 /**

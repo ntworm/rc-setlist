@@ -207,6 +207,19 @@ test('SlaveCommandTracker enforces transportSeq supersede, null bypass, and TTL 
   );
   assert.equal(exp.result, 'expired');
   assert.equal(tracker.getSessionState().lastExecutedTransportSeq, 5);
+
+  const queueExp = await tracker.receiveCommand(
+    ws,
+    makeEnvelope('exp-queued', { transportSeq: 6, ttlMs: 100 }),
+    (_inner, meta) => {
+      assert.equal(meta.isExpired(), false);
+      clock.advance(100);
+      assert.equal(meta.isExpired(), true);
+      return { result: 'expired' };
+    },
+  );
+  assert.equal(queueExp.result, 'expired');
+  assert.equal(queueExp.reason, 'expired');
 });
 
 test('SlaveCommandTracker resets sequence on new sessionId and handles executor failures', async () => {

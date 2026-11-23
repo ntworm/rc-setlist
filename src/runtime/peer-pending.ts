@@ -70,6 +70,7 @@ export interface CollectDueSendsResult {
   toSend: PeerCommandWire[];
   expired: PendingEntry[];
   stopAlerts: PendingEntry[];
+  cancelled: PendingEntry[];
 }
 
 /** Settlement classification returned by `PeerPendingTable.onAck`. */
@@ -205,15 +206,16 @@ export class PeerPendingTable {
     const toSend: PeerCommandWire[] = [];
     const expired: PendingEntry[] = [];
     const stopAlerts: PendingEntry[] = [];
+    const cancelled: PendingEntry[] = [];
 
     this.pruneRecentlyExpired(now);
     for (const entry of [...this.entries.values()]) {
-      this.evaluateEntryHealth(entry, opts, now, expired, stopAlerts);
+      this.evaluateEntryHealth(entry, opts, now, expired, stopAlerts, cancelled);
     }
-    if (!opts.synchronized) return { toSend, expired, stopAlerts };
+    if (!opts.synchronized) return { toSend, expired, stopAlerts, cancelled };
 
     this.collectSynchronizedSends(opts, now, toSend, expired);
-    return { toSend, expired, stopAlerts };
+    return { toSend, expired, stopAlerts, cancelled };
   }
 
   /**
@@ -274,7 +276,15 @@ export class PeerPendingTable {
   private cancelSupersededSafetyStops(incoming: PendingEntry): PendingEntry[] {
     const cancelled: PendingEntry[] = [];
     const incomingSeq = incoming.transportSeq;
-    if (incoming.commandType === 'play' && incomingSeq !== null) {
+    if (incoming.safetyStop && incomingSeq !== null) {
+      this.cancelMatching(
+        (item) => !item.safetyStop && item.transportSeq !== null && item.transportSeq < incomingSeq,
+        cancelled,
+      );
+    } else if (
+      (incoming.commandType === 'play' || incoming.commandType === 'trigger_count_in') &&
+      incomingSeq !== null
+    ) {
       this.cancelMatching(
         (item) =>
           item.safetyStop &&
@@ -336,6 +346,7 @@ export class PeerPendingTable {
     now: number,
     expired: PendingEntry[],
     stopAlerts: PendingEntry[],
+    cancelled: PendingEntry[],
   ): void {
     if (entry.safetyStop) {
       const stillActive =
@@ -343,6 +354,7 @@ export class PeerPendingTable {
       if (!stillActive) {
         this.entries.delete(entry.commandId);
         this.sentOnce.delete(entry.commandId);
+        cancelled.push(entry);
         return;
       }
       if (!entry.stopAlertSent && now - entry.createdAt >= SAFETY_STOP_ALERT_MS) {
@@ -356,6 +368,16 @@ export class PeerPendingTable {
     }
   }
 
+  private orderedEntries(): PendingEntry[] {
+    const safety: PendingEntry[] = [];
+    const normal: PendingEntry[] = [];
+    for (const entry of this.entries.values()) {
+      if (entry.safetyStop) safety.push(entry);
+      else normal.push(entry);
+    }
+    return [...safety, ...normal];
+  }
+
   private collectSynchronizedSends(
     opts: CollectDueSendsOptions,
     now: number,
@@ -366,7 +388,7 @@ export class PeerPendingTable {
     const backpressured = opts.bufferedAmount >= STALLED_SOCKET_BYTES;
     let safetyUsed = false;
 
-    for (const entry of [...this.entries.values()]) {
+    for (const entry of this.orderedEntries()) {
       if (!this.isEntryDue(entry, now)) continue;
       if (shouldSkipForBackpressure(backpressured, entry.safetyStop, safetyUsed)) continue;
       const ttlMs = this.computeWireTtl(entry, now, halfRttMs);

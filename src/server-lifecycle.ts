@@ -72,8 +72,10 @@ import {
   receivePeerCommand,
   resetSlaveCommandState,
   type PeerCommandEnvelope,
+  type SlaveCommandExecutionMeta,
   type SlaveCommandExecutionResult,
 } from './runtime/peer-slave-commands.js';
+import { OperatorError } from './core/operator-error.js';
 import {
   adoptUpstreamEcho,
   failAdoptedEcho,
@@ -419,6 +421,7 @@ function handleClientHandshake(
         ...state,
         peerStatus: bridgeState.peerStatus,
         peerStatuses: bridgeState.peerStatuses,
+        peerAlerts: bridgeState.peerAlerts,
       },
     }),
   );
@@ -455,12 +458,36 @@ function reportPeerJumpError(
   return { result: 'failed', reason: peerJump.code };
 }
 
+const PEER_OSC_COMMAND_TYPES = new Set([
+  'play',
+  'stop',
+  'metronome',
+  'refresh',
+  'jump',
+  'set_quantization',
+  'trigger_count_in',
+]);
+
+function requiresConnectedOsc(command: ShowCommand<ClientMessage>): boolean {
+  if (PEER_OSC_COMMAND_TYPES.has(command.type)) return true;
+  if (command.type === 'set_panic') {
+    const payload = command.payload as { active?: unknown } | null;
+    return payload?.active === true;
+  }
+  return false;
+}
+
 function dispatchPeerLocalCommand(
   command: ShowCommand<ClientMessage>,
   ws: AugmentedWebSocket,
+  meta?: SlaveCommandExecutionMeta,
 ): Promise<SlaveCommandExecutionResult> {
   const bus = bridgeState.commandBus;
   if (!bus) return Promise.resolve({ result: 'failed', reason: 'not_ready' });
+  if (meta?.deadlineAt !== null && meta?.deadlineAt !== undefined) {
+    const remainingMs = Math.max(1, Math.floor(meta.deadlineAt - performance.now()));
+    command.timeoutMs = Math.min(command.timeoutMs, remainingMs);
+  }
   return new Promise<SlaveCommandExecutionResult>((resolve) => {
     let settled = false;
     const finish = (outcome: SlaveCommandExecutionResult): void => {
@@ -471,16 +498,27 @@ function dispatchPeerLocalCommand(
     };
     const onSettled = (cmd: { commandId: string; status: string; reason?: string }): void => {
       if (cmd.commandId !== command.commandId) return;
-      finish(
-        cmd.status === 'confirmed'
-          ? { result: 'confirmed' }
-          : { result: 'failed', reason: cmd.reason ?? cmd.status },
-      );
+      if (cmd.status === 'confirmed') {
+        finish({ result: 'confirmed' });
+        return;
+      }
+      if (cmd.status === 'expired') {
+        finish({ result: 'expired', reason: 'expired' });
+        return;
+      }
+      finish({ result: 'failed', reason: cmd.reason ?? cmd.status });
     };
     bus.on('command_settled', onSettled);
     bus.dispatch(command, async () => {
+      if (meta?.isExpired()) {
+        bus.updateStatus(command.commandId, 'expired', 'timeout');
+        finish({ result: 'expired', reason: 'expired' });
+        return;
+      }
+      if (requiresConnectedOsc(command) && bridgeState.oscClient?.isConnected !== true) {
+        throw new OperatorError('OSC client is not connected.');
+      }
       await executeCommandAction(command, ws);
-      finish({ result: 'confirmed' });
     });
   });
 }
@@ -489,6 +527,7 @@ function executeInboundPeerInner(
   ws: AugmentedWebSocket,
   outerCommandId: string,
   inner: ClientMessage,
+  meta?: SlaveCommandExecutionMeta,
 ): Promise<SlaveCommandExecutionResult> {
   const manager = bridgeState.manager;
   const bus = bridgeState.commandBus;
@@ -508,12 +547,12 @@ function executeInboundPeerInner(
     effectiveMsg,
     resolvePeerSenderId(ws),
   );
-  return dispatchPeerLocalCommand(command, ws);
+  return dispatchPeerLocalCommand(command, ws, meta);
 }
 
 function handleInboundPeerCommand(ws: AugmentedWebSocket, msg: PeerCommandEnvelope): Promise<void> {
-  return receivePeerCommand(ws, msg, (inner) =>
-    executeInboundPeerInner(ws, msg.commandId, inner),
+  return receivePeerCommand(ws, msg, (inner, meta) =>
+    executeInboundPeerInner(ws, msg.commandId, inner, meta),
   ).then(() => undefined);
 }
 

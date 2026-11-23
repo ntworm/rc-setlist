@@ -303,12 +303,8 @@ export class PeerLinkHealth {
       send: opts.send,
       getLocalView: () => buildLocalHealthView(this.tracker, false),
       onRemoteView: (view) => {
-        const prevFp = this.remoteView?.cuesFingerprint;
         this.remoteView = view;
-        if (prevFp !== view.cuesFingerprint) {
-          this.lastRemoteFingerprint =
-            view.cuesFingerprint.length > 0 ? view.cuesFingerprint : null;
-        }
+        this.lastRemoteFingerprint = view.cuesFingerprint;
       },
       onRefresh: opts.onRefresh,
       onDead: opts.onDead,
@@ -329,6 +325,9 @@ export class PeerLinkHealth {
 
   setRemoteFingerprint(fingerprint: string | null): void {
     this.lastRemoteFingerprint = fingerprint;
+    if (this.remoteView && fingerprint !== null) {
+      this.remoteView = { ...this.remoteView, cuesFingerprint: fingerprint };
+    }
   }
 
   private handleHbMessage(message: Record<string, unknown>): void {

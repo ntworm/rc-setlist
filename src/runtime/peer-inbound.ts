@@ -32,9 +32,23 @@ let synchronized = false;
 let versionMismatch = false;
 let lastLogged = '';
 let onStatusChange: (() => void) | null = null;
+let cachedSlaveRole: ReturnType<typeof readSlaveRole> = null;
+let cachedHasOutboundPeers = false;
+let roleCachePrimed = false;
+
+function refreshRoleCache(): void {
+  cachedSlaveRole = readSlaveRole();
+  cachedHasOutboundPeers = readPeerConfigs().length > 0;
+  roleCachePrimed = true;
+}
+
+function ensureRoleCache(): void {
+  if (!roleCachePrimed) refreshRoleCache();
+}
 
 function hasStandaloneSlaveRole(): boolean {
-  return readSlaveRole() !== null && readPeerConfigs().length === 0;
+  ensureRoleCache();
+  return cachedSlaveRole !== null && !cachedHasOutboundPeers;
 }
 
 function sendOnSocket(ws: AugmentedWebSocket | null, msg: unknown): boolean {
@@ -88,12 +102,13 @@ export function setInboundStatusListener(cb: (() => void) | null): void {
  * Synchronizes the inbound health record with the persisted SlaveRole file.
  */
 export function syncInboundSlaveRole(): void {
+  refreshRoleCache();
   if (hasStandaloneSlaveRole()) {
     if (!tracker) tracker = new PeerHealthTracker();
     onStatusChange?.();
     return;
   }
-  if (readSlaveRole() === null || !activeSocket) {
+  if (cachedSlaveRole === null || !activeSocket) {
     generation += 1;
     clearInboundRecord();
   }
@@ -101,10 +116,19 @@ export function syncInboundSlaveRole(): void {
 }
 
 /**
+ * Updates cached outbound-peer presence when outbound links start or stop.
+ */
+export function setInboundHasOutboundPeers(hasOutbound: boolean): void {
+  ensureRoleCache();
+  cachedHasOutboundPeers = hasOutbound;
+}
+
+/**
  * Activates or supersedes the inbound peer heartbeat session after sync_confirm.
  */
 export function onInboundPeerSyncConfirm(ws: AugmentedWebSocket): void {
   if (ws.isPeer !== true) return;
+  refreshRoleCache();
   if (!tracker) tracker = new PeerHealthTracker();
   const superseding = activeSocket !== null && activeSocket !== ws && synchronized;
   generation += 1;
@@ -208,21 +232,34 @@ export function nudgeInboundHeartbeat(): void {
  * a matching protocol handshake, unpair, or server reset.
  */
 export function markInboundVersionMismatch(mismatch: boolean): void {
+  refreshRoleCache();
   versionMismatch = mismatch;
   if (mismatch && !tracker) tracker = new PeerHealthTracker();
   onStatusChange?.();
+}
+
+function shouldEmitInboundSummary(): boolean {
+  if (activeSocket !== null || versionMismatch) {
+    ensureRoleCache();
+    return true;
+  }
+  if (!tracker) return false;
+  return hasStandaloneSlaveRole();
+}
+
+function computeInboundMarkersMatch(localFingerprint: string): boolean {
+  if (!synchronized) return true;
+  return remoteView !== null && remoteView.cuesFingerprint === localFingerprint;
 }
 
 /**
  * Builds the merged inbound PeerLinkSummary row when paired as slave or connected to a master.
  */
 export function getInboundPeerSummary(): PeerLinkSummary | null {
-  const role = readSlaveRole();
-  if (!activeSocket && !versionMismatch && (!role || readPeerConfigs().length > 0)) return null;
+  if (!shouldEmitInboundSummary()) return null;
   if (!tracker) tracker = new PeerHealthTracker();
   const signals = localHealthSignals();
-  const markersMatch =
-    remoteView !== null && remoteView.cuesFingerprint === signals.cuesFingerprint;
+  const markersMatch = computeInboundMarkersMatch(signals.cuesFingerprint);
   const { patch, logged } = evaluatePeerLinkHealth(
     INBOUND_PEER_KEY,
     tracker,
@@ -235,7 +272,7 @@ export function getInboundPeerSummary(): PeerLinkSummary | null {
   return {
     key: INBOUND_PEER_KEY,
     role: 'inbound',
-    config: parseMasterAddress(role?.masterAddress),
+    config: parseMasterAddress(cachedSlaveRole?.masterAddress),
     state: {
       connected: synchronized,
       markersMatch,
@@ -260,5 +297,8 @@ export function getInboundLastSeen(): LastSeenEntry | null {
  */
 export function resetInboundPeerState(): void {
   generation += 1;
+  roleCachePrimed = false;
+  cachedSlaveRole = null;
+  cachedHasOutboundPeers = false;
   clearInboundRecord();
 }

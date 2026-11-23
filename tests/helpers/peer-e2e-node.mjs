@@ -57,15 +57,46 @@ export function createChildFakeOsc(logFile) {
     (name) =>
     (...args) =>
       recordOsc(logFile, name, ...args);
+  const applyTransport = (beat, isPlaying) => {
+    if (!bridgeState.manager) return;
+    bridgeState.manager.updateTransport(beat, isPlaying);
+    bridgeState.commandBus?.resolveObservableConfirmations();
+  };
   return {
     isConnected: true,
-    startPlaying: log('startPlaying'),
-    continuePlaying: log('continuePlaying'),
-    stopPlaying: log('stopPlaying'),
-    setCurrentSongTime: log('setCurrentSongTime'),
+    startPlaying: (...args) => {
+      recordOsc(logFile, 'startPlaying', ...args);
+      const beat = bridgeState.manager?.getState().currentSongTime ?? 0;
+      applyTransport(beat, true);
+    },
+    continuePlaying: (...args) => {
+      recordOsc(logFile, 'continuePlaying', ...args);
+      const beat = bridgeState.manager?.getState().currentSongTime ?? 0;
+      applyTransport(beat, true);
+    },
+    stopPlaying: (...args) => {
+      recordOsc(logFile, 'stopPlaying', ...args);
+      const beat = bridgeState.manager?.getState().currentSongTime ?? 0;
+      applyTransport(beat, false);
+    },
+    setCurrentSongTime: (beat, ...rest) => {
+      recordOsc(logFile, 'setCurrentSongTime', beat, ...rest);
+      if (typeof beat === 'number' && Number.isFinite(beat)) {
+        const isPlaying = bridgeState.manager?.getState().isPlaying ?? false;
+        applyTransport(beat, isPlaying);
+      }
+    },
     setMetronome: log('setMetronome'),
     setClipTriggerQuantization: log('setClipTriggerQuantization'),
-    jumpToCuePoint: log('jumpToCuePoint'),
+    jumpToCuePoint: (cueIndex, ...rest) => {
+      recordOsc(logFile, 'jumpToCuePoint', cueIndex, ...rest);
+      const cues = contextSong?.cuePoints ?? PEER_CUES;
+      const cue = Array.isArray(cues) ? cues.find((c) => c.cueIndex === cueIndex) : null;
+      if (cue && typeof cue.time === 'number' && Number.isFinite(cue.time)) {
+        const isPlaying = bridgeState.manager?.getState().isPlaying ?? false;
+        applyTransport(cue.time, isPlaying);
+      }
+    },
     send: log('send'),
     getCuePoints: log('getCuePoints'),
     stopPropertyListeners() {},

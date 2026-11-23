@@ -540,45 +540,33 @@ Música B [bpm 96]</code></pre>
     <ul>
       <li>
         <strong>OK</strong> (verde): heartbeats bidirecionais estáveis, marcadores iguais e Live /
+        OSC prontos nos dois lados.
       </li>
-    </ul>
-    <p>OSC prontos nos dois lados.</p>
-    <ul>
       <li>
         <strong>INSTÁVEL</strong> (amarelo): o link está aquecendo (<code>20 s</code> após
-        conectar), se
+        conectar), se recuperando de queda recente ou heartbeat perdido (<code>60 s</code> de janela
+        limpa), com latência alta (<code>RTT p95 &gt; 150 ms</code>), sob trava de
+        <code>5 min</code> por link oscilando (<code>3</code> ou mais quedas em <code>5 min</code>),
+        com marcadores diferentes ou fora de passo.
       </li>
-    </ul>
-    <p>
-      recuperando de queda recente ou heartbeat perdido (<code>60 s</code> de janela limpa), com
-      latência alta (<code>RTT &gt;= 250 ms</code> p95 ou amostra <code>&gt;= 500 ms</code>), sob
-      trava de <code>5 min</code> por link oscilando (<code>3</code> ou mais quedas em
-      <code>5 min</code>), com marcadores diferentes ou fora de passo.
-    </p>
-    <ul>
       <li>
         <strong>CAÍDO</strong> (vermelho): nenhum frame chegou por <code>3 s</code>, o socket fechou
-        ou o
+        ou o Live / OSC ficou indisponível em um dos computadores. Ao entrar em
+        <strong>CAÍDO</strong> (ou ao recarregar a página durante <strong>CAÍDO</strong> com o Live
+        tocando), um alarme vermelho em tela cheia aparece no Controle de palco e em
+        <code>/performance</code>. <strong>Dispensar alarme</strong> fecha a sobreposição mantendo o
+        alerta vermelho acima da barra de transporte.
+      </li>
+      <li>
+        <strong>VERSÕES DIFERENTES</strong> (vermelho): os dois computadores rodam versões
+        incompatíveis do protocolo do link. Atualize os dois para a mesma versão do RC Setlist;
+        nenhum comando é repassado enquanto as versões diferirem.
+      </li>
+      <li>
+        <strong>CERTIFICADO MUDOU</strong> (vermelho): o segundo computador apresentou outro
+        certificado TLS e precisa ser pareado de novo.
       </li>
     </ul>
-    <p>
-      Live / OSC ficou indisponível em um dos computadores. Ao entrar em <strong>CAÍDO</strong> (ou
-      ao recarregar a página durante <strong>CAÍDO</strong> com o Live tocando), um alarme vermelho
-      em tela cheia aparece no Controle de palco e em <code>/performance</code>.
-      <strong>Dispensar alarme</strong> fecha a sobreposição mantendo o alerta vermelho acima da
-      barra de transporte.
-    </p>
-    <ul>
-      <li><strong>VERSÕES DIFERENTES</strong> (vermelho): os dois computadores rodam versões</li>
-    </ul>
-    <p>
-      incompatíveis do protocolo do link. Atualize os dois para a mesma versão do RC Setlist; nenhum
-      comando é repassado enquanto as versões diferirem.
-    </p>
-    <ul>
-      <li><strong>CERTIFICADO MUDOU</strong> (vermelho): o segundo computador apresentou outro</li>
-    </ul>
-    <p>certificado TLS e precisa ser pareado de novo.</p>
     <p>
       Cada linha mostra o endereço do computador, o motivo atual, <code>RTT</code>,
       <code>quedas (5m)</code>, <code>última queda há X</code> e <code>visto há X</code>. Quando o
@@ -622,39 +610,29 @@ Música B [bpm 96]</code></pre>
     <ul>
       <li>
         O Controle de palco mostra por <code>3 s</code> um selo por computador
-        (<code>Pendente</code>,
+        (<code>Pendente</code>, <code>Executou</code> ou <code>Falhou</code>).
       </li>
-    </ul>
-    <p><code>Executou</code> ou <code>Falhou</code>).</p>
-    <ul>
-      <li>Se um comando perder o prazo ou falhar no slave, o Controle de palco e o</li>
-    </ul>
-    <p>
-      painel do Live exibem <strong><code>SLAVE NÃO EXECUTOU: &lt;comando&gt;</code></strong
-      >. Se a confirmação chegar atrasada depois do prazo, o alerta muda para
-      <strong><code>Executou atrasado: &lt;comando&gt;</code></strong
-      >.
-    </p>
-    <ul>
+      <li>
+        Se um comando perder o prazo ou falhar no slave, o Controle de palco e o painel do Live
+        exibem <strong><code>SLAVE NÃO EXECUTOU: &lt;comando&gt;</code></strong
+        >. Se a confirmação chegar atrasada depois do prazo, o alerta muda para
+        <strong><code>Executou atrasado: &lt;comando&gt;</code></strong
+        >.
+      </li>
       <li>
         Comandos de segurança (<strong>Stop</strong> e <strong>Pânico</strong>) nunca expiram
-        enquanto o
+        enquanto o computador principal continuar parado ou em pânico: são reenviados ao reconectar
+        e, se o slave não confirmar em <code>1 s</code>, aparece
+        <strong><code>SLAVE AINDA NÃO PAROU</code></strong> até a confirmação chegar.
+      </li>
+      <li>
+        Comandos de transporte levam um número de sequência para que um <code>play</code> atrasado
+        atrás de um <code>stop</code> ou <code>pânico</code> mais novo seja descartado
+        (<code>superseded</code>) e nunca toque fora de ordem, enquanto comandos fora do transporte
+        (<code>metrônomo</code>, <code>quantização</code>, <code>refresh</code>) nunca são
+        descartados por mudanças de transporte.
       </li>
     </ul>
-    <p>
-      computador principal continuar parado ou em pânico: são reenviados ao reconectar e, se o slave
-      não confirmar em <code>1 s</code>, aparece
-      <strong><code>SLAVE AINDA NÃO PAROU</code></strong> até a confirmação chegar.
-    </p>
-    <ul>
-      <li>Comandos de transporte levam um número de sequência para que um <code>play</code></li>
-    </ul>
-    <p>
-      atrasado atrás de um <code>stop</code> ou <code>pânico</code> mais novo seja descartado
-      (<code>superseded</code>) e nunca toque fora de ordem, enquanto comandos fora do transporte
-      (<code>metrônomo</code>, <code>quantização</code>, <code>refresh</code>) nunca são descartados
-      por mudanças de transporte.
-    </p>
     <p>
       Ficam no computador principal: edição do setlist, edição de marcadores, cores, notas, letras,
       perfis, ordenação e a exportação CSV. O segundo computador mantém o próprio setlist e os
@@ -670,21 +648,19 @@ Música B [bpm 96]</code></pre>
       certeza:
     </p>
     <ul>
-      <li>Os dois estão parados e o segundo computador está a mais de meio beat de</li>
-    </ul>
-    <p>
-      distância por três alvos seguidos: ele pula para o marcador correspondente (ou move a agulha
-      para o beat exato entre marcadores) em até <code>2 s</code> após reconectar.
-    </p>
-    <ul>
-      <li>Os dois tocam e o segundo está um número inteiro de beats fora: a agulha</li>
-    </ul>
-    <p>dele anda essa diferença.</p>
-    <ul>
-      <li>O principal toca e o segundo está parado: ele começa na próxima barra da</li>
-    </ul>
-    <p>posição do principal.</p>
-    <ul>
+      <li>
+        Os dois estão parados e o segundo computador está a mais de meio beat de distância por três
+        alvos seguidos: ele pula para o marcador correspondente (ou move a agulha para o beat exato
+        entre marcadores) em até <code>2 s</code> após reconectar.
+      </li>
+      <li>
+        Os dois tocam e o segundo está um número inteiro de beats fora: a agulha dele anda essa
+        diferença.
+      </li>
+      <li>
+        O principal toca e o segundo está parado: ele começa na próxima barra da posição do
+        principal.
+      </li>
       <li>O principal está parado e o segundo toca: ele para.</li>
     </ul>
     <p>

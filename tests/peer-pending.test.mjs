@@ -405,13 +405,18 @@ test('PeerPendingTable handles backpressure and 1s stop_unacked alert', () => {
 test('PeerPendingTable cancels superseded safety stops and builds status events', () => {
   const clock = createClock(5_000);
   const table = new PeerPendingTable({ now: clock.now });
-  table.enqueue(
+  table.enqueue(makePendingInput('play-1', { commandType: 'play', transportSeq: 1 }));
+  const stopRes = table.enqueue(
     makePendingInput('stop-1', {
       commandType: 'stop',
       transportSeq: 2,
       safetyStop: true,
       deadlineAt: null,
     }),
+  );
+  assert.deepEqual(
+    stopRes.cancelled.map((e) => e.commandId),
+    ['play-1'],
   );
   table.enqueue(
     makePendingInput('panic-1', {
@@ -487,5 +492,9 @@ test('PeerPendingTable drops safety stops silently once master is no longer stop
   assert.equal(res.toSend.length, 0);
   assert.equal(res.expired.length, 0);
   assert.equal(res.stopAlerts.length, 0);
+  assert.deepEqual(
+    res.cancelled.map((e) => e.commandId),
+    ['s-1', 'p-1'],
+  );
   assert.equal(table.size(), 0);
 });

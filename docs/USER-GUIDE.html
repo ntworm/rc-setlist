@@ -533,46 +533,33 @@ Song B [bpm 96]</code></pre>
     <ul>
       <li>
         <strong>OK</strong> (green): bidirectional heartbeats are clean, markers match, and both
+        Ableton Live / OSC bridges are ready.
       </li>
-    </ul>
-    <p>Ableton Live / OSC bridges are ready.</p>
-    <ul>
       <li>
         <strong>UNSTABLE</strong> (amber): the link is warming up (<code>20 s</code> after the first
-        connect),
+        connect), recovering from a recent drop or lost heartbeat (<code>60 s</code> clean window),
+        experiencing high latency (<code>RTT p95 &gt; 150 ms</code>), holding the
+        <code>5 min</code> penalty after an oscillating link (<code>3</code> or more drops in
+        <code>5 min</code>), reading different markers, or out of step.
       </li>
-    </ul>
-    <p>
-      recovering from a recent drop or lost heartbeat (<code>60 s</code> clean window), experiencing
-      high latency (<code>RTT &gt;= 250 ms</code> p95 or <code>&gt;= 500 ms</code> sample), holding
-      the <code>5 min</code> penalty after an oscillating link (<code>3</code> or more drops in
-      <code>5 min</code>), reading different markers, or out of step.
-    </p>
-    <ul>
       <li>
         <strong>DOWN</strong> (red): no frame has arrived for <code>3 s</code>, the socket closed,
-        or Live /
+        or Live / OSC is unavailable on either computer. When the link enters
+        <strong>DOWN</strong> (or a page reloads while <strong>DOWN</strong> and playing), a
+        full-screen red stage alarm appears on Stage Control and <code>/performance</code>.
+        <strong>Dismiss alarm</strong> hides the overlay while keeping the red transport badge above
+        the transport dock.
       </li>
-    </ul>
-    <p>
-      OSC is unavailable on either computer. When the link enters <strong>DOWN</strong> (or a page
-      reloads while <strong>DOWN</strong> and playing), a full-screen red stage alarm appears on
-      Stage Control and <code>/performance</code>. <strong>Dismiss alarm</strong> hides the overlay
-      while keeping the red transport badge above the transport dock.
-    </p>
-    <ul>
-      <li><strong>DIFFERENT VERSIONS</strong> (red): the two computers run incompatible link</li>
-    </ul>
-    <p>
-      protocol versions. Update both computers to the same RC Setlist build; no commands are relayed
-      while versions differ.
-    </p>
-    <ul>
+      <li>
+        <strong>DIFFERENT VERSIONS</strong> (red): the two computers run incompatible link protocol
+        versions. Update both computers to the same RC Setlist build; no commands are relayed while
+        versions differ.
+      </li>
       <li>
         <strong>CERTIFICATE CHANGED</strong> (red): the second computer presented a different TLS
+        certificate and must be paired again.
       </li>
     </ul>
-    <p>certificate and must be paired again.</p>
     <p>
       Each row prints the computer address, the current reason, <code>RTT</code>,
       <code>drops (5m)</code>, <code>last drop X ago</code>, and <code>seen X ago</code>. When a
@@ -617,40 +604,28 @@ Song B [bpm 96]</code></pre>
     <ul>
       <li>
         Stage Control shows a <code>3 s</code> per-computer tick (<code>Pending</code>,
-        <code>Executed</code>, or
+        <code>Executed</code>, or <code>Failed</code>).
       </li>
-    </ul>
-    <p><code>Failed</code>).</p>
-    <ul>
-      <li>If a command misses its deadline or fails on the slave, Stage Control and the</li>
-    </ul>
-    <p>
-      Live panel show <strong><code>SLAVE DID NOT EXECUTE: &lt;command&gt;</code></strong
-      >. If a delayed confirmation arrives afterwards, the alert updates to
-      <strong><code>Executed late: &lt;command&gt;</code></strong
-      >.
-    </p>
-    <ul>
+      <li>
+        If a command misses its deadline or fails on the slave, Stage Control and the Live panel
+        show <strong><code>SLAVE DID NOT EXECUTE: &lt;command&gt;</code></strong
+        >. If a delayed confirmation arrives afterwards, the alert updates to
+        <strong><code>Executed late: &lt;command&gt;</code></strong
+        >.
+      </li>
       <li>
         Safety <strong>Stop</strong> and <strong>Panic</strong> commands never expire while the main
-        computer
+        computer remains stopped or panicked: they are retried across reconnects, and if the slave
+        has not confirmed within <code>1 s</code>, Stage Control and the Live panel show
+        <strong><code>SLAVE STILL NOT STOPPED</code></strong> until confirmation arrives.
       </li>
-    </ul>
-    <p>
-      remains stopped or panicked: they are retried across reconnects, and if the slave has not
-      confirmed within <code>1 s</code>, Stage Control and the Live panel show
-      <strong><code>SLAVE STILL NOT STOPPED</code></strong> until confirmation arrives.
-    </p>
-    <ul>
       <li>
         Transport commands carry a sequence number so a delayed <code>play</code> behind a newer
+        <code>stop</code> or <code>panic</code> is superseded and never executed out of order, while
+        non-transport commands (<code>metronome</code>, <code>quantization</code>,
+        <code>refresh</code>) are never superseded by transport changes.
       </li>
     </ul>
-    <p>
-      <code>stop</code> or <code>panic</code> is superseded and never executed out of order, while
-      non-transport commands (<code>metronome</code>, <code>quantization</code>,
-      <code>refresh</code>) are never superseded by transport changes.
-    </p>
     <p>
       These stay on the main computer: setlist editing, marker editing, colours, notes, lyrics,
       profiles, ordering and the CSV export. The second computer keeps its own setlist and its own
@@ -667,21 +642,18 @@ Song B [bpm 96]</code></pre>
       a second thereafter, and the second computer corrects what it can tell for sure:
     </p>
     <ul>
-      <li>Both are stopped and the second computer is more than half a beat away for</li>
-    </ul>
-    <p>
-      three targets in a row: it jumps to the matching marker (or moves its playhead to the exact
-      beat between markers) within <code>2 s</code> of reconnecting.
-    </p>
-    <ul>
-      <li>Both play and the second one is a whole number of beats off: its playhead</li>
-    </ul>
-    <p>moves by that gap.</p>
-    <ul>
-      <li>The main computer plays and the second one is stopped: it starts on the next</li>
-    </ul>
-    <p>bar line of the main computer&#39;s position.</p>
-    <ul>
+      <li>
+        Both are stopped and the second computer is more than half a beat away for three targets in
+        a row: it jumps to the matching marker (or moves its playhead to the exact beat between
+        markers) within <code>2 s</code> of reconnecting.
+      </li>
+      <li>
+        Both play and the second one is a whole number of beats off: its playhead moves by that gap.
+      </li>
+      <li>
+        The main computer plays and the second one is stopped: it starts on the next bar line of the
+        main computer&#39;s position.
+      </li>
       <li>The main computer is stopped and the second one plays: it stops.</li>
     </ul>
     <p>

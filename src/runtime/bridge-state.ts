@@ -219,6 +219,7 @@ export function broadcastState(): void {
       songNotes,
       peerStatus: bridgeState.peerStatus,
       peerStatuses: bridgeState.peerStatuses,
+      peerAlerts: bridgeState.peerAlerts,
       profileScopeSwitching: bridgeState.profileScopeSwitching,
     });
     warnIfSlow('ws', 'state broadcast', startedAt);

@@ -433,7 +433,10 @@ test('A6: unreachable stop raises stop_unacked after 1s and executes on reconnec
   assert.equal(await waitFor(() => bridgeState.peerStatus.connected === false, 2000), true);
 
   const stopCmd = { type: 'stop', commandId: 'a6-safety-stop' };
+  ctx.tracker.send({ type: 'play', commandId: 'a6-queued-play' });
   ctx.tracker.send(stopCmd);
+  const playSuperseded = await ctx.tracker.waitTerminal('a6-queued-play', 1500);
+  assert.equal(playSuperseded?.status, 'superseded', 'stop must cancel earlier queued play');
   const unacked = await ctx.tracker.waitEvent(stopCmd.commandId, 'stop_unacked', 2500);
   assert.ok(unacked, 'stop_unacked alert must emit when slave unreachable >= 1s');
   const unackedMs = unacked.at - ctx.tracker.sentTime(stopCmd.commandId);
