@@ -281,13 +281,22 @@ test('a jump at quantization zero is a cue jump, flag or no flag', () => {
   }
 });
 
+function isJumpTimeMessage(message) {
+  const inner = message?.type === 'peer_command' ? message.command : message;
+  return inner?.type === 'jump_time';
+}
+
+function unwrapJumpTime(message) {
+  return message?.type === 'peer_command' ? message.command : message;
+}
+
 test('an immediate jump travels to the peer with the flag', async () => {
   peerComputer.messages.length = 0;
   relayToPeer(
     makeCommand('jump', 'cmd-immediate', { type: 'jump', songIndex: 1, immediate: true }),
   );
-  await waitFor(() => peerComputer.messages.some((message) => message.type === 'jump_time'));
-  const jump = peerComputer.messages.find((message) => message.type === 'jump_time');
+  await waitFor(() => peerComputer.messages.some(isJumpTimeMessage));
+  const jump = unwrapJumpTime(peerComputer.messages.find(isJumpTimeMessage));
   assert.strictEqual(jump.immediate, true, 'the paired computer lands it at once too');
   const resolved = resolvePeerJump(jump, bridgeState.manager.getState());
   assert.strictEqual(resolved.message?.immediate, true, 'the conversion keeps the flag');
@@ -309,7 +318,7 @@ test('an immediate jump this computer refuses does not travel to the peer', asyn
     );
     await delay(300);
     assert.strictEqual(
-      peerComputer.messages.some((message) => message.type === 'jump_time'),
+      peerComputer.messages.some(isJumpTimeMessage),
       false,
       'the paired computer must not jump now while this one refuses',
     );
@@ -320,10 +329,8 @@ test('an immediate jump this computer refuses does not travel to the peer', asyn
     controller.send(
       JSON.stringify({ type: 'jump', songIndex: 1, immediate: true, commandId: 'jump-now' }),
     );
-    const jump = await waitForMessage(
-      peerComputer.messages,
-      (message) => message.type === 'jump_time',
-    );
+    const jumpMsg = await waitForMessage(peerComputer.messages, isJumpTimeMessage);
+    const jump = unwrapJumpTime(jumpMsg);
     assert.ok(jump, 'the immediate jump travels when nothing waits for the grid');
     assert.strictEqual(jump.immediate, true, 'the flag travels with it');
   } finally {

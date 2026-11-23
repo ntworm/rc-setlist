@@ -394,6 +394,8 @@ export class CommandBus extends EventEmitter {
     const confirmed: ShowCommand<unknown>[] = [];
 
     for (const command of this.pendingCommands) {
+      const retention = this.processedIds.get(command.commandId);
+      if (retention?.command === command && retention.phase === 'queued') continue;
       const payload = isRecord(command.payload) ? command.payload : {};
       let matches = false;
 
