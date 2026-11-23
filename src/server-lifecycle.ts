@@ -54,6 +54,7 @@ import {
   type PeerUpstreamReply,
 } from './runtime/peer-link.js';
 import {
+  isActiveInboundPeer,
   markInboundVersionMismatch,
   onInboundPeerClosed,
   onInboundPeerMessage,
@@ -484,10 +485,6 @@ function dispatchPeerLocalCommand(
 ): Promise<SlaveCommandExecutionResult> {
   const bus = bridgeState.commandBus;
   if (!bus) return Promise.resolve({ result: 'failed', reason: 'not_ready' });
-  if (meta?.deadlineAt !== null && meta?.deadlineAt !== undefined) {
-    const remainingMs = Math.max(1, Math.floor(meta.deadlineAt - performance.now()));
-    command.timeoutMs = Math.min(command.timeoutMs, remainingMs);
-  }
   return new Promise<SlaveCommandExecutionResult>((resolve) => {
     let settled = false;
     const finish = (outcome: SlaveCommandExecutionResult): void => {
@@ -519,6 +516,11 @@ function dispatchPeerLocalCommand(
         throw new OperatorError('OSC client is not connected.');
       }
       await executeCommandAction(command, ws);
+      // A quantized jump waiting for its grid line is accepted by Live now; the landing
+      // follows the grid, so confirming here keeps the delivery deadline honest.
+      if (command.type === 'jump' && bridgeState.scheduler?.hasPending()) {
+        finish({ result: 'confirmed' });
+      }
     });
   });
 }
@@ -851,6 +853,17 @@ export async function startServer(options: StartServerOptions = {}): Promise<voi
             message: peerRejection.message,
           }),
         );
+        return;
+      }
+
+      // A superseded or unpaired inbound peer socket must not drive this computer.
+      if (
+        isPeerConnection &&
+        (msg.type === 'peer_target' ||
+          msg.type === 'peer_command' ||
+          msg.type === 'peer_health_ack') &&
+        !isActiveInboundPeer(ws)
+      ) {
         return;
       }
 

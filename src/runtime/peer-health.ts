@@ -309,7 +309,7 @@ export class PeerHealthTracker {
   }
 
   private recordBadEvent(t: number, reason: PeerHealthReason): void {
-    this.warmupActive = false;
+    // The cold-start warm-up is independent of bad events: it is never shortened by them.
     this.ackActive = false;
     this.lastBadEventAt = t;
     this.lastBadReason = reason;

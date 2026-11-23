@@ -76,6 +76,7 @@ export interface CollectDueSendsResult {
 /** Settlement classification returned by `PeerPendingTable.onAck`. */
 export type PeerPendingAckOutcome =
   | { kind: 'settled'; entry: PendingEntry; ack: PeerAckMessage }
+  | { kind: 'safety_retry'; entry: PendingEntry; ack: PeerAckMessage }
   | { kind: 'late_confirmed'; entry: PendingEntry; ack: PeerAckMessage }
   | { kind: 'unknown' };
 
@@ -236,6 +237,11 @@ export class PeerPendingTable {
     this.pruneRecentlyExpired(t);
     const active = this.entries.get(ack.commandId);
     if (active) {
+      if (active.safetyStop && (ack.result === 'failed' || ack.result === 'expired')) {
+        // A safety stop never gives up: the slave could not run it right now, so it stays
+        // queued and is resent on the normal retry cadence while the master is stopped.
+        return { kind: 'safety_retry', entry: active, ack };
+      }
       this.entries.delete(ack.commandId);
       this.sentOnce.delete(ack.commandId);
       return { kind: 'settled', entry: active, ack };

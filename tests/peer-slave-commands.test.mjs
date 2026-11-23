@@ -271,3 +271,26 @@ test('SlaveCommandTracker resets sequence on new sessionId and handles executor 
   assert.equal(closedWs.sent.length, 0);
   resetSlaveCommandState();
 });
+
+test('SlaveCommandTracker lets a failed safety stop run again instead of pinning the failure', async () => {
+  const clock = createClock(1_000);
+  const tracker = new SlaveCommandTracker({
+    now: clock.now,
+    getTransportSnapshot: () => ({ isPlaying: true, beat: 4 }),
+    noteCommand: () => {},
+    adoptEcho: (msg) => msg,
+  });
+  const ws = createFakeSocket(1);
+  const stop = makeEnvelope('stop-retry', {
+    transportSeq: 2,
+    ttlMs: null,
+    command: { type: 'stop' },
+  });
+  const first = await tracker.receiveCommand(ws, stop, () => ({
+    result: 'failed',
+    reason: 'execution_failed',
+  }));
+  assert.equal(first.result, 'failed');
+  const second = await tracker.receiveCommand(ws, stop, () => ({ result: 'confirmed' }));
+  assert.equal(second.result, 'confirmed');
+});

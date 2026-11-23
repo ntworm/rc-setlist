@@ -224,8 +224,7 @@ function handlePeerError(target: PeerLink, code: unknown): void {
     return;
   }
   if (code === 'not_synchronized') {
-    target.synchronized = false;
-    setLinkState(target, { connected: false });
+    // Close without clearing `synchronized` first: onPeerClosed counts the drop.
     if (target.socket) closePeerSocket(target.socket);
     return;
   }

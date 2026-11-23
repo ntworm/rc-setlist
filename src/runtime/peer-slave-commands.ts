@@ -85,6 +85,11 @@ function defaultTransportSnapshot(): SlaveTransportSnapshot {
   };
 }
 
+function isSafetyStopEnvelope(msg: PeerCommandEnvelope): boolean {
+  const inner = msg.command as { type: string; active?: unknown };
+  return inner.type === 'stop' || (inner.type === 'set_panic' && inner.active === true);
+}
+
 function sendAck(ws: PeerAckSocket, ack: PeerAckMessage): boolean {
   if (ws.readyState !== WebSocket.OPEN) return false;
   try {
@@ -273,7 +278,12 @@ export class SlaveCommandTracker {
     const ack = makeAck(msg.commandId, outcome.result, reason, this.getTransportSnapshot());
     const inFlight = this.cache.get(msg.commandId);
     const targetSocket = inFlight?.status === 'in_flight' ? inFlight.latestSocket : ws;
-    this.setCacheEntry(msg.commandId, { status: 'settled', settledAt, ack }, settledAt);
+    if (outcome.result !== 'confirmed' && isSafetyStopEnvelope(msg)) {
+      // A transient failure of a safety stop must stay retryable: do not pin it for 10 minutes.
+      this.cache.delete(msg.commandId);
+    } else {
+      this.setCacheEntry(msg.commandId, { status: 'settled', settledAt, ack }, settledAt);
+    }
     sendAck(targetSocket, ack);
     return ack;
   }

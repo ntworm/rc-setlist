@@ -318,6 +318,11 @@ function handlePeerAck(target: PeerCommandTarget, message: Record<string, unknow
   if (!ack) return;
   const outcome = target.pending.onAck(ack);
   if (outcome.kind === 'unknown') return;
+  if (outcome.kind === 'safety_retry') {
+    recordAlert(target.key, outcome.entry, 'stop_unacked');
+    broadcastCommandStatus(target, outcome.entry, 'stop_unacked', ack.reason || undefined);
+    return;
+  }
   if (outcome.kind === 'late_confirmed') {
     recordAlert(target.key, outcome.entry, 'late_confirmed');
     broadcastCommandStatus(target, outcome.entry, 'late_confirmed');

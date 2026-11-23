@@ -110,9 +110,26 @@ export function syncInboundSlaveRole(): void {
   }
   if (cachedSlaveRole === null || !activeSocket) {
     generation += 1;
+    closeQuietly(activeSocket, 'unpaired');
     clearInboundRecord();
   }
   onStatusChange?.();
+}
+
+function closeQuietly(ws: AugmentedWebSocket | null, reason: string): void {
+  if (!ws) return;
+  try {
+    ws.close(4003, reason);
+  } catch {
+    // socket already closing
+  }
+}
+
+/**
+ * Reports whether a peer socket is the active inbound master link.
+ */
+export function isActiveInboundPeer(ws: AugmentedWebSocket): boolean {
+  return ws === activeSocket;
 }
 
 /**
@@ -140,7 +157,9 @@ export function onInboundPeerSyncConfirm(ws: AugmentedWebSocket): void {
   } else {
     tracker.onSynchronized();
   }
+  const previousSocket = activeSocket;
   activeSocket = ws;
+  if (superseding) closeQuietly(previousSocket, 'superseded');
   synchronized = true;
   remoteView = null;
   versionMismatch = false;

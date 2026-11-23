@@ -354,7 +354,7 @@ function unpairAllPeers(locale: UiLocale): PeerActionResult {
   // A pairing still on disk returns on restart, so keep the link and report
   // the failure rather than showing a "not paired" state that will not last.
   if (!clearPeerConfig()) return { ok: false, message: unpairFailureText(locale) };
-  clearSlaveRole();
+  if (!clearSlaveRole()) return { ok: false, message: unpairFailureText(locale) };
   syncInboundSlaveRole();
   startPeerLink(null);
   return { ok: true };
