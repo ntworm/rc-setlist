@@ -6,6 +6,8 @@
 
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
+import { CommandBus } from '../src/core/command-bus.ts';
+import { SetlistManager } from '../src/core/setlist-manager.ts';
 import { PeerHealthTracker } from '../src/runtime/peer-health.ts';
 import { PeerPendingTable } from '../src/runtime/peer-pending.ts';
 
@@ -79,4 +81,37 @@ test('PeerPendingTable keeps a safety stop queued when the slave answers failed 
   assert.equal(table.onAck(makeAck('stop-r', 'expired')).kind, 'safety_retry');
   assert.equal(table.onAck(makeAck('stop-r', 'confirmed')).kind, 'settled');
   assert.equal(table.has('stop-r'), false);
+});
+
+test('CommandBus.releaseFailedRetry lets a failed safety stop re-execute without releasing confirmed ids', async () => {
+  const manager = new SetlistManager();
+  manager.updateTransport(10, true);
+  const logger = { log: () => {} };
+  const bus = new CommandBus(manager, logger);
+  try {
+    const cmd1 = bus.registerCommand('peer:stop-retry', 'stop', { type: 'stop' }, 'peer');
+    await new Promise((resolve) => {
+      bus.once('command_settled', resolve);
+      bus.dispatch(cmd1, () => {
+        throw new Error('OSC down');
+      });
+    });
+    assert.equal(bus.getStatus('peer:stop-retry')?.status, 'failed');
+    assert.equal(bus.isDuplicate('peer:stop-retry'), true);
+    assert.equal(bus.releaseFailedRetry('peer:stop-retry'), true);
+    assert.equal(bus.isDuplicate('peer:stop-retry'), false);
+
+    const cmd2 = bus.registerCommand('peer:stop-retry', 'stop', { type: 'stop' }, 'peer');
+    await new Promise((resolve) => {
+      bus.once('command_settled', resolve);
+      bus.dispatch(cmd2, () => {
+        manager.updateTransport(10, false);
+        bus.resolveObservableConfirmations();
+      });
+    });
+    assert.equal(bus.getStatus('peer:stop-retry')?.status, 'confirmed');
+    assert.equal(bus.releaseFailedRetry('peer:stop-retry'), false);
+  } finally {
+    bus.stop();
+  }
 });

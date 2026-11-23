@@ -346,12 +346,10 @@ presents another certificate, and the row asks for a new pairing.
 
 The Stage Control page shows a second dot beside the connection dot:
 
-- **green**: the second computer is connected and both read the same markers.
-- **amber**: it is connected, but the markers are different.
-- **red**: it is not answering, or its certificate changed and it has to be
-  paired again.
-- **no dot**: there is no second computer paired, and nothing is sent
-  anywhere.
+- **green**: the link is healthy (past the `20 s` warm-up, heartbeats and RTT are clean, markers match, and Live/OSC are ready on both computers).
+- **amber**: the link is connected but **UNSTABLE** (warming up, recovering from a drop or high RTT, `5 min` oscillating hold, markers differ, or out of step).
+- **red**: the link is **DOWN** (`3 s` silence or Live/OSC unavailable), running **DIFFERENT VERSIONS**, or its **CERTIFICATE CHANGED** and it must be paired again.
+- **no dot**: there is no second computer paired, and nothing is sent anywhere.
 
 Stage Control (in both **Edit** and **Show** mode), `/performance`, and the Live
 panel also show a per-computer link health bar whenever a second computer is

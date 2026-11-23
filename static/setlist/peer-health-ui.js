@@ -7,7 +7,7 @@
 
   const TONE_CLASSES = ['is-ok', 'is-warning', 'is-error'];
   const ALERT_STATUSES = new Set(['stop_unacked', 'expired', 'failed', 'late_confirmed']);
-  const STOP_CLEARING_COMMANDS = new Set(['stop', 'set_panic', 'play', 'trigger_count_in']);
+  const STOP_CLEARING_COMMANDS = new Set(['stop', 'play', 'trigger_count_in']);
 
   /** Resolves a localized string via the global i18n catalog. */
   function translate(key, params) {

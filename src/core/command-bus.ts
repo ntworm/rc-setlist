@@ -143,6 +143,24 @@ export class CommandBus extends EventEmitter {
   }
 
   /**
+   * Releases a settled failed/expired/cancelled command id so a safety retry can re-execute it.
+   */
+  public releaseFailedRetry(commandId: string): boolean {
+    const command = this.commandHistory.get(commandId);
+    if (
+      !command ||
+      (command.status !== 'failed' &&
+        command.status !== 'expired' &&
+        command.status !== 'cancelled')
+    ) {
+      return false;
+    }
+    this.processedIds.delete(commandId);
+    this.commandHistory.delete(commandId);
+    return true;
+  }
+
+  /**
    * Returns the saved status of a retained command, or null.
    *
    * The payload stays here: a retry only needs to learn how its first send

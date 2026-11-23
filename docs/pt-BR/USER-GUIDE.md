@@ -355,13 +355,10 @@ apresenta outro certificado, e a linha pede um pareamento novo.
 A página do Controle de palco mostra um segundo ponto ao lado do ponto de
 conexão:
 
-- **verde**: o segundo computador está conectado e os dois leem os mesmos
-  marcadores.
-- **amarelo**: está conectado, mas os marcadores são diferentes.
-- **vermelho**: não está respondendo, ou o certificado mudou e ele precisa
-  ser pareado de novo.
-- **sem ponto**: não há segundo computador pareado, e nada é enviado para
-  lugar nenhum.
+- **verde**: o link está saudável (passou o aquecimento de `20 s`, heartbeats e RTT estão limpos, marcadores batem e Live/OSC estão prontos nos dois lados).
+- **amarelo**: está conectado, mas **INSTÁVEL** (aquecendo, recuperando de queda ou RTT alto, trava de `5 min`, marcadores diferentes ou fora de passo).
+- **vermelho**: o link está **CAÍDO** (`3 s` sem resposta ou Live/OSC indisponível), com **VERSÕES DIFERENTES**, ou o **CERTIFICADO MUDOU** e precisa ser pareado de novo.
+- **sem ponto**: não há segundo computador pareado, e nada é enviado para lugar nenhum.
 
 O Controle de palco (tanto no modo **Editar** quanto no modo **Show**), a tela
 `/performance` e o painel do Live também mostram uma barra de saúde por

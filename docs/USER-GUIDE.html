@@ -513,18 +513,23 @@ Song B [bpm 96]</code></pre>
     <p>The Stage Control page shows a second dot beside the connection dot:</p>
     <ul>
       <li>
-        <strong>green</strong>: the second computer is connected and both read the same markers.
+        <strong>green</strong>: the link is healthy (past the <code>20 s</code> warm-up, heartbeats
+        and RTT are clean, markers match, and Live/OSC are ready on both computers).
       </li>
-      <li><strong>amber</strong>: it is connected, but the markers are different.</li>
       <li>
-        <strong>red</strong>: it is not answering, or its certificate changed and it has to be
+        <strong>amber</strong>: the link is connected but <strong>UNSTABLE</strong> (warming up,
+        recovering from a drop or high RTT, <code>5 min</code> oscillating hold, markers differ, or
+        out of step).
+      </li>
+      <li>
+        <strong>red</strong>: the link is <strong>DOWN</strong> (<code>3 s</code> silence or
+        Live/OSC unavailable), running <strong>DIFFERENT VERSIONS</strong>, or its
+        <strong>CERTIFICATE CHANGED</strong> and it must be paired again.
+      </li>
+      <li>
+        <strong>no dot</strong>: there is no second computer paired, and nothing is sent anywhere.
       </li>
     </ul>
-    <p>paired again.</p>
-    <ul>
-      <li><strong>no dot</strong>: there is no second computer paired, and nothing is sent</li>
-    </ul>
-    <p>anywhere.</p>
     <p>
       Stage Control (in both <strong>Edit</strong> and <strong>Show</strong> mode),
       <code>/performance</code>, and the Live panel also show a per-computer link health bar

@@ -455,3 +455,15 @@ test('A6: unreachable stop raises stop_unacked after 1s and executes on reconnec
   assert.equal(bridgeState.peerAlerts[key], undefined, 'stop_unacked alert must clear');
   assert.equal(await waitChildCall(beforeCalls, (l) => l === 'stopPlaying'), true);
 });
+
+test('A5.4: quantized jump while playing confirms cleanly instead of expiring on deadline', async () => {
+  bridgeState.manager.updateQuantization(4);
+  bridgeState.manager.updateTransport(1, true);
+  const beforeCalls = readLogCalls(ctx.childLog).length;
+  ctx.tracker.send({ type: 'jump', songIndex: 1, commandId: 'a54-qjump' });
+  const done = await ctx.tracker.waitTerminal('a54-qjump', 3000);
+  assert.equal(done?.status, 'confirmed', 'quantized jump must confirm');
+  assert.equal(await waitChildCall(beforeCalls, (l) => l.startsWith('jumpToCuePoint:')), true);
+  ctx.tracker.send({ type: 'stop', commandId: 'a54-stop' });
+  assert.equal((await ctx.tracker.waitTerminal('a54-stop', 3000))?.status, 'confirmed');
+});

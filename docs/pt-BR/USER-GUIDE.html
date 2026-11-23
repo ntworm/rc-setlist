@@ -520,18 +520,25 @@ Música B [bpm 96]</code></pre>
     </h3>
     <p>A página do Controle de palco mostra um segundo ponto ao lado do ponto de conexão:</p>
     <ul>
-      <li><strong>verde</strong>: o segundo computador está conectado e os dois leem os mesmos</li>
+      <li>
+        <strong>verde</strong>: o link está saudável (passou o aquecimento de <code>20 s</code>,
+        heartbeats e RTT estão limpos, marcadores batem e Live/OSC estão prontos nos dois lados).
+      </li>
+      <li>
+        <strong>amarelo</strong>: está conectado, mas <strong>INSTÁVEL</strong> (aquecendo,
+        recuperando de queda ou RTT alto, trava de <code>5 min</code>, marcadores diferentes ou fora
+        de passo).
+      </li>
+      <li>
+        <strong>vermelho</strong>: o link está <strong>CAÍDO</strong> (<code>3 s</code> sem resposta
+        ou Live/OSC indisponível), com <strong>VERSÕES DIFERENTES</strong>, ou o
+        <strong>CERTIFICADO MUDOU</strong> e precisa ser pareado de novo.
+      </li>
+      <li>
+        <strong>sem ponto</strong>: não há segundo computador pareado, e nada é enviado para lugar
+        nenhum.
+      </li>
     </ul>
-    <p>marcadores.</p>
-    <ul>
-      <li><strong>amarelo</strong>: está conectado, mas os marcadores são diferentes.</li>
-      <li><strong>vermelho</strong>: não está respondendo, ou o certificado mudou e ele precisa</li>
-    </ul>
-    <p>ser pareado de novo.</p>
-    <ul>
-      <li><strong>sem ponto</strong>: não há segundo computador pareado, e nada é enviado para</li>
-    </ul>
-    <p>lugar nenhum.</p>
     <p>
       O Controle de palco (tanto no modo <strong>Editar</strong> quanto no modo
       <strong>Show</strong>), a tela <code>/performance</code> e o painel do Live também mostram uma

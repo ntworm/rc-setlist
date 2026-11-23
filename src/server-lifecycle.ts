@@ -66,6 +66,7 @@ import { resetMasterRelayIntent } from './runtime/peer-link-commands.js';
 import {
   createMasterSessionId,
   EXTENSION_VERSION,
+  isSafetyStopCommand,
   LINK_PROTOCOL_VERSION,
 } from './runtime/peer-protocol.js';
 import {
@@ -541,7 +542,10 @@ function executeInboundPeerInner(
   const effectiveMsg = peerJump.kind === 'jump' ? peerJump.message : inner;
   const commandId = effectiveMsg.commandId || outerCommandId;
   if (bus.isDuplicate(commandId)) {
-    return Promise.resolve(duplicatePeerOutcome(bus, commandId));
+    const isSafety = isSafetyStopCommand(effectiveMsg);
+    if (!isSafety || !bus.releaseFailedRetry(commandId)) {
+      return Promise.resolve(duplicatePeerOutcome(bus, commandId));
+    }
   }
   const command = bus.registerCommand(
     commandId,
