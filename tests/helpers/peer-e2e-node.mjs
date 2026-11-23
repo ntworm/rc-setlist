@@ -62,6 +62,17 @@ export function createChildFakeOsc(logFile) {
     bridgeState.manager.updateTransport(beat, isPlaying);
     bridgeState.commandBus?.resolveObservableConfirmations();
   };
+  const applyCueTeleport = (cueIndex) => {
+    if (!bridgeState.manager) return;
+    const state = bridgeState.manager.getState();
+    if (state.isPlaying && state.clipTriggerQuantization > 0) return;
+    const cues =
+      contextSong && Array.isArray(contextSong.cuePoints) ? contextSong.cuePoints : PEER_CUES;
+    const cue = cues.find((c) => c.cueIndex === cueIndex);
+    if (cue && Number.isFinite(cue.time)) {
+      applyTransport(cue.time, state.isPlaying);
+    }
+  };
   return {
     isConnected: true,
     startPlaying: (...args) => {
@@ -90,12 +101,7 @@ export function createChildFakeOsc(logFile) {
     setClipTriggerQuantization: log('setClipTriggerQuantization'),
     jumpToCuePoint: (cueIndex, ...rest) => {
       recordOsc(logFile, 'jumpToCuePoint', cueIndex, ...rest);
-      const cues = contextSong?.cuePoints ?? PEER_CUES;
-      const cue = Array.isArray(cues) ? cues.find((c) => c.cueIndex === cueIndex) : null;
-      if (cue && typeof cue.time === 'number' && Number.isFinite(cue.time)) {
-        const isPlaying = bridgeState.manager?.getState().isPlaying ?? false;
-        applyTransport(cue.time, isPlaying);
-      }
+      applyCueTeleport(cueIndex);
     },
     send: log('send'),
     getCuePoints: log('getCuePoints'),
@@ -176,6 +182,9 @@ const IPC_HANDLERS = {
     const songTime = Number(msg.songTime ?? 0);
     const playing = Boolean(msg.isPlaying);
     const tempo = typeof msg.tempo === 'number' ? msg.tempo : undefined;
+    if (typeof msg.quantization === 'number') {
+      bridgeState.manager?.updateQuantization(msg.quantization);
+    }
     bridgeState.manager?.updateTransport(songTime, playing, tempo);
     broadcastState();
     replyAck(msg);

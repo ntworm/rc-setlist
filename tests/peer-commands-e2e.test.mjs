@@ -458,7 +458,13 @@ test('A6: unreachable stop raises stop_unacked after 1s and executes on reconnec
 
 test('A5.4: quantized jump while playing confirms cleanly instead of expiring on deadline', async () => {
   bridgeState.manager.updateQuantization(4);
-  bridgeState.manager.updateTransport(1, true);
+  bridgeState.manager.updateTransport(3.8, true);
+  await ipcRequest(ctx.child, {
+    type: 'set_transport',
+    songTime: 3.8,
+    isPlaying: true,
+    quantization: 4,
+  });
   const beforeCalls = readLogCalls(ctx.childLog).length;
   ctx.tracker.send({ type: 'jump', songIndex: 1, commandId: 'a54-qjump' });
   const done = await ctx.tracker.waitTerminal('a54-qjump', 3000);

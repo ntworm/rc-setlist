@@ -180,6 +180,13 @@ for (const locale of ['en', 'pt-BR']) {
     await expect(alert).toHaveText(c.stillNotStopped);
 
     await emitCommandStatus(request, {
+      commandId: 'other-panic-off',
+      commandType: 'set_panic',
+      status: 'confirmed',
+    });
+    await expect(alert).toHaveText(c.stillNotStopped);
+
+    await emitCommandStatus(request, {
       commandId: 'stop-1',
       commandType: 'stop',
       status: 'confirmed',
