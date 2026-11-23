@@ -998,6 +998,39 @@ select {
   color: var(--p-warn);
 }
 
+.peer-alerts-box {
+  display: grid;
+  gap: 4px;
+  margin: 6px 0 0;
+}
+
+.peer-alert-item {
+  padding: 4px 6px;
+  border: 1px solid var(--p-rule);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.peer-alert-item.error {
+  border-color: var(--p-error);
+  color: var(--p-error);
+}
+
+.peer-alert-item.warning {
+  border-color: var(--p-warn);
+  color: var(--p-warn);
+}
+
+.peer-auto-correct-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 6px;
+  font-size: 11px;
+  color: var(--p-text-2);
+  cursor: pointer;
+}
+
 .peer-found {
   margin: 0 0 8px;
 }

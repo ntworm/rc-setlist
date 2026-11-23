@@ -245,6 +245,172 @@
   }
 
   /**
+   * Maps a peer_command_status value to its 3-second tick key and semantic tone.
+   */
+  function classifyCommandTick(status) {
+    if (status === 'pending') return { key: 'peer.tick.pending', tone: 'is-warning' };
+    if (status === 'confirmed' || status === 'late_confirmed') {
+      return { key: 'peer.tick.confirmed', tone: 'is-ok' };
+    }
+    if (status === 'failed' || status === 'expired' || status === 'stop_unacked') {
+      return { key: 'peer.tick.failed', tone: 'is-error' };
+    }
+    return null;
+  }
+
+  /**
+   * Formats a single command alert entry into localized text and semantic tone.
+   */
+  function formatCommandAlert(alert) {
+    const cmd = alert.commandType || 'command';
+    if (alert.status === 'stop_unacked') {
+      return { text: translate('peer.alert.stillNotStopped'), tone: 'is-error' };
+    }
+    if (alert.status === 'late_confirmed') {
+      return { text: translate('peer.alert.executedLate', { command: cmd }), tone: 'is-warning' };
+    }
+    return { text: translate('peer.alert.notExecuted', { command: cmd }), tone: 'is-error' };
+  }
+
+  /**
+   * Renders `#peerCommandTicks` from active 3-second per-computer tick entries.
+   */
+  function renderCommandTicks(ctx) {
+    const box = ctx.doc?.getElementById?.('peerCommandTicks');
+    if (!box) return;
+    const entries = [...ctx.ticksByKey.values()];
+    if (entries.length === 0) {
+      box.hidden = true;
+      box.replaceChildren?.();
+      return;
+    }
+    box.hidden = false;
+    const nodes = entries.map((entry) => {
+      const chip = ctx.doc.createElement('span');
+      chip.className = `peer-command-tick ${entry.tone}`;
+      chip.dataset.peerKey = entry.peerKey;
+      const host = rowHostLabel(entry);
+      chip.textContent = `${host} \u00b7 ${entry.commandType}: ${translate(entry.labelKey)}`;
+      return chip;
+    });
+    box.replaceChildren(...nodes);
+  }
+
+  /**
+   * Renders `#peerCommandAlert` from active per-computer command alerts.
+   */
+  function renderCommandAlerts(ctx) {
+    const banner = ctx.doc?.getElementById?.('peerCommandAlert');
+    if (!banner) return;
+    const alerts = [...ctx.alertsByKey.values()];
+    if (alerts.length === 0) {
+      banner.hidden = true;
+      banner.textContent = '';
+      applyToneClass(banner, '');
+      return;
+    }
+    const formatted = alerts.map(formatCommandAlert);
+    const hasError = formatted.some((item) => item.tone === 'is-error');
+    banner.hidden = false;
+    applyToneClass(banner, hasError ? 'is-error' : 'is-warning');
+    banner.textContent = formatted.map((item) => item.text).join(' \u00b7 ');
+  }
+
+  /**
+   * Updates per-computer 3-second tick state for an incoming `peer_command_status` frame.
+   */
+  function updateTickState(ctx, peerKey, payload) {
+    const existing = ctx.ticksByKey.get(peerKey);
+    if (existing?.timer) clearTimeout(existing.timer);
+    const tick = classifyCommandTick(payload.status);
+    if (!tick) {
+      ctx.ticksByKey.delete(peerKey);
+      renderCommandTicks(ctx);
+      return;
+    }
+    const timer = setTimeout(() => {
+      ctx.ticksByKey.delete(peerKey);
+      renderCommandTicks(ctx);
+    }, 3000);
+    timer.unref?.();
+    ctx.ticksByKey.set(peerKey, {
+      peerKey,
+      host: payload.host,
+      port: payload.port,
+      commandType: payload.commandType || 'command',
+      labelKey: tick.key,
+      tone: tick.tone,
+      timer,
+    });
+    renderCommandTicks(ctx);
+  }
+
+  const ERROR_ALERT_STATUSES = new Set(['stop_unacked', 'expired', 'failed']);
+
+  /**
+   * Updates `#peerCommandAlert` state for an incoming `peer_command_status` frame.
+   */
+  function updateAlertState(ctx, peerKey, payload) {
+    const status = payload.status;
+    const commandId = payload.commandId || '';
+    const commandType = payload.commandType || 'command';
+    if (ERROR_ALERT_STATUSES.has(status) || status === 'late_confirmed') {
+      ctx.alertsByKey.set(peerKey, { commandId, commandType, status });
+    } else if (status === 'confirmed') {
+      const prev = ctx.alertsByKey.get(peerKey);
+      if (prev?.status === 'stop_unacked' || prev?.commandId === commandId) {
+        ctx.alertsByKey.delete(peerKey);
+      }
+    }
+    renderCommandAlerts(ctx);
+  }
+
+  /**
+   * Clears all command tick timers, ticks, and command alert banners.
+   */
+  function clearCommandFeedback(ctx) {
+    for (const item of ctx.ticksByKey.values()) {
+      if (item.timer) clearTimeout(item.timer);
+    }
+    ctx.ticksByKey.clear();
+    ctx.alertsByKey.clear();
+    renderCommandTicks(ctx);
+    renderCommandAlerts(ctx);
+  }
+
+  /**
+   * Applies an incoming show state snapshot to the peer health UI controller context.
+   */
+  function observeControllerState(ctx, state) {
+    ctx.peerStatus = state?.peerStatus || null;
+    ctx.peerStatuses = Array.isArray(state?.peerStatuses) ? state.peerStatuses : [];
+    ctx.isPlaying = Boolean(state?.isPlaying);
+    globalScope.RcPeerStatus?.applyPeerStatus(ctx.peerStatus, { document: ctx.doc });
+    ctx.alarm?.update({
+      paired: Boolean(ctx.peerStatus?.paired),
+      health: ctx.peerStatus?.health,
+      isPlaying: ctx.isPlaying,
+    });
+    renderHealthBar(ctx, false);
+    updateAlarmOverlay(ctx);
+  }
+
+  /**
+   * Resets all controller state and clears DOM surfaces on disconnect.
+   */
+  function resetControllerState(ctx) {
+    ctx.peerStatus = null;
+    ctx.peerStatuses = [];
+    ctx.isPlaying = false;
+    ctx.lastSeenByKey.clear();
+    ctx.alarm?.reset();
+    globalScope.RcPeerStatus?.applyPeerStatus(null, { document: ctx.doc });
+    clearHealthBar(ctx);
+    clearCommandFeedback(ctx);
+    updateAlarmOverlay(ctx);
+  }
+
+  /**
    * Wires click handlers for peer acknowledgement and alarm dismissal once per controller.
    */
   function bindControllerEvents(ctx) {
@@ -269,6 +435,8 @@
       doc: options.document || globalScope.document,
       alarm: globalScope.RcPeerStatus?.createPeerAlarmController?.(),
       lastSeenByKey: new Map(),
+      ticksByKey: new Map(),
+      alertsByKey: new Map(),
       peerStatus: null,
       peerStatuses: [],
       isPlaying: false,
@@ -281,19 +449,7 @@
     bindControllerEvents(ctx);
 
     return {
-      observeState(state) {
-        ctx.peerStatus = state?.peerStatus || null;
-        ctx.peerStatuses = Array.isArray(state?.peerStatuses) ? state.peerStatuses : [];
-        ctx.isPlaying = Boolean(state?.isPlaying);
-        globalScope.RcPeerStatus?.applyPeerStatus(ctx.peerStatus, { document: ctx.doc });
-        ctx.alarm?.update({
-          paired: Boolean(ctx.peerStatus?.paired),
-          health: ctx.peerStatus?.health,
-          isPlaying: ctx.isPlaying,
-        });
-        renderHealthBar(ctx, false);
-        updateAlarmOverlay(ctx);
-      },
+      observeState: (state) => observeControllerState(ctx, state),
       observePeerHealthEvent(payload) {
         if (!payload || payload.type !== 'peer_health' || typeof payload.key !== 'string') return;
         ctx.lastSeenByKey.set(payload.key, {
@@ -303,21 +459,21 @@
         });
         refreshRowMetrics(ctx);
       },
+      observePeerCommandStatus(payload) {
+        if (!payload || payload.type !== 'peer_command_status') return;
+        const peerKey = rowKeyFor({ key: payload.peerKey, host: payload.host, port: payload.port });
+        if (!peerKey) return;
+        updateTickState(ctx, peerKey, payload);
+        updateAlertState(ctx, peerKey, payload);
+      },
       onLocaleChange() {
         globalScope.RcPeerStatus?.applyPeerStatus(ctx.peerStatus, { document: ctx.doc });
         renderHealthBar(ctx, true);
+        renderCommandTicks(ctx);
+        renderCommandAlerts(ctx);
         updateAlarmOverlay(ctx);
       },
-      reset() {
-        ctx.peerStatus = null;
-        ctx.peerStatuses = [];
-        ctx.isPlaying = false;
-        ctx.lastSeenByKey.clear();
-        ctx.alarm?.reset();
-        globalScope.RcPeerStatus?.applyPeerStatus(null, { document: ctx.doc });
-        clearHealthBar(ctx);
-        updateAlarmOverlay(ctx);
-      },
+      reset: () => resetControllerState(ctx),
     };
   }
 

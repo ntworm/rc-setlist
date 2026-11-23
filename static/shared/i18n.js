@@ -298,6 +298,25 @@
       'pt-BR': 'VERS\u00d5ES DIFERENTES',
     },
     'peer.transportBadge.certificateChanged': { en: 'CERT MISMATCH', 'pt-BR': 'CERTIFICADO MUDOU' },
+    'peer.alert.notExecuted': {
+      en: 'SLAVE DID NOT EXECUTE: {command}',
+      'pt-BR': 'SLAVE N\u00c3O EXECUTOU: {command}',
+    },
+    'peer.alert.stillNotStopped': {
+      en: 'SLAVE STILL NOT STOPPED',
+      'pt-BR': 'SLAVE AINDA N\u00c3O PAROU',
+    },
+    'peer.alert.executedLate': {
+      en: 'Executed late: {command}',
+      'pt-BR': 'Executou atrasado: {command}',
+    },
+    'peer.tick.confirmed': { en: 'Executed', 'pt-BR': 'Executou' },
+    'peer.tick.failed': { en: 'Failed', 'pt-BR': 'Falhou' },
+    'peer.tick.pending': { en: 'Pending', 'pt-BR': 'Pendente' },
+    'panel.peerAutoCorrect': {
+      en: 'Auto-correct playhead on slave',
+      'pt-BR': 'Corrigir agulha automaticamente no slave',
+    },
 
     'performance.name': { en: 'Performance', 'pt-BR': 'Performance' },
     'performance.brandAria': { en: 'RC Setlist Performance', 'pt-BR': 'Performance do RC Setlist' },

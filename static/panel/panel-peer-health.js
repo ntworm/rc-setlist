@@ -249,9 +249,59 @@
   }
 
   /**
-   * Renders all paired computer rows into `#peerList`.
+   * Formats a localized alert string from a panel alert record.
+   */
+  function formatPanelAlert(alert) {
+    if (!alert) return '';
+    const cmd = alert.commandType || 'command';
+    if (alert.status === 'stop_unacked') return translate('peer.alert.stillNotStopped');
+    if (alert.status === 'late_confirmed') {
+      return translate('peer.alert.executedLate', { command: cmd });
+    }
+    if (alert.status === 'expired' || alert.status === 'failed') {
+      return translate('peer.alert.notExecuted', { command: cmd });
+    }
+    return alert.text || '';
+  }
+
+  /**
+   * Renders active peer command alerts into `#peerAlertsBox`.
+   */
+  function renderPeerAlerts(peer) {
+    const box = shell.el('peerAlertsBox');
+    if (!box) return;
+    box.textContent = '';
+    const entries = peer?.alerts ? Object.values(peer.alerts).filter(Boolean) : [];
+    box.hidden = entries.length === 0;
+    for (const alert of entries) {
+      const line = document.createElement('div');
+      const tone = alert.status === 'late_confirmed' ? 'warning' : 'error';
+      line.className = `peer-alert-item ${tone}`;
+      line.textContent = formatPanelAlert(alert);
+      box.appendChild(line);
+    }
+  }
+
+  /**
+   * Synchronizes `#chkPeerAutoCorrect` and binds its change listener once.
+   */
+  function syncAutoCorrectToggle(peer) {
+    const chk = shell.el('chkPeerAutoCorrect');
+    if (!chk) return;
+    chk.checked = peer?.autoCorrect !== false;
+    if (chk.dataset.boundAutoCorrect === '1') return;
+    chk.dataset.boundAutoCorrect = '1';
+    chk.addEventListener('change', () => {
+      shell.sendAction('toggle-peer-auto-correct');
+    });
+  }
+
+  /**
+   * Renders all paired computer rows into `#peerList`, plus command alerts and auto-correct toggle.
    */
   function renderPeerList(peer) {
+    renderPeerAlerts(peer);
+    syncAutoCorrectToggle(peer);
     const list = shell.el('peerList');
     if (!list) return;
     const peers = peer?.peers || [];

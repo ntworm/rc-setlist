@@ -49,6 +49,7 @@ const PLAIN_ACTIONS: ReadonlySet<string> = new Set([
   'diagnose-osc',
   'toggle-auto-start',
   'toggle-write-tempo',
+  'toggle-peer-auto-correct',
   'refresh',
   'select-address',
   'select-profile',

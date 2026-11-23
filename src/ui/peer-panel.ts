@@ -3,21 +3,12 @@
 // Source: https://github.com/ntworm/ableton-rc-setlist
 //
 // The second computer, as the Live panel sees it.
-//
-// Two computers can run the show. The main one holds Live and the panel; the
-// second one follows it, transport and all. The two are paired by hand: the
-// second one prints a six-digit code and the operator types it, together with
-// the second computer's address, into the panel of the main one. The main one
-// may hold several second computers at once, and each of them is forgotten on
-// its own. A code read over a table of gear is the only credential an
-// operator can carry from one machine to the other.
-//
-// Nothing here opens a socket on its own. With no pair configured the panel
-// says so, the stage page shows no dot, and the extension talks to nobody.
+// Nothing here opens a socket on its own.
 
 import {
   clearPeerConfig,
   clearSlaveRole,
+  getPeerAutoCorrect,
   getUiLocale,
   readPeerConfigs,
   removePeerConfig,
@@ -42,18 +33,27 @@ import { bridgeState, readPeerRole, type PeerRole } from '../runtime/bridge-stat
 import { getLanAddresses, pickLanIps } from '../util/helpers.js';
 import { roleText } from './peer-role-text.js';
 import {
+  buildPeerPanelAlerts,
   buildPeerPanelRows,
   parsePeerAckAction,
   peerPanelState,
   peerStateText,
   type PeerAckAction,
   type PeerLastSeenSource,
+  type PeerPanelAlertDisplay,
   type PeerPanelState,
   type PeerRowDisplay,
 } from './peer-panel-health.js';
 import type { PeerLinkStatus } from '../types.js';
 
-export { peerPanelState, peerStateText, type PeerPanelState };
+export {
+  buildPeerPanelAlerts,
+  formatPeerAlertText,
+  peerPanelState,
+  peerStateText,
+  type PeerPanelAlertDisplay,
+  type PeerPanelState,
+} from './peer-panel-health.js';
 
 /** The prefix every peer action carries. */
 const PAIR_PREFIX = 'peer-pair:';
@@ -122,6 +122,10 @@ export interface PeerPanelModel {
   masterAddress?: string;
   /** Whether the main computer is talking to this one right now. */
   slaveConnected?: boolean;
+  /** Whether automatic playhead correction on the slave is enabled. */
+  autoCorrect?: boolean;
+  /** Active command execution alerts keyed by peer key. */
+  alerts?: Record<string, PeerPanelAlertDisplay>;
 }
 
 /** Why a pairing was refused, in the two languages the panel speaks. */
@@ -486,5 +490,7 @@ export function peerPanelModel(options: PeerPanelOptions = {}): PeerPanelModel {
     roleText: roleText(role, locale, peers),
     masterAddress,
     slaveConnected: isSlaveConnected(role),
+    autoCorrect: getPeerAutoCorrect(),
+    alerts: buildPeerPanelAlerts(bridgeState.peerAlerts, locale),
   };
 }

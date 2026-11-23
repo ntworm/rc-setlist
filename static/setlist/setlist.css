@@ -2265,9 +2265,68 @@ body.show-mode .control-pane {
 /* ===== Peer health & R2-11 alarm ===== */
 
 .peer-health-bar[hidden],
+.peer-command-alert[hidden],
+.peer-command-ticks[hidden],
 .peer-transport-badge[hidden],
 .peer-alarm-overlay[hidden] {
   display: none !important;
+}
+
+.peer-command-alert {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  padding: 0.45rem 0.75rem;
+  border: 1px solid var(--ui-danger);
+  border-radius: var(--ui-radius);
+  background: var(--ui-danger-soft);
+  color: var(--ui-danger-ink);
+  font-size: var(--t-stage-micro);
+  font-weight: 850;
+  line-height: var(--ui-line-accent-safe);
+  text-transform: uppercase;
+}
+
+.peer-command-alert.is-warning {
+  border-color: var(--ui-accent);
+  background: var(--ui-accent-soft);
+  color: var(--ui-accent-ink);
+}
+
+.peer-command-ticks {
+  flex: 0 0 auto;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 0.6rem;
+}
+
+.peer-command-tick {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.2rem 0.5rem;
+  border: 1px solid var(--ui-rule);
+  border-radius: var(--ui-radius);
+  font-family: var(--ui-mono);
+  font-size: var(--t-stage-micro);
+  font-weight: 750;
+}
+
+.peer-command-tick.is-ok {
+  border-color: var(--ui-success);
+  background: var(--ui-success-soft);
+  color: var(--ui-success-ink);
+}
+
+.peer-command-tick.is-warning {
+  border-color: var(--ui-accent);
+  background: var(--ui-accent-soft);
+  color: var(--ui-accent-ink);
+}
+
+.peer-command-tick.is-error {
+  border-color: var(--ui-danger);
+  background: var(--ui-danger-soft);
+  color: var(--ui-danger-ink);
 }
 
 .peer-health-bar {

@@ -18,8 +18,10 @@ import { resolveLanSnapshot } from '../server/lan-address.js';
 import { certCoversRequiredAltNames, hasLocalCa, httpsOptions } from '../server/cert.js';
 import {
   getAutoStart,
+  getPeerAutoCorrect,
   getUiLocale,
   setAutoStart,
+  setPeerAutoCorrect,
   setUiLocale,
   type UiLocale,
   getWriteTempoOnJump,
@@ -148,10 +150,8 @@ export async function showPanelDialog(context: ModalContext): Promise<void> {
         log.info('lifecycle', 'restarting server');
         await stopServer();
         await startServer();
-      } else if (envelope.action === 'toggle-auto-start') {
-        toggleAutoStart();
-      } else if (envelope.action === 'toggle-write-tempo') {
-        toggleWriteTempo();
+      } else if (isOptionToggleAction(envelope.action)) {
+        runOptionToggleAction(envelope.action);
       } else if (envelope.action === 'diagnose-osc' && running) {
         requestOscDiagnosticProbe();
         await new Promise<void>((resolve) => setTimeout(resolve, 350));
@@ -177,6 +177,20 @@ function logPanelAction(envelope: PanelEnvelope): void {
   });
 }
 
+function isOptionToggleAction(action: string): boolean {
+  return (
+    action === 'toggle-auto-start' ||
+    action === 'toggle-write-tempo' ||
+    action === 'toggle-peer-auto-correct'
+  );
+}
+
+function runOptionToggleAction(action: string): void {
+  if (action === 'toggle-auto-start') toggleAutoStart();
+  else if (action === 'toggle-write-tempo') toggleWriteTempo();
+  else if (action === 'toggle-peer-auto-correct') togglePeerAutoCorrect();
+}
+
 /**
  * Turns the automatic start of the server around.
  */
@@ -194,6 +208,16 @@ function toggleWriteTempo(): void {
   const ok = setWriteTempoOnJump(next);
   bridgeState.writeTempoOnJump = next;
   log.info('panel', 'write-tempo-on-jump toggled', { next, writeOk: ok });
+}
+
+/**
+ * Turns automatic playhead correction on the second computer around.
+ */
+function togglePeerAutoCorrect(): void {
+  const next = !getPeerAutoCorrect();
+  const ok = setPeerAutoCorrect(next);
+  bridgeState.peerAutoCorrect = next;
+  log.info('panel', 'peer-auto-correct toggled', { next, writeOk: ok });
 }
 
 /**

@@ -6,7 +6,7 @@
 // for the Live panel.
 
 import type { UiLocale } from '../preferences.js';
-import type { PeerHealthReason, PeerLinkStatus, PeerStatus } from '../types.js';
+import type { PeerCommandAlert, PeerHealthReason, PeerLinkStatus, PeerStatus } from '../types.js';
 
 /** The states the panel can show for the second computer. */
 export type PeerPanelState =
@@ -257,4 +257,52 @@ export function buildPeerPanelRows<TRow extends PeerLinkStatus>(
     ...row,
     ...peerRowDisplay(row, locale, resolveRowLastSeen(row, lastSeenByKey, inboundLastSeenAt)),
   }));
+}
+
+/** Display model for an active peer command alert in the Live panel. */
+export interface PeerPanelAlertDisplay {
+  peerKey: string;
+  commandId: string;
+  commandType: string;
+  status: string;
+  text: string;
+}
+
+/**
+ * Formats an active peer command alert into localized EN or pt-BR operator text.
+ */
+export function formatPeerAlertText(
+  alert: Pick<PeerCommandAlert, 'commandType' | 'status'>,
+  locale: UiLocale,
+): string {
+  const cmd = alert.commandType || 'command';
+  if (alert.status === 'stop_unacked') {
+    return locale === 'pt-BR' ? 'SLAVE AINDA N\u00c3O PAROU' : 'SLAVE STILL NOT STOPPED';
+  }
+  if (alert.status === 'late_confirmed') {
+    return locale === 'pt-BR' ? `Executou atrasado: ${cmd}` : `Executed late: ${cmd}`;
+  }
+  return locale === 'pt-BR' ? `SLAVE N\u00c3O EXECUTOU: ${cmd}` : `SLAVE DID NOT EXECUTE: ${cmd}`;
+}
+
+/**
+ * Builds localized Live panel alert records keyed by peer key.
+ */
+export function buildPeerPanelAlerts(
+  alerts: Readonly<Record<string, PeerCommandAlert>> | undefined,
+  locale: UiLocale,
+): Record<string, PeerPanelAlertDisplay> {
+  const out: Record<string, PeerPanelAlertDisplay> = {};
+  if (!alerts) return out;
+  for (const [peerKey, alert] of Object.entries(alerts)) {
+    if (!alert) continue;
+    out[peerKey] = {
+      peerKey,
+      commandId: alert.commandId,
+      commandType: alert.commandType,
+      status: alert.status,
+      text: formatPeerAlertText(alert, locale),
+    };
+  }
+  return out;
 }

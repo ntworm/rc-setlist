@@ -9,6 +9,8 @@ import {
   resolveSessionAddress,
 } from '../src/ui/panel-session.ts';
 import { isSetlistAction } from '../src/ui/panel-setlists.ts';
+import { buildPeerPanelAlerts, formatPeerAlertText, peerPanelModel } from '../src/ui/peer-panel.ts';
+import { bridgeState } from '../src/runtime/bridge-state.ts';
 
 test('the panel session starts on the main section', () => {
   const session = createPanelSession();
@@ -24,6 +26,7 @@ test('the actions the panel has always sent are still understood', () => {
     'diagnose-osc',
     'toggle-auto-start',
     'toggle-write-tempo',
+    'toggle-peer-auto-correct',
     'set-language:en',
     'set-language:pt-BR',
     'peer-code',
@@ -243,4 +246,50 @@ test('the addresses of the panel are plain IPv4 addresses', () => {
   assert.equal(isIpv4Address('192.168.1'), false);
   assert.equal(isIpv4Address('192.168.1.50 '), false);
   assert.equal(isIpv4Address(''), false);
+});
+
+test('formatPeerAlertText and buildPeerPanelAlerts format EN and pt-BR alerts', () => {
+  assert.equal(
+    formatPeerAlertText({ commandType: 'jump', status: 'expired' }, 'en'),
+    'SLAVE DID NOT EXECUTE: jump',
+  );
+  assert.equal(
+    formatPeerAlertText({ commandType: 'jump', status: 'expired' }, 'pt-BR'),
+    'SLAVE N\u00c3O EXECUTOU: jump',
+  );
+  assert.equal(
+    formatPeerAlertText({ commandType: 'stop', status: 'stop_unacked' }, 'en'),
+    'SLAVE STILL NOT STOPPED',
+  );
+  assert.equal(
+    formatPeerAlertText({ commandType: 'stop', status: 'stop_unacked' }, 'pt-BR'),
+    'SLAVE AINDA N\u00c3O PAROU',
+  );
+  assert.equal(
+    formatPeerAlertText({ commandType: 'play', status: 'late_confirmed' }, 'en'),
+    'Executed late: play',
+  );
+  assert.equal(
+    formatPeerAlertText({ commandType: 'play', status: 'late_confirmed' }, 'pt-BR'),
+    'Executou atrasado: play',
+  );
+
+  const prev = bridgeState.peerAlerts;
+  try {
+    bridgeState.peerAlerts = {
+      '10.0.0.2:4444': {
+        commandId: 'c1',
+        commandType: 'jump',
+        status: 'expired',
+        at: 1000,
+      },
+    };
+    const alerts = buildPeerPanelAlerts(bridgeState.peerAlerts, 'pt-BR');
+    assert.equal(alerts['10.0.0.2:4444'].text, 'SLAVE N\u00c3O EXECUTOU: jump');
+    const model = peerPanelModel({ locale: 'en' });
+    assert.equal(typeof model.autoCorrect, 'boolean');
+    assert.equal(model.alerts['10.0.0.2:4444'].text, 'SLAVE DID NOT EXECUTE: jump');
+  } finally {
+    bridgeState.peerAlerts = prev;
+  }
 });

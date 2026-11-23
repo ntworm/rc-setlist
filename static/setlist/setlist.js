@@ -1510,6 +1510,8 @@ function connect() {
         playCountInStarted(payload.sendPlayOffsetMs);
       } else if (payload.type === 'peer_health') {
         peerHealthUi?.observePeerHealthEvent(payload);
+      } else if (payload.type === 'peer_command_status') {
+        peerHealthUi?.observePeerCommandStatus(payload);
       } else if (payload.type === 'error') {
         lyricsSaveTracker.failAll('server_error');
         // A refused setlist command never gets a status of its own: the list
