@@ -44,13 +44,15 @@ export function handlePeerPair(req: http.IncomingMessage, res: http.ServerRespon
   const code = url.searchParams.get('code');
   const encrypted = (req.socket as TLSSocket | undefined)?.encrypted === true;
   if (!code || !encrypted) {
-    res.writeHead(404, { 'Content-Type': 'text/plain' }).end('not found\n');
+    res.writeHead(404, { 'Content-Type': 'text/plain' });
+    res.end('not found\n');
     return;
   }
   const rawAddr = req.socket?.remoteAddress ?? 'unknown';
   const refusal = REFUSALS[attemptPairing(code, rawAddr).status];
   if (refusal) {
-    res.writeHead(refusal[0], { 'Content-Type': 'text/plain' }).end(refusal[1]);
+    res.writeHead(refusal[0], { 'Content-Type': 'text/plain' });
+    res.end(refusal[1]);
     return;
   }
   const masterAddress = rawAddr.startsWith('::ffff:') ? rawAddr.slice(7) : rawAddr;

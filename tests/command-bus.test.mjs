@@ -432,18 +432,14 @@ test('timeouts expire once without emitting retry_required', async () => {
 
 test('trigger_count_in respects criticalCommandsLocked', async () => {
   const { bus, manager } = createBus();
-  const send = (id, fn) => {
-    const cmd = bus.registerCommand(id, 'trigger_count_in', {}, 'test');
-    const done = settled(bus, cmd.commandId);
-    bus.dispatch(cmd, fn);
-    return done;
-  };
+  const reg = (id) => bus.registerCommand(id, 'trigger_count_in', {}, 'test');
   manager.setCriticalCommandsLocked(true);
-  assert.equal(
-    (await send('ci-lock', () => assert.fail('locked'))).reason,
-    'critical_commands_locked',
-  );
+  const [a, ad] = [reg('ci-lock'), settled(bus, 'ci-lock')];
+  bus.dispatch(a, () => assert.fail('locked'));
+  assert.equal((await ad).reason, 'critical_commands_locked');
   manager.setCriticalCommandsLocked(false);
-  assert.equal((await send('ci-open', () => {})).status, 'confirmed');
+  const [b, bd] = [reg('ci-open'), settled(bus, 'ci-open')];
+  bus.dispatch(b, () => {});
+  assert.equal((await bd).status, 'confirmed');
   bus.stop();
 });

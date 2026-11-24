@@ -52,13 +52,15 @@ export async function resolveServerDirectHost(
   resolveLan: () => Promise<{ primary: string; others: string[] }> = resolveLanAddress,
 ): Promise<string> {
   if (tlsOptions === null) return '';
-  const candidate =
-    options.directHost !== undefined
-      ? (options.directHost ?? '')
-      : await resolveLan().then(
-          (r) => r.primary,
-          () => '',
-        );
-  if (!isStrictNonLoopbackIpv4(candidate)) return '';
-  return certCoversRequiredAltNames(tlsOptions.cert, [candidate]) ? candidate : '';
+  let candidate: string;
+  try {
+    candidate =
+      options.directHost !== undefined
+        ? (options.directHost ?? '')
+        : ((await resolveLan())?.primary ?? '');
+  } catch {
+    return '';
+  }
+  const ok = isStrictNonLoopbackIpv4(candidate);
+  return ok && certCoversRequiredAltNames(tlsOptions.cert, [candidate]) ? candidate : '';
 }

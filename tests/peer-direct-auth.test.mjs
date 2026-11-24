@@ -16,54 +16,48 @@ import { createHttpRequestListener, setPeerToken } from '../src/server/http.ts';
 import * as hp from '../src/server/http-peer.ts';
 import * as h from '../src/util/helpers.ts';
 
-function mkCtx() {
+const mkCtx = () => {
   const dir = fs.mkdtempSync(path.join(tmpdir(), 'rc-d-'));
   ctx.setExtensionContext({ environment: { storageDirectory: dir } });
   return dir;
-}
-
-function rmCtx(dir) {
+};
+const rmCtx = (dir) => {
   for (const fn of [setPeerToken, hp.setDirectToken, hp.setDirectHost]) fn('');
   pairing.resetPairingState();
   ctx.clearExtensionContext();
   fs.rmSync(dir, { recursive: true, force: true });
-}
-
+};
 function callPairRaw() {
   let body = '';
   const sock = { encrypted: true, remoteAddress: '127.0.0.1' };
   const url = `/peer/pair?code=${pairing.generatePairingCode()}`;
-  const res = { writeHead: () => res, end: (s) => (body = s) };
+  const res = { writeHead: () => {}, end: (s) => (body = s) };
   hp.handlePeerPair({ url, headers: {}, socket: sock }, res);
   return JSON.parse(body);
 }
-
-async function makeTlsCert(ip) {
-  const alt = (t, v) => (t === 2 ? { type: 2, value: v } : { type: 7, ip: v });
-  const alts = [alt(2, 'localhost'), alt(7, '127.0.0.1'), alt(7, ip)];
-  const cn = [{ name: 'commonName', value: 'localhost' }];
-  const p = await selfsigned.generate(cn, {
-    extensions: [{ name: 'subjectAltName', altNames: alts }],
-  });
-  return { key: Buffer.from(p.private), cert: Buffer.from(p.cert) };
-}
-
+const san = ['localhost', '127.0.0.1', '192.168.1.44'].map((v, i) =>
+  i ? { type: 7, ip: v } : { type: 2, value: v },
+);
+const ext = [{ name: 'subjectAltName', altNames: san }];
+const pems = await selfsigned.generate([], { extensions: ext });
+const tls = { key: Buffer.from(pems.private), cert: Buffer.from(pems.cert) };
 function assertRegen(fn, file, bads, prev) {
   for (const bad of bads) {
     fs.writeFileSync(file, bad);
     const nx = fn();
-    assert.equal(/^[0-9a-f]{32}$/.test(nx) && nx !== prev && nx !== bad.trim(), true);
-    assert.equal(fs.readFileSync(file, 'utf8'), nx);
+    assert.equal(nx !== prev && nx !== bad.trim() && fs.readFileSync(file, 'utf8') === nx, true);
+    assert.match(nx, /^[0-9a-f]{32}$/);
   }
 }
 
 test('validators and token persistence reject invalid, whitespace, and collisions', () => {
-  const badIps = [null, '', '192.168.01.1', '0.0.0.0', '127.0.0.1', '224.0.0.1'];
+  const badIps1 = [null, '', '192.168.01.1', '0.0.0.0', '127.0.0.1', '224.0.0.1'];
   const badToks = [null, '', ' a', 'a ', 'a\nb', 'a\x00b', 'a\x7fb', 'a\u0080b', 'a\u00a0b'];
-  for (const v of ['192.168.1.10', '10.0.0.5']) assert.equal(h.isStrictNonLoopbackIpv4(v), true);
-  for (const v of badIps) assert.equal(h.isStrictNonLoopbackIpv4(v), false);
-  for (const v of ['abc123', '!-~']) assert.equal(h.isValidScopedToken(v), true);
-  for (const v of badToks) assert.equal(h.isValidScopedToken(v), false);
+  const chk = (f, a, e) => a.forEach((v) => assert.equal(f(v), e));
+  chk(h.isStrictNonLoopbackIpv4, ['192.168.1.10', '10.0.0.5'], true);
+  chk(h.isStrictNonLoopbackIpv4, [...badIps1, '192.168.1.256', '192.168.1', '192.168.1.1 '], false);
+  chk(h.isValidScopedToken, ['abc123', '!-~'], true);
+  chk(h.isValidScopedToken, badToks, false);
   const dir = mkCtx();
   const prev = { ...bs };
   const [dp, pp] = [path.join(dir, 'direct-token'), path.join(dir, 'peer-token')];
@@ -88,8 +82,9 @@ test('validators and token persistence reject invalid, whitespace, and collision
 
 test('/peer/pair, PeerConfig, and sameConfig handle optional directToken/directHost', async () => {
   const dir = mkCtx();
-  pairing.resetPairingState();
-  const srv = https.createServer(await makeTlsCert('192.168.1.44'), createHttpRequestListener());
+  let overrideBody = null;
+  const app = createHttpRequestListener();
+  const srv = https.createServer(tls, (q, s) => (overrideBody ? s.end(overrideBody) : app(q, s)));
   await new Promise((r) => srv.listen(0, '127.0.0.1', r));
   try {
     setPeerToken('peer-abc');
@@ -100,7 +95,7 @@ test('/peer/pair, PeerConfig, and sameConfig handle optional directToken/directH
     const r2 = await pairing.pair('127.0.0.1', pairing.generatePairingCode(), srv.address().port);
     const c = r2.config;
     assert.equal(r2.ok && c.directToken === 'direct-xyz' && c.directHost === '192.168.1.44', true);
-    assert.equal(prefs.readPeerConfig()?.directToken, 'direct-xyz');
+    assert.deepEqual(prefs.readPeerConfig(), c);
     assert.equal(sameConfig(c, { ...c }) && !sameConfig(c, { ...c, directToken: 'o' }), true);
     assert.equal(sameConfig(c, { ...c, directHost: '10.0.0.9' }), false);
     for (const t of [null, 'bad token', 'peer-abc']) {
@@ -108,8 +103,11 @@ test('/peer/pair, PeerConfig, and sameConfig handle optional directToken/directH
       hp.setDirectHost(t ? '127.0.0.1' : null);
       assert.deepEqual(callPairRaw(), { peerToken: 'peer-abc' });
     }
-    for (const bad of [{ directToken: 'peer-abc' }, { directHost: '127.0.0.1' }]) {
-      prefs.writePeerConfig({ ...c, ...bad });
+    overrideBody = JSON.stringify({ peerToken: 'p', directToken: 'p', directHost: '127.0.0.1' });
+    const r3 = await pairing.pair('127.0.0.1', '000000', srv.address().port);
+    assert.equal(r3.ok && !r3.config.directToken && !r3.config.directHost, true);
+    for (const patch of [{ directToken: 'peer-abc' }, { directHost: '127.0.0.1' }]) {
+      prefs.writePeerConfig({ ...c, ...patch });
       assert.equal(prefs.readPeerConfig(), null);
     }
   } finally {
@@ -119,15 +117,14 @@ test('/peer/pair, PeerConfig, and sameConfig handle optional directToken/directH
 });
 
 test('resolveServerDirectHost and server lifecycle enforce TLS coverage and cleanup', async () => {
-  const tls = await makeTlsCert('192.168.1.44');
   const stub = async () => ({ primary: '192.168.1.44', others: [] });
   const r = dt.resolveServerDirectHost;
   assert.equal(await r({}, tls, stub), '192.168.1.44');
   assert.equal(await r({ directHost: '192.168.1.44' }, null, () => assert.fail('x')), '');
   assert.equal(await r({}, tls, () => Promise.reject(new Error('x'))), '');
+  assert.equal(await r({}, tls, () => assert.fail('sync')), '');
   assert.equal(await r({ directHost: '192.168.1.99' }, tls, stub), '');
   assert.equal(await r({ directHost: '127.0.0.1' }, tls, stub), '');
-
   const dir = mkCtx();
   fs.writeFileSync(path.join(dir, 'peer-token'), 'stale-direct');
   Object.assign(bs, { directToken: 'stale-direct', directHost: '192.168.1.44' });
