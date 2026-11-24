@@ -35,6 +35,8 @@ import {
   setHttpAuthToken,
   setPeerToken,
 } from './server/http.js';
+import { setDirectHost, setDirectToken } from './server/http-peer.js';
+import { getOrGenerateDirectToken, resolveServerDirectHost } from './runtime/direct-token.js';
 import { McpTcpClient } from './integration/mcp-client.js';
 import { McpFallbackSync, McpUnavailableError } from './integration/mcp-fallback-sync.js';
 import { syncFromSdkContext } from './sync/sdk-sync.js';
@@ -585,6 +587,8 @@ export async function startServer(options: StartServerOptions = {}): Promise<voi
     bridgeState.masterSessionId = createMasterSessionId();
     bridgeState.masterTransportSeq = 0;
     bridgeState.peerAlerts = {};
+    bridgeState.directToken = '';
+    bridgeState.directHost = '';
     resetMasterRelayIntent();
     resetSlaveCommandState();
     bridgeState.manager = new SetlistManager();
@@ -604,6 +608,8 @@ export async function startServer(options: StartServerOptions = {}): Promise<voi
     setHttpAuthToken(bridgeState.authToken);
     bridgeState.peerToken = getOrGeneratePeerToken();
     setPeerToken(bridgeState.peerToken);
+    bridgeState.directToken = getOrGenerateDirectToken();
+    setDirectToken(bridgeState.directToken);
     bridgeState.peerAutoCorrect = getPeerAutoCorrect();
 
     const fallbackSessionId = bridgeState.projectSessionId || newProjectSessionId();
@@ -762,6 +768,8 @@ export async function startServer(options: StartServerOptions = {}): Promise<voi
 
     const tlsOptions = useHttps && httpsOptions && !options.skipCerts ? httpsOptions : null;
     bridgeState.serverUsesTls = tlsOptions !== null;
+    bridgeState.directHost = await resolveServerDirectHost(options, tlsOptions);
+    setDirectHost(bridgeState.directHost);
     const srv = tlsOptions
       ? https.createServer(tlsOptions, createHttpRequestListener())
       : http.createServer(createHttpRequestListener());
@@ -1170,6 +1178,10 @@ export async function stopServer(): Promise<void> {
   bridgeState.masterTransportSeq = 0;
   bridgeState.peerAlerts = {};
   bridgeState.peerAutoCorrect = true;
+  bridgeState.directToken = '';
+  bridgeState.directHost = '';
+  setDirectToken('');
+  setDirectHost('');
 
   // The computers of the network stop saying hello with the server.
   stopPeerDiscovery();

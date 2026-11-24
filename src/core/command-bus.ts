@@ -43,6 +43,7 @@ export const COMMAND_POLICIES: Readonly<Record<string, CommandPolicy>> = Object.
   profile_delete: Object.freeze({ completion: 'local', timeoutMs: 10_000 }),
   profile_restore: Object.freeze({ completion: 'local', timeoutMs: 10_000 }),
   edit_locator: Object.freeze({ completion: 'local', timeoutMs: 5_000 }),
+  trigger_count_in: Object.freeze({ completion: 'local', critical: true, timeoutMs: 2_000 }),
 });
 
 type QueuedCommand = {

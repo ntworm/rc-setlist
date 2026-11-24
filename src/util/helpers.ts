@@ -46,3 +46,24 @@ export function pickLanIps(ips: string[]): { primary: string; others: string[] }
   if (!primary) return { primary: '127.0.0.1', others: [] };
   return { primary, others: sorted.slice(1) };
 }
+
+/** Reports whether the value is a strict unicast non-loopback IPv4 literal. */
+export function isStrictNonLoopbackIpv4(value: unknown): value is string {
+  if (typeof value !== 'string') return false;
+  const parts = value.split('.');
+  if (parts.length !== 4) return false;
+  const nums = parts.map((p) => (/^(?:0|[1-9]\d{0,2})$/.test(p) ? Number(p) : 256));
+  if (nums.some((n) => n > 255)) return false;
+  const a = nums[0]!;
+  return a !== 0 && a !== 127 && a < 224;
+}
+
+/** Reports whether the value is a non-empty printable ASCII non-space token. */
+export function isValidScopedToken(value: unknown): value is string {
+  if (typeof value !== 'string' || value.length === 0) return false;
+  for (let i = 0; i < value.length; i++) {
+    const code = value.charCodeAt(i);
+    if (code < 0x21 || code > 0x7e) return false;
+  }
+  return true;
+}

@@ -6,6 +6,7 @@
 
 import { createHash } from 'node:crypto';
 import type { WebSocket } from 'ws';
+import type { PeerConfig } from '../preferences.js';
 
 /** Whether a value is a plain record. */
 export function isRecord(value: unknown): value is Record<string, unknown> {
@@ -80,16 +81,15 @@ export function roomOnSocket(socket: WebSocket | null): boolean | null {
 }
 
 /** Whether two pairings name the same computer with the same credential. */
-export function sameConfig(
-  a: { host: string; port: number; peerToken: string; fingerprint: string; keyPin?: string },
-  b: { host: string; port: number; peerToken: string; fingerprint: string; keyPin?: string },
-): boolean {
+export function sameConfig(a: PeerConfig, b: PeerConfig): boolean {
   return (
     a.host === b.host &&
     a.port === b.port &&
     a.peerToken === b.peerToken &&
     a.fingerprint === b.fingerprint &&
-    a.keyPin === b.keyPin
+    a.keyPin === b.keyPin &&
+    a.directToken === b.directToken &&
+    a.directHost === b.directHost
   );
 }
 

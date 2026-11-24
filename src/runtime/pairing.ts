@@ -23,6 +23,7 @@ import { httpsOptions } from '../server/cert.js';
 import { writePeerConfig, type PeerConfig } from '../preferences.js';
 import { bridgeState } from './bridge-state.js';
 import { syncInboundSlaveRole } from './peer-inbound.js';
+import { isStrictNonLoopbackIpv4, isValidScopedToken } from '../util/helpers.js';
 import { log } from '../util/log.js';
 import { atomicWriteFileSync } from '../util/atomic-write.js';
 
@@ -199,8 +200,14 @@ export function certificateFingerprint(raw: Buffer): string {
 function readStoredPeerToken(tokenPath: string): string {
   try {
     if (fs.existsSync(tokenPath)) {
-      const token = fs.readFileSync(tokenPath, 'utf8').trim();
-      if (token && token !== bridgeState.authToken) return token;
+      const token = fs.readFileSync(tokenPath, 'utf8').replace(/\r?\n$/, '');
+      if (
+        isValidScopedToken(token) &&
+        token !== bridgeState.authToken &&
+        token !== bridgeState.directToken
+      ) {
+        return token;
+      }
     }
   } catch (err) {
     log.error('peer', 'Failed to read the peer token.', {
@@ -233,7 +240,9 @@ export function getOrGeneratePeerToken(): string {
   }
 
   let token = randomBytes(16).toString('hex'); // 32 hex characters
-  while (token === bridgeState.authToken) token = randomBytes(16).toString('hex');
+  while (token === bridgeState.authToken || token === bridgeState.directToken) {
+    token = randomBytes(16).toString('hex');
+  }
   try {
     // A replaced file gets the mode too: the rename swaps in a new owner-only file.
     atomicWriteFileSync(tokenPath, token, { mode: 0o600 });
@@ -323,6 +332,7 @@ interface PeerTokenResponse {
   peerToken: string;
   fingerprint: string;
   keyPin: string | null;
+  directFields: { directToken?: string; directHost?: string };
 }
 
 interface PeerTokenFailure {
@@ -393,6 +403,20 @@ function refusalText(statusCode: number | undefined): string {
   return `the pairing request was refused (${statusCode ?? 'no answer'})`;
 }
 
+function readOptionalDirectFields(
+  record: Record<string, unknown>,
+  peerToken: string,
+): { directToken?: string; directHost?: string } {
+  const out: { directToken?: string; directHost?: string } = {};
+  if (isValidScopedToken(record.directToken) && record.directToken !== peerToken) {
+    out.directToken = record.directToken;
+  }
+  if (isStrictNonLoopbackIpv4(record.directHost)) {
+    out.directHost = record.directHost;
+  }
+  return out;
+}
+
 function readPairResponse(
   statusCode: number | undefined,
   body: string,
@@ -411,14 +435,21 @@ function readPairResponse(
   if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
     return { ok: false, error: 'the pairing answer carried no peer token' };
   }
-  const peerToken = (parsed as Record<string, unknown>).peerToken;
+  const record = parsed as Record<string, unknown>;
+  const peerToken = record.peerToken;
   if (typeof peerToken !== 'string' || !peerToken) {
     return { ok: false, error: 'the pairing answer carried no peer token' };
   }
   if (!fingerprint) {
     return { ok: false, error: 'the paired computer presented no certificate' };
   }
-  return { ok: true, peerToken, fingerprint, keyPin };
+  return {
+    ok: true,
+    peerToken,
+    fingerprint,
+    keyPin,
+    directFields: readOptionalDirectFields(record, peerToken),
+  };
 }
 
 /**
@@ -445,6 +476,7 @@ export async function pair(
       port,
       peerToken: response.peerToken,
       fingerprint: response.fingerprint,
+      ...response.directFields,
     };
     // The pin of the key travels with the pairing: a certificate that is
     // issued again keeps its key, and the link has to survive that.

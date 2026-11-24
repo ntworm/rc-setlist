@@ -2,6 +2,7 @@ import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { getExtensionContext } from './context.js';
 import { atomicWriteFileSync } from './util/atomic-write.js';
+import { isStrictNonLoopbackIpv4, isValidScopedToken } from './util/helpers.js';
 
 const SETLIST_DIR = '.setlist';
 const AUTO_START_FILE = 'auto-start';
@@ -29,6 +30,8 @@ export interface PeerConfig {
   peerToken: string;
   fingerprint: string;
   keyPin?: string;
+  directToken?: string;
+  directHost?: string;
 }
 
 function preferencePath(fileName: string): string | null {
@@ -199,15 +202,27 @@ function isValidPort(value: unknown): boolean {
   return typeof value === 'number' && Number.isInteger(value) && value > 0 && value <= 65535;
 }
 
+function hasValidOptionalPeerFields(record: Record<string, unknown>, peerToken: string): boolean {
+  // The key pin is optional: a pairing from before it was written holds the
+  // fingerprint alone, and that pairing still has to load.
+  if (record.keyPin !== undefined && !isNonEmptyString(record.keyPin)) return false;
+  if (
+    record.directToken !== undefined &&
+    (!isValidScopedToken(record.directToken) || record.directToken === peerToken)
+  ) {
+    return false;
+  }
+  if (record.directHost !== undefined && !isStrictNonLoopbackIpv4(record.directHost)) return false;
+  return true;
+}
+
 function isPeerConfig(value: unknown): value is PeerConfig {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
   const record = value as Record<string, unknown>;
   if (!isNonEmptyString(record.host)) return false;
   if (!isNonEmptyString(record.peerToken)) return false;
   if (!isNonEmptyString(record.fingerprint)) return false;
-  // The key pin is optional: a pairing from before it was written holds the
-  // fingerprint alone, and that pairing still has to load.
-  if (record.keyPin !== undefined && !isNonEmptyString(record.keyPin)) return false;
+  if (!hasValidOptionalPeerFields(record, record.peerToken)) return false;
   return isValidPort(record.port);
 }
 

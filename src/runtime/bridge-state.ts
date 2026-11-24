@@ -93,6 +93,10 @@ export interface BridgeState {
   authToken: string;
   /** The credential a paired computer presents to be let in. */
   peerToken: string;
+  /** The credential a direct phone client presents to reach this slave. */
+  directToken: string;
+  /** The TLS-covered LAN host advertised for direct phone connections. */
+  directHost: string;
   /** What the paired computer looks like from here. */
   peerStatus: PeerStatus;
   /** What every paired computer looks like from here, one row each. */
@@ -142,6 +146,8 @@ export const bridgeState: BridgeState = {
   isCreatingTestSession: false,
   authToken: '',
   peerToken: '',
+  directToken: '',
+  directHost: '',
   peerStatus: {
     paired: false,
     connected: false,

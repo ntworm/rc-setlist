@@ -1,11 +1,11 @@
 import * as http from 'node:http';
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
-import type { TLSSocket } from 'node:tls';
 import { fileURLToPath, URL as NodeURL } from 'node:url';
-import { attemptPairing, type PairingAttempt } from '../runtime/pairing.js';
-import { writeSlaveRole } from '../preferences.js';
 import { log } from '../util/log.js';
+import { handlePeerPair } from './http-peer.js';
+
+export { setPeerToken } from './http-peer.js';
 
 const __dirnameResolved =
   typeof __dirname !== 'undefined' ? __dirname : path.dirname(fileURLToPath(import.meta.url));
@@ -77,15 +77,6 @@ let httpAuthToken: string = '';
  */
 export function setHttpAuthToken(token: string): void {
   httpAuthToken = token;
-}
-
-let peerToken: string = '';
-
-/**
- * Sets the credential a paired computer is given when it pairs.
- */
-export function setPeerToken(token: string): void {
-  peerToken = token;
 }
 
 let csvExportResolver: CsvExportResolver | null = null;
@@ -234,80 +225,6 @@ async function serveStaticFile(
     res.writeHead(404, { 'Content-Type': 'text/plain' });
     res.end('not found\n');
   }
-}
-
-function isEncryptedRequest(req: http.IncomingMessage): boolean {
-  const socket = req.socket as TLSSocket | undefined;
-  return socket?.encrypted === true;
-}
-
-function writePlain(res: http.ServerResponse, status: number, body: string, isHead: boolean): void {
-  res.writeHead(status, { 'Content-Type': 'text/plain' });
-  res.end(isHead ? undefined : body);
-}
-
-function pairingCodeFrom(req: http.IncomingMessage): string | null {
-  const url = new NodeURL(req.url ?? '', `http://${req.headers.host ?? 'localhost'}`);
-  return url.searchParams.get('code');
-}
-
-/**
- * The refusal a failed pairing attempt gets, or null when it worked.
- *
- * Every refusal says the same thing, so a caller cannot tell a wrong code
- * from an expired one from a rate limit that has not been reached yet.
- */
-function pairingRefusal(attempt: PairingAttempt): { status: number; body: string } | null {
-  if (attempt.status === 'rate_limited') return { status: 429, body: 'too many attempts\n' };
-  if (attempt.status === 'no_code') return { status: 404, body: 'not found\n' };
-  if (attempt.status === 'rejected') return { status: 403, body: 'forbidden\n' };
-  return null;
-}
-
-/**
- * The address of the computer that asked to pair, without the IPv6 wrapper.
- */
-function remoteAddressOf(req: http.IncomingMessage): string {
-  const address = req.socket?.remoteAddress ?? 'unknown';
-  return address.startsWith('::ffff:') ? address.slice('::ffff:'.length) : address;
-}
-
-/**
- * Answers the pairing request of a computer that wants to be the peer.
- *
- * The code is the credential here, and it is only good over TLS: a code read
- * off a shoulder is one thing, a code read off the wire is another.
- */
-function handlePeerPair(req: http.IncomingMessage, res: http.ServerResponse): void {
-  const code = pairingCodeFrom(req);
-  if (!code) {
-    writePlain(res, 404, 'not found\n', false);
-    return;
-  }
-  if (!isEncryptedRequest(req)) {
-    writePlain(res, 404, 'not found\n', false);
-    return;
-  }
-  const attempt = attemptPairing(code, req.socket?.remoteAddress ?? 'unknown');
-  const refusal = pairingRefusal(attempt);
-  if (refusal) {
-    writePlain(res, refusal.status, refusal.body, false);
-    return;
-  }
-  // The computer that handed out its code is the second one: it writes down
-  // the address of the main computer, so it still knows who it follows after
-  // the extension is closed and opened again. A file that cannot be written
-  // must not stop the pairing.
-  writeSlaveRole({
-    masterAddress: remoteAddressOf(req),
-    pairedAt: new Date().toISOString(),
-  });
-  const body = JSON.stringify({ peerToken });
-  res.writeHead(200, {
-    'Content-Type': 'application/json; charset=utf-8',
-    'Cache-Control': 'no-store',
-  });
-  res.end(body);
 }
 
 /**

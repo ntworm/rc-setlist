@@ -345,6 +345,7 @@ export interface StartServerOptions {
   skipCerts?: boolean;
   skipProjectDetector?: boolean;
   projectIdentity?: ProjectIdentity;
+  directHost?: string | null;
 }
 
 export interface AugmentedWebSocket extends WebSocket {
