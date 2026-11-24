@@ -4,7 +4,7 @@ import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { randomBytes } from 'node:crypto';
 import { WebSocket } from 'ws';
-import type { StartServerOptions, AugmentedWebSocket } from './types.js';
+import type { StartServerOptions, AugmentedWebSocket, ConnectionRole } from './types.js';
 import {
   bridgeState,
   activateProjectProfileScope,
@@ -347,6 +347,33 @@ function refusedByThisComputer(command: ShowCommand<ClientMessage>): boolean {
   return immediateJumpRefused(payload);
 }
 
+function connectionRole(ws: AugmentedWebSocket): ConnectionRole {
+  if (ws.isPeer === true) return 'peer';
+  if (ws.isDirect === true) return 'direct';
+  return 'browser';
+}
+
+function stripDirectMeta(msg: ClientMessage): ClientMessage {
+  if (
+    msg.type !== 'play' &&
+    msg.type !== 'stop' &&
+    msg.type !== 'jump_time' &&
+    msg.type !== 'set_panic'
+  ) {
+    return msg;
+  }
+  if (
+    !Object.prototype.hasOwnProperty.call(msg, 'ttlMs') &&
+    !Object.prototype.hasOwnProperty.call(msg, 'transportSeq')
+  ) {
+    return msg;
+  }
+  const clean = { ...msg };
+  delete clean.ttlMs;
+  delete clean.transportSeq;
+  return clean;
+}
+
 /**
  * Runs a command a second computer handed up, as if a page of this computer
  * had sent it: every lock of this computer applies, and the command goes down
@@ -360,12 +387,13 @@ function runUpstreamCommand(message: ClientMessage, refuse: PeerUpstreamReply): 
     refuse({ reason: 'not_ready' });
     return;
   }
-  const peerJump = resolvePeerJump(message, manager.getState());
+  const stripped = stripDirectMeta(message);
+  const peerJump = resolvePeerJump(stripped, manager.getState());
   if (peerJump.kind === 'error') {
     refuse({ reason: peerJump.code });
     return;
   }
-  const effectiveMsg = peerJump.kind === 'jump' ? peerJump.message : message;
+  const effectiveMsg = peerJump.kind === 'jump' ? peerJump.message : stripped;
   const commandId = effectiveMsg.commandId;
   if (!commandId || bus.isDuplicate(commandId)) {
     refuse({ reason: 'duplicate' });
@@ -389,10 +417,10 @@ function handleClientHandshake(
   msg: Extract<ClientMessage, { type: 'handshake' }>,
   ws: AugmentedWebSocket,
   isController: boolean,
-  isPeerConnection: boolean,
+  role: ConnectionRole,
 ): void {
   if (!bridgeState.manager) return;
-  if (isPeerConnection) {
+  if (role === 'peer') {
     const remoteProtocol = msg.linkProtocol ?? 1;
     if (remoteProtocol !== LINK_PROTOCOL_VERSION) {
       markInboundVersionMismatch(true);
@@ -415,12 +443,19 @@ function handleClientHandshake(
   ws.synchronized = false;
   const state = bridgeState.manager.getState();
   ws.handshakeStateVersion = state.stateVersion;
+  const ackBase = {
+    type: 'handshake_ack',
+    stateVersion: state.stateVersion,
+    extensionVersion: EXTENSION_VERSION,
+    linkProtocol: LINK_PROTOCOL_VERSION,
+  };
+  if (role === 'direct') {
+    ws.send(JSON.stringify(ackBase));
+    return;
+  }
   ws.send(
     JSON.stringify({
-      type: 'handshake_ack',
-      stateVersion: state.stateVersion,
-      extensionVersion: EXTENSION_VERSION,
-      linkProtocol: LINK_PROTOCOL_VERSION,
+      ...ackBase,
       state: {
         ...state,
         peerStatus: bridgeState.peerStatus,
@@ -457,7 +492,14 @@ function reportPeerJumpError(
     failAdoptedEcho(inner.commandId, `The jump did not land on this computer: ${peerJump.message}`);
   }
   if (ws.readyState === WebSocket.OPEN) {
-    ws.send(JSON.stringify({ type: 'error', code: peerJump.code, message: peerJump.message }));
+    ws.send(
+      JSON.stringify({
+        type: 'error',
+        code: peerJump.code,
+        message: peerJump.message,
+        ...(outerCommandId ? { commandId: outerCommandId } : {}),
+      }),
+    );
   }
   return { result: 'failed', reason: peerJump.code };
 }
@@ -537,11 +579,12 @@ function executeInboundPeerInner(
   const manager = bridgeState.manager;
   const bus = bridgeState.commandBus;
   if (!manager || !bus) return Promise.resolve({ result: 'failed', reason: 'not_ready' });
-  const peerJump = resolvePeerJump(inner, manager.getState());
+  const stripped = stripDirectMeta(inner);
+  const peerJump = resolvePeerJump(stripped, manager.getState());
   if (peerJump.kind === 'error') {
-    return Promise.resolve(reportPeerJumpError(ws, outerCommandId, inner, peerJump));
+    return Promise.resolve(reportPeerJumpError(ws, outerCommandId, stripped, peerJump));
   }
-  const effectiveMsg = peerJump.kind === 'jump' ? peerJump.message : inner;
+  const effectiveMsg = peerJump.kind === 'jump' ? peerJump.message : stripped;
   const commandId = effectiveMsg.commandId || outerCommandId;
   if (bus.isDuplicate(commandId)) {
     const isSafety = isSafetyStopCommand(effectiveMsg);
@@ -757,6 +800,7 @@ export async function startServer(options: StartServerOptions = {}): Promise<voi
 
     bridgeState.wsServer = new SetlistWSServer(bridgeState.authToken, {
       peerToken: bridgeState.peerToken,
+      directToken: bridgeState.directToken,
     });
     bridgeState.wsServer.init();
     bridgeState.wsServer.on('peer_closed', (ws: AugmentedWebSocket) => onInboundPeerClosed(ws));
@@ -816,11 +860,19 @@ export async function startServer(options: StartServerOptions = {}): Promise<voi
     bridgeState.wsServer.on('client_message', (msg: ClientMessage, ws: AugmentedWebSocket) => {
       if (!bridgeState.manager) return;
 
+      const role = connectionRole(ws);
       const isController = ws.isController === true;
-      const isPeerConnection = ws.isPeer === true;
+      const isPeerConnection = role === 'peer';
+      const isDirectConnection = role === 'direct';
       const isSynchronized =
         ws.synchronized === true || ws.skipHandshakeCheck || process.env.NODE_ENV === 'test';
-      const allowedBeforeSync = new Set(['handshake', 'sync_confirm', 'auth', 'get_lyrics']);
+      const allowedBeforeSync = new Set([
+        'handshake',
+        'sync_confirm',
+        'auth',
+        'get_lyrics',
+        'rtt_ping',
+      ]);
 
       if (!allowedBeforeSync.has(msg.type) && !isSynchronized) {
         ws.send(
@@ -828,13 +880,14 @@ export async function startServer(options: StartServerOptions = {}): Promise<voi
             type: 'error',
             code: 'not_synchronized',
             message: 'Client is not synchronized.',
+            ...(msg.commandId ? { commandId: msg.commandId } : {}),
           }),
         );
         return;
       }
 
       if (msg.type === 'handshake') {
-        handleClientHandshake(msg, ws, isController, isPeerConnection);
+        handleClientHandshake(msg, ws, isController, role);
         return;
       }
 
@@ -856,15 +909,21 @@ export async function startServer(options: StartServerOptions = {}): Promise<voi
       // jump by beat belongs to a peer connection alone: the beat is what
       // travels between two computers, because the songs may sit in another
       // order on the other side.
-      const peerRejection = peerCommandRejection(msg, isPeerConnection);
+      const peerRejection = peerCommandRejection(msg, role);
       if (peerRejection) {
         ws.send(
           JSON.stringify({
             type: 'error',
             code: peerRejection.code,
             message: peerRejection.message,
+            ...(msg.commandId ? { commandId: msg.commandId } : {}),
           }),
         );
+        return;
+      }
+
+      if (msg.type === 'rtt_ping') {
+        ws.send(JSON.stringify({ type: 'rtt_pong', t0: msg.t0 }));
         return;
       }
 
@@ -907,10 +966,12 @@ export async function startServer(options: StartServerOptions = {}): Promise<voi
         void handleInboundPeerCommand(ws, msg);
         return;
       }
-      if (isPeerConnection && msg.type !== 'peer_health_ack') notePeerCommand(msg.type);
+      if ((isPeerConnection || isDirectConnection) && msg.type !== 'peer_health_ack') {
+        notePeerCommand(msg.type);
+      }
 
       const readOnlyTypes = new Set(['get_lyrics', 'profiles_get', 'preflight_check']);
-      if (!readOnlyTypes.has(msg.type) && !isController && !isPeerConnection) {
+      if (!readOnlyTypes.has(msg.type) && !isController && role === 'browser') {
         console.warn(
           `[Security] WS client tried to execute command '${msg.type}' without controller permissions.`,
         );
@@ -919,6 +980,7 @@ export async function startServer(options: StartServerOptions = {}): Promise<voi
             type: 'error',
             code: 'unauthorized',
             message: 'Unauthorized: controller permission is required.',
+            ...(msg.commandId ? { commandId: msg.commandId } : {}),
           }),
         );
         return;
@@ -970,11 +1032,12 @@ export async function startServer(options: StartServerOptions = {}): Promise<voi
             type: 'error',
             code: peerJump.code,
             message: peerJump.message,
+            ...(msg.commandId ? { commandId: msg.commandId } : {}),
           }),
         );
         return;
       }
-      const effectiveMsg = peerJump.kind === 'jump' ? peerJump.message : incoming;
+      const effectiveMsg = stripDirectMeta(peerJump.kind === 'jump' ? peerJump.message : incoming);
 
       const commandId =
         effectiveMsg.commandId || `legacy-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
@@ -983,7 +1046,7 @@ export async function startServer(options: StartServerOptions = {}): Promise<voi
         console.warn(`[CommandBus] Discarding duplicate command ID: ${commandId}`);
         // The sender of a retry learns the saved status; nobody else does.
         const saved = bridgeState.commandBus.getStatus(commandId);
-        if (saved && saved.sourceClientId === senderId) {
+        if (!isDirectConnection && saved && saved.sourceClientId === senderId) {
           ws.send(
             JSON.stringify({
               type: 'command_status',
@@ -1000,7 +1063,7 @@ export async function startServer(options: StartServerOptions = {}): Promise<voi
       // On a second computer the show is driven by the main one: the command
       // goes up, and lands here when it comes back down. Without the main
       // computer it runs here alone, as before.
-      if (!isPeerConnection && PEER_RELAY_TYPES.has(effectiveMsg.type)) {
+      if (role === 'browser' && PEER_RELAY_TYPES.has(effectiveMsg.type)) {
         if (forwardToMaster(effectiveMsg, commandId)) return;
         noteRanWithoutMaster(effectiveMsg.type);
       }
@@ -1035,7 +1098,7 @@ export async function startServer(options: StartServerOptions = {}): Promise<voi
         // The paired computer follows the show. A command that came from a
         // peer is not forwarded again: the link is one hop, not a loop. A
         // jump this computer refuses is not forwarded either.
-        if (!isPeerConnection && !refusedByThisComputer(command)) relayToPeer(command);
+        if (role === 'browser' && !refusedByThisComputer(command)) relayToPeer(command);
       }
     });
 

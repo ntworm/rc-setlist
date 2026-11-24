@@ -1,11 +1,13 @@
 import type { ClientMessage } from '../types.js';
 import {
   decodeHandshakeExtras,
+  decodeOptionalDirectMeta,
   decodePeerCommand,
   decodePeerHb,
   decodePeerHbAck,
   decodePeerHealthAck,
   decodePeerTarget,
+  decodeRttPing,
   type PeerDecodeResult,
 } from './peer-client-message.js';
 
@@ -132,6 +134,8 @@ export function decodeClientMessage(input: unknown): DecodeResult {
       if (!isFiniteInteger(input.stateVersion, 0, Number.MAX_SAFE_INTEGER))
         return fail('Invalid stateVersion.');
       return success({ type: 'sync_confirm', stateVersion: input.stateVersion });
+    case 'rtt_ping':
+      return decodeRttPing(input, commandId);
     case 'get_lyrics':
       if (input.song !== undefined && !isBoundedText(input.song, MAX_SONG_TITLE_LENGTH))
         return fail('Invalid song.');
@@ -144,10 +148,14 @@ export function decodeClientMessage(input: unknown): DecodeResult {
       return success({ type: 'profiles_get' });
     case 'preflight_check':
       return success({ type: 'preflight_check' });
-    case 'play':
-      return success({ type: 'play' });
-    case 'stop':
-      return success({ type: 'stop' });
+    case 'play': {
+      const meta = decodeOptionalDirectMeta(input, false, true);
+      return meta.ok ? success({ type: 'play', ...meta.meta }) : fail(meta.message);
+    }
+    case 'stop': {
+      const meta = decodeOptionalDirectMeta(input, true, true);
+      return meta.ok ? success({ type: 'stop', ...meta.meta }) : fail(meta.message);
+    }
     case 'refresh':
       return success({ type: 'refresh' });
     case 'export_csv':
@@ -178,7 +186,7 @@ export function decodeClientMessage(input: unknown): DecodeResult {
         ...(input.sectionIndex === undefined ? {} : { sectionIndex: input.sectionIndex }),
         ...(input.immediate === undefined ? {} : { immediate: input.immediate }),
       });
-    case 'jump_time':
+    case 'jump_time': {
       if (!isBoundedNumber(input.time, 0, 1_000_000)) return fail('Invalid time for jump_time.');
       if (input.section !== undefined && typeof input.section !== 'boolean') {
         return fail('Invalid section flag for jump_time.');
@@ -186,12 +194,16 @@ export function decodeClientMessage(input: unknown): DecodeResult {
       if (input.immediate !== undefined && typeof input.immediate !== 'boolean') {
         return fail('Invalid immediate flag for jump_time.');
       }
+      const meta = decodeOptionalDirectMeta(input, false, true);
+      if (!meta.ok) return fail(meta.message);
       return success({
         type: 'jump_time',
         time: input.time,
         ...(input.section === undefined ? {} : { section: input.section }),
         ...(input.immediate === undefined ? {} : { immediate: input.immediate }),
+        ...meta.meta,
       });
+    }
     case 'peer_upstream_result':
       if (!commandId) return fail('Invalid commandId for peer_upstream_result.');
       if (typeof input.ok !== 'boolean') return fail('Invalid ok for peer_upstream_result.');
@@ -261,9 +273,12 @@ export function decodeClientMessage(input: unknown): DecodeResult {
         ...(input.bpm === undefined ? {} : { bpm: input.bpm }),
         ...(input.beats === undefined ? {} : { beats: input.beats }),
       });
-    case 'set_panic':
+    case 'set_panic': {
       if (typeof input.active !== 'boolean') return fail('Invalid active flag.');
-      return success({ type: 'set_panic', active: input.active });
+      const meta = decodeOptionalDirectMeta(input, input.active, input.active);
+      if (!meta.ok) return fail(meta.message);
+      return success({ type: 'set_panic', active: input.active, ...meta.meta });
+    }
     case 'set_critical_lock':
       if (typeof input.locked !== 'boolean') return fail('Invalid locked flag.');
       return success({ type: 'set_critical_lock', locked: input.locked });

@@ -211,6 +211,12 @@ type ClientMessageBase = {
   commandId?: string;
 };
 
+/** Optional delivery metadata attached by direct WebSocket links. */
+export type DirectWireFields = {
+  ttlMs?: number | null;
+  transportSeq?: number | null;
+};
+
 export type ClientMessage =
   | (ClientMessageBase & {
       type: 'handshake';
@@ -220,11 +226,12 @@ export type ClientMessage =
       sessionId?: string;
     })
   | (ClientMessageBase & { type: 'sync_confirm'; stateVersion: number })
+  | (ClientMessageBase & { type: 'rtt_ping'; t0: number })
   | (ClientMessageBase & { type: 'get_lyrics'; song?: string })
   | (ClientMessageBase & { type: 'profiles_get' })
   | (ClientMessageBase & { type: 'preflight_check' })
-  | (ClientMessageBase & { type: 'play' })
-  | (ClientMessageBase & { type: 'stop' })
+  | (ClientMessageBase & DirectWireFields & { type: 'play' })
+  | (ClientMessageBase & DirectWireFields & { type: 'stop' })
   | (ClientMessageBase & { type: 'refresh' })
   | (ClientMessageBase & { type: 'export_csv' })
   | (ClientMessageBase & { type: 'metronome'; value: boolean })
@@ -241,14 +248,15 @@ export type ClientMessage =
        */
       immediate?: boolean;
     })
-  | (ClientMessageBase & {
-      type: 'jump_time';
-      time: number;
-      /** Whether the jump landed on a section rather than on a song. */
-      section?: boolean;
-      /** Whether the jump must land now, without waiting for the grid. */
-      immediate?: boolean;
-    })
+  | (ClientMessageBase &
+      DirectWireFields & {
+        type: 'jump_time';
+        time: number;
+        /** Whether the jump landed on a section rather than on a song. */
+        section?: boolean;
+        /** Whether the jump must land now, without waiting for the grid. */
+        immediate?: boolean;
+      })
   | (ClientMessageBase & {
       /** The main computer refused a command a second computer handed up. */
       type: 'peer_upstream_result';
@@ -301,7 +309,7 @@ export type ClientMessage =
   | (ClientMessageBase & { type: 'reorder'; songTitles: string[] })
   | (ClientMessageBase & { type: 'save_lyrics'; song: string; text: string })
   | (ClientMessageBase & { type: 'click_preview'; bpm?: number; beats?: number })
-  | (ClientMessageBase & { type: 'set_panic'; active: boolean })
+  | (ClientMessageBase & DirectWireFields & { type: 'set_panic'; active: boolean })
   | (ClientMessageBase & { type: 'set_critical_lock'; locked: boolean })
   | (ClientMessageBase & { type: 'set_mode'; mode: 'rehearsal' | 'show' })
   | (ClientMessageBase & { type: 'profile_create'; name: string })

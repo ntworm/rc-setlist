@@ -8,7 +8,7 @@
 // cannot travel as an index into a list. It travels as the beat it lands on,
 // and the receiving side finds the marker that sits there.
 
-import type { ClientMessage, SetlistState } from '../../types.js';
+import type { ClientMessage, ConnectionRole, SetlistState } from '../../types.js';
 import { PEER_RELAY_TYPES } from '../../runtime/peer-message.js';
 
 export interface PeerCommandRejection {
@@ -71,14 +71,40 @@ const PEER_ONLY_REFUSALS: Readonly<Record<string, string>> = {
   peer_command: 'Unauthorized: only a peer connection may send a peer command.',
 };
 
+const DIRECT_TRANSPORT_TYPES: ReadonlySet<string> = new Set([
+  'play',
+  'stop',
+  'jump_time',
+  'set_panic',
+]);
+
+function resolveRole(roleOrIsPeer: ConnectionRole | boolean): ConnectionRole {
+  if (typeof roleOrIsPeer !== 'boolean') return roleOrIsPeer;
+  return roleOrIsPeer ? 'peer' : 'browser';
+}
+
+function directCommandRejection(msg: ClientMessage): PeerCommandRejection | null {
+  if (msg.type === 'handshake' || msg.type === 'sync_confirm') return null;
+  if (!DIRECT_TRANSPORT_TYPES.has(msg.type)) {
+    return { code: 'unauthorized', message: 'Unauthorized: command not allowed for direct link.' };
+  }
+  if (typeof msg.commandId !== 'string' || msg.commandId.trim() === '') {
+    return { code: 'invalid_message', message: 'Direct commands require a non-empty commandId.' };
+  }
+  return null;
+}
+
 /**
- * Reports why a peer connection may not run this message, or null when it
- * may.
+ * Reports why a connection with the given role may not run this message, or
+ * null when it may.
  */
 export function peerCommandRejection(
   msg: ClientMessage,
-  isPeer: boolean,
+  roleOrIsPeer: ConnectionRole | boolean,
 ): PeerCommandRejection | null {
+  const role = resolveRole(roleOrIsPeer);
+  if (role === 'direct') return directCommandRejection(msg);
+  const isPeer = role === 'peer';
   const peerOnly = Object.prototype.hasOwnProperty.call(PEER_ONLY_REFUSALS, msg.type)
     ? PEER_ONLY_REFUSALS[msg.type]
     : undefined;

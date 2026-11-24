@@ -23,12 +23,14 @@ export function peerCommandId(commandId: string): string {
   return `peer-${createHash('sha256').update(commandId, 'utf8').digest('hex').slice(0, 32)}`;
 }
 
-/** The fields of a command, without its type and its id. */
+/** The fields of a command, without its type, id, or direct-wire metadata. */
 export function payloadFields(payload: unknown): Record<string, unknown> {
   const fields: Record<string, unknown> = {};
   if (!isRecord(payload)) return fields;
   for (const [key, value] of Object.entries(payload)) {
-    if (key === 'type' || key === 'commandId') continue;
+    if (key === 'type' || key === 'commandId' || key === 'ttlMs' || key === 'transportSeq') {
+      continue;
+    }
     fields[key] = value;
   }
   return fields;

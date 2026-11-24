@@ -1,4 +1,4 @@
-import type { ClientMessage, PeerHealthTier, PeerHealthView } from '../types.js';
+import type { ClientMessage, DirectWireFields, PeerHealthTier, PeerHealthView } from '../types.js';
 import { isPeerRelayWireType } from '../commands/handlers/peer.js';
 
 export type PeerDecodeResult =
@@ -290,6 +290,42 @@ function decodePeerCommandSeq(
   return { ok: false };
 }
 
+function hasDirectMetaKey(obj: Record<string, unknown>): boolean {
+  return (
+    Object.prototype.hasOwnProperty.call(obj, 'ttlMs') ||
+    Object.prototype.hasOwnProperty.call(obj, 'transportSeq')
+  );
+}
+
+/** Validates optional direct-wire `ttlMs` and `transportSeq` fields on transport commands. */
+export function decodeOptionalDirectMeta(
+  input: Record<string, unknown>,
+  safetyStop: boolean,
+  transport: boolean,
+): { ok: true; meta: DirectWireFields } | { ok: false; message: string } {
+  const meta: DirectWireFields = {};
+  if (input.ttlMs !== undefined) {
+    const ttl = decodePeerCommandTtl(input.ttlMs, safetyStop);
+    if (!ttl.ok) return { ok: false, message: 'Invalid ttlMs.' };
+    meta.ttlMs = ttl.value;
+  }
+  if (input.transportSeq !== undefined) {
+    const seq = decodePeerCommandSeq(input.transportSeq, transport);
+    if (!seq.ok) return { ok: false, message: 'Invalid transportSeq.' };
+    meta.transportSeq = seq.value;
+  }
+  return { ok: true, meta };
+}
+
+/** Decodes an `rtt_ping` latency measurement frame. */
+export function decodeRttPing(
+  input: Record<string, unknown>,
+  commandId?: string,
+): PeerDecodeResult {
+  if (!isNonNegativeNumber(input.t0)) return invalid('Invalid t0 for rtt_ping.', commandId);
+  return withCommandId({ type: 'rtt_ping', t0: input.t0 }, commandId);
+}
+
 /**
  * Decodes a `peer_command` envelope around a relayed show command.
  */
@@ -301,7 +337,7 @@ export function decodePeerCommand(
   if (!commandId || !isSafeCommandId(commandId)) {
     return invalid('Invalid commandId for peer_command.');
   }
-  if (!isRecord(input.command)) {
+  if (!isRecord(input.command) || hasDirectMetaKey(input.command)) {
     return invalid('Invalid command for peer_command.', commandId);
   }
   const inner = decodeInner(input.command);
