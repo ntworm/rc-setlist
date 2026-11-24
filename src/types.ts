@@ -348,10 +348,15 @@ export interface StartServerOptions {
   directHost?: string | null;
 }
 
+/** Connection role for an upgraded WebSocket client. */
+export type ConnectionRole = 'browser' | 'direct' | 'peer';
+
 export interface AugmentedWebSocket extends WebSocket {
   isController?: boolean;
   /** True for a connection that presented the peer credential. */
   isPeer?: boolean;
+  /** True for a connection that presented the direct credential. */
+  isDirect?: boolean;
   isAlive?: boolean;
   clientId?: string;
   synchronized?: boolean;

@@ -58,6 +58,16 @@ export function isStrictNonLoopbackIpv4(value: unknown): value is string {
   return a !== 0 && a !== 127 && a < 224;
 }
 
+/** Reports whether the value is a strict IPv4 link-local address (169.254.0.0/16). */
+export function isLinkLocalIpv4(value: unknown): value is string {
+  if (typeof value !== 'string') return false;
+  const parts = value.split('.');
+  if (parts.length !== 4) return false;
+  const nums = parts.map((p) => (/^(?:0|[1-9]\d{0,2})$/.test(p) ? Number(p) : 256));
+  if (nums.some((n) => n > 255)) return false;
+  return nums[0] === 169 && nums[1] === 254;
+}
+
 /** Reports whether the value is a non-empty printable ASCII non-space token. */
 export function isValidScopedToken(value: unknown): value is string {
   if (typeof value !== 'string' || value.length === 0) return false;
