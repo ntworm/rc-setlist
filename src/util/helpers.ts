@@ -59,7 +59,7 @@ export function isStrictNonLoopbackIpv4(value: unknown): value is string {
 }
 
 /** Reports whether the value is a strict IPv4 link-local address (169.254.0.0/16). */
-export function isLinkLocalIpv4(value: unknown): value is string {
+export function isLinkLocalIpv4(value: unknown): boolean {
   if (typeof value !== 'string') return false;
   const parts = value.split('.');
   if (parts.length !== 4) return false;
