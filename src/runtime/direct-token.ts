@@ -45,16 +45,6 @@ export function getOrGenerateDirectToken(): string {
   return token;
 }
 
-async function safePrimaryLan(
-  fn: () => Promise<{ primary: string; others: string[] }>,
-): Promise<string> {
-  try {
-    return (await fn()).primary;
-  } catch {
-    return '';
-  }
-}
-
 /** Resolves the LAN host advertised for direct TLS connections, or empty when unavailable. */
 export async function resolveServerDirectHost(
   options: StartServerOptions,
@@ -65,7 +55,10 @@ export async function resolveServerDirectHost(
   const candidate =
     options.directHost !== undefined
       ? (options.directHost ?? '')
-      : await safePrimaryLan(resolveLan);
+      : await resolveLan().then(
+          (r) => r.primary,
+          () => '',
+        );
   if (!isStrictNonLoopbackIpv4(candidate)) return '';
   return certCoversRequiredAltNames(tlsOptions.cert, [candidate]) ? candidate : '';
 }

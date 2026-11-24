@@ -1,7 +1,7 @@
 import * as http from 'node:http';
 import type { TLSSocket } from 'node:tls';
 import { URL as NodeURL } from 'node:url';
-import { attemptPairing, type PairingAttempt } from '../runtime/pairing.js';
+import { attemptPairing } from '../runtime/pairing.js';
 import { writeSlaveRole } from '../preferences.js';
 import { isStrictNonLoopbackIpv4, isValidScopedToken } from '../util/helpers.js';
 
@@ -24,28 +24,18 @@ export function setDirectHost(host: string): void {
   directHost = isStrictNonLoopbackIpv4(host) ? host : '';
 }
 
-function writePlain(res: http.ServerResponse, status: number, body: string): void {
-  res.writeHead(status, { 'Content-Type': 'text/plain' });
-  res.end(body);
-}
-
-function pairingRefusal(attempt: PairingAttempt): { status: number; body: string } | null {
-  if (attempt.status === 'rate_limited') return { status: 429, body: 'too many attempts\n' };
-  if (attempt.status === 'no_code') return { status: 404, body: 'not found\n' };
-  if (attempt.status === 'rejected') return { status: 403, body: 'forbidden\n' };
-  return null;
-}
+const REFUSALS: Record<string, [number, string]> = {
+  rate_limited: [429, 'too many attempts\n'],
+  no_code: [404, 'not found\n'],
+  rejected: [403, 'forbidden\n'],
+};
 
 function pairPayload(): { peerToken: string; directToken?: string; directHost?: string } {
-  const payload: { peerToken: string; directToken?: string; directHost?: string } = { peerToken };
-  if (directToken && directToken !== peerToken) payload.directToken = directToken;
-  if (directHost) payload.directHost = directHost;
-  return payload;
-}
-
-function remoteAddressOf(req: http.IncomingMessage): string {
-  const addr = req.socket?.remoteAddress ?? 'unknown';
-  return addr.startsWith('::ffff:') ? addr.slice(7) : addr;
+  return {
+    peerToken,
+    ...(directToken && directToken !== peerToken ? { directToken } : {}),
+    ...(directHost ? { directHost } : {}),
+  };
 }
 
 /** Answers the pairing request of a computer that wants to be the peer. */
@@ -54,15 +44,17 @@ export function handlePeerPair(req: http.IncomingMessage, res: http.ServerRespon
   const code = url.searchParams.get('code');
   const encrypted = (req.socket as TLSSocket | undefined)?.encrypted === true;
   if (!code || !encrypted) {
-    writePlain(res, 404, 'not found\n');
+    res.writeHead(404, { 'Content-Type': 'text/plain' }).end('not found\n');
     return;
   }
-  const refusal = pairingRefusal(attemptPairing(code, req.socket?.remoteAddress ?? 'unknown'));
+  const rawAddr = req.socket?.remoteAddress ?? 'unknown';
+  const refusal = REFUSALS[attemptPairing(code, rawAddr).status];
   if (refusal) {
-    writePlain(res, refusal.status, refusal.body);
+    res.writeHead(refusal[0], { 'Content-Type': 'text/plain' }).end(refusal[1]);
     return;
   }
-  writeSlaveRole({ masterAddress: remoteAddressOf(req), pairedAt: new Date().toISOString() });
+  const masterAddress = rawAddr.startsWith('::ffff:') ? rawAddr.slice(7) : rawAddr;
+  writeSlaveRole({ masterAddress, pairedAt: new Date().toISOString() });
   res.writeHead(200, {
     'Content-Type': 'application/json; charset=utf-8',
     'Cache-Control': 'no-store',
