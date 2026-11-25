@@ -334,6 +334,7 @@ test('jumpTo sends the immediate flag only when the action asks for it', () => {
     isLocked: false,
     showLockWarning: () => assert.fail('a locked panel must not jump'),
     canUseTransport: () => true,
+    canNavigateOrPlay: () => true,
     lastJumpTime: 0,
     lastJumpTarget: { song: -1, section: -1 },
     WebSocket: { OPEN: 1 },
@@ -348,6 +349,11 @@ test('jumpTo sends the immediate flag only when the action asks for it', () => {
   now = 10_100; // inside the 300 ms duplicate guard window
   context.jumpTo(3, null, { immediate: true });
   assert.equal(sent.length, 2, 'the 300 ms duplicate guard still throttles a repeat jump');
+  // A slave that follows its master may stop but not navigate.
+  context.canNavigateOrPlay = () => false;
+  now = 20_000;
+  context.jumpTo(5, null);
+  assert.equal(sent.length, 2, 'a slave-locked Stage Control does not jump');
 });
 
 test('the immediate song actions are labelled in both mapping tables and the catalog', () => {

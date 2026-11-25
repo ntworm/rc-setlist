@@ -10,7 +10,10 @@ const COPY = {
     notExecuted: 'SLAVE DID NOT EXECUTE: jump',
     executedLate: 'Executed late: jump',
     stillNotStopped: 'SLAVE STILL NOT STOPPED',
-    autoCorrectLabel: 'Auto-correct playhead on slave',
+    followModeLabel: 'Slave mode',
+    followAll: 'Follow all',
+    followTransport: 'Follow transport',
+    independent: 'Independent',
   },
   'pt-BR': {
     pending: '192.168.1.20:4444 \u00b7 jump: Pendente',
@@ -19,7 +22,10 @@ const COPY = {
     notExecuted: 'SLAVE N\u00c3O EXECUTOU: jump',
     executedLate: 'Executou atrasado: jump',
     stillNotStopped: 'SLAVE AINDA N\u00c3O PAROU',
-    autoCorrectLabel: 'Corrigir agulha automaticamente no slave',
+    followModeLabel: 'Modo do slave',
+    followAll: 'Segue tudo',
+    followTransport: 'Segue transporte',
+    independent: 'Independente',
   },
 };
 
@@ -112,7 +118,8 @@ async function openLocalizedPanel(page, locale, peerOverrides) {
         code: null,
         canGenerateCode: true,
         codeHint: '',
-        autoCorrect: true,
+        role: 'slave',
+        followMode: 'follow',
         peers: [],
         ...peer,
       };
@@ -195,11 +202,12 @@ for (const locale of ['en', 'pt-BR']) {
     await expect(ticks).toBeHidden({ timeout: 4500 });
   });
 
-  test(`Live Panel (${locale}) renders peer command alerts and toggle-peer-auto-correct`, async ({
+  test(`Live Panel (${locale}) renders peer command alerts and the slave follow-mode selector`, async ({
     page,
   }) => {
     await openLocalizedPanel(page, locale, {
-      autoCorrect: false,
+      role: 'slave',
+      followMode: 'transport',
       alerts: {
         [HOST_KEY]: {
           peerKey: HOST_KEY,
@@ -231,16 +239,67 @@ for (const locale of ['en', 'pt-BR']) {
     await expect(box).toContainText(c.stillNotStopped);
     await expect(box).toContainText(c.executedLate);
 
-    const row = page.locator('#peerAutoCorrectRow');
-    await expect(row).toContainText(c.autoCorrectLabel);
-    const chk = page.locator('#chkPeerAutoCorrect');
-    await expect(chk).not.toBeChecked();
-    await chk.click();
+    const row = page.locator('#peerFollowModeRow');
+    await expect(row).toBeVisible();
+    await expect(row).toContainText(c.followModeLabel);
+    const follow = row.locator('[data-follow-mode="follow"]');
+    const transport = row.locator('[data-follow-mode="transport"]');
+    const independent = row.locator('[data-follow-mode="independent"]');
+    await expect(follow).toHaveText(c.followAll);
+    await expect(transport).toHaveText(c.followTransport);
+    await expect(independent).toHaveText(c.independent);
+    await expect(follow).toHaveAttribute('aria-pressed', 'false');
+    await expect(transport).toHaveAttribute('aria-pressed', 'true');
+    await expect(independent).toHaveAttribute('aria-pressed', 'false');
+
+    // The active mode does not resend itself; another mode sends one action.
+    await transport.click();
+    await independent.click();
 
     const envelopes = await page.evaluate(() =>
       (window.__messages || []).map((m) => JSON.parse(m.params[0])),
     );
     expect(envelopes).toHaveLength(1);
-    expect(envelopes[0].action).toBe('toggle-peer-auto-correct');
+    expect(envelopes[0].action).toBe('set-follow-mode:independent');
+  });
+
+  test(`Live Panel (${locale}) hides the follow-mode selector on the main computer and tags an Independent slave`, async ({
+    page,
+  }) => {
+    await openLocalizedPanel(page, locale, {
+      role: 'master',
+      followMode: 'follow',
+      peers: [
+        {
+          key: HOST_KEY,
+          host: '192.168.1.20',
+          port: 4444,
+          connected: true,
+          markersMatch: true,
+          fingerprintMismatch: false,
+          health: 'ok',
+          reason: 'ok',
+          followMode: 'independent',
+        },
+        {
+          key: '192.168.1.21:4444',
+          host: '192.168.1.21',
+          port: 4444,
+          connected: true,
+          markersMatch: true,
+          fingerprintMismatch: false,
+          health: 'ok',
+          reason: 'ok',
+          followMode: null,
+        },
+      ],
+    });
+
+    await expect(page.locator('#peerFollowModeRow')).toBeHidden();
+    const items = page.locator('#peerList li');
+    await expect(items).toHaveCount(2);
+    await expect(items.nth(0).locator('.peer-list-status')).toHaveClass(/active/);
+    await expect(items.nth(0).locator('.peer-list-mode-tag')).toHaveText(c.independent);
+    await expect(items.nth(1).locator('.peer-list-mode-tag')).toHaveCount(0);
   });
 }

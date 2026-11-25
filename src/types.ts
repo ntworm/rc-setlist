@@ -40,6 +40,9 @@ export interface Setlist {
 
 export type PeerHealthTier = 'ok' | 'unstable' | 'down';
 
+/** How a paired slave computer follows commands and playhead targets from the master. */
+export type PeerFollowMode = 'follow' | 'transport' | 'independent';
+
 export type PeerHealthReason =
   | 'ok'
   | 'link_down'
@@ -62,6 +65,7 @@ export interface PeerHealthView {
   liveReady: boolean;
   cuesFingerprint: string;
   outOfStep: boolean;
+  followMode?: PeerFollowMode;
 }
 
 /**
@@ -109,6 +113,7 @@ export interface PeerLinkStatus {
   drops5m?: number;
   lastDropAt?: number | null;
   remoteLinkHealth?: PeerHealthTier | null;
+  followMode?: PeerFollowMode | null;
 }
 
 /** Latest delivery alert recorded for a paired computer. */
@@ -176,6 +181,8 @@ export interface SetlistState {
   peerStatuses?: PeerLinkStatus[];
   /** Active per-link command delivery alerts keyed by peer key. */
   peerAlerts?: Record<string, PeerCommandAlert>;
+  /** Whether local Stage Control navigation is locked on a following slave. */
+  slaveLock?: boolean;
   /** Whether the setlists are being moved to another Live Set right now. */
   profileScopeSwitching?: boolean;
 
@@ -204,7 +211,7 @@ export type CommandStatus =
   'created' | 'sent' | 'acknowledged' | 'confirmed' | 'failed' | 'expired' | 'cancelled';
 
 export type CommandFailureReason =
-  'panic_active' | 'critical_commands_locked' | 'execution_failed' | 'timeout';
+  'panic_active' | 'critical_commands_locked' | 'slave_locked' | 'execution_failed' | 'timeout';
 
 type ClientMessageBase = {
   type: string;

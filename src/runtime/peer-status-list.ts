@@ -10,7 +10,13 @@
 // computer that presented another certificate is said so even when the
 // others are fine.
 
-import type { PeerHealthReason, PeerHealthTier, PeerLinkStatus, PeerStatus } from '../types.js';
+import type {
+  PeerFollowMode,
+  PeerHealthReason,
+  PeerHealthTier,
+  PeerLinkStatus,
+  PeerStatus,
+} from '../types.js';
 
 /** What one computer looks like from here. */
 export interface PeerLinkState {
@@ -25,6 +31,7 @@ export interface PeerLinkState {
   drops5m?: number;
   lastDropAt?: number | null;
   remoteLinkHealth?: PeerHealthTier | null;
+  followMode?: PeerFollowMode | null;
 }
 
 /** The parts of a link the list of the paired computers is built from. */
@@ -65,6 +72,7 @@ function rowTelemetry(state: PeerLinkState) {
     drops5m: state.drops5m ?? 0,
     lastDropAt: state.lastDropAt ?? null,
     remoteLinkHealth: state.remoteLinkHealth ?? null,
+    followMode: state.followMode ?? null,
   };
 }
 

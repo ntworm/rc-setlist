@@ -1,6 +1,7 @@
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { getExtensionContext } from './context.js';
+import type { PeerFollowMode } from './types.js';
 import { atomicWriteFileSync } from './util/atomic-write.js';
 import { isStrictNonLoopbackIpv4, isValidScopedToken } from './util/helpers.js';
 
@@ -9,6 +10,7 @@ const AUTO_START_FILE = 'auto-start';
 const UI_LOCALE_FILE = 'ui-locale';
 const WRITE_TEMPO_ON_JUMP_FILE = 'write-tempo-on-jump';
 const PEER_AUTO_CORRECT_FILE = 'peer-auto-correct';
+const PEER_FOLLOW_MODE_FILE = 'peer-follow-mode';
 const PEER_CONFIG_FILE = 'peer.json';
 const PEER_ROLE_FILE = 'peer-role.json';
 
@@ -164,19 +166,36 @@ export function setWriteTempoOnJump(on: boolean): boolean {
 }
 
 /**
- * Whether the second computer automatically reconciles its playhead to match
- * the main computer while stopped. Defaults to `true`.
+ * Reports whether a value is one of the supported slave follow modes.
  */
-export function getPeerAutoCorrect(): boolean {
-  return readPreference(PEER_AUTO_CORRECT_FILE)?.toLowerCase() !== 'false';
+export function isPeerFollowMode(value: unknown): value is PeerFollowMode {
+  return value === 'follow' || value === 'transport' || value === 'independent';
 }
 
 /**
- * Sets whether the second computer automatically reconciles its playhead to
- * match the main computer while stopped.
+ * How the second computer follows the main computer:
+ * `follow` runs commands and corrects playhead always, `transport` runs
+ * commands and corrects while playing (alerting only while stopped), and
+ * `independent` keeps the link for status and alerts only.
+ *
+ * When `peer-follow-mode` does not exist yet, migrates from legacy
+ * `peer-auto-correct` (`false` -> `transport`, everything else -> `follow`).
  */
-export function setPeerAutoCorrect(on: boolean): boolean {
-  return writePreference(PEER_AUTO_CORRECT_FILE, on ? 'true' : 'false');
+export function getPeerFollowMode(): PeerFollowMode {
+  const raw = readPreference(PEER_FOLLOW_MODE_FILE);
+  if (raw !== null) {
+    const normalized = raw.toLowerCase();
+    return isPeerFollowMode(normalized) ? normalized : 'follow';
+  }
+  return readPreference(PEER_AUTO_CORRECT_FILE)?.toLowerCase() === 'false' ? 'transport' : 'follow';
+}
+
+/**
+ * Persists how the second computer follows the main computer.
+ */
+export function setPeerFollowMode(mode: string): boolean {
+  if (!isPeerFollowMode(mode)) return false;
+  return writePreference(PEER_FOLLOW_MODE_FILE, mode);
 }
 
 /**

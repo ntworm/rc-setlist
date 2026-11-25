@@ -8,7 +8,6 @@
 import {
   clearPeerConfig,
   clearSlaveRole,
-  getPeerAutoCorrect,
   getUiLocale,
   readPeerConfigs,
   removePeerConfig,
@@ -44,7 +43,8 @@ import {
   type PeerPanelState,
   type PeerRowDisplay,
 } from './peer-panel-health.js';
-import type { PeerLinkStatus } from '../types.js';
+import { panelFollowMode } from './peer-follow-mode-panel.js';
+import type { PeerFollowMode, PeerLinkStatus } from '../types.js';
 
 export {
   buildPeerPanelAlerts,
@@ -122,8 +122,8 @@ export interface PeerPanelModel {
   masterAddress?: string;
   /** Whether the main computer is talking to this one right now. */
   slaveConnected?: boolean;
-  /** Whether automatic playhead correction on the slave is enabled. */
-  autoCorrect?: boolean;
+  /** How this computer follows the main computer when paired as a slave. */
+  followMode?: PeerFollowMode;
   /** Active command execution alerts keyed by peer key. */
   alerts?: Record<string, PeerPanelAlertDisplay>;
 }
@@ -490,7 +490,7 @@ export function peerPanelModel(options: PeerPanelOptions = {}): PeerPanelModel {
     roleText: roleText(role, locale, peers),
     masterAddress,
     slaveConnected: isSlaveConnected(role),
-    autoCorrect: getPeerAutoCorrect(),
+    followMode: panelFollowMode(),
     alerts: buildPeerPanelAlerts(bridgeState.peerAlerts, locale),
   };
 }

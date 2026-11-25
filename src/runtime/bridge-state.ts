@@ -32,7 +32,7 @@ import {
 } from '../core/project-profile-scope.js';
 import type { ProjectIdentity } from '../core/project-identity.js';
 import type { ProfileManagerOptions } from '../core/profile-manager.js';
-import type { PeerCommandAlert, PeerLinkStatus, PeerStatus } from '../types.js';
+import type { PeerCommandAlert, PeerFollowMode, PeerLinkStatus, PeerStatus } from '../types.js';
 import { readPeerConfigs, readSlaveRole } from '../preferences.js';
 import { log } from '../util/log.js';
 import { atomicWriteFileSync } from '../util/atomic-write.js';
@@ -72,10 +72,15 @@ export interface BridgeState {
    */
   writeTempoOnJump: boolean;
   /**
-   * Whether the second computer automatically reconciles its playhead while
-   * stopped. Loaded from `peer-auto-correct` on startup (defaults to `true`).
+   * How the second computer follows the main computer.
+   * Loaded from `peer-follow-mode` on startup (defaults to `'follow'`).
    */
-  peerAutoCorrect: boolean;
+  peerFollowMode: PeerFollowMode;
+  /**
+   * Whether this computer is currently a standalone slave with a synchronized
+   * inbound master link. Maintained by `peer-inbound.ts`.
+   */
+  inboundSlaveSynced: boolean;
   /** Cached song book for the active profile. */
   songBook: SongBook | null;
   serverRunning: boolean;
@@ -139,7 +144,8 @@ export const bridgeState: BridgeState = {
   transportClockSource: null,
 
   writeTempoOnJump: false,
-  peerAutoCorrect: true,
+  peerFollowMode: 'follow',
+  inboundSlaveSynced: false,
   songBook: null,
   serverRunning: false,
   serverUsesTls: false,
@@ -218,6 +224,14 @@ export function readPeerRole(): { role: PeerRole; masterAddress: string } {
 }
 
 /**
+ * Whether local Stage Control navigation and play commands are locked because
+ * this computer is a synchronized standalone slave following the main computer.
+ */
+export function isSlaveLocked(): boolean {
+  return bridgeState.inboundSlaveSynced && bridgeState.peerFollowMode !== 'independent';
+}
+
+/**
  * Broadcasts the state.
  */
 export function broadcastState(): void {
@@ -235,6 +249,7 @@ export function broadcastState(): void {
       peerStatus: bridgeState.peerStatus,
       peerStatuses: bridgeState.peerStatuses,
       peerAlerts: bridgeState.peerAlerts,
+      slaveLock: isSlaveLocked(),
       profileScopeSwitching: bridgeState.profileScopeSwitching,
     });
     warnIfSlow('ws', 'state broadcast', startedAt);

@@ -58,6 +58,11 @@
 Open the controller URL or scan the controller QR code from the panel. The token
 is required for transport and write actions. Do not share it publicly.
 
+On a slave, a banner that says _Slave following the main computer_ means the
+slave follows the master: **Play** and navigation are disabled there and
+**Stop** stays available. To navigate on the slave, choose **Independent** under
+**Slave mode** in the **Network** tab of its Live panel.
+
 Transport and navigation actions need RC Setlist 0.3.0 or newer. When songs,
 lyrics and timecode update but every transport or navigation action fails,
 choose **Check OSC** in the panel and read the OSC section above.
@@ -153,11 +158,12 @@ panel report the measured state of each link:
 - **UNSTABLE — Recent drop / Heartbeat lost / High latency (RTT)**: the link had a drop within the last `60 s`, missed heartbeats (`> 1.5 s`), or measured high latency (`RTT p95 > 150 ms`). Prefer wired Ethernet between the two machines. Once the link is stable again, press **Acknowledge** on Stage Control or in the Live panel to shorten recovery to `10 s`.
 - **UNSTABLE — Link oscillating (5 min hold)**: the link dropped `3` or more times within `5 min`. Check the Ethernet cable, switch, or Wi-Fi interference; **Acknowledge** is disabled until the `5 min` hold expires without further drops.
 - **UNSTABLE — Markers differ**: load the exact same `.als` arrangement locator layout on both computers, or use **Bring from master** on the slave while stopped.
-- **UNSTABLE — Out of step**: the slave playhead differed from the master for `3 s` outside a pending quantized jump or active loop. Verify that Ableton **Link** is **on** and **Start Stop Sync** is **off** on both computers, and keep **Auto-correct playhead on slave** enabled in the Live panel's **Network** tab.
+- **UNSTABLE — Out of step**: the slave playhead differed from the master for `3 s` outside a pending quantized jump or active loop. Verify that Ableton **Link** is **on** and **Start Stop Sync** is **off** on both computers, and keep the slave in **Follow all** under **Slave mode** in the Live panel's **Network** tab (in **Follow transport** a stopped slave at another beat only alerts).
 - **DOWN — Link down / Remote link down / Local or Remote Live/OSC unavailable**: no frames arrived for `3 s` or AbletonOSC is not responding on one of the machines. If the full-screen red alarm appears on stage, press **Dismiss alarm** to continue operating with the red transport badge while restoring the network cable or restarting RC Setlist on the offline machine.
 - **DIFFERENT VERSIONS**: the master and slave are on different RC Setlist link protocols. Install the exact same RC Setlist release on both computers.
 - **CERTIFICATE CHANGED**: the slave generated a new TLS certificate. In the Live panel's **Network** tab, press **Unpair**, generate a new six-digit code on the slave, and pair again.
 - **`SLAVE DID NOT EXECUTE: <command>` / `Executed late: <command>`**: a command missed its delivery deadline or failed on the slave. Check the link health row and repeat the cue or transport action if needed.
+- **Independent** tag beside a computer: that slave runs in **Independent** mode. The master sends it no commands and raises no alerts for it; switch the slave back to **Follow all** or **Follow transport** under **Slave mode** in its Live panel to make it follow again.
 - **`SLAVE STILL NOT STOPPED`**: the master stopped or triggered panic while the slave was unreachable for more than `1 s`. The stop command stays queued and executes automatically as soon as the slave reconnects; if the link is physically severed, stop the slave machine directly.
 
 ## What to include in a bug report

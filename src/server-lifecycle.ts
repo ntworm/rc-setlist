@@ -11,6 +11,7 @@ import {
   broadcastState,
   broadcastProfileState,
   getActiveProfilePaths,
+  isSlaveLocked,
   profileStatePayload,
   loadLyricsForSong,
   resetMasterTransportSeq,
@@ -98,10 +99,11 @@ import {
   notePeerCommand,
   resetPeerFollowRuntime,
 } from './runtime/peer-follow-runtime.js';
+import { shouldRejectSlaveLocked } from './runtime/peer-follow-mode.js';
 import { getOrGeneratePeerToken } from './runtime/pairing.js';
 import { startPeerDiscovery, stopPeerDiscovery } from './runtime/peer-discovery.js';
 import { startEventLoopWatch, warnIfSlow } from './runtime/event-loop-watch.js';
-import { getPeerAutoCorrect, readPeerConfigs } from './preferences.js';
+import { getPeerFollowMode, readPeerConfigs } from './preferences.js';
 import { applyJumpTargetTempo } from './commands/jump-tempo.js';
 import type { ClientMessage, ShowCommand } from './types.js';
 import {
@@ -465,6 +467,7 @@ function handleClientHandshake(
         peerStatus: bridgeState.peerStatus,
         peerStatuses: bridgeState.peerStatuses,
         peerAlerts: bridgeState.peerAlerts,
+        slaveLock: isSlaveLocked(),
       },
     }),
   );
@@ -610,9 +613,22 @@ function executeInboundPeerInner(
   return dispatchPeerLocalCommand(command, ws, meta);
 }
 
+function runInboundPeerOrIndependent(
+  ws: AugmentedWebSocket,
+  outerCommandId: string,
+  inner: ClientMessage,
+  meta?: SlaveCommandExecutionMeta,
+  errorCommandId?: string,
+): Promise<SlaveCommandExecutionResult> {
+  if (bridgeState.peerFollowMode === 'independent') {
+    return Promise.resolve({ result: 'failed', reason: 'independent' });
+  }
+  return executeInboundPeerInner(ws, outerCommandId, inner, meta, errorCommandId);
+}
+
 function handleInboundPeerCommand(ws: AugmentedWebSocket, msg: PeerCommandEnvelope): Promise<void> {
   return receivePeerCommand(ws, msg, (inner, meta) =>
-    executeInboundPeerInner(ws, msg.commandId, inner, meta),
+    runInboundPeerOrIndependent(ws, msg.commandId, inner, meta),
   ).then(() => undefined);
 }
 
@@ -632,7 +648,7 @@ function handleInboundDirectCommand(
   msg: DirectCommandMessage,
 ): Promise<void> {
   return receiveDirectCommand(ws, msg, (inner, meta) =>
-    executeInboundPeerInner(ws, inner.commandId || msg.commandId, inner, meta, msg.commandId),
+    runInboundPeerOrIndependent(ws, inner.commandId || msg.commandId, inner, meta, msg.commandId),
   ).then(() => undefined);
 }
 
@@ -682,7 +698,7 @@ export async function startServer(options: StartServerOptions = {}): Promise<voi
     setPeerToken(bridgeState.peerToken);
     bridgeState.directToken = getOrGenerateDirectToken();
     setDirectToken(bridgeState.directToken);
-    bridgeState.peerAutoCorrect = getPeerAutoCorrect();
+    bridgeState.peerFollowMode = getPeerFollowMode();
 
     const fallbackSessionId = bridgeState.projectSessionId || newProjectSessionId();
     bridgeState.projectSessionId = projectSessionIdForSong(
@@ -1000,6 +1016,7 @@ export async function startServer(options: StartServerOptions = {}): Promise<voi
         return;
       }
       if (isPeerConnection && msg.type !== 'peer_health_ack') {
+        if (bridgeState.peerFollowMode === 'independent') return;
         notePeerCommand(msg.type);
       }
 
@@ -1093,10 +1110,26 @@ export async function startServer(options: StartServerOptions = {}): Promise<voi
         return;
       }
 
+      if (shouldRejectSlaveLocked(role, effectiveMsg.type)) {
+        ws.send(
+          JSON.stringify({
+            type: 'command_status',
+            commandId,
+            status: 'failed',
+            reason: 'slave_locked',
+          }),
+        );
+        return;
+      }
+
       // On a second computer the show is driven by the main one: the command
-      // goes up, and lands here when it comes back down. Without the main
-      // computer it runs here alone, as before.
-      if (role === 'browser' && PEER_RELAY_TYPES.has(effectiveMsg.type)) {
+      // goes up, and lands here when it comes back down. In Independent mode
+      // or without the main computer it runs here alone.
+      if (
+        role === 'browser' &&
+        bridgeState.peerFollowMode !== 'independent' &&
+        PEER_RELAY_TYPES.has(effectiveMsg.type)
+      ) {
         if (forwardToMaster(effectiveMsg, commandId)) return;
         noteRanWithoutMaster(effectiveMsg.type);
       }
@@ -1273,7 +1306,8 @@ export async function stopServer(): Promise<void> {
   resetPeerUpstream();
   resetMasterTransportSeq();
   bridgeState.peerAlerts = {};
-  bridgeState.peerAutoCorrect = true;
+  bridgeState.peerFollowMode = 'follow';
+  bridgeState.inboundSlaveSynced = false;
   bridgeState.directToken = '';
   bridgeState.directHost = '';
   setDirectToken('');

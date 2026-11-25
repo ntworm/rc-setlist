@@ -204,6 +204,13 @@
       for transport and write actions. Do not share it publicly.
     </p>
     <p>
+      On a slave, a banner that says _Slave following the main computer_ means the slave follows the
+      master: <strong>Play</strong> and navigation are disabled there and
+      <strong>Stop</strong> stays available. To navigate on the slave, choose
+      <strong>Independent</strong> under <strong>Slave mode</strong> in the
+      <strong>Network</strong> tab of its Live panel.
+    </p>
+    <p>
       Transport and navigation actions need RC Setlist 0.3.0 or newer. When songs, lyrics and
       timecode update but every transport or navigation action fails, choose
       <strong>Check OSC</strong> in the panel and read the OSC section above.
@@ -332,9 +339,10 @@
         <strong>UNSTABLE — Out of step</strong>: the slave playhead differed from the master for
         <code>3 s</code> outside a pending quantized jump or active loop. Verify that Ableton
         <strong>Link</strong> is <strong>on</strong> and <strong>Start Stop Sync</strong> is
-        <strong>off</strong> on both computers, and keep
-        <strong>Auto-correct playhead on slave</strong> enabled in the Live panel&#39;s
-        <strong>Network</strong> tab.
+        <strong>off</strong> on both computers, and keep the slave in
+        <strong>Follow all</strong> under <strong>Slave mode</strong> in the Live panel&#39;s
+        <strong>Network</strong> tab (in <strong>Follow transport</strong> a stopped slave at
+        another beat only alerts).
       </li>
       <li>
         <strong>DOWN — Link down / Remote link down / Local or Remote Live/OSC unavailable</strong>:
@@ -360,6 +368,13 @@
         and repeat the cue or transport action if needed.
       </li>
       <li>
+        <strong>Independent</strong> tag beside a computer: that slave runs in
+        <strong>Independent</strong> mode. The master sends it no commands and raises no alerts for
+        it; switch the slave back to <strong>Follow all</strong> or
+        <strong>Follow transport</strong> under <strong>Slave mode</strong> in its Live panel to
+        make it follow again.
+      </li>
+      <li>
         <strong><code>SLAVE STILL NOT STOPPED</code></strong
         >: the master stopped or triggered panic while the slave was unreachable for more than
         <code>1 s</code>. The stop command stays queued and executes automatically as soon as the
@@ -372,6 +387,6 @@
       sanitized logs. Remove controller tokens, certificate material, local paths and real
       setlist/lyrics content. See <a href="../SUPPORT.md">SUPPORT.md</a>.
     </p>
-    <div class="source">Rendered from <code>docs\TROUBLESHOOTING.md</code> on 2026-11-23.</div>
+    <div class="source">Rendered from <code>docs\TROUBLESHOOTING.md</code> on 2026-11-25.</div>
   </body>
 </html>

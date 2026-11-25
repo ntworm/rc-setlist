@@ -5,8 +5,9 @@
 // Master-side pending command relay, 150 ms retry flushing, peer_ack handling, and alerts.
 
 import type { WebSocket } from 'ws';
-import type { ShowCommand } from '../types.js';
+import type { PeerFollowMode, ShowCommand } from '../types.js';
 import { bridgeState, broadcastState } from './bridge-state.js';
+import { isIndependentTarget } from './peer-follow-mode.js';
 import {
   applyPeerDirectSync,
   parsePeerDirectSync,
@@ -49,10 +50,12 @@ export interface PeerCommandTarget {
   readonly state: {
     readonly fingerprintMismatch: boolean;
     readonly versionMismatch?: boolean;
+    readonly followMode?: PeerFollowMode | null;
   };
   readonly pending: PeerPendingTable;
   pendingTimer: NodeJS.Timeout | null;
   rttMs(): number;
+  remoteFollowMode?: () => PeerFollowMode | null;
 }
 
 interface PreparedRelayCommand {
@@ -318,6 +321,20 @@ export function onPeerPendingReconnect(target: PeerCommandTarget): void {
   flushPeerPending(target);
 }
 
+function settlePeerAck(target: PeerCommandTarget, entry: PendingEntry, ack: PeerAckMessage): void {
+  if (ack.reason === 'independent') {
+    clearAlertIfMatches(target.key, entry, ack.result);
+    return;
+  }
+  const reason = ack.reason || undefined;
+  if (ack.result === 'failed' || ack.result === 'expired') {
+    recordAlert(target.key, entry, ack.result, reason);
+  } else {
+    clearAlertIfMatches(target.key, entry, ack.result);
+  }
+  broadcastCommandStatus(target, entry, ack.result, reason);
+}
+
 function handlePeerAck(target: PeerCommandTarget, message: Record<string, unknown>): void {
   const ack = parsePeerAck(message);
   if (!ack) return;
@@ -333,14 +350,7 @@ function handlePeerAck(target: PeerCommandTarget, message: Record<string, unknow
     broadcastCommandStatus(target, outcome.entry, 'late_confirmed');
     return;
   }
-  const { entry } = outcome;
-  const reason = ack.reason || undefined;
-  if (ack.result === 'failed' || ack.result === 'expired') {
-    recordAlert(target.key, entry, ack.result, reason);
-  } else {
-    clearAlertIfMatches(target.key, entry, ack.result);
-  }
-  broadcastCommandStatus(target, entry, ack.result, reason);
+  settlePeerAck(target, outcome.entry, ack);
 }
 
 function handlePeerDirectSync(target: PeerCommandTarget, message: Record<string, unknown>): void {
@@ -465,7 +475,9 @@ export function relayCommandToPeers(
   targets: Iterable<PeerCommandTarget>,
   command: ShowCommand<unknown>,
 ): boolean {
-  const eligible = [...targets].filter(isRelayEligible);
+  const eligible = [...targets].filter(
+    (target) => isRelayEligible(target) && !isIndependentTarget(target),
+  );
   if (eligible.length === 0) return false;
   const prepared = prepareRelayCommand(command);
   if (!prepared) return false;

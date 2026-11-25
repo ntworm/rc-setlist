@@ -208,6 +208,12 @@
       transporte e escrita. Não o compartilhe publicamente.
     </p>
     <p>
+      No slave, uma faixa que diz _Slave seguindo o master_ quer dizer que o slave segue o master:
+      <strong>Play</strong> e a navegação ficam desabilitados ali e o <strong>Stop</strong> continua
+      disponível. Para navegar no slave, escolha <strong>Independente</strong> em
+      <strong>Modo do slave</strong> na aba <strong>Rede</strong> do painel do Live dele.
+    </p>
+    <p>
       As ações de transporte e navegação precisam do RC Setlist 0.3.0 ou superior. Quando as
       músicas, as letras e o timecode atualizam, mas toda ação de transporte ou navegação falha,
       escolha <strong>Verificar OSC</strong> no painel e leia a seção de OSC acima.
@@ -342,8 +348,9 @@
         <code>3 s</code> fora de salto quantizado pendente ou loop ativo. Confira se o
         <strong>Link</strong> do Ableton está <strong>ligado</strong> e o
         <strong>Start Stop Sync</strong> está <strong>desligado</strong> nos dois computadores, e
-        mantenha <strong>Corrigir agulha automaticamente no slave</strong> marcado na aba
-        <strong>Rede</strong> do painel do Live.
+        deixe o slave em <strong>Segue tudo</strong> em <strong>Modo do slave</strong> na aba
+        <strong>Rede</strong> do painel do Live (em <strong>Segue transporte</strong>, um slave
+        parado em outro tempo só alerta).
       </li>
       <li>
         <strong
@@ -371,6 +378,12 @@
         link e repita o salto ou comando se necessário.
       </li>
       <li>
+        Etiqueta <strong>Independente</strong> ao lado de um computador: esse slave está no modo
+        <strong>Independente</strong>. O master não envia comandos nem gera alertas para ele; volte
+        o slave para <strong>Segue tudo</strong> ou <strong>Segue transporte</strong> em
+        <strong>Modo do slave</strong> no painel do Live dele para que siga de novo.
+      </li>
+      <li>
         <strong><code>SLAVE AINDA NÃO PAROU</code></strong
         >: o master parou ou acionou pânico enquanto o slave estava inacessível por mais de
         <code>1 s</code>. O comando de parada permanece na fila e executa automaticamente assim que
@@ -385,7 +398,7 @@
       setlist ou das letras. Consulte <a href="../../SUPPORT.md">SUPPORT.md</a>.
     </p>
     <div class="source">
-      Rendered from <code>docs\pt-BR\TROUBLESHOOTING.md</code> on 2026-11-23.
+      Rendered from <code>docs\pt-BR\TROUBLESHOOTING.md</code> on 2026-11-25.
     </div>
   </body>
 </html>

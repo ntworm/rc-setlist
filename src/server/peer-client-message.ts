@@ -1,4 +1,5 @@
 import type { ClientMessage, DirectWireFields, PeerHealthTier, PeerHealthView } from '../types.js';
+import { isPeerFollowMode } from '../preferences.js';
 import { isPeerRelayWireType } from '../commands/handlers/peer.js';
 
 export type PeerDecodeResult =
@@ -134,28 +135,32 @@ export function decodeHandshakeExtras(input: Record<string, unknown>): Handshake
   return { ok: true, extras };
 }
 
+function hasValidHealthFlags(value: Record<string, unknown>): boolean {
+  return (
+    typeof value.canAcknowledge === 'boolean' &&
+    typeof value.oscConnected === 'boolean' &&
+    typeof value.liveReady === 'boolean' &&
+    typeof value.outOfStep === 'boolean'
+  );
+}
+
 /**
  * Validates and canonicalizes a `PeerHealthView` snapshot.
  */
 export function decodePeerHealthView(value: unknown): PeerHealthView | null {
   if (!isRecord(value)) return null;
   if (!isPeerHealthTier(value.linkHealth)) return null;
-  if (
-    typeof value.canAcknowledge !== 'boolean' ||
-    typeof value.oscConnected !== 'boolean' ||
-    typeof value.liveReady !== 'boolean' ||
-    typeof value.outOfStep !== 'boolean'
-  ) {
-    return null;
-  }
+  if (!hasValidHealthFlags(value)) return null;
   if (!isValidCuesFingerprint(value.cuesFingerprint)) return null;
+  const followMode = isPeerFollowMode(value.followMode) ? value.followMode : undefined;
   return {
     linkHealth: value.linkHealth,
-    canAcknowledge: value.canAcknowledge,
-    oscConnected: value.oscConnected,
-    liveReady: value.liveReady,
+    canAcknowledge: value.canAcknowledge as boolean,
+    oscConnected: value.oscConnected as boolean,
+    liveReady: value.liveReady as boolean,
     cuesFingerprint: value.cuesFingerprint,
-    outOfStep: value.outOfStep,
+    outOfStep: value.outOfStep as boolean,
+    ...(followMode ? { followMode } : {}),
   };
 }
 

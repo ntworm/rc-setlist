@@ -21,14 +21,17 @@
 // - The main computer plays and this one is stopped: it starts on a bar line
 //   of the main computer's position, and the first rule settles the rest.
 // - The main computer is stopped and this one plays: it stops.
-// - Both are stopped at different beats: when auto-correct is on, converge to
-//   the marker at that beat (or move directly between markers); when off,
-//   alert without moving the playhead.
+// - Both are stopped at different beats: in Follow all mode, converge to the
+//   marker at that beat (or move directly between markers); in Follow
+//   transport mode, alert without moving the playhead.
+// - In Independent mode nothing is corrected and nothing is out of step.
 //
 // Each case must hold for several targets in a row before anything happens,
 // and nothing happens while a jump waits for its grid, while a loop runs or
 // right after a relayed command, when the two sides are expected to differ
 // for a moment. Sustained mismatches outside those windows flag `outOfStep`.
+
+import type { PeerFollowMode } from '../types.js';
 
 /** What the main computer says about its transport and target position. */
 export interface PeerTarget {
@@ -57,8 +60,8 @@ export interface LocalTransport {
   beatsPerBar: number;
   /** Whether panic or a lock refuses a transport command here. */
   transportLocked: boolean;
-  /** Whether automatic stopped-state convergence is enabled. Defaults to `true`. */
-  autoCorrect?: boolean;
+  /** How this computer follows the main computer. Defaults to `'follow'`. */
+  followMode?: PeerFollowMode;
 }
 
 export type FollowAction =
@@ -276,6 +279,8 @@ export class PeerFollower {
 
   /** Reads one target and acts when its case has held long enough. */
   onTarget(remote: PeerTarget, local: LocalTransport): FollowAction {
+    const mode: PeerFollowMode = local.followMode ?? 'follow';
+    if (mode === 'independent') return this.clearIndependentState();
     const at = this.now();
     // A link that was quiet for a while came back: what was counted before
     // it is not counted on top of the first target after it.
@@ -291,7 +296,17 @@ export class PeerFollower {
       this.reset();
       return { kind: 'none' };
     }
-    return this.advanceActionStreak(action, local);
+    return this.advanceActionStreak(action, mode);
+  }
+
+  private clearIndependentState(): FollowAction {
+    this.reset();
+    this.reportedMismatch = false;
+    this.reportedStoppedMismatch = false;
+    this.lastRemote = null;
+    this.lastLocal = null;
+    this.clearOutOfStep();
+    return { kind: 'none' };
   }
 
   private canPursueAction(action: FollowAction, steady: boolean, at: number): boolean {
@@ -302,7 +317,7 @@ export class PeerFollower {
     return true;
   }
 
-  private advanceActionStreak(action: FollowAction, local: LocalTransport): FollowAction {
+  private advanceActionStreak(action: FollowAction, mode: PeerFollowMode): FollowAction {
     if (action.kind === 'none') {
       this.reset();
       this.reportedMismatch = false;
@@ -316,7 +331,7 @@ export class PeerFollower {
     }
     if (this.streak < STABLE_CLOCKS) return { kind: 'none' };
     this.reset();
-    return this.apply(action, local.autoCorrect !== false);
+    return this.apply(action, mode);
   }
 
   private updateOutOfStep(remote: PeerTarget, local: LocalTransport, at: number): void {
@@ -349,10 +364,20 @@ export class PeerFollower {
     return advancesAtTempo(this.lastLocal, local.songTime, local.tempo, at);
   }
 
-  private apply(action: FollowAction, autoCorrect: boolean): FollowAction {
+  private apply(action: FollowAction, mode: PeerFollowMode): FollowAction {
     if (action.kind === 'phase_mismatch') return this.applyPhaseMismatch(action.gap);
-    if (action.kind === 'none') return action;
-    if (!autoCorrect) return this.reportAutoCorrectOff(action);
+    if (action.kind === 'none' || mode === 'independent') return { kind: 'none' };
+    if (mode === 'transport' && action.kind === 'seek_stopped') {
+      return this.reportAutoCorrectOff(action);
+    }
+    this.runCorrection(action);
+    this.correctionQuietUntil = this.now() + this.timing().settleAfterCorrectionMs;
+    this.clearOutOfStep();
+    return action;
+  }
+
+  /** Moves, starts, stops, or seeks this computer's transport for one correction. */
+  private runCorrection(action: FollowAction): void {
     switch (action.kind) {
       case 'shift':
         this.effects.moveTo(action.to);
@@ -379,9 +404,6 @@ export class PeerFollower {
         );
         break;
     }
-    this.correctionQuietUntil = this.now() + this.timing().settleAfterCorrectionMs;
-    this.clearOutOfStep();
-    return action;
   }
 
   private reportAutoCorrectOff(action: FollowAction): FollowAction {
@@ -389,8 +411,8 @@ export class PeerFollower {
       this.reportedStoppedMismatch = true;
       const detail =
         action.kind === 'seek_stopped'
-          ? 'The second computer is at a different beat from the main computer while stopped (auto-correct is off).'
-          : 'The second computer is out of step with the main computer (auto-correct is off).';
+          ? 'The second computer is at a different beat from the main computer while stopped (Follow transport mode).'
+          : 'The second computer is out of step with the main computer (Follow transport mode).';
       this.effects.report(detail);
     }
     return { kind: 'none' };

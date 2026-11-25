@@ -6,7 +6,14 @@
 // for the Live panel.
 
 import type { UiLocale } from '../preferences.js';
-import type { PeerCommandAlert, PeerHealthReason, PeerLinkStatus, PeerStatus } from '../types.js';
+import type {
+  PeerCommandAlert,
+  PeerFollowMode,
+  PeerHealthReason,
+  PeerLinkStatus,
+  PeerStatus,
+} from '../types.js';
+import { peerFollowModeTagText } from './peer-follow-mode-panel.js';
 
 /** The states the panel can show for the second computer. */
 export type PeerPanelState =
@@ -39,6 +46,8 @@ export interface PeerRowDisplay {
   lastDropAt: number | null;
   lastSeenAt: number | null;
   canAcknowledge: boolean;
+  followMode: PeerFollowMode | null;
+  followModeTagText: string;
 }
 
 const ACK_PREFIX = 'peer-ack:';
@@ -198,6 +207,7 @@ export function peerRowDisplay(
 ): PeerRowDisplay {
   const state = rowBadgeState(row);
   const panelState = peerPanelState({ paired: true, ...row });
+  const followMode = row.followMode ?? null;
   return {
     state,
     badgeText: peerHealthBadgeText(state, locale),
@@ -208,6 +218,8 @@ export function peerRowDisplay(
     lastDropAt: finiteOrNull(row.lastDropAt),
     lastSeenAt: finiteOrNull(lastSeenAt),
     canAcknowledge: state === 'unstable' && row.canAcknowledge === true,
+    followMode,
+    followModeTagText: peerFollowModeTagText(followMode, locale),
   };
 }
 

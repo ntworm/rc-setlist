@@ -39,7 +39,7 @@ function localTransport(): LocalTransport | null {
     loopActive: state.loopActive,
     beatsPerBar: beatsPerBar(state.signatureNumerator, state.signatureDenominator),
     transportLocked: bridgeState.commandBus?.wouldRejectForSafety('play') ?? false,
-    autoCorrect: bridgeState.peerAutoCorrect,
+    followMode: bridgeState.peerFollowMode,
   };
 }
 

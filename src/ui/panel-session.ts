@@ -49,7 +49,6 @@ const PLAIN_ACTIONS: ReadonlySet<string> = new Set([
   'diagnose-osc',
   'toggle-auto-start',
   'toggle-write-tempo',
-  'toggle-peer-auto-correct',
   'refresh',
   'select-address',
   'select-profile',
@@ -68,6 +67,12 @@ const PLAIN_ACTIONS: ReadonlySet<string> = new Set([
 
 /** The actions that carry their argument in the action itself. */
 const LOCALE_ACTIONS: ReadonlySet<string> = new Set(['set-language:en', 'set-language:pt-BR']);
+
+/** The prefix of the action that switches the slave follow mode. */
+const FOLLOW_MODE_PREFIX = 'set-follow-mode:';
+
+/** The closed set of slave follow modes accepted by the panel. */
+const FOLLOW_MODE_VALUES: ReadonlySet<string> = new Set(['follow', 'transport', 'independent']);
 
 /** The prefix of the action that pairs a second computer. */
 const PAIR_PREFIX = 'peer-pair:';
@@ -132,6 +137,9 @@ export function createPanelSession(): PanelSession {
 export function isKnownAction(action: string): boolean {
   if (PLAIN_ACTIONS.has(action)) return true;
   if (LOCALE_ACTIONS.has(action)) return true;
+  if (action.startsWith(FOLLOW_MODE_PREFIX)) {
+    return FOLLOW_MODE_VALUES.has(action.slice(FOLLOW_MODE_PREFIX.length));
+  }
   if (
     action.startsWith(PAIR_PREFIX) ||
     action.startsWith(UNPAIR_PREFIX) ||

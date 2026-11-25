@@ -1146,6 +1146,18 @@ body {
   color: var(--ui-danger-ink);
 }
 
+.peer-health-mode-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.16rem 0.45rem;
+  border: 1px solid var(--ui-rule);
+  border-radius: var(--ui-radius);
+  color: var(--ui-text);
+  font-weight: 850;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
 .peer-health-host {
   color: var(--ui-text);
   font-family: var(--ui-mono);

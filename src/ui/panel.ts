@@ -18,16 +18,15 @@ import { resolveLanSnapshot } from '../server/lan-address.js';
 import { certCoversRequiredAltNames, hasLocalCa, httpsOptions } from '../server/cert.js';
 import {
   getAutoStart,
-  getPeerAutoCorrect,
   getUiLocale,
   setAutoStart,
-  setPeerAutoCorrect,
   setUiLocale,
   type UiLocale,
   getWriteTempoOnJump,
   setWriteTempoOnJump,
 } from '../preferences.js';
 import { buildOscDiagnosticModel } from './osc-diagnostics.js';
+import { applyPanelFollowModeAction, FOLLOW_MODE_ACTION_PREFIX } from './peer-follow-mode-panel.js';
 import { peerPanelModel, runPeerAction, sanitizePanelAction } from './peer-panel.js';
 import {
   applyEnvelopeToSession,
@@ -181,14 +180,14 @@ function isOptionToggleAction(action: string): boolean {
   return (
     action === 'toggle-auto-start' ||
     action === 'toggle-write-tempo' ||
-    action === 'toggle-peer-auto-correct'
+    action.startsWith(FOLLOW_MODE_ACTION_PREFIX)
   );
 }
 
 function runOptionToggleAction(action: string): void {
   if (action === 'toggle-auto-start') toggleAutoStart();
   else if (action === 'toggle-write-tempo') toggleWriteTempo();
-  else if (action === 'toggle-peer-auto-correct') togglePeerAutoCorrect();
+  else if (action.startsWith(FOLLOW_MODE_ACTION_PREFIX)) applyPanelFollowModeAction(action);
 }
 
 /**
@@ -208,16 +207,6 @@ function toggleWriteTempo(): void {
   const ok = setWriteTempoOnJump(next);
   bridgeState.writeTempoOnJump = next;
   log.info('panel', 'write-tempo-on-jump toggled', { next, writeOk: ok });
-}
-
-/**
- * Turns automatic playhead correction on the second computer around.
- */
-function togglePeerAutoCorrect(): void {
-  const next = !getPeerAutoCorrect();
-  const ok = setPeerAutoCorrect(next);
-  bridgeState.peerAutoCorrect = next;
-  log.info('panel', 'peer-auto-correct toggled', { next, writeOk: ok });
 }
 
 /**

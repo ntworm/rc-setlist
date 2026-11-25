@@ -102,6 +102,7 @@
     host.className = 'peer-health-host';
     host.textContent = rowHostLabel(row);
     rowEl.append(pill, host);
+    globalScope.RcPeerStatus.appendFollowModeTag?.(doc, rowEl, row, translate);
 
     const reasonKey = view.reasonKey || (view.tier !== 'ok' ? view.textKey : '');
     if (reasonKey) {

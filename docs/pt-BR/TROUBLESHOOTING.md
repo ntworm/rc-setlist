@@ -59,6 +59,11 @@
 Abra a URL de controle ou leia o QR code de controle no painel. O token é
 obrigatório para transporte e escrita. Não o compartilhe publicamente.
 
+No slave, uma faixa que diz _Slave seguindo o master_ quer dizer que o slave
+segue o master: **Play** e a navegação ficam desabilitados ali e o **Stop**
+continua disponível. Para navegar no slave, escolha **Independente** em **Modo
+do slave** na aba **Rede** do painel do Live dele.
+
 As ações de transporte e navegação precisam do RC Setlist 0.3.0 ou superior.
 Quando as músicas, as letras e o timecode atualizam, mas toda ação de
 transporte ou navegação falha, escolha **Verificar OSC** no painel e leia a
@@ -157,11 +162,12 @@ Quando dois computadores estão pareados, o Controle de palco, a tela
 - **INSTÁVEL — Queda recente / Heartbeat perdido / Latência alta (RTT)**: o link sofreu uma queda nos últimos `60 s`, perdeu heartbeats (`> 1,5 s`) ou mediu latência alta (`RTT p95 > 150 ms`). Prefira cabo de rede Ethernet entre as duas máquinas. Quando o link estabilizar, aperte **Confirmar** no Controle de palco ou no painel do Live para reduzir a recuperação para `10 s`.
 - **INSTÁVEL — Link oscilando (trava 5 min)**: o link caiu `3` ou mais vezes em `5 min`. Verifique cabo Ethernet, switch ou interferência no Wi-Fi; o botão **Confirmar** fica indisponível até a trava de `5 min` terminar sem novas quedas.
 - **INSTÁVEL — Marcadores diferentes**: abra o mesmo `.als` com os mesmos locators nos dois computadores, ou use **Trazer do master** no slave com o Live parado.
-- **INSTÁVEL — Fora de passo**: a agulha do slave divergiu do master por `3 s` fora de salto quantizado pendente ou loop ativo. Confira se o **Link** do Ableton está **ligado** e o **Start Stop Sync** está **desligado** nos dois computadores, e mantenha **Corrigir agulha automaticamente no slave** marcado na aba **Rede** do painel do Live.
+- **INSTÁVEL — Fora de passo**: a agulha do slave divergiu do master por `3 s` fora de salto quantizado pendente ou loop ativo. Confira se o **Link** do Ableton está **ligado** e o **Start Stop Sync** está **desligado** nos dois computadores, e deixe o slave em **Segue tudo** em **Modo do slave** na aba **Rede** do painel do Live (em **Segue transporte**, um slave parado em outro tempo só alerta).
 - **CAÍDO — Link caído / Link caído no outro computador / Live/OSC local ou remoto indisponível**: nenhum frame chegou por `3 s` ou o AbletonOSC parou de responder em uma das máquinas. Se o alarme vermelho em tela cheia abrir no palco, aperte **Dispensar alarme** para continuar operando com o selo vermelho no transporte enquanto restabelece o cabo de rede ou reinicia o RC Setlist na máquina offline.
 - **VERSÕES DIFERENTES**: master e slave estão em versões incompatíveis do protocolo do link. Instale exatamente a mesma versão do RC Setlist nos dois computadores.
 - **CERTIFICADO MUDOU**: o slave gerou um novo certificado TLS. Na aba **Rede** do painel do Live, aperte **Desfazer**, gere um novo código de seis dígitos no slave e pareie novamente.
 - **`SLAVE NÃO EXECUTOU: <comando>` / `Executou atrasado: <comando>`**: um comando perdeu o prazo de entrega ou falhou no slave. Verifique a barra de saúde do link e repita o salto ou comando se necessário.
+- Etiqueta **Independente** ao lado de um computador: esse slave está no modo **Independente**. O master não envia comandos nem gera alertas para ele; volte o slave para **Segue tudo** ou **Segue transporte** em **Modo do slave** no painel do Live dele para que siga de novo.
 - **`SLAVE AINDA NÃO PAROU`**: o master parou ou acionou pânico enquanto o slave estava inacessível por mais de `1 s`. O comando de parada permanece na fila e executa automaticamente assim que o slave reconectar; se o cabo foi desconectado de vez, pare o slave diretamente na segunda máquina.
 
 ## O que incluir em um bug report

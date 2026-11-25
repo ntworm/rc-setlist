@@ -369,6 +369,7 @@ test('peerStatusRows populates defaults when metadata is omitted', () => {
     drops5m: 0,
     lastDropAt: null,
     remoteLinkHealth: null,
+    followMode: null,
   });
 });
 
@@ -410,5 +411,6 @@ test('peerStatusRows preserves explicit health and role metadata', () => {
     drops5m: 3,
     lastDropAt: 9_000,
     remoteLinkHealth: 'unstable',
+    followMode: null,
   });
 });

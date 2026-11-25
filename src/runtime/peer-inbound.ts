@@ -7,6 +7,7 @@
 import { WebSocket } from 'ws';
 import { readPeerConfigs, readSlaveRole } from '../preferences.js';
 import type { AugmentedWebSocket, ClientMessage, PeerHealthView } from '../types.js';
+import { bridgeState, broadcastState } from './bridge-state.js';
 import { isPeerOutOfStep, resetPeerFollowRuntime } from './peer-follow-runtime.js';
 import { PeerHealthTracker } from './peer-health.js';
 import {
@@ -56,6 +57,13 @@ function ensureRoleCache(): void {
 function hasStandaloneSlaveRole(): boolean {
   ensureRoleCache();
   return cachedSlaveRole !== null && !cachedHasOutboundPeers;
+}
+
+function syncInboundSlaveSynced(): void {
+  const next = synchronized && hasStandaloneSlaveRole();
+  if (bridgeState.inboundSlaveSynced === next) return;
+  bridgeState.inboundSlaveSynced = next;
+  broadcastState();
 }
 
 function sendOnSocket(ws: AugmentedWebSocket | null, msg: unknown): boolean {
@@ -147,6 +155,7 @@ function clearInboundRecord(): void {
   lastLogged = '';
   setDirectSyncListener(null);
   resetPeerFollowRuntime();
+  syncInboundSlaveSynced();
 }
 
 /**
@@ -163,6 +172,7 @@ export function syncInboundSlaveRole(): void {
   refreshRoleCache();
   if (hasStandaloneSlaveRole()) {
     if (!tracker) tracker = new PeerHealthTracker();
+    syncInboundSlaveSynced();
     onStatusChange?.();
     return;
   }
@@ -171,6 +181,7 @@ export function syncInboundSlaveRole(): void {
     closeQuietly(activeSocket, 'unpaired');
     clearInboundRecord();
   }
+  syncInboundSlaveSynced();
   onStatusChange?.();
 }
 
@@ -196,6 +207,7 @@ export function isActiveInboundPeer(ws: AugmentedWebSocket): boolean {
 export function setInboundHasOutboundPeers(hasOutbound: boolean): void {
   ensureRoleCache();
   cachedHasOutboundPeers = hasOutbound;
+  syncInboundSlaveSynced();
 }
 
 /**
@@ -227,7 +239,8 @@ export function onInboundPeerSyncConfirm(ws: AugmentedWebSocket): void {
   heartbeat = startPeerHeartbeat({
     tracker: activeTracker,
     send: (msg) => (isCurrent() ? sendOnSocket(ws, msg) : false),
-    getLocalView: () => buildLocalHealthView(activeTracker, isPeerOutOfStep()),
+    getLocalView: () =>
+      buildLocalHealthView(activeTracker, isPeerOutOfStep(), bridgeState.peerFollowMode),
     onRemoteView: (view) => {
       if (!isCurrent()) return;
       remoteView = view;
@@ -248,6 +261,7 @@ export function onInboundPeerSyncConfirm(ws: AugmentedWebSocket): void {
   });
   setDirectSyncListener(sendInboundDirectSyncDelta);
   sendInboundDirectSyncFull();
+  syncInboundSlaveSynced();
   onStatusChange?.();
 }
 
@@ -283,6 +297,7 @@ export function onInboundPeerClosed(ws: AugmentedWebSocket): void {
     tracker = null;
     lastLogged = '';
   }
+  syncInboundSlaveSynced();
   onStatusChange?.();
 }
 

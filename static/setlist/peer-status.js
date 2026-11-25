@@ -312,7 +312,22 @@
     applyTransportBadge(doc, view, translate);
   }
 
+  /**
+   * Appends the "Independent" tag to a peer row whose remote computer runs in
+   * Independent mode. The tag is informational: it never changes the tier.
+   */
+  function appendFollowModeTag(doc, rowEl, row, translate) {
+    if (row?.followMode !== 'independent' || !doc?.createElement) return null;
+    const t = typeof translate === 'function' ? translate : defaultTranslate;
+    const tag = doc.createElement('span');
+    tag.className = 'peer-health-mode-tag';
+    tag.textContent = t('peer.followMode.independentTag');
+    rowEl.appendChild(tag);
+    return tag;
+  }
+
   globalScope.RcPeerStatus = Object.freeze({
+    appendFollowModeTag,
     peerStatusView,
     applyPeerStatus,
     formatAgo,

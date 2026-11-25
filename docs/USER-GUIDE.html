@@ -600,7 +600,8 @@ Song B [bpm 96]</code></pre>
       These travel to the paired computer: <strong>Play</strong>, <strong>Stop</strong>,
       <strong>jump</strong> (as the beat it lands on), <strong>metronome</strong>,
       <strong>quantization</strong>, <strong>count-in</strong>, <strong>refresh</strong> and
-      <strong>panic</strong>.
+      <strong>panic</strong>. A slave in <strong>Independent</strong> mode receives none of them
+      (see Slave modes below).
     </p>
     <p>
       Every relayed command is confirmed by the slave (<code>peer_ack</code>) and retried every
@@ -669,10 +670,55 @@ Song B [bpm 96]</code></pre>
       the two are not on the same beat; the second computer reports it and asks to check Link,
       without moving. When a playhead mismatch holds for <code>3 s</code> outside a pending jump or
       active loop, both computers show <strong>UNSTABLE</strong> with reason
-      <strong>Out of step</strong>. The <strong>Auto-correct playhead on slave</strong> checkbox in
-      the Live panel&#39;s <strong>Network</strong> tab (<code>peer-auto-correct</code>, enabled by
-      default) can be turned off to alert without moving the slave playhead. Every correction is
-      written to the log of the second computer.
+      <strong>Out of step</strong>. The slave mode (below) decides which of these corrections run.
+      Every correction is written to the log of the second computer.
+    </p>
+    <h3 id="slave-modes">Slave modes</h3>
+    <p>
+      On a slave, the <strong>Second computer</strong> card of the Live panel&#39;s
+      <strong>Network</strong> tab shows <strong>Slave mode</strong> with three buttons. The
+      selector appears only on a slave, and the choice is remembered after a restart
+      (<code>peer-follow-mode</code>).
+    </p>
+    <ul>
+      <li>
+        <strong>Follow all</strong> (default): the slave runs the master&#39;s commands and corrects
+        its playhead always, playing and stopped. Its Stage Control navigation is locked.
+      </li>
+      <li>
+        <strong>Follow transport</strong>: the slave runs the master&#39;s commands and corrects its
+        playhead while playing (gap, start, stop); stopped at another beat, it only alerts. Its
+        Stage Control navigation is locked.
+      </li>
+      <li>
+        <strong>Independent</strong>: the master sends no commands, and the slave refuses any that
+        arrive. No playhead correction and no <strong>Out of step</strong>. Its Stage Control is
+        free and runs only on this computer.
+      </li>
+    </ul>
+    <p>
+      In <strong>Follow all</strong> and <strong>Follow transport</strong>, while the link to the
+      master is up, the Stage Control of the slave is read-only for navigation:
+      <strong>Play</strong>, the song and section buttons, a tap on a song or section, the count-in,
+      the click, the pre-roll and the quantization are disabled, and a banner says _Slave following
+      the main computer. To navigate, switch to Independent in Live._ The slave refuses those
+      commands with <code>slave_locked</code>. <strong>Stop</strong>, <strong>Panic</strong> and
+      <strong>Refresh</strong> stay available and still go up to the master, so a Stop on the slave
+      stops the whole show.
+    </p>
+    <p>
+      In <strong>Independent</strong>, the link stays on for health and alerts only: the master
+      sends nothing to that slave and raises no alert for it, and what the operator does on the
+      slave runs on that computer alone. The master&#39;s Stage Control and Live panel show an
+      <strong>Independent</strong> tag beside that computer; the tag does not change its
+      <strong>OK</strong> / <strong>UNSTABLE</strong> / <strong>DOWN</strong> state. Switching back
+      to <strong>Follow all</strong> or <strong>Follow transport</strong> locks the slave again and
+      the master resumes sending commands.
+    </p>
+    <p>
+      A slave that last ran an older build with the
+      <strong>Auto-correct playhead on slave</strong> checkbox keeps its choice: checked becomes
+      <strong>Follow all</strong>, unchecked becomes <strong>Follow transport</strong>.
     </p>
     <h3 id="a-phone-is-not-a-second-computer">A phone is not a second computer</h3>
     <p>
@@ -782,6 +828,6 @@ Song B [bpm 96]</code></pre>
       The full reasoning is in
       <a href="architecture/song-identity.html">docs/architecture/song-identity.md</a>.
     </p>
-    <div class="source">Rendered from <code>docs\USER-GUIDE.md</code> on 2026-11-23.</div>
+    <div class="source">Rendered from <code>docs\USER-GUIDE.md</code> on 2026-11-25.</div>
   </body>
 </html>

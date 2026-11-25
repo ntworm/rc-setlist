@@ -305,42 +305,6 @@
         </div>
         <div class="candidate-list" id="networkCandidates"></div>
 
-        <section class="card fold-card" id="phoneCertCard" hidden>
-          <div class="fold-head">
-            <span class="card-title" data-i18n="panel.certTitle">Certificate</span>
-            <span class="hint" data-i18n="panel.certStatus">
-              Install once on each phone and computer to stop the browser warning
-            </span>
-            <button
-              class="btn"
-              id="btnCertToggle"
-              type="button"
-              aria-expanded="false"
-              aria-controls="certDetails"
-              data-i18n="panel.peerShow"
-            >
-              Show
-            </button>
-          </div>
-          <div class="fold-body cert-details" id="certDetails" hidden>
-            <div id="qrCert" class="qr-frame"></div>
-            <div class="cert-copy">
-              <span class="mono-line" id="certUrl"></span>
-              <div class="hint" data-i18n="panel.certStep1">
-                1. Read the QR with the phone, or open the address on the computer, and download the
-                certificate
-              </div>
-              <div class="hint" data-i18n="panel.certStep2">
-                2. Install it as a trusted CA certificate (the page shows how on Android, iPhone,
-                Windows and Mac)
-              </div>
-              <div class="hint" data-i18n="panel.certStep3">
-                3. Reopen the browser and the Stage Control: no warning
-              </div>
-            </div>
-          </div>
-        </section>
-
         <section class="card fold-card">
           <div class="fold-head">
             <span class="card-title" data-i18n="panel.peerSecondComputer">Second computer</span>
@@ -360,10 +324,44 @@
           <div class="hint" id="peerCodeHint"></div>
           <div class="peer-alerts-box" id="peerAlertsBox" role="alert" hidden></div>
           <ul class="peer-list" id="peerList" hidden></ul>
-          <label class="peer-auto-correct-row" id="peerAutoCorrectRow">
-            <input type="checkbox" id="chkPeerAutoCorrect" checked />
-            <span data-i18n="panel.peerAutoCorrect">Auto-correct playhead on slave</span>
-          </label>
+          <div class="peer-follow-mode-row" id="peerFollowModeRow" hidden>
+            <span class="cap" data-i18n="panel.peerFollowModeLabel">Slave mode</span>
+            <div
+              class="follow-mode-seg"
+              id="peerFollowModeSeg"
+              role="group"
+              data-i18n-aria-label="panel.peerFollowModeLabel"
+              aria-label="Slave mode"
+            >
+              <button
+                class="follow-mode-btn"
+                type="button"
+                data-follow-mode="follow"
+                aria-pressed="false"
+                data-i18n="panel.peerFollowMode.follow"
+              >
+                Follow all
+              </button>
+              <button
+                class="follow-mode-btn"
+                type="button"
+                data-follow-mode="transport"
+                aria-pressed="false"
+                data-i18n="panel.peerFollowMode.transport"
+              >
+                Follow transport
+              </button>
+              <button
+                class="follow-mode-btn"
+                type="button"
+                data-follow-mode="independent"
+                aria-pressed="false"
+                data-i18n="panel.peerFollowMode.independent"
+              >
+                Independent
+              </button>
+            </div>
+          </div>
           <div class="fold-body" id="peerDetails" hidden>
             <div class="peer-found" id="peerFound" hidden>
               <span class="cap" data-i18n="panel.peerFound">Ready to pair</span>
@@ -418,6 +416,42 @@
                 Generate code
               </button>
               <span class="peer-active-code" id="peerActiveCode"></span>
+            </div>
+          </div>
+        </section>
+
+        <section class="card fold-card" id="phoneCertCard" hidden>
+          <div class="fold-head">
+            <span class="card-title" data-i18n="panel.certTitle">Certificate</span>
+            <span class="hint" data-i18n="panel.certStatus">
+              Install once on each phone and computer to stop the browser warning
+            </span>
+            <button
+              class="btn"
+              id="btnCertToggle"
+              type="button"
+              aria-expanded="false"
+              aria-controls="certDetails"
+              data-i18n="panel.peerShow"
+            >
+              Show
+            </button>
+          </div>
+          <div class="fold-body cert-details" id="certDetails" hidden>
+            <div id="qrCert" class="qr-frame"></div>
+            <div class="cert-copy">
+              <span class="mono-line" id="certUrl"></span>
+              <div class="hint" data-i18n="panel.certStep1">
+                1. Read the QR with the phone, or open the address on the computer, and download the
+                certificate
+              </div>
+              <div class="hint" data-i18n="panel.certStep2">
+                2. Install it as a trusted CA certificate (the page shows how on Android, iPhone,
+                Windows and Mac)
+              </div>
+              <div class="hint" data-i18n="panel.certStep3">
+                3. Reopen the browser and the Stage Control: no warning
+              </div>
             </div>
           </div>
         </section>

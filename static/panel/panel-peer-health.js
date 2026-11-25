@@ -235,6 +235,12 @@
       ? translate(view.stateKey)
       : row.badgeText || row.statusText || '';
     item.append(address, status);
+    if (row.followMode === 'independent') {
+      const tag = document.createElement('span');
+      tag.className = 'peer-list-mode-tag';
+      tag.textContent = translate('peer.followMode.independentTag');
+      item.appendChild(tag);
+    }
 
     const metaText = buildMetaText(row, view, nowMs);
     if (metaText) {
@@ -282,26 +288,35 @@
     }
   }
 
+  const FOLLOW_MODES = ['follow', 'transport', 'independent'];
+
   /**
-   * Synchronizes `#chkPeerAutoCorrect` and binds its change listener once.
+   * Shows the slave follow-mode selector only for the slave role, marks the
+   * active mode, and binds the button clicks once.
    */
-  function syncAutoCorrectToggle(peer) {
-    const chk = shell.el('chkPeerAutoCorrect');
-    if (!chk) return;
-    chk.checked = peer?.autoCorrect !== false;
-    if (chk.dataset.boundAutoCorrect === '1') return;
-    chk.dataset.boundAutoCorrect = '1';
-    chk.addEventListener('change', () => {
-      shell.sendAction('toggle-peer-auto-correct');
-    });
+  function syncFollowModeSelector(peer) {
+    const row = shell.el('peerFollowModeRow');
+    if (!row) return;
+    row.hidden = peer?.role !== 'slave';
+    const active = FOLLOW_MODES.includes(peer?.followMode) ? peer.followMode : 'follow';
+    for (const button of row.querySelectorAll('[data-follow-mode]')) {
+      const mode = button.dataset.followMode;
+      button.setAttribute('aria-pressed', mode === active ? 'true' : 'false');
+      if (button.dataset.boundFollowMode === '1') continue;
+      button.dataset.boundFollowMode = '1';
+      button.addEventListener('click', () => {
+        if (button.getAttribute('aria-pressed') === 'true') return;
+        shell.sendAction(`set-follow-mode:${mode}`);
+      });
+    }
   }
 
   /**
-   * Renders all paired computer rows into `#peerList`, plus command alerts and auto-correct toggle.
+   * Renders all paired computer rows into `#peerList`, plus command alerts and the follow-mode selector.
    */
   function renderPeerList(peer) {
     renderPeerAlerts(peer);
-    syncAutoCorrectToggle(peer);
+    syncFollowModeSelector(peer);
     const list = shell.el('peerList');
     if (!list) return;
     const peers = peer?.peers || [];

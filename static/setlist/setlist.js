@@ -841,6 +841,7 @@ function renderMidiMappings() {
 }
 
 function executeSetlistAction(action) {
+  if (isSlaveLockedState() && action !== 'stop' && action !== 'toggle_lock') return;
   if (action === 'play') {
     requestPlay();
   } else if (action === 'stop') {
@@ -1025,6 +1026,32 @@ function canUseTransport() {
   return Boolean(isController && ws && ws.readyState === WebSocket.OPEN && lastState && !isLocked);
 }
 
+/**
+ * Whether the server says this computer is a slave following the main
+ * computer, so navigation and play stay with the main computer.
+ */
+function isSlaveLockedState() {
+  return lastState?.slaveLock === true;
+}
+
+/**
+ * Whether Play, jumps, the count-in, the click, the pre-roll and the
+ * quantization may be used here. Stop only needs `canUseTransport()`.
+ */
+function canNavigateOrPlay() {
+  return canUseTransport() && !isSlaveLockedState();
+}
+
+/**
+ * Shows the slave lock banner, translated, while the slave follows the main computer.
+ */
+function renderSlaveLockBanner() {
+  const banner = document.getElementById('slaveLockBanner');
+  if (!banner) return;
+  banner.hidden = !isSlaveLockedState();
+  banner.textContent = t('setlist.slaveLockBanner');
+}
+
 function navigateAdjacent(direction) {
   const target = SetlistTransportRuntime.resolveNavigationTarget(lastState, direction);
   if (target) jumpTo(target.songIndex, target.sectionIndex);
@@ -1042,17 +1069,19 @@ function renderPlayState(isPlaying) {
 
 function updateTransportAvailability() {
   const available = canUseTransport();
+  const navigable = canNavigateOrPlay();
   const isPlaying = Boolean(lastState?.isPlaying);
   languageSelect.disabled = isLocked || isPlaying;
   languageSelect.setAttribute('aria-disabled', String(languageSelect.disabled));
-  btnPlay.disabled = !available;
+  btnPlay.disabled = !navigable;
   renderPlayState(isPlaying);
   lastRenderedPlaying = isPlaying;
   btnStop.disabled = !available;
-  btnMetronome.disabled = !available;
-  btnPreRoll.disabled = !available;
+  btnMetronome.disabled = !navigable;
+  btnPreRoll.disabled = !navigable;
   btnRefresh.disabled = !available;
-  quantizationSelect.disabled = !available;
+  quantizationSelect.disabled = !navigable;
+  renderSlaveLockBanner();
   transportHoldControllers.forEach((controller) => controller.update());
   setlistTargetHoldController?.update();
 }
@@ -1180,6 +1209,7 @@ function scheduleCountInBlip(ctx, atSeconds, accent) {
 }
 
 function requestPlay() {
+  if (isSlaveLockedState()) return;
   // A second press during the count means "go now", not "count again".
   if (isCountingIn()) {
     cancelCountIn();
@@ -1188,7 +1218,7 @@ function requestPlay() {
   }
 
   const wantsCountIn =
-    canUseTransport() && lastState?.preRollEnabled === true && lastState.isPlaying === false;
+    canNavigateOrPlay() && lastState?.preRollEnabled === true && lastState.isPlaying === false;
   if (!wantsCountIn) {
     sendControl('play');
     return;
@@ -1253,7 +1283,7 @@ function playCountInStarted(sendPlayOffsetMs) {
 function mountTransportControls() {
   const shared = {
     getState: () => lastState,
-    canNavigate: canUseTransport,
+    canNavigate: canNavigateOrPlay,
     onNavigate: (target) => jumpTo(target.songIndex, target.sectionIndex),
   };
   const controls = [
@@ -1275,6 +1305,7 @@ function mountTransportControls() {
     SetlistTransportRuntime.mountHoldButton({
       ...shared,
       button: btnStop,
+      canNavigate: canUseTransport,
       resolveTarget: () => (canUseTransport() ? { control: 'stop' } : null),
       onComplete: () => {
         cancelCountIn();
@@ -2021,7 +2052,7 @@ function setlistTargetKey(target) {
  * stopped transport already sits at the song it is on, and stays quiet.
  */
 function canHoldSetlistTarget(target) {
-  if (!target?.element?.isConnected || !canUseTransport() || !lastState) return false;
+  if (!target?.element?.isConnected || !canNavigateOrPlay() || !lastState) return false;
   if (target.sectionIndex === null) {
     return Boolean(lastState.isPlaying) || lastState.activeSongIndex !== target.songIndex;
   }
@@ -2283,7 +2314,7 @@ function jumpTo(songIndex, sectionIndex, options) {
     showLockWarning();
     return;
   }
-  if (!canUseTransport()) return;
+  if (!canNavigateOrPlay()) return;
 
   const now = Date.now();
   if (
@@ -2372,7 +2403,7 @@ function toggleMetronome() {
     showLockWarning();
     return;
   }
-  if (!canUseTransport()) return;
+  if (!canNavigateOrPlay()) return;
   ws.send(
     JSON.stringify({
       type: 'metronome',
@@ -2386,7 +2417,7 @@ function togglePreRoll() {
     showLockWarning();
     return;
   }
-  if (!canUseTransport()) return;
+  if (!canNavigateOrPlay()) return;
   ws.send(
     JSON.stringify({
       type: 'set_pre_roll',
@@ -2398,7 +2429,7 @@ function togglePreRoll() {
 const logPanel = document.getElementById('logPanel');
 
 function changeQuantization(val) {
-  if (isLocked || !canUseTransport()) {
+  if (isLocked || !canNavigateOrPlay()) {
     if (isLocked) showLockWarning();
     renderQuantization(quantizationConfirmation.snapshot());
     return;
@@ -3024,6 +3055,7 @@ function promptForToken() {
 
 i18n.subscribe(() => {
   updateLockVisuals();
+  renderSlaveLockBanner();
   renderMidiMappings();
   renderProfileState();
   peerHealthUi?.onLocaleChange();

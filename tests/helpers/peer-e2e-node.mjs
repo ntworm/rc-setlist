@@ -11,12 +11,16 @@ import { fileURLToPath } from 'node:url';
 import { WebSocket, WebSocketServer } from 'ws';
 import { setExtensionContext } from '../../src/context.ts';
 import { startServer } from '../../src/index.ts';
-import { clearSlaveRole, getPeerAutoCorrect, setPeerAutoCorrect } from '../../src/preferences.ts';
-import { bridgeState, broadcastState } from '../../src/runtime/bridge-state.ts';
+import { clearSlaveRole, getPeerFollowMode, setPeerFollowMode } from '../../src/preferences.ts';
+import { bridgeState, broadcastState, isSlaveLocked } from '../../src/runtime/bridge-state.ts';
 import { generatePairingCode } from '../../src/runtime/pairing.ts';
-import { isPeerOutOfStep, setPeerFollowTiming } from '../../src/runtime/peer-follow-runtime.ts';
+import {
+  isPeerOutOfStep,
+  resetPeerFollowRuntime,
+  setPeerFollowTiming,
+} from '../../src/runtime/peer-follow-runtime.ts';
 import { setPeerHealthTiming } from '../../src/runtime/peer-health.ts';
-import { syncInboundSlaveRole } from '../../src/runtime/peer-inbound.ts';
+import { nudgeInboundHeartbeat, syncInboundSlaveRole } from '../../src/runtime/peer-inbound.ts';
 import { publishPeerStatus } from '../../src/runtime/peer-link.ts';
 import { createHttpRequestListener } from '../../src/server/http.ts';
 import { createFakeOsc, makeTlsOptions } from './peer-link-harness.mjs';
@@ -154,7 +158,8 @@ const IPC_HANDLERS = {
       peerHealthAckCount,
       outOfStep: isPeerOutOfStep(),
       currentSongTime: bridgeState.manager?.getState().currentSongTime ?? 0,
-      autoCorrect: bridgeState.peerAutoCorrect,
+      followMode: bridgeState.peerFollowMode,
+      slaveLock: isSlaveLocked(),
       safety: bridgeState.manager?.getState().safety ?? null,
     });
   },
@@ -173,9 +178,13 @@ const IPC_HANDLERS = {
     if (msg.timing && typeof msg.timing === 'object') setPeerFollowTiming(msg.timing);
     replyAck(msg);
   },
-  set_peer_auto_correct(msg) {
-    setPeerAutoCorrect(Boolean(msg.enabled));
-    bridgeState.peerAutoCorrect = getPeerAutoCorrect();
+  set_peer_follow_mode(msg) {
+    setPeerFollowMode(String(msg.mode ?? 'follow'));
+    bridgeState.peerFollowMode = getPeerFollowMode();
+    if (bridgeState.peerFollowMode === 'independent') resetPeerFollowRuntime();
+    nudgeInboundHeartbeat();
+    publishPeerStatus();
+    broadcastState();
     replyAck(msg);
   },
   set_transport(msg) {

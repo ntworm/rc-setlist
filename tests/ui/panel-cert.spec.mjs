@@ -84,3 +84,26 @@ test('the certificate card stays hidden without a certificate to install', async
 
   await expect(page.locator('#phoneCertCard')).toBeHidden();
 });
+
+test('the network tab lists the address, the second computer, then the certificate last', async ({
+  page,
+}) => {
+  await openPanel(page);
+  await openNetwork(page);
+
+  const order = await page.locator('#panelNetwork').evaluate((pane) => {
+    const cards = [...pane.children].filter((node) => node.tagName === 'SECTION');
+    return cards.map((card) => {
+      if (card.id === 'phoneCertCard') return 'certificate';
+      if (card.querySelector('#peerStatusText')) return 'second-computer';
+      if (card.querySelector('#networkAddressSelect')) return 'address';
+      return 'other';
+    });
+  });
+  expect(order).toEqual(['address', 'second-computer', 'certificate']);
+
+  const lastChild = await page
+    .locator('#panelNetwork')
+    .evaluate((pane) => pane.lastElementChild?.id || '');
+  expect(lastChild).toBe('phoneCertCard');
+});

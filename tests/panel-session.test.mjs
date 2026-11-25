@@ -26,7 +26,9 @@ test('the actions the panel has always sent are still understood', () => {
     'diagnose-osc',
     'toggle-auto-start',
     'toggle-write-tempo',
-    'toggle-peer-auto-correct',
+    'set-follow-mode:follow',
+    'set-follow-mode:transport',
+    'set-follow-mode:independent',
     'set-language:en',
     'set-language:pt-BR',
     'peer-code',
@@ -200,6 +202,11 @@ test('an answer that is far too long is discarded', () => {
 
 test('an unknown action is not one the panel may send', () => {
   assert.equal(isKnownAction('drop-the-table'), false);
+  assert.equal(isKnownAction('toggle-peer-auto-correct'), false);
+  assert.equal(isKnownAction('set-follow-mode:'), false);
+  assert.equal(isKnownAction('set-follow-mode:invalid'), false);
+  assert.equal(isKnownAction('set-follow-mode:FOLLOW'), false);
+  assert.equal(decodePanelEnvelope('set-follow-mode:invalid'), null);
   assert.equal(isKnownAction('start'), true);
 });
 
@@ -287,7 +294,11 @@ test('formatPeerAlertText and buildPeerPanelAlerts format EN and pt-BR alerts', 
     const alerts = buildPeerPanelAlerts(bridgeState.peerAlerts, 'pt-BR');
     assert.equal(alerts['10.0.0.2:4444'].text, 'SLAVE N\u00c3O EXECUTOU: jump');
     const model = peerPanelModel({ locale: 'en' });
-    assert.equal(typeof model.autoCorrect, 'boolean');
+    assert.ok(
+      model.followMode === 'follow' ||
+        model.followMode === 'transport' ||
+        model.followMode === 'independent',
+    );
     assert.equal(model.alerts['10.0.0.2:4444'].text, 'SLAVE DID NOT EXECUTE: jump');
   } finally {
     bridgeState.peerAlerts = prev;

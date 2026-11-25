@@ -810,7 +810,8 @@ setlist of the slave. Live has to be stopped on the slave.
 
 These travel to the paired computer: **Play**, **Stop**, **jump** (as the beat
 it lands on), **metronome**, **quantization**, **count-in**, **refresh** and
-**panic**.
+**panic**. A slave in **Independent** mode receives none of them (see Slave
+modes below).
 
 Every relayed command is confirmed by the slave (`peer_ack`) and retried every
 `150 ms` until its deadline:
@@ -846,10 +847,39 @@ answering is never followed). A gap that is not whole
 beats means the two are not on the same beat; the second computer reports it
 and asks to check Link, without moving. When a playhead mismatch holds for
 `3 s` outside a pending jump or active loop, both computers show **UNSTABLE**
-with reason **Out of step**. The **Auto-correct playhead on slave** checkbox in
-the Live panel's **Network** tab (`peer-auto-correct`, enabled by default) can
-be turned off to alert without moving the slave playhead. Every correction is
-written to the log of the second computer.
+with reason **Out of step**. The slave mode (below) decides which of these
+corrections run. Every correction is written to the log of the second computer.
+
+### Slave modes
+
+On a slave, the **Second computer** card of the Live panel's **Network** tab
+shows **Slave mode** with three buttons. The selector appears only on a slave,
+and the choice is remembered after a restart (`peer-follow-mode`).
+
+- **Follow all** (default): the slave runs the master's commands and corrects its playhead always, playing and stopped. Its Stage Control navigation is locked.
+- **Follow transport**: the slave runs the master's commands and corrects its playhead while playing (gap, start, stop); stopped at another beat, it only alerts. Its Stage Control navigation is locked.
+- **Independent**: the master sends no commands, and the slave refuses any that arrive. No playhead correction and no **Out of step**. Its Stage Control is free and runs only on this computer.
+
+In **Follow all** and **Follow transport**, while the link to the master is
+up, the Stage Control of the slave is read-only for navigation: **Play**, the
+song and section buttons, a tap on a song or section, the count-in, the click,
+the pre-roll and the quantization are disabled, and a banner says _Slave
+following the main computer. To navigate, switch to Independent in Live._ The
+slave refuses those commands with `slave_locked`. **Stop**, **Panic** and
+**Refresh** stay available and still go up to the master, so a Stop on the
+slave stops the whole show.
+
+In **Independent**, the link stays on for health and alerts only: the master
+sends nothing to that slave and raises no alert for it, and what the operator
+does on the slave runs on that computer alone. The master's Stage Control and
+Live panel show an **Independent** tag beside that computer; the tag does not
+change its **OK** / **UNSTABLE** / **DOWN** state. Switching back to **Follow
+all** or **Follow transport** locks the slave again and the master resumes
+sending commands.
+
+A slave that last ran an older build with the **Auto-correct playhead on
+slave** checkbox keeps its choice: checked becomes **Follow all**, unchecked
+becomes **Follow transport**.
 
 ### A phone is not a second computer
 
@@ -1138,6 +1168,11 @@ the Arrangement has no tempo automation.
 Open the controller URL or scan the controller QR code from the panel. The token
 is required for transport and write actions. Do not share it publicly.
 
+On a slave, a banner that says _Slave following the main computer_ means the
+slave follows the master: **Play** and navigation are disabled there and
+**Stop** stays available. To navigate on the slave, choose **Independent** under
+**Slave mode** in the **Network** tab of its Live panel.
+
 Transport and navigation actions need RC Setlist 0.3.0 or newer. When songs,
 lyrics and timecode update but every transport or navigation action fails,
 choose **Check OSC** in the panel and read the OSC section above.
@@ -1233,11 +1268,12 @@ panel report the measured state of each link:
 - **UNSTABLE — Recent drop / Heartbeat lost / High latency (RTT)**: the link had a drop within the last `60 s`, missed heartbeats (`> 1.5 s`), or measured high latency (`RTT p95 > 150 ms`). Prefer wired Ethernet between the two machines. Once the link is stable again, press **Acknowledge** on Stage Control or in the Live panel to shorten recovery to `10 s`.
 - **UNSTABLE — Link oscillating (5 min hold)**: the link dropped `3` or more times within `5 min`. Check the Ethernet cable, switch, or Wi-Fi interference; **Acknowledge** is disabled until the `5 min` hold expires without further drops.
 - **UNSTABLE — Markers differ**: load the exact same `.als` arrangement locator layout on both computers, or use **Bring from master** on the slave while stopped.
-- **UNSTABLE — Out of step**: the slave playhead differed from the master for `3 s` outside a pending quantized jump or active loop. Verify that Ableton **Link** is **on** and **Start Stop Sync** is **off** on both computers, and keep **Auto-correct playhead on slave** enabled in the Live panel's **Network** tab.
+- **UNSTABLE — Out of step**: the slave playhead differed from the master for `3 s` outside a pending quantized jump or active loop. Verify that Ableton **Link** is **on** and **Start Stop Sync** is **off** on both computers, and keep the slave in **Follow all** under **Slave mode** in the Live panel's **Network** tab (in **Follow transport** a stopped slave at another beat only alerts).
 - **DOWN — Link down / Remote link down / Local or Remote Live/OSC unavailable**: no frames arrived for `3 s` or AbletonOSC is not responding on one of the machines. If the full-screen red alarm appears on stage, press **Dismiss alarm** to continue operating with the red transport badge while restoring the network cable or restarting RC Setlist on the offline machine.
 - **DIFFERENT VERSIONS**: the master and slave are on different RC Setlist link protocols. Install the exact same RC Setlist release on both computers.
 - **CERTIFICATE CHANGED**: the slave generated a new TLS certificate. In the Live panel's **Network** tab, press **Unpair**, generate a new six-digit code on the slave, and pair again.
 - **`SLAVE DID NOT EXECUTE: <command>` / `Executed late: <command>`**: a command missed its delivery deadline or failed on the slave. Check the link health row and repeat the cue or transport action if needed.
+- **Independent** tag beside a computer: that slave runs in **Independent** mode. The master sends it no commands and raises no alerts for it; switch the slave back to **Follow all** or **Follow transport** under **Slave mode** in its Live panel to make it follow again.
 - **`SLAVE STILL NOT STOPPED`**: the master stopped or triggered panic while the slave was unreachable for more than `1 s`. The stop command stays queued and executes automatically as soon as the slave reconnects; if the link is physically severed, stop the slave machine directly.
 
 ## What to include in a bug report

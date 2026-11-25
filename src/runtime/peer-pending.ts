@@ -135,6 +135,11 @@ function shouldSkipForBackpressure(
   return !safetyStop || safetyUsed;
 }
 
+function shouldRetrySafetyAck(entry: PendingEntry, ack: PeerAckMessage): boolean {
+  if (!entry.safetyStop || ack.reason === 'independent') return false;
+  return ack.result === 'failed' || ack.result === 'expired';
+}
+
 /**
  * Builds a `peer_command_status` WebSocket broadcast payload for a pending command entry.
  */
@@ -237,7 +242,7 @@ export class PeerPendingTable {
     this.pruneRecentlyExpired(t);
     const active = this.entries.get(ack.commandId);
     if (active) {
-      if (active.safetyStop && (ack.result === 'failed' || ack.result === 'expired')) {
+      if (shouldRetrySafetyAck(active, ack)) {
         // A safety stop never gives up: the slave could not run it right now, so it stays
         // queued and is resent on the normal retry cadence while the master is stopped.
         return { kind: 'safety_retry', entry: active, ack };

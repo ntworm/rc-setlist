@@ -8,6 +8,7 @@ import * as tls from 'node:tls';
 import { WebSocket } from 'ws';
 import { bridgeState, broadcastState } from './bridge-state.js';
 import { fingerprintFromSocket, publicKeyPinFromSocket } from './pairing.js';
+import { clearPendingForIndependent } from './peer-follow-mode.js';
 import {
   createLastSeenBroadcaster,
   localHealthViewKey,
@@ -184,6 +185,11 @@ function onPeerHandshakeAck(
   target.synchronized = true;
   target.health.onSynchronized({
     send: (msg) => (isStaleSocket(target, socket) ? false : sendToPeer(target, msg)),
+    onRemoteView: (view) => {
+      if (!isStaleSocket(target, socket) && view.followMode === 'independent') {
+        clearPendingForIndependent(target);
+      }
+    },
     onRefresh: () => {
       if (!isStaleSocket(target, socket)) publishPeerStatus();
     },
@@ -406,6 +412,7 @@ function createPeerLink(key: string, config: PeerConfig): PeerLink {
     pendingTimer: null,
     health,
     rttMs: () => health.tracker.localSnapshot().rttP95Ms ?? 0,
+    remoteFollowMode: () => health.remoteFollowMode(),
     state: { connected: false, markersMatch: true, fingerprintMismatch: false },
   };
   startPendingFlushTimer(link);

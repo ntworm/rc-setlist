@@ -11,7 +11,7 @@ import * as path from 'node:path';
 import { tmpdir } from 'node:os';
 import { clearExtensionContext } from '../src/context.ts';
 import { stopServer } from '../src/index.ts';
-import { getPeerAutoCorrect, writePeerConfigs } from '../src/preferences.ts';
+import { getPeerFollowMode, writePeerConfigs } from '../src/preferences.ts';
 import { bridgeState } from '../src/runtime/bridge-state.ts';
 import { pair } from '../src/runtime/pairing.ts';
 import { resetPeerFollowTiming, setPeerFollowTiming } from '../src/runtime/peer-follow-runtime.ts';
@@ -191,7 +191,7 @@ after(async () => {
 
 test('A7.1: stopped jump lost while down converges within 2s on marker and between markers', async () => {
   await resetBothStoppedAtZero();
-  assert.equal(getPeerAutoCorrect(), true);
+  assert.equal(getPeerFollowMode(), 'follow');
   await assertStoppedConvergence(120, 'jumpToCuePoint:2', 'setCurrentSongTime:');
   await assertStoppedConvergence(150, 'setCurrentSongTime:150', 'jumpToCuePoint:');
   await resetBothStoppedAtZero();
@@ -261,7 +261,7 @@ test('A7.3: no divergence flagged during pending quantized jump or active loop',
   await resetBothStoppedAtZero();
 });
 
-test('A7.4: peer-auto-correct off alerts without moving slave playhead', async () => {
+test('A7.4: transport mode alerts without moving stopped slave playhead', async () => {
   await resetBothStoppedAtZero();
   const slaveCtrl = await connectSyncedWs(
     ctx.childReady.port,
@@ -269,15 +269,16 @@ test('A7.4: peer-auto-correct off alerts without moving slave playhead', async (
     'a7-slave-ctrl',
   );
   const slaveMessages = collectJson(slaveCtrl);
-  const isWarn = (m) => m.type === 'log' && m.level === 'warn' && /auto-correct/i.test(m.message);
+  const isWarn = (m) =>
+    m.type === 'log' && m.level === 'warn' && /Follow transport mode/i.test(m.message);
   try {
-    await ipcRequest(ctx.child, { type: 'set_peer_auto_correct', enabled: false });
-    assert.equal((await getChildStatus()).autoCorrect, false);
+    await ipcRequest(ctx.child, { type: 'set_peer_follow_mode', mode: 'transport' });
+    assert.equal((await getChildStatus()).followMode, 'transport');
     const beforeCalls = readLogCalls(ctx.childLog).length;
     bridgeState.manager.updateTransport(150, false);
 
     const warned = await waitFor(() => slaveMessages.find(isWarn), 3000);
-    assert.ok(warned, 'slave must emit warning log when auto-correct is off');
+    assert.ok(warned, 'slave must emit warning log in transport mode');
     await assertOutOfStepBothWithin600ms();
     await delay(600);
 
@@ -285,12 +286,12 @@ test('A7.4: peer-auto-correct off alerts without moving slave playhead', async (
     assert.equal(
       calls.some((l) => l.startsWith('jumpToCuePoint:') || l.startsWith('setCurrentSongTime:')),
       false,
-      'slave playhead must not move when auto-correct is off',
+      'slave playhead must not move while stopped in transport mode',
     );
     assert.equal((await getChildStatus()).currentSongTime, 0);
 
-    await ipcRequest(ctx.child, { type: 'set_peer_auto_correct', enabled: true });
-    assert.equal((await getChildStatus()).autoCorrect, true);
+    await ipcRequest(ctx.child, { type: 'set_peer_follow_mode', mode: 'follow' });
+    assert.equal((await getChildStatus()).followMode, 'follow');
     await waitFor(async () => (await getChildStatus()).currentSongTime === 150, 3000);
     await waitBothOk(2000);
   } finally {

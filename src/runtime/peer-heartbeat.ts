@@ -5,7 +5,7 @@
 // Bidirectional peer heartbeat runner, telemetry logging, and last-seen broadcaster.
 
 import { decodePeerHb, decodePeerHbAck } from '../server/peer-client-message.js';
-import type { PeerHealthReason, PeerHealthTier, PeerHealthView } from '../types.js';
+import type { PeerFollowMode, PeerHealthReason, PeerHealthTier, PeerHealthView } from '../types.js';
 import { bridgeState } from './bridge-state.js';
 import { isPeerOutOfStep } from './peer-follow-runtime.js';
 import { computeShownHealth, PeerHealthTracker, peerHealthTiming } from './peer-health.js';
@@ -79,7 +79,7 @@ export function localHealthSignals(): {
 export function localHealthViewKey(): string {
   const s = localHealthSignals();
   const out = isPeerOutOfStep() ? 1 : 0;
-  return `${s.oscConnected ? 1 : 0}:${s.liveReady ? 1 : 0}:${out}:${s.cuesFingerprint}`;
+  return `${s.oscConnected ? 1 : 0}:${s.liveReady ? 1 : 0}:${out}:${bridgeState.peerFollowMode}:${s.cuesFingerprint}`;
 }
 
 /**
@@ -88,6 +88,7 @@ export function localHealthViewKey(): string {
 export function buildLocalHealthView(
   tracker: PeerHealthTracker,
   outOfStep = isPeerOutOfStep(),
+  followMode?: PeerFollowMode,
 ): PeerHealthView {
   const local = tracker.localSnapshot();
   const signals = localHealthSignals();
@@ -98,6 +99,7 @@ export function buildLocalHealthView(
     liveReady: signals.liveReady,
     cuesFingerprint: signals.cuesFingerprint,
     outOfStep,
+    ...(followMode !== undefined ? { followMode } : {}),
   };
 }
 
@@ -248,6 +250,7 @@ export function evaluatePeerLinkHealth(
       drops5m: local.drops5m,
       lastDropAt: local.lastDropAt,
       remoteLinkHealth: remoteView?.linkHealth ?? null,
+      followMode: remoteView?.followMode ?? null,
     },
   };
 }
@@ -293,6 +296,7 @@ export class PeerLinkHealth {
 
   onSynchronized(opts: {
     send: (msg: unknown) => boolean;
+    onRemoteView?: (view: PeerHealthView) => void;
     onRefresh: () => void;
     onDead: () => void;
   }): void {
@@ -305,10 +309,15 @@ export class PeerLinkHealth {
       onRemoteView: (view) => {
         this.remoteView = view;
         this.lastRemoteFingerprint = view.cuesFingerprint;
+        opts.onRemoteView?.(view);
       },
       onRefresh: opts.onRefresh,
       onDead: opts.onDead,
     });
+  }
+
+  remoteFollowMode(): PeerFollowMode | null {
+    return this.remoteView?.followMode ?? null;
   }
 
   onDisconnected(wasSynchronized: boolean): void {

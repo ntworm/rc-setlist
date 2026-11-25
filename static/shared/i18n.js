@@ -313,9 +313,14 @@
     'peer.tick.confirmed': { en: 'Executed', 'pt-BR': 'Executou' },
     'peer.tick.failed': { en: 'Failed', 'pt-BR': 'Falhou' },
     'peer.tick.pending': { en: 'Pending', 'pt-BR': 'Pendente' },
-    'panel.peerAutoCorrect': {
-      en: 'Auto-correct playhead on slave',
-      'pt-BR': 'Corrigir agulha automaticamente no slave',
+    'peer.followMode.independentTag': { en: 'Independent', 'pt-BR': 'Independente' },
+    'panel.peerFollowModeLabel': { en: 'Slave mode', 'pt-BR': 'Modo do slave' },
+    'panel.peerFollowMode.follow': { en: 'Follow all', 'pt-BR': 'Segue tudo' },
+    'panel.peerFollowMode.transport': { en: 'Follow transport', 'pt-BR': 'Segue transporte' },
+    'panel.peerFollowMode.independent': { en: 'Independent', 'pt-BR': 'Independente' },
+    'setlist.slaveLockBanner': {
+      en: 'Slave following the main computer. To navigate, switch to Independent in Live.',
+      'pt-BR': 'Slave seguindo o master. Para navegar, mude para Independente no Live.',
     },
 
     'performance.name': { en: 'Performance', 'pt-BR': 'Performance' },

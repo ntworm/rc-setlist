@@ -231,22 +231,23 @@ test('a phone on the second computer drives the main one, and each computer runs
   const phone = await connectSynced(childPort, childToken);
   const phoneMessages = collect(phone);
   try {
+    // A slave that follows its master keeps Stop: it goes up and stops the show.
     const mainBefore = mainOscCalls.length;
     const childBefore = readLogCalls(childLogFile).length;
-    phone.send(JSON.stringify({ type: 'metronome', value: false, commandId: 'phone-metro' }));
+    phone.send(JSON.stringify({ type: 'stop', commandId: 'phone-stop' }));
     const onMain = await waitFor(
-      () => mainOscCalls.slice(mainBefore).includes('setMetronome:false'),
+      () => mainOscCalls.slice(mainBefore).includes('stopPlaying'),
       3000,
     );
     assert.equal(onMain, true, 'the main computer runs the command of the phone');
-    const onChild = await waitForChildCall(childLogFile, (l) => l === 'setMetronome:false');
+    const onChild = await waitForChildCall(childLogFile, (l) => l === 'stopPlaying');
     assert.ok(onChild, 'the command comes back down to the second computer');
     // No echo and no loop: wait, then count again.
     await delay(500);
-    assert.equal(countOf(mainOscCalls.slice(mainBefore), 'setMetronome:false'), 1);
-    assert.equal(countOf(readLogCalls(childLogFile).slice(childBefore), 'setMetronome:false'), 1);
+    assert.equal(countOf(mainOscCalls.slice(mainBefore), 'stopPlaying'), 1);
+    assert.equal(countOf(readLogCalls(childLogFile).slice(childBefore), 'stopPlaying'), 1);
     const statuses = phoneMessages.filter(
-      (m) => m.type === 'command_status' && m.commandId === 'phone-metro',
+      (m) => m.type === 'command_status' && m.commandId === 'phone-stop',
     );
     assert.ok(
       statuses.some((m) => m.status === 'sent'),
@@ -261,36 +262,29 @@ test('a phone on the second computer drives the main one, and each computer runs
   }
 });
 
-test('a jump of a phone on the second computer goes up by beat and lands once on each', async () => {
+test('a slave that follows its master refuses the metronome and jumps of its phone', async () => {
   const phone = await connectSynced(childPort, childToken);
+  const phoneMessages = collect(phone);
   try {
-    // The songs sit in another order here, so the jump goes up by beat.
-    const jumpMainBefore = mainOscCalls.length;
-    const jumpChildBefore = readLogCalls(childLogFile).length;
+    const mainBefore = mainOscCalls.length;
+    const childBefore = readLogCalls(childLogFile).length;
+    phone.send(JSON.stringify({ type: 'metronome', value: false, commandId: 'phone-metro' }));
     phone.send(JSON.stringify({ type: 'jump', songIndex: 0, commandId: 'phone-jump' }));
-    const mainJump = await waitFor(
-      () => mainOscCalls.slice(jumpMainBefore).some((c) => c.startsWith('jumpToCuePoint:')),
-      3000,
-    );
-    assert.equal(mainJump, true, 'the main computer jumps');
-    const childJump = await waitFor(
-      () =>
-        readLogCalls(childLogFile)
-          .slice(jumpChildBefore)
-          .some((c) => c === 'jumpToCuePoint:2'),
-      3000,
-    );
-    assert.equal(childJump, true, 'the second computer lands on the same song');
+    for (const commandId of ['phone-metro', 'phone-jump']) {
+      const status = await waitFor(
+        () => phoneMessages.find((m) => m.type === 'command_status' && m.commandId === commandId),
+        3000,
+      );
+      assert.equal(status?.status, 'failed', commandId);
+      assert.equal(status?.reason, 'slave_locked', commandId);
+    }
     await delay(500);
+    const locked = (c) => c.startsWith('setMetronome:') || c.startsWith('jumpToCuePoint:');
+    assert.equal(mainOscCalls.slice(mainBefore).filter(locked).length, 0, 'the main stays put');
     assert.equal(
-      mainOscCalls.slice(jumpMainBefore).filter((c) => c.startsWith('jumpToCuePoint:')).length,
-      1,
-    );
-    assert.equal(
-      readLogCalls(childLogFile)
-        .slice(jumpChildBefore)
-        .filter((c) => c.startsWith('jumpToCuePoint:')).length,
-      1,
+      readLogCalls(childLogFile).slice(childBefore).filter(locked).length,
+      0,
+      'the second computer stays put',
     );
   } finally {
     phone.close();

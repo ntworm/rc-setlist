@@ -192,16 +192,19 @@ test('direct strips meta before CommandBus, holds handlePeerTarget, and drops du
   });
 });
 
-test('slave mode forwards browser play without direct meta while direct runs locally', async () => {
+test('slave mode locks browser play, forwards browser stop without direct meta, and runs direct locally', async () => {
   const setRole = () =>
     writeSlaveRole({ masterAddress: '127.0.0.1:4444', pairedAt: '1970-01-01T00:00:00.000Z' });
   await withServer(setRole, async ({ calls, sync }) => {
     const peer = await sync(bs.peerToken, 'master-peer');
     await waitFor(() => bs.wsServer.peerSockets().some((s) => s.synchronized));
     const [ctrl, dir] = await Promise.all([sync(bs.authToken, 'sb'), sync(bs.directToken, 'sd')]);
-    send(ctrl, { type: 'play', commandId: 'sb-1', ttlMs: 500, transportSeq: 7 });
+    send(ctrl, { type: 'play', commandId: 'sb-0' });
+    const locked = await msgBy(ctrl, (m) => m.type === 'command_status' && m.commandId === 'sb-0');
+    is(locked.status === 'failed' && locked.reason === 'slave_locked', true);
+    send(ctrl, { type: 'stop', commandId: 'sb-1', ttlMs: 500, transportSeq: 7 });
     const up = await msgBy(peer, (m) => m.type === 'peer_upstream');
-    eq(up, { type: 'peer_upstream', command: { type: 'play', commandId: 'sb-1' } });
+    eq(up, { type: 'peer_upstream', command: { type: 'stop', commandId: 'sb-1' } });
     is(calls.length, 0);
     send(dir, { type: 'stop', commandId: 'sd-2', ttlMs: 500, transportSeq: 8 });
     const sdAck = await msgBy(dir, (m) => m.type === 'direct_ack' && m.commandId === 'sd-2');

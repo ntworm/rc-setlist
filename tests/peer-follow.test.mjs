@@ -4,7 +4,7 @@ import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { tmpdir } from 'node:os';
 import { clearExtensionContext, setExtensionContext } from '../src/context.ts';
-import { getPeerAutoCorrect, setPeerAutoCorrect } from '../src/preferences.ts';
+import { getPeerFollowMode, setPeerFollowMode } from '../src/preferences.ts';
 import {
   OUT_OF_STEP_MS,
   PeerFollower,
@@ -43,7 +43,7 @@ function local(overrides = {}) {
     loopActive: false,
     beatsPerBar: 4,
     transportLocked: false,
-    autoCorrect: true,
+    followMode: 'follow',
     ...overrides,
   };
 }
@@ -188,10 +188,10 @@ test('both stopped beyond tolerance seeks to remote beat and section flag', () =
   );
 });
 
-test('stopped convergence runs seekStopped after three matching targets when autoCorrect is on', () => {
+test('stopped convergence runs seekStopped after three matching targets in follow mode', () => {
   const h = harness();
   const r = remote({ isPlaying: false, beat: 120, section: true });
-  const l = local({ isPlaying: false, songTime: 0 });
+  const l = local({ isPlaying: false, songTime: 0, followMode: 'follow' });
   assert.strictEqual(h.follower.onTarget(r, l).kind, 'none');
   h.advance(500);
   assert.strictEqual(h.follower.onTarget(r, l).kind, 'none');
@@ -204,17 +204,19 @@ test('stopped convergence runs seekStopped after three matching targets when aut
   assert.deepStrictEqual(stoppedSeeks(h), [['seekStopped', 120, true]]);
 });
 
-test('stopped mismatch with autoCorrect off alerts once without moving playhead', () => {
+test('stopped mismatch in transport mode alerts once without moving playhead', () => {
   const h = harness();
   const r = remote({ isPlaying: false, beat: 150, section: false });
-  const l = local({ isPlaying: false, songTime: 0, autoCorrect: false });
+  const l = local({ isPlaying: false, songTime: 0, followMode: 'transport' });
   for (let i = 0; i <= STABLE_CLOCKS * 2; i += 1) {
     h.follower.onTarget(r, l);
     h.advance(500);
   }
   assert.strictEqual(stoppedSeeks(h).length, 0);
   assert.strictEqual(moves(h).length, 0);
-  assert.strictEqual(h.calls.filter((c) => c[0] === 'report').length, 1);
+  const reports = h.calls.filter((c) => c[0] === 'report');
+  assert.strictEqual(reports.length, 1);
+  assert.match(reports[0][1], /Follow transport mode/);
   assert.strictEqual(h.follower.isOutOfStep(), true);
 });
 
@@ -375,15 +377,23 @@ test('a link that was quiet for a while counts again from nothing', () => {
   assert.strictEqual(moves(h).length, 0);
 });
 
-test('peer-auto-correct preference defaults to true and persists false/true', () => {
-  const storageDir = fs.mkdtempSync(path.join(tmpdir(), 'rc-peer-autocorrect-'));
+test('peer-follow-mode preference defaults to follow, migrates legacy file, and persists modes', () => {
+  const storageDir = fs.mkdtempSync(path.join(tmpdir(), 'rc-peer-follow-mode-'));
   setExtensionContext({ environment: { storageDirectory: storageDir } });
   try {
-    assert.strictEqual(getPeerAutoCorrect(), true);
-    assert.strictEqual(setPeerAutoCorrect(false), true);
-    assert.strictEqual(getPeerAutoCorrect(), false);
-    assert.strictEqual(setPeerAutoCorrect(true), true);
-    assert.strictEqual(getPeerAutoCorrect(), true);
+    assert.strictEqual(getPeerFollowMode(), 'follow');
+    fs.writeFileSync(path.join(storageDir, 'peer-auto-correct'), 'false', 'utf8');
+    assert.strictEqual(getPeerFollowMode(), 'transport');
+    fs.writeFileSync(path.join(storageDir, 'peer-auto-correct'), 'true', 'utf8');
+    assert.strictEqual(getPeerFollowMode(), 'follow');
+    assert.strictEqual(setPeerFollowMode('independent'), true);
+    assert.strictEqual(getPeerFollowMode(), 'independent');
+    assert.strictEqual(setPeerFollowMode('transport'), true);
+    assert.strictEqual(getPeerFollowMode(), 'transport');
+    assert.strictEqual(setPeerFollowMode('follow'), true);
+    assert.strictEqual(getPeerFollowMode(), 'follow');
+    assert.strictEqual(setPeerFollowMode('unknown'), false);
+    assert.strictEqual(getPeerFollowMode(), 'follow');
   } finally {
     clearExtensionContext();
     fs.rmSync(storageDir, { recursive: true, force: true });

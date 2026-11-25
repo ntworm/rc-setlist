@@ -390,3 +390,23 @@ test('applyPeerStatus supports custom options, className-only badge, and missing
   assert.equal(dot.title, 'peer.connected');
   assert.equal(dot.getAttribute('aria-label'), 'peer.connected');
 });
+
+test('appendFollowModeTag adds a translated Independent tag only for independent rows', () => {
+  const appended = [];
+  const doc = { createElement: (tag) => ({ tag, className: '', textContent: '' }) };
+  const rowEl = { appendChild: (child) => appended.push(child) };
+  const translate = (key) => (key === 'peer.followMode.independentTag' ? 'Independente' : key);
+
+  assert.equal(
+    peerStatus.appendFollowModeTag(doc, rowEl, { followMode: 'follow' }, translate),
+    null,
+  );
+  assert.equal(peerStatus.appendFollowModeTag(doc, rowEl, { followMode: null }, translate), null);
+  assert.equal(peerStatus.appendFollowModeTag(doc, rowEl, {}, translate), null);
+  assert.equal(appended.length, 0);
+
+  const tag = peerStatus.appendFollowModeTag(doc, rowEl, { followMode: 'independent' }, translate);
+  assert.equal(tag.className, 'peer-health-mode-tag');
+  assert.equal(tag.textContent, 'Independente');
+  assert.deepEqual(appended, [tag]);
+});

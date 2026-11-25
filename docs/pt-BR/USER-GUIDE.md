@@ -400,7 +400,8 @@ precisa estar parado no slave.
 
 Viajam para o computador pareado: **Play**, **Stop**, **salto** (como o beat
 em que ele pousa), **metrônomo**, **quantização**, **contagem**, **refresh** e
-**pânico**.
+**pânico**. Um slave no modo **Independente** não recebe nenhum deles (veja
+Modos do slave abaixo).
 
 Cada comando repassado é confirmado pelo slave (`peer_ack`) e reenviado a cada
 `150 ms` até o prazo limite:
@@ -438,10 +439,38 @@ diferença que não é de beats inteiros quer dizer que os dois não estão no
 mesmo tempo; o segundo computador avisa e pede para conferir o Link, sem se
 mover. Quando uma divergência de agulha dura `3 s` fora de salto pendente ou
 loop ativo, os dois computadores mostram **INSTÁVEL** com motivo **Fora de
-passo**. A opção **Corrigir agulha automaticamente no slave** na aba **Rede**
-do painel do Live (`peer-auto-correct`, ligada por padrão) pode ser desligada
-para apenas alertar sem mover a agulha do slave. Toda correção fica no log do
-segundo computador.
+passo**. O modo do slave (abaixo) decide quais dessas correções acontecem. Toda
+correção fica no log do segundo computador.
+
+### Modos do slave
+
+No slave, o cartão **Segundo computador** da aba **Rede** do painel do Live
+mostra **Modo do slave** com três botões. O seletor só aparece no slave, e a
+escolha fica salva depois de reiniciar (`peer-follow-mode`).
+
+- **Segue tudo** (padrão): o slave executa os comandos do master e corrige a agulha sempre, tocando e parado. A navegação do Controle de palco dele fica travada.
+- **Segue transporte**: o slave executa os comandos do master e corrige a agulha tocando (diferença, início, parada); parado em outro tempo, só alerta. A navegação do Controle de palco dele fica travada.
+- **Independente**: o master não envia comandos, e o slave recusa os que chegarem. Nenhuma correção de agulha e nada de **Fora de passo**. O Controle de palco dele fica livre e roda só neste computador.
+
+Em **Segue tudo** e **Segue transporte**, com o link do master ativo, o
+Controle de palco do slave fica só leitura para navegar: **Play**, os botões de
+música e seção, o toque numa música ou seção, a contagem, o clique, o pre-roll
+e a quantização ficam desabilitados, e uma faixa diz _Slave seguindo o master.
+Para navegar, mude para Independente no Live._ O slave recusa esses comandos
+com `slave_locked`. **Stop**, **Pânico** e **Atualizar** continuam disponíveis
+e sobem ao master, então um Stop no slave para o show inteiro.
+
+Em **Independente**, o link fica ligado só para saúde e alertas: o master não
+envia nada a esse slave nem gera alerta por ele, e o que o operador faz no
+slave roda só naquele computador. O Controle de palco e o painel do Live do
+master mostram a etiqueta **Independente** ao lado desse computador; a etiqueta
+não muda o estado **OK** / **INSTÁVEL** / **CAÍDO**. Voltar para **Segue tudo**
+ou **Segue transporte** trava o slave de novo e o master volta a enviar os
+comandos.
+
+Um slave que rodava uma versão antiga com a opção **Corrigir agulha
+automaticamente no slave** mantém a escolha: marcada vira **Segue tudo**,
+desmarcada vira **Segue transporte**.
 
 ### Um celular não é um segundo computador
 

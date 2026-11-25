@@ -1021,14 +1021,44 @@ select {
   color: var(--p-warn);
 }
 
-.peer-auto-correct-row {
-  display: inline-flex;
+.peer-follow-mode-row {
+  display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
   margin-top: 6px;
-  font-size: 11px;
+}
+
+.peer-follow-mode-row[hidden] {
+  display: none;
+}
+
+.follow-mode-seg {
+  display: flex;
+  border: 1px solid var(--p-line-strong);
+}
+
+.follow-mode-btn {
+  padding: 4px 9px;
+  border: 0;
+  background: transparent;
   color: var(--p-text-2);
+  font-size: 10px;
+  font-weight: 700;
   cursor: pointer;
+}
+
+.follow-mode-btn[aria-pressed='true'] {
+  background: var(--p-accent);
+  color: var(--p-bg);
+}
+
+.peer-list-mode-tag {
+  padding: 1px 6px;
+  border: 1px solid var(--p-line-strong);
+  color: var(--p-text-2);
+  font-size: 10px;
+  font-weight: 700;
 }
 
 .peer-found {

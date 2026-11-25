@@ -391,7 +391,8 @@ setlist of the slave. Live has to be stopped on the slave.
 
 These travel to the paired computer: **Play**, **Stop**, **jump** (as the beat
 it lands on), **metronome**, **quantization**, **count-in**, **refresh** and
-**panic**.
+**panic**. A slave in **Independent** mode receives none of them (see Slave
+modes below).
 
 Every relayed command is confirmed by the slave (`peer_ack`) and retried every
 `150 ms` until its deadline:
@@ -427,10 +428,39 @@ answering is never followed). A gap that is not whole
 beats means the two are not on the same beat; the second computer reports it
 and asks to check Link, without moving. When a playhead mismatch holds for
 `3 s` outside a pending jump or active loop, both computers show **UNSTABLE**
-with reason **Out of step**. The **Auto-correct playhead on slave** checkbox in
-the Live panel's **Network** tab (`peer-auto-correct`, enabled by default) can
-be turned off to alert without moving the slave playhead. Every correction is
-written to the log of the second computer.
+with reason **Out of step**. The slave mode (below) decides which of these
+corrections run. Every correction is written to the log of the second computer.
+
+### Slave modes
+
+On a slave, the **Second computer** card of the Live panel's **Network** tab
+shows **Slave mode** with three buttons. The selector appears only on a slave,
+and the choice is remembered after a restart (`peer-follow-mode`).
+
+- **Follow all** (default): the slave runs the master's commands and corrects its playhead always, playing and stopped. Its Stage Control navigation is locked.
+- **Follow transport**: the slave runs the master's commands and corrects its playhead while playing (gap, start, stop); stopped at another beat, it only alerts. Its Stage Control navigation is locked.
+- **Independent**: the master sends no commands, and the slave refuses any that arrive. No playhead correction and no **Out of step**. Its Stage Control is free and runs only on this computer.
+
+In **Follow all** and **Follow transport**, while the link to the master is
+up, the Stage Control of the slave is read-only for navigation: **Play**, the
+song and section buttons, a tap on a song or section, the count-in, the click,
+the pre-roll and the quantization are disabled, and a banner says _Slave
+following the main computer. To navigate, switch to Independent in Live._ The
+slave refuses those commands with `slave_locked`. **Stop**, **Panic** and
+**Refresh** stay available and still go up to the master, so a Stop on the
+slave stops the whole show.
+
+In **Independent**, the link stays on for health and alerts only: the master
+sends nothing to that slave and raises no alert for it, and what the operator
+does on the slave runs on that computer alone. The master's Stage Control and
+Live panel show an **Independent** tag beside that computer; the tag does not
+change its **OK** / **UNSTABLE** / **DOWN** state. Switching back to **Follow
+all** or **Follow transport** locks the slave again and the master resumes
+sending commands.
+
+A slave that last ran an older build with the **Auto-correct playhead on
+slave** checkbox keeps its choice: checked becomes **Follow all**, unchecked
+becomes **Follow transport**.
 
 ### A phone is not a second computer
 

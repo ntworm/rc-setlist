@@ -608,7 +608,8 @@ Música B [bpm 96]</code></pre>
       Viajam para o computador pareado: <strong>Play</strong>, <strong>Stop</strong>,
       <strong>salto</strong> (como o beat em que ele pousa), <strong>metrônomo</strong>,
       <strong>quantização</strong>, <strong>contagem</strong>, <strong>refresh</strong> e
-      <strong>pânico</strong>.
+      <strong>pânico</strong>. Um slave no modo <strong>Independente</strong> não recebe nenhum
+      deles (veja Modos do slave abaixo).
     </p>
     <p>
       Cada comando repassado é confirmado pelo slave (<code>peer_ack</code>) e reenviado a cada
@@ -678,10 +679,53 @@ Música B [bpm 96]</code></pre>
       não é de beats inteiros quer dizer que os dois não estão no mesmo tempo; o segundo computador
       avisa e pede para conferir o Link, sem se mover. Quando uma divergência de agulha dura
       <code>3 s</code> fora de salto pendente ou loop ativo, os dois computadores mostram
-      <strong>INSTÁVEL</strong> com motivo <strong>Fora de passo</strong>. A opção
-      <strong>Corrigir agulha automaticamente no slave</strong> na aba <strong>Rede</strong> do
-      painel do Live (<code>peer-auto-correct</code>, ligada por padrão) pode ser desligada para
-      apenas alertar sem mover a agulha do slave. Toda correção fica no log do segundo computador.
+      <strong>INSTÁVEL</strong> com motivo <strong>Fora de passo</strong>. O modo do slave (abaixo)
+      decide quais dessas correções acontecem. Toda correção fica no log do segundo computador.
+    </p>
+    <h3 id="modos-do-slave">Modos do slave</h3>
+    <p>
+      No slave, o cartão <strong>Segundo computador</strong> da aba <strong>Rede</strong> do painel
+      do Live mostra <strong>Modo do slave</strong> com três botões. O seletor só aparece no slave,
+      e a escolha fica salva depois de reiniciar (<code>peer-follow-mode</code>).
+    </p>
+    <ul>
+      <li>
+        <strong>Segue tudo</strong> (padrão): o slave executa os comandos do master e corrige a
+        agulha sempre, tocando e parado. A navegação do Controle de palco dele fica travada.
+      </li>
+      <li>
+        <strong>Segue transporte</strong>: o slave executa os comandos do master e corrige a agulha
+        tocando (diferença, início, parada); parado em outro tempo, só alerta. A navegação do
+        Controle de palco dele fica travada.
+      </li>
+      <li>
+        <strong>Independente</strong>: o master não envia comandos, e o slave recusa os que
+        chegarem. Nenhuma correção de agulha e nada de <strong>Fora de passo</strong>. O Controle de
+        palco dele fica livre e roda só neste computador.
+      </li>
+    </ul>
+    <p>
+      Em <strong>Segue tudo</strong> e <strong>Segue transporte</strong>, com o link do master
+      ativo, o Controle de palco do slave fica só leitura para navegar: <strong>Play</strong>, os
+      botões de música e seção, o toque numa música ou seção, a contagem, o clique, o pre-roll e a
+      quantização ficam desabilitados, e uma faixa diz _Slave seguindo o master. Para navegar, mude
+      para Independente no Live._ O slave recusa esses comandos com <code>slave_locked</code>.
+      <strong>Stop</strong>, <strong>Pânico</strong> e <strong>Atualizar</strong> continuam
+      disponíveis e sobem ao master, então um Stop no slave para o show inteiro.
+    </p>
+    <p>
+      Em <strong>Independente</strong>, o link fica ligado só para saúde e alertas: o master não
+      envia nada a esse slave nem gera alerta por ele, e o que o operador faz no slave roda só
+      naquele computador. O Controle de palco e o painel do Live do master mostram a etiqueta
+      <strong>Independente</strong> ao lado desse computador; a etiqueta não muda o estado
+      <strong>OK</strong> / <strong>INSTÁVEL</strong> / <strong>CAÍDO</strong>. Voltar para
+      <strong>Segue tudo</strong> ou <strong>Segue transporte</strong> trava o slave de novo e o
+      master volta a enviar os comandos.
+    </p>
+    <p>
+      Um slave que rodava uma versão antiga com a opção
+      <strong>Corrigir agulha automaticamente no slave</strong> mantém a escolha: marcada vira
+      <strong>Segue tudo</strong>, desmarcada vira <strong>Segue transporte</strong>.
     </p>
     <h3 id="um-celular-n-o-um-segundo-computador">Um celular não é um segundo computador</h3>
     <p>
@@ -790,6 +834,6 @@ Música B [bpm 96]</code></pre>
       O raciocínio completo está em
       <a href="../architecture/song-identity.md">docs/architecture/song-identity.md</a>.
     </p>
-    <div class="source">Rendered from <code>docs\pt-BR\USER-GUIDE.md</code> on 2026-11-23.</div>
+    <div class="source">Rendered from <code>docs\pt-BR\USER-GUIDE.md</code> on 2026-11-25.</div>
   </body>
 </html>
