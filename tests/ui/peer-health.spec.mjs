@@ -226,6 +226,15 @@ for (const locale of ['en', 'pt-BR']) {
     });
     await expect(page.locator('#peerTransportBadge')).toHaveClass(/is-error/);
     await expect(page.locator('#peerTransportBadge')).toHaveText(c.downBadge);
+    await expect(page.locator('#peerAlarmOverlay')).toBeVisible();
+    // Stop must stay on top of the alarm, so the operator can stop before dismissing.
+    const stopOnTop = await page.evaluate(() => {
+      const stop = document.getElementById('btnStop');
+      const r = stop.getBoundingClientRect();
+      const hit = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
+      return hit === stop || stop.contains(hit);
+    });
+    expect(stopOnTop).toBe(true);
     await page.locator('#btnPeerAlarmDismiss').click();
 
     await emitPeerState(request, base, {

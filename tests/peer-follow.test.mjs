@@ -264,7 +264,11 @@ test('a stopped second computer starts only while the main one really plays', ()
     frozen.advance(500);
     frozen.follower.onTarget(remote({ beat: 64 }), local({ isPlaying: false }));
   }
-  assert.strictEqual(frozen.calls.filter((c) => c[0] === 'startAt').length, 0);
+  // Only the out-of-step flag may be raised: no correction of any kind.
+  assert.deepStrictEqual(
+    frozen.calls.filter((c) => c[0] !== 'outOfStep'),
+    [],
+  );
 });
 
 test('the follower keeps still right after a relayed command', () => {

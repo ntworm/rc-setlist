@@ -2500,6 +2500,14 @@ body.show-mode .control-pane {
   background: rgba(14, 6, 8, 0.94);
 }
 
+/* Stop stays reachable above the link-down alarm: it is the one control the
+   operator may need before reading or dismissing the alarm. */
+body:has(#peerAlarmOverlay:not([hidden])) #btnStop {
+  position: relative;
+  z-index: 10001;
+  outline: 3px solid var(--ui-danger);
+}
+
 .peer-alarm-box {
   width: min(38rem, 100%);
   display: grid;
