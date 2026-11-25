@@ -17,11 +17,18 @@ import {
   type LastSeenEntry,
   type PeerHeartbeatSession,
 } from './peer-heartbeat.js';
+import { STALLED_SOCKET_BYTES } from './peer-message.js';
+import {
+  getConfirmedDirectSummary,
+  getLastExecutedTransportSeq,
+  setDirectSyncListener,
+} from './peer-slave-commands.js';
 import type { PeerLinkSummary } from './peer-status-list.js';
 
 /** Synthetic row key for the inbound master link on a slave computer. */
 export const INBOUND_PEER_KEY = 'inbound:master';
 const DEFAULT_INBOUND_PORT = 4444;
+const DIRECT_SYNC_CHUNK_SIZE = 64;
 
 let generation = 0;
 let activeSocket: AugmentedWebSocket | null = null;
@@ -79,6 +86,56 @@ function parseMasterAddress(masterAddress: string | undefined): { host: string; 
   return { host: raw, port: DEFAULT_INBOUND_PORT };
 }
 
+function canSendDirectSync(ws: AugmentedWebSocket): boolean {
+  return activeSocket === ws && synchronized && !((ws.bufferedAmount ?? 0) >= STALLED_SOCKET_BYTES);
+}
+
+function sendInboundDirectSyncDelta(confirmedId?: string): void {
+  const ws = activeSocket;
+  if (!ws || !synchronized) return;
+  // Skip under backpressure; reconnect full sync recovers any missed deltas.
+  if ((ws.bufferedAmount ?? 0) >= STALLED_SOCKET_BYTES) return;
+  sendOnSocket(ws, {
+    type: 'peer_direct_sync',
+    confirmedIds: confirmedId ? [confirmedId] : [],
+    lastExecutedTransportSeq: getLastExecutedTransportSeq(),
+  });
+}
+
+function sendDirectSyncChunks(
+  ws: AugmentedWebSocket,
+  ordered: string[],
+  lastExecutedTransportSeq: number,
+): void {
+  for (let i = 0; i < ordered.length; i += DIRECT_SYNC_CHUNK_SIZE) {
+    if (!canSendDirectSync(ws)) break;
+    const chunk = ordered.slice(i, i + DIRECT_SYNC_CHUNK_SIZE);
+    const ok = sendOnSocket(ws, {
+      type: 'peer_direct_sync',
+      confirmedIds: chunk,
+      lastExecutedTransportSeq,
+    });
+    if (!ok) break;
+  }
+}
+
+function sendInboundDirectSyncFull(): void {
+  const ws = activeSocket;
+  if (!ws || !synchronized) return;
+  const { confirmedIds, lastExecutedTransportSeq } = getConfirmedDirectSummary();
+  if (confirmedIds.length === 0) {
+    if (lastExecutedTransportSeq > 0 && canSendDirectSync(ws)) {
+      sendOnSocket(ws, {
+        type: 'peer_direct_sync',
+        confirmedIds: [],
+        lastExecutedTransportSeq,
+      });
+    }
+    return;
+  }
+  sendDirectSyncChunks(ws, [...confirmedIds].reverse(), lastExecutedTransportSeq);
+}
+
 function clearInboundRecord(): void {
   heartbeat?.stop();
   heartbeat = null;
@@ -88,6 +145,7 @@ function clearInboundRecord(): void {
   synchronized = false;
   versionMismatch = false;
   lastLogged = '';
+  setDirectSyncListener(null);
   resetPeerFollowRuntime();
 }
 
@@ -188,6 +246,8 @@ export function onInboundPeerSyncConfirm(ws: AugmentedWebSocket): void {
       onInboundPeerClosed(ws);
     },
   });
+  setDirectSyncListener(sendInboundDirectSyncDelta);
+  sendInboundDirectSyncFull();
   onStatusChange?.();
 }
 
@@ -217,6 +277,7 @@ export function onInboundPeerClosed(ws: AugmentedWebSocket): void {
   heartbeat = null;
   remoteView = null;
   tracker?.onDisconnected(wasSync);
+  setDirectSyncListener(null);
   resetPeerFollowRuntime();
   if (!hasStandaloneSlaveRole()) {
     tracker = null;

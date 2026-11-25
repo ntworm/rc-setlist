@@ -10,7 +10,9 @@ import { bridgeState } from './bridge-state.js';
 import { notePeerCommand } from './peer-follow-runtime.js';
 import { peerCommandId } from './peer-message.js';
 import {
+  absorbCachedSeq,
   addDirectWaiter,
+  evictLruCache,
   isSafetyStopCommand,
   isTransportCommandType,
   makeDirectAck,
@@ -24,6 +26,15 @@ import {
   type DirectSyncListener,
   type DirectWaiter,
   type PeerAckMessage,
+  type PeerAckSocket,
+  type PeerCommandEnvelope,
+  type SeqAdvance,
+  type SlaveCommandExecutionMeta,
+  type SlaveCommandExecutionResult,
+  type SlaveCommandExecutor,
+  type SlaveCommandTrackerOptions,
+  type SlaveSessionSnapshot,
+  type SlaveTransportSnapshot,
 } from './peer-protocol.js';
 import { adoptUpstreamEcho } from './peer-upstream.js';
 
@@ -33,63 +44,6 @@ export const SLAVE_COMMAND_CACHE_CAPACITY = 512;
 /** Retention window in milliseconds for settled slave command acknowledgements. */
 export const SLAVE_COMMAND_CACHE_TTL_MS = 10 * 60_000;
 
-/** Local transport snapshot attached to slave `peer_ack` frames. */
-export interface SlaveTransportSnapshot {
-  isPlaying: boolean;
-  beat: number;
-}
-
-/** Settlement result returned by the local command pipeline executor. */
-export interface SlaveCommandExecutionResult {
-  result: 'confirmed' | 'failed' | 'expired';
-  reason?: string;
-}
-
-/** Deadline metadata passed to the local command executor to detect queue-wait TTL expiry. */
-export interface SlaveCommandExecutionMeta {
-  readonly deadlineAt: number | null;
-  isExpired(): boolean;
-}
-
-/** Executor invoked once per accepted slave peer command. */
-export type SlaveCommandExecutor = (
-  inner: ClientMessage,
-  meta?: SlaveCommandExecutionMeta,
-) => SlaveCommandExecutionResult | Promise<SlaveCommandExecutionResult>;
-
-/** Minimal WebSocket surface required to transmit `peer_ack` frames. */
-export interface PeerAckSocket {
-  readyState: number;
-  send(data: string): void;
-}
-
-/** Incoming `peer_command` envelope received from the master. */
-export interface PeerCommandEnvelope {
-  type: 'peer_command';
-  commandId: string;
-  ttlMs: number | null;
-  transportSeq: number | null;
-  command: ClientMessage;
-}
-
-/** Injectable hooks and cache limits for `SlaveCommandTracker`. */
-export interface SlaveCommandTrackerOptions {
-  now?: () => number;
-  capacity?: number;
-  ttlMs?: number;
-  getTransportSnapshot?: () => SlaveTransportSnapshot;
-  noteCommand?: (type: string) => void;
-  adoptEcho?: (msg: ClientMessage) => ClientMessage;
-}
-
-/** Diagnostic snapshot of slave session and dedupe cache state. */
-export interface SlaveSessionSnapshot {
-  sessionId: string | null;
-  lastExecutedTransportSeq: number;
-  cacheSize: number;
-}
-
-type SeqAdvance = { prevSeq: number; appliedSeq: number };
 type RunOrigin = {
   origin: 'peer' | 'direct';
   ws: PeerAckSocket;
@@ -101,10 +55,12 @@ type SlaveCacheEntry =
   | {
       status: 'in_flight';
       startedAt: number;
+      epoch: number;
+      seqChange: SeqAdvance | null;
       latestPeerSocket: PeerAckSocket | null;
       directWaiters: DirectWaiter<PeerAckSocket>[];
     }
-  | { status: 'settled'; settledAt: number; ack: PeerAckMessage };
+  | { status: 'settled'; settledAt: number; epoch: number; ack: PeerAckMessage };
 
 function defaultTransportSnapshot(): SlaveTransportSnapshot {
   const state = bridgeState.manager?.getState();
@@ -222,6 +178,7 @@ export class SlaveCommandTracker {
     this.confirmedDirectIds.clear();
     this.sessionId = null;
     this.lastExecutedTransportSeq = 0;
+    this.directSyncListener = null;
   }
 
   /**
@@ -243,23 +200,34 @@ export class SlaveCommandTracker {
     executeInner: SlaveCommandExecutor,
   ): Promise<{ ack: PeerAckMessage; seq: number } | null> {
     const now = this.now();
-    const cached = this.lookupCached(run, now);
+    const cached = this.lookupCached(run, seq, now);
     if (cached.hit) return Promise.resolve(cached.res);
     const rej = this.preExecutionRejection(run.cmd, seq, ttlMs);
     if (rej !== null) {
       const ack = makePeerAck(run.id, rej, rej, this.getTransportSnapshot());
-      this.setCacheEntry(run.id, { status: 'settled', settledAt: now, ack }, now);
+      this.setCacheEntry(
+        run.id,
+        { status: 'settled', settledAt: now, epoch: this.sessionEpoch, ack },
+        now,
+      );
       return Promise.resolve({ ack, seq: this.replySingle(run, ack) });
     }
     const directWaiters: DirectWaiter<PeerAckSocket>[] = [];
     if (run.origin === 'direct') addDirectWaiter(directWaiters, run.ws, run.rawId);
     const latestPeerSocket = run.origin === 'peer' ? run.ws : null;
+    const seqChange = this.advanceSeq(run.cmd, seq);
     this.setCacheEntry(
       run.id,
-      { status: 'in_flight', startedAt: now, latestPeerSocket, directWaiters },
+      {
+        status: 'in_flight',
+        startedAt: now,
+        epoch: this.sessionEpoch,
+        seqChange,
+        latestPeerSocket,
+        directWaiters,
+      },
       now,
     );
-    const seqChange = this.advanceSeq(run.cmd, seq);
     return this.runAndSettle(
       run,
       inner,
@@ -277,6 +245,7 @@ export class SlaveCommandTracker {
 
   private lookupCached(
     run: RunOrigin,
+    incomingSeq: number | null,
     now: number,
   ): { hit: true; res: { ack: PeerAckMessage; seq: number } | null } | { hit: false } {
     const existing = this.cache.get(run.id);
@@ -285,6 +254,12 @@ export class SlaveCommandTracker {
       if (run.origin === 'peer') {
         if (run.ws.readyState === WebSocket.OPEN) existing.latestPeerSocket = run.ws;
       } else addDirectWaiter(existing.directWaiters, run.ws, run.rawId);
+      this.lastExecutedTransportSeq = absorbCachedSeq(
+        existing,
+        incomingSeq,
+        this.sessionEpoch,
+        this.lastExecutedTransportSeq,
+      );
       this.cache.delete(run.id);
       this.cache.set(run.id, existing);
       return { hit: true, res: null };
@@ -293,6 +268,12 @@ export class SlaveCommandTracker {
       this.cache.delete(run.id);
       return { hit: false };
     }
+    this.lastExecutedTransportSeq = absorbCachedSeq(
+      existing,
+      incomingSeq,
+      this.sessionEpoch,
+      this.lastExecutedTransportSeq,
+    );
     this.cache.delete(run.id);
     this.cache.set(run.id, existing);
     const seq = this.replySingle(run, existing.ack);
@@ -399,7 +380,7 @@ export class SlaveCommandTracker {
     if (result !== 'confirmed' && isSafetyStopCommand(run.cmd)) {
       this.cache.delete(run.id);
       this.rollbackSeq(epoch, seqChange);
-    } else this.setCacheEntry(run.id, { status: 'settled', settledAt, ack }, settledAt);
+    } else this.setCacheEntry(run.id, { status: 'settled', settledAt, epoch, ack }, settledAt);
     if (peerWs) sendPeerFrame(peerWs, ack);
     const seq = this.lastExecutedTransportSeq;
     for (const w of waiters) sendPeerFrame(w.ws, makeDirectAck(w.rawCommandId, run.id, ack, seq));
@@ -417,35 +398,15 @@ export class SlaveCommandTracker {
     }
   }
 
-  private pruneExpired(now: number): void {
-    for (const [key, entry] of this.cache) {
-      if (entry.status === 'settled' && now - entry.settledAt >= this.ttlMs) {
-        this.cache.delete(key);
-      }
-    }
-  }
-
-  private evictIfFull(commandId: string, now: number): void {
-    if (this.cache.has(commandId)) return;
-    this.pruneExpired(now);
-    while (this.cache.size >= this.capacity) {
-      const victim = this.oldestEvictableKey();
-      if (victim === undefined) break;
-      this.cache.delete(victim);
-    }
-  }
-
-  private oldestEvictableKey(): string | undefined {
-    let fallback: string | undefined;
-    for (const [key, entry] of this.cache) {
-      if (fallback === undefined) fallback = key;
-      if (entry.status === 'settled') return key;
-    }
-    return fallback;
-  }
-
   private setCacheEntry(commandId: string, entry: SlaveCacheEntry, now: number): void {
-    this.evictIfFull(commandId, now);
+    evictLruCache(
+      this.cache,
+      commandId,
+      (item) => (item.status === 'settled' ? item.settledAt : null),
+      this.capacity,
+      this.ttlMs,
+      now,
+    );
     this.cache.delete(commandId);
     this.cache.set(commandId, entry);
   }

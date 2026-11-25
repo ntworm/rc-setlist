@@ -13,6 +13,7 @@ import {
   getActiveProfilePaths,
   profileStatePayload,
   loadLyricsForSong,
+  resetMasterTransportSeq,
   resetSignatureTimelineForIdentity,
   runPreflightCheck,
 } from './runtime/bridge-state.js';
@@ -71,6 +72,9 @@ import {
   isSafetyStopCommand,
   LINK_PROTOCOL_VERSION,
   type DirectCommandMessage,
+  type PeerCommandEnvelope,
+  type SlaveCommandExecutionMeta,
+  type SlaveCommandExecutionResult,
 } from './runtime/peer-protocol.js';
 import {
   getLastExecutedTransportSeq,
@@ -78,9 +82,6 @@ import {
   receiveDirectCommand,
   receivePeerCommand,
   resetSlaveCommandState,
-  type PeerCommandEnvelope,
-  type SlaveCommandExecutionMeta,
-  type SlaveCommandExecutionResult,
 } from './runtime/peer-slave-commands.js';
 import { OperatorError } from './core/operator-error.js';
 import {
@@ -656,7 +657,7 @@ export async function startServer(options: StartServerOptions = {}): Promise<voi
 
   try {
     bridgeState.masterSessionId = createMasterSessionId();
-    bridgeState.masterTransportSeq = 0;
+    resetMasterTransportSeq();
     bridgeState.peerAlerts = {};
     bridgeState.directToken = '';
     bridgeState.directHost = '';
@@ -1270,7 +1271,7 @@ export async function stopServer(): Promise<void> {
   stopPeerLink();
   setPeerUpstreamHandler(null);
   resetPeerUpstream();
-  bridgeState.masterTransportSeq = 0;
+  resetMasterTransportSeq();
   bridgeState.peerAlerts = {};
   bridgeState.peerAutoCorrect = true;
   bridgeState.directToken = '';

@@ -7,6 +7,11 @@
 import type { WebSocket } from 'ws';
 import type { ShowCommand } from '../types.js';
 import { bridgeState, broadcastState } from './bridge-state.js';
+import {
+  applyPeerDirectSync,
+  parsePeerDirectSync,
+  type ConfirmedRef,
+} from './peer-direct-targets.js';
 import { sendPeerJson, stopTimer } from './peer-liveness.js';
 import { isRecord, PEER_RELAY_TYPES, roomOnSocket } from './peer-message.js';
 import { answerSetlistRequest } from './peer-setlist.js';
@@ -136,7 +141,7 @@ function parsePeerAck(message: Record<string, unknown>): PeerAckMessage | null {
 
 function broadcastCommandStatus(
   target: PeerCommandTarget,
-  entry: PendingEntry,
+  entry: ConfirmedRef,
   status: PeerCommandStatus,
   reason?: string,
 ): void {
@@ -338,8 +343,20 @@ function handlePeerAck(target: PeerCommandTarget, message: Record<string, unknow
   broadcastCommandStatus(target, entry, ack.result, reason);
 }
 
+function handlePeerDirectSync(target: PeerCommandTarget, message: Record<string, unknown>): void {
+  if (!target.synchronized || !isRelayEligible(target)) return;
+  const sync = parsePeerDirectSync(message);
+  if (sync === null) return;
+  applyPeerDirectSync(
+    target,
+    sync,
+    (entry) => clearAlertIfMatches(target.key, entry, 'confirmed'),
+    (entry) => broadcastCommandStatus(target, entry, 'confirmed'),
+  );
+}
+
 /**
- * Dispatches peer_ack, setlist_request, and peer_upstream frames for an outbound peer link.
+ * Dispatches peer_ack, peer_direct_sync, setlist_request, and peer_upstream frames for an outbound peer link.
  */
 export function dispatchPeerCommandFrame(
   target: PeerCommandTarget,
@@ -347,6 +364,10 @@ export function dispatchPeerCommandFrame(
 ): boolean {
   if (message.type === 'peer_ack') {
     handlePeerAck(target, message);
+    return true;
+  }
+  if (message.type === 'peer_direct_sync') {
+    handlePeerDirectSync(target, message);
     return true;
   }
   if (message.type === 'setlist_request' && typeof message.requestId === 'string') {
@@ -393,6 +414,7 @@ function validateAndBuildWire(
 function nextTransportSeq(type: string, active: unknown): number | null {
   if (!isTransportCommandType({ type, active })) return null;
   bridgeState.masterTransportSeq += 1;
+  bridgeState.masterTargetSeq = bridgeState.masterTransportSeq;
   return bridgeState.masterTransportSeq;
 }
 

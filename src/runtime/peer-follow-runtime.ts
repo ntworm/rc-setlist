@@ -63,7 +63,7 @@ function localPeerTarget(): Record<string, unknown> | null {
   if (!state || bridgeState.oscClient?.isConnected !== true) return null;
   return {
     type: 'peer_target',
-    transportSeq: bridgeState.masterTransportSeq,
+    transportSeq: bridgeState.masterTargetSeq,
     beat: Math.max(0, state.currentSongTime),
     section: isAtActiveSection(state),
     isPlaying: state.isPlaying,

@@ -105,6 +105,8 @@ export interface BridgeState {
   masterSessionId: string;
   /** Monotonic master transport command sequence reset on every server start. */
   masterTransportSeq: number;
+  /** Highest master-originated transport sequence emitted in `peer_target` frames. */
+  masterTargetSeq: number;
   /** Latest delivery alerts keyed by peer link key. */
   peerAlerts: Record<string, PeerCommandAlert>;
   globalPersistenceDir: string;
@@ -164,6 +166,7 @@ export const bridgeState: BridgeState = {
   peerStatuses: [],
   masterSessionId: createMasterSessionId(),
   masterTransportSeq: 0,
+  masterTargetSeq: 0,
   peerAlerts: {},
   globalPersistenceDir: '',
   projectIdentity: null,
@@ -175,6 +178,12 @@ export const bridgeState: BridgeState = {
   legacyRecoveryPending: false,
   legacyRecoveryPromise: null,
 };
+
+/** Resets both master transport and target sequence counters atomically. */
+export function resetMasterTransportSeq(): void {
+  bridgeState.masterTransportSeq = 0;
+  bridgeState.masterTargetSeq = 0;
+}
 
 /**
  * RequireProfileManager — implementation detail.

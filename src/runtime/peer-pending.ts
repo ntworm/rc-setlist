@@ -257,6 +257,28 @@ export class PeerPendingTable {
   }
 
   /**
+   * Reconciles an external confirmation (such as `peer_direct_sync`) against active or recently expired commands.
+   */
+  onExternalConfirm(
+    commandId: string,
+    now?: number,
+  ): { kind: 'active' | 'expired'; entry: PendingEntry } | null {
+    this.pruneRecentlyExpired(now ?? this.now());
+    const entry = this.entries.get(commandId);
+    if (entry) {
+      this.entries.delete(commandId);
+      this.sentOnce.delete(commandId);
+      return { kind: 'active', entry };
+    }
+    const expired = this.recentlyExpired.get(commandId);
+    if (expired) {
+      this.recentlyExpired.delete(commandId);
+      return { kind: 'expired', entry: expired.entry };
+    }
+    return null;
+  }
+
+  /**
    * Returns the number of currently active pending commands.
    */
   size(): number {

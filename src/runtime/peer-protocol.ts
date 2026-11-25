@@ -57,6 +57,130 @@ export interface ConfirmedDirectSummary {
 /** Callback invoked when direct command confirmation needs master reconciliation. */
 export type DirectSyncListener = (confirmedId?: string) => void;
 
+/** Local transport snapshot attached to slave `peer_ack` frames. */
+export interface SlaveTransportSnapshot {
+  isPlaying: boolean;
+  beat: number;
+}
+
+/** Settlement result returned by the local command pipeline executor. */
+export interface SlaveCommandExecutionResult {
+  result: 'confirmed' | 'failed' | 'expired';
+  reason?: string;
+}
+
+/** Deadline metadata passed to the local command executor to detect queue-wait TTL expiry. */
+export interface SlaveCommandExecutionMeta {
+  readonly deadlineAt: number | null;
+  isExpired(): boolean;
+}
+
+/** Executor invoked once per accepted slave peer command. */
+export type SlaveCommandExecutor = (
+  inner: ClientMessage,
+  meta?: SlaveCommandExecutionMeta,
+) => SlaveCommandExecutionResult | Promise<SlaveCommandExecutionResult>;
+
+/** Minimal WebSocket surface required to transmit `peer_ack` frames. */
+export interface PeerAckSocket {
+  readyState: number;
+  send(data: string): void;
+}
+
+/** Incoming `peer_command` envelope received from the master. */
+export interface PeerCommandEnvelope {
+  type: 'peer_command';
+  commandId: string;
+  ttlMs: number | null;
+  transportSeq: number | null;
+  command: ClientMessage;
+}
+
+/** Injectable hooks and cache limits for `SlaveCommandTracker`. */
+export interface SlaveCommandTrackerOptions {
+  now?: () => number;
+  capacity?: number;
+  ttlMs?: number;
+  getTransportSnapshot?: () => SlaveTransportSnapshot;
+  noteCommand?: (type: string) => void;
+  adoptEcho?: (msg: ClientMessage) => ClientMessage;
+}
+
+/** Diagnostic snapshot of slave session and dedupe cache state. */
+export interface SlaveSessionSnapshot {
+  sessionId: string | null;
+  lastExecutedTransportSeq: number;
+  cacheSize: number;
+}
+
+/** Tracks a transportSeq advance for rollback when a safety stop fails. */
+export interface SeqAdvance {
+  prevSeq: number;
+  appliedSeq: number;
+}
+
+type CachedSeqEntry =
+  | { status: 'in_flight'; epoch: number; seqChange: SeqAdvance | null }
+  | { status: 'settled'; epoch: number; ack: { result: PeerAckResult } };
+
+function oldestEvictableKey<T>(
+  cache: Map<string, T>,
+  getSettledAt: (entry: T) => number | null,
+): string | undefined {
+  let fallback: string | undefined;
+  for (const [key, entry] of cache) {
+    if (fallback === undefined) fallback = key;
+    if (getSettledAt(entry) !== null) return key;
+  }
+  return fallback;
+}
+
+/** Prunes expired cache entries and evicts the oldest settled entry when at capacity. */
+export function evictLruCache<T>(
+  cache: Map<string, T>,
+  incomingKey: string,
+  getSettledAt: (entry: T) => number | null,
+  capacity: number,
+  ttlMs: number,
+  now: number,
+): void {
+  if (cache.has(incomingKey)) return;
+  for (const [key, entry] of cache) {
+    const settledAt = getSettledAt(entry);
+    if (settledAt !== null && now - settledAt >= ttlMs) cache.delete(key);
+  }
+  while (cache.size >= capacity) {
+    const victim = oldestEvictableKey(cache, getSettledAt);
+    if (victim === undefined) break;
+    cache.delete(victim);
+  }
+}
+
+/**
+ * Absorbs a higher transportSeq from a duplicate hit within the active session epoch.
+ * Mutates `entry.seqChange` in place for in-flight entries so safety-stop rollback stays accurate.
+ */
+export function absorbCachedSeq(
+  entry: CachedSeqEntry,
+  seq: number | null,
+  currentEpoch: number,
+  lastExecuted: number,
+): number {
+  if (entry.epoch !== currentEpoch || seq === null || seq <= lastExecuted) {
+    return lastExecuted;
+  }
+  if (entry.status === 'in_flight') {
+    if (entry.seqChange !== null) {
+      if (lastExecuted !== entry.seqChange.appliedSeq) {
+        entry.seqChange.prevSeq = lastExecuted;
+      }
+      entry.seqChange.appliedSeq = seq;
+    }
+    return seq;
+  }
+  return entry.ack.result === 'confirmed' ? seq : lastExecuted;
+}
+
 /** Builds a `peer_ack` frame from a command outcome and transport snapshot. */
 export function makePeerAck(
   commandId: string,
