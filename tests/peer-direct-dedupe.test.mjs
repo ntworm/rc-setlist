@@ -8,6 +8,16 @@ import * as psc from '../src/runtime/peer-slave-commands.ts';
 
 const [eq, is] = [assert.deepEqual, assert.equal];
 const [ok, fail] = [() => ({ result: 'confirmed' }), () => ({ result: 'failed', reason: 'down' })];
+const ackOf = (commandId, result, reason, transportSeq) => ({
+  type: 'direct_ack',
+  commandId,
+  peerCommandId: pid(commandId),
+  result,
+  reason,
+  isPlaying: true,
+  beat: 12,
+  transportSeq,
+});
 const sock = (sent = []) => ({ readyState: 1, sent, send: (r) => sent.push(JSON.parse(r)) });
 const defer = () => {
   let resolve;
@@ -62,16 +72,7 @@ test('unified transportSeq: safety stop supersedes play and rolls back on failur
   await p(pWs, 'p5', { type: 'play' }, 5);
   is(adopted.length, 1);
   const hitP5 = await d(dWs, { type: 'play', commandId: 'p5', transportSeq: 5 }, fail);
-  eq(dWs.sent.at(-1), {
-    type: 'direct_ack',
-    commandId: 'p5',
-    peerCommandId: pid('p5'),
-    result: 'confirmed',
-    reason: '',
-    isPlaying: true,
-    beat: 12,
-    transportSeq: 5,
-  });
+  eq(dWs.sent.at(-1), ackOf('p5', 'confirmed', '', 5));
   is(
     hitP5.result === 'confirmed' && t.getConfirmedDirectSummary().confirmedIds.includes(pid('p5')),
     true,
@@ -82,16 +83,7 @@ test('unified transportSeq: safety stop supersedes play and rolls back on failur
   is(rf.result === 'failed' && rf.transportSeq === 5 && ro.transportSeq === 6, true);
   eq(syncs, [pid('p5'), pid('s5')]);
   await d(dWs, { type: 'play', commandId: 'p6', transportSeq: 6, ttlMs: 500 });
-  eq(dWs.sent.at(-1), {
-    type: 'direct_ack',
-    commandId: 'p6',
-    peerCommandId: pid('p6'),
-    result: 'superseded',
-    reason: 'superseded',
-    isPlaying: true,
-    beat: 12,
-    transportSeq: 6,
-  });
+  eq(dWs.sent.at(-1), ackOf('p6', 'superseded', 'superseded', 6));
   is(
     (await d(dWs, { type: 'jump_time', time: 4, commandId: 'j6', transportSeq: 6 })).result,
     'superseded',
@@ -100,16 +92,7 @@ test('unified transportSeq: safety stop supersedes play and rolls back on failur
   is(adopted.length, 1);
   is((await d(dWs, { type: 'stop', commandId: 's4', transportSeq: 4 })).result, 'superseded');
   await d(dWs, { type: 'play', commandId: 'p9', transportSeq: 9, ttlMs: 0 });
-  eq(dWs.sent.at(-1), {
-    type: 'direct_ack',
-    commandId: 'p9',
-    peerCommandId: pid('p9'),
-    result: 'expired',
-    reason: 'expired',
-    isPlaying: true,
-    beat: 12,
-    transportSeq: 6,
-  });
+  eq(dWs.sent.at(-1), ackOf('p9', 'expired', 'expired', 6));
   const pan8 = { type: 'set_panic', active: true, commandId: 'pan8', transportSeq: 8 };
   is(
     (await d(dWs, pan8, fail)).transportSeq === 6 && (await d(dWs, pan8)).transportSeq === 8,
