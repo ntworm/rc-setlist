@@ -4,38 +4,27 @@
 
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { SetlistManager } from '../src/core/setlist-manager.ts';
-import { bridgeState, resetMasterTransportSeq } from '../src/runtime/bridge-state.ts';
-import { applyPeerDirectSync, parsePeerDirectSync } from '../src/runtime/peer-direct-targets.ts';
-import { startPeerTarget } from '../src/runtime/peer-follow-runtime.ts';
+import { bridgeState } from '../src/runtime/bridge-state.ts';
+import { parsePeerDirectSync } from '../src/runtime/peer-direct-targets.ts';
 import {
   onInboundPeerClosed,
   onInboundPeerSyncConfirm,
   resetInboundPeerState,
 } from '../src/runtime/peer-inbound.ts';
-import {
-  dispatchPeerCommandFrame,
-  relayCommandToPeers,
-} from '../src/runtime/peer-link-commands.ts';
+import { dispatchPeerCommandFrame } from '../src/runtime/peer-link-commands.ts';
 import { STALLED_SOCKET_BYTES, peerCommandId } from '../src/runtime/peer-message.ts';
 import { PeerPendingTable, RECENTLY_EXPIRED_TTL_MS } from '../src/runtime/peer-pending.ts';
-import { absorbCachedSeq, evictLruCache } from '../src/runtime/peer-protocol.ts';
 import {
-  SLAVE_COMMAND_CACHE_TTL_MS,
-  SlaveCommandTracker,
   receiveDirectCommand,
   receivePeerCommand,
   resetSlaveCommandState,
 } from '../src/runtime/peer-slave-commands.ts';
 import {
-  defer,
   eq,
-  failExec,
   is,
   makePendingInput,
   makeSock,
   makeTarget,
-  makeTracker,
   okExec,
   withBridge,
 } from './helpers/peer-direct-sync-fixtures.mjs';
@@ -141,7 +130,7 @@ function setupExpiredPair() {
     masterIsPanicked: false,
   });
 
-  return { pending, target, setNow: (v) => (now = v) };
+  return { pending, target };
 }
 
 test('peer_direct_sync reconciles expired entries and protects newer stop_unacked', async () => {

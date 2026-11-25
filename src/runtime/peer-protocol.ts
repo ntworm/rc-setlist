@@ -166,7 +166,7 @@ export function absorbCachedSeq(
   currentEpoch: number,
   lastExecuted: number,
 ): number {
-  if (entry.epoch !== currentEpoch || seq === null || seq <= lastExecuted) {
+  if (entry.epoch !== currentEpoch || seq === null || !(seq > lastExecuted)) {
     return lastExecuted;
   }
   if (entry.status === 'in_flight') {
