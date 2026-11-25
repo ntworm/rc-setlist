@@ -139,7 +139,8 @@ test('direct handshake_ack is minimal, rtt_ping is browser-only, and errors keep
     eq(await msgBy(ctrl, (m) => m.type === 'rtt_pong'), { type: 'rtt_pong', t0: 12.5 });
     const [dAck, bAck] = [(await syncWs(dir, 'd-1')).ack, (await syncWs(ctrl, 'b-1')).ack];
     await syncWs(view, 'v-1');
-    is(!('state' in dAck) && !dir.msgs.some((m) => m.type === 'profiles_state'), true);
+    is(!('state' in dAck) && typeof dAck.transportSeq === 'number', true);
+    is(!dir.msgs.some((m) => m.type === 'profiles_state'), true);
     is('state' in bAck && Array.isArray(bAck.state.songs), true);
     assert.ok(await msgBy(ctrl, (m) => m.type === 'profiles_state'));
     send(dir, { type: 'set_mode', mode: 'show', commandId: 'e-pr' });
@@ -158,9 +159,15 @@ test('direct strips meta before CommandBus, holds handlePeerTarget, and drops du
     resetPeerFollowRuntime();
     const [dir, ctrl] = await Promise.all([sync(bs.directToken, 'd-2'), sync(bs.authToken, 'b-2')]);
     send(dir, { type: 'stop', commandId: 'd-stop', ttlMs: 500, transportSeq: 4 });
-    const r1 = await waitFor(() => reg.find((r) => r.id === 'd-stop'));
+    const dStopId = peerCommandId('d-stop');
+    const r1 = await waitFor(() => reg.find((r) => r.id === dStopId));
     await waitFor(() => calls.includes('stopPlaying'));
-    eq(r1.payload, { type: 'stop', commandId: 'd-stop' });
+    eq(r1.payload, { type: 'stop', commandId: dStopId });
+    const dAck = await msgBy(dir, (m) => m.type === 'direct_ack' && m.commandId === 'd-stop');
+    is(
+      dAck.peerCommandId === dStopId && dAck.result === 'confirmed' && dAck.transportSeq === 4,
+      true,
+    );
     const f = {
       section: false,
       isPlaying: false,
@@ -196,7 +203,20 @@ test('slave mode forwards browser play without direct meta while direct runs loc
     const up = await msgBy(peer, (m) => m.type === 'peer_upstream');
     eq(up, { type: 'peer_upstream', command: { type: 'play', commandId: 'sb-1' } });
     is(calls.length, 0);
-    send(dir, { type: 'play', commandId: 'sd-1', ttlMs: 500, transportSeq: 8 });
+    send(dir, { type: 'stop', commandId: 'sd-2', ttlMs: 500, transportSeq: 8 });
+    const sdAck = await msgBy(dir, (m) => m.type === 'direct_ack' && m.commandId === 'sd-2');
+    is(sdAck.result === 'confirmed' && sdAck.transportSeq === 8, true);
+    is((await sync(bs.directToken, 'sd-2-ws')).ack.transportSeq, 8);
+    const pCmd = {
+      type: 'peer_command',
+      commandId: peerCommandId('sd-2'),
+      ttlMs: 500,
+      transportSeq: 8,
+    };
+    send(peer, { ...pCmd, command: { type: 'stop' } });
+    const pAck = await msgBy(peer, (m) => m.type === 'peer_ack');
+    is(pAck.result === 'confirmed' && calls.length === 1, true);
+    send(dir, { type: 'play', commandId: 'sd-1', ttlMs: 500, transportSeq: 9 });
     await waitFor(() => calls.includes('startPlaying'));
     await sleep(30);
     is(peer.msgs.filter((m) => m.type === 'peer_upstream').length, 1);

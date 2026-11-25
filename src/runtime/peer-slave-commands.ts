@@ -8,7 +8,23 @@ import { WebSocket } from 'ws';
 import type { ClientMessage } from '../types.js';
 import { bridgeState } from './bridge-state.js';
 import { notePeerCommand } from './peer-follow-runtime.js';
-import type { PeerAckMessage, PeerAckResult } from './peer-protocol.js';
+import { peerCommandId } from './peer-message.js';
+import {
+  addDirectWaiter,
+  isSafetyStopCommand,
+  isTransportCommandType,
+  makeDirectAck,
+  makePeerAck,
+  pruneTimedIds,
+  recordTimedId,
+  sendPeerFrame,
+  type ConfirmedDirectSummary,
+  type DirectAckMessage,
+  type DirectCommandMessage,
+  type DirectSyncListener,
+  type DirectWaiter,
+  type PeerAckMessage,
+} from './peer-protocol.js';
 import { adoptUpstreamEcho } from './peer-upstream.js';
 
 /** Maximum number of outer command IDs retained in the slave dedupe LRU cache. */
@@ -73,52 +89,29 @@ export interface SlaveSessionSnapshot {
   cacheSize: number;
 }
 
+type SeqAdvance = { prevSeq: number; appliedSeq: number };
+type RunOrigin = {
+  origin: 'peer' | 'direct';
+  ws: PeerAckSocket;
+  id: string;
+  rawId: string;
+  cmd: { type: string; active?: unknown };
+};
 type SlaveCacheEntry =
-  | { status: 'in_flight'; startedAt: number; latestSocket: PeerAckSocket }
+  | {
+      status: 'in_flight';
+      startedAt: number;
+      latestPeerSocket: PeerAckSocket | null;
+      directWaiters: DirectWaiter<PeerAckSocket>[];
+    }
   | { status: 'settled'; settledAt: number; ack: PeerAckMessage };
 
 function defaultTransportSnapshot(): SlaveTransportSnapshot {
   const state = bridgeState.manager?.getState();
-  return {
-    isPlaying: state?.isPlaying ?? false,
-    beat: state?.currentSongTime ?? 0,
-  };
+  return { isPlaying: state?.isPlaying ?? false, beat: state?.currentSongTime ?? 0 };
 }
 
-function isSafetyStopEnvelope(msg: PeerCommandEnvelope): boolean {
-  const inner = msg.command as { type: string; active?: unknown };
-  return inner.type === 'stop' || (inner.type === 'set_panic' && inner.active === true);
-}
-
-function sendAck(ws: PeerAckSocket, ack: PeerAckMessage): boolean {
-  if (ws.readyState !== WebSocket.OPEN) return false;
-  try {
-    ws.send(JSON.stringify(ack));
-    return true;
-  } catch {
-    return false;
-  }
-}
-
-function makeAck(
-  commandId: string,
-  result: PeerAckResult,
-  reason: string,
-  snapshot: SlaveTransportSnapshot,
-): PeerAckMessage {
-  return {
-    type: 'peer_ack',
-    commandId,
-    result,
-    reason,
-    isPlaying: snapshot.isPlaying,
-    beat: snapshot.beat,
-  };
-}
-
-/**
- * Tracks slave command deduplication, TTL expiry, transport sequence ordering, and session resets.
- */
+/** Tracks slave command deduplication, TTL expiry, transportSeq ordering, and dual-path fan-out. */
 export class SlaveCommandTracker {
   private readonly now: () => number;
   private readonly capacity: number;
@@ -128,9 +121,12 @@ export class SlaveCommandTracker {
   private readonly adoptEcho: (msg: ClientMessage) => ClientMessage;
 
   private readonly cache = new Map<string, SlaveCacheEntry>();
+  private readonly confirmedDirectIds = new Map<string, number>();
   private sessionId: string | null = null;
+  private sessionEpoch = 0;
   private lastExecutedTransportSeq = 0;
   private generation = 0;
+  private directSyncListener: DirectSyncListener | null = null;
 
   constructor(options: SlaveCommandTrackerOptions = {}) {
     this.now = options.now ?? (() => performance.now());
@@ -146,9 +142,15 @@ export class SlaveCommandTracker {
    */
   onHandshakeSession(nextSessionId?: string): void {
     if (!nextSessionId) return;
+    if (this.sessionId === null) {
+      this.sessionId = nextSessionId;
+      return;
+    }
     if (nextSessionId !== this.sessionId) {
       this.sessionId = nextSessionId;
+      this.sessionEpoch += 1;
       this.lastExecutedTransportSeq = 0;
+      this.confirmedDirectIds.clear();
     }
   }
 
@@ -160,25 +162,55 @@ export class SlaveCommandTracker {
     msg: PeerCommandEnvelope,
     executeInner: SlaveCommandExecutor,
   ): Promise<PeerAckMessage | null> {
-    const now = this.now();
-    const cached = this.lookupCached(ws, msg.commandId, now);
-    if (cached.hit) return Promise.resolve(cached.ack);
+    const run: RunOrigin = {
+      origin: 'peer',
+      ws,
+      id: msg.commandId,
+      rawId: msg.commandId,
+      cmd: msg.command,
+    };
+    const inner = this.adoptEcho({ ...msg.command, commandId: msg.commandId });
+    return this.dispatch(run, inner, msg.transportSeq, msg.ttlMs, executeInner);
+  }
 
-    const rejection = this.preExecutionRejection(msg);
-    if (rejection !== null) {
-      return Promise.resolve(this.settleRejected(ws, msg.commandId, rejection, now));
-    }
-
-    this.setCacheEntry(
-      msg.commandId,
-      { status: 'in_flight', startedAt: now, latestSocket: ws },
-      now,
+  /** Handles a `direct`-role transport command with canonical dedupe, TTL, and `direct_ack`. */
+  receiveDirectCommand(
+    ws: PeerAckSocket,
+    msg: DirectCommandMessage,
+    executeInner: SlaveCommandExecutor,
+  ): Promise<DirectAckMessage | null> {
+    const id = peerCommandId(msg.commandId);
+    const { ttlMs: _t, transportSeq: _s, ...rest } = msg;
+    const run: RunOrigin = { origin: 'direct', ws, id, rawId: msg.commandId, cmd: msg };
+    const p = this.dispatch(
+      run,
+      { ...rest, commandId: id },
+      msg.transportSeq ?? null,
+      msg.ttlMs ?? null,
+      executeInner,
     );
-    if (msg.transportSeq !== null && msg.transportSeq > this.lastExecutedTransportSeq) {
-      this.lastExecutedTransportSeq = msg.transportSeq;
-    }
-    const deadlineAt = msg.ttlMs === null ? null : now + msg.ttlMs;
-    return this.runAndSettle(ws, msg, executeInner, this.generation, deadlineAt);
+    return p.then((a) =>
+      a ? makeDirectAck(msg.commandId, id, a, this.lastExecutedTransportSeq) : null,
+    );
+  }
+
+  /** Registers or clears the listener notified when confirmed direct commands need sync. */
+  setDirectSyncListener(listener: DirectSyncListener | null): void {
+    this.directSyncListener = listener;
+  }
+
+  /** Returns non-expired confirmed direct command IDs and highest executed transportSeq. */
+  getConfirmedDirectSummary(): ConfirmedDirectSummary {
+    pruneTimedIds(this.confirmedDirectIds, this.now(), this.ttlMs);
+    return {
+      confirmedIds: [...this.confirmedDirectIds.keys()],
+      lastExecutedTransportSeq: this.lastExecutedTransportSeq,
+    };
+  }
+
+  /** Returns the highest executed transport sequence number on this slave. */
+  getLastExecutedTransportSeq(): number {
+    return this.lastExecutedTransportSeq;
   }
 
   /**
@@ -186,7 +218,9 @@ export class SlaveCommandTracker {
    */
   reset(): void {
     this.generation += 1;
+    this.sessionEpoch += 1;
     this.cache.clear();
+    this.confirmedDirectIds.clear();
     this.sessionId = null;
     this.lastExecutedTransportSeq = 0;
   }
@@ -202,90 +236,183 @@ export class SlaveCommandTracker {
     };
   }
 
+  private dispatch(
+    run: RunOrigin,
+    inner: ClientMessage,
+    seq: number | null,
+    ttlMs: number | null,
+    executeInner: SlaveCommandExecutor,
+  ): Promise<PeerAckMessage | null> {
+    const now = this.now();
+    const cached = this.lookupCached(run, now);
+    if (cached.hit) return Promise.resolve(cached.ack);
+    const rej = this.preExecutionRejection(run.cmd, seq, ttlMs);
+    if (rej !== null) {
+      const ack = makePeerAck(run.id, rej, rej, this.getTransportSnapshot());
+      this.setCacheEntry(run.id, { status: 'settled', settledAt: now, ack }, now);
+      this.replySingle(run, ack);
+      return Promise.resolve(ack);
+    }
+    const directWaiters: DirectWaiter<PeerAckSocket>[] = [];
+    if (run.origin === 'direct') addDirectWaiter(directWaiters, run.ws, run.rawId);
+    const latestPeerSocket = run.origin === 'peer' ? run.ws : null;
+    this.setCacheEntry(
+      run.id,
+      { status: 'in_flight', startedAt: now, latestPeerSocket, directWaiters },
+      now,
+    );
+    const seqChange = this.advanceSeq(run.cmd, seq);
+    return this.runAndSettle(
+      run,
+      inner,
+      executeInner,
+      ttlMs === null ? null : now + ttlMs,
+      seqChange,
+    );
+  }
+
+  private replySingle(run: RunOrigin, ack: PeerAckMessage): void {
+    const seq = this.lastExecutedTransportSeq;
+    sendPeerFrame(run.ws, run.origin === 'peer' ? ack : makeDirectAck(run.rawId, run.id, ack, seq));
+  }
+
   private lookupCached(
-    ws: PeerAckSocket,
-    commandId: string,
+    run: RunOrigin,
     now: number,
   ): { hit: true; ack: PeerAckMessage | null } | { hit: false } {
-    const existing = this.cache.get(commandId);
+    const existing = this.cache.get(run.id);
     if (!existing) return { hit: false };
     if (existing.status === 'in_flight') {
-      if (ws.readyState === WebSocket.OPEN) existing.latestSocket = ws;
-      this.cache.delete(commandId);
-      this.cache.set(commandId, existing);
+      if (run.origin === 'peer') {
+        if (run.ws.readyState === WebSocket.OPEN) existing.latestPeerSocket = run.ws;
+      } else addDirectWaiter(existing.directWaiters, run.ws, run.rawId);
+      this.cache.delete(run.id);
+      this.cache.set(run.id, existing);
       return { hit: true, ack: null };
     }
     if (now - existing.settledAt >= this.ttlMs) {
-      this.cache.delete(commandId);
+      this.cache.delete(run.id);
       return { hit: false };
     }
-    this.cache.delete(commandId);
-    this.cache.set(commandId, existing);
-    sendAck(ws, existing.ack);
+    this.cache.delete(run.id);
+    this.cache.set(run.id, existing);
+    this.replySingle(run, existing.ack);
+    if (run.origin === 'direct' && existing.ack.result === 'confirmed')
+      this.recordConfirmedDirect(run.id, now);
     return { hit: true, ack: existing.ack };
   }
 
-  private preExecutionRejection(msg: PeerCommandEnvelope): 'superseded' | 'expired' | null {
-    if (msg.transportSeq !== null && msg.transportSeq < this.lastExecutedTransportSeq) {
-      return 'superseded';
+  private preExecutionRejection(
+    cmd: { type: string; active?: unknown },
+    seq: number | null,
+    ttlMs: number | null,
+  ): 'superseded' | 'expired' | null {
+    if (seq !== null) {
+      const nonSafety = isTransportCommandType(cmd) && !isSafetyStopCommand(cmd);
+      if (nonSafety ? seq <= this.lastExecutedTransportSeq : seq < this.lastExecutedTransportSeq)
+        return 'superseded';
     }
-    if (msg.ttlMs !== null && (!Number.isFinite(msg.ttlMs) || msg.ttlMs <= 0)) {
-      return 'expired';
-    }
-    return null;
+    return ttlMs !== null && (!Number.isFinite(ttlMs) || ttlMs <= 0) ? 'expired' : null;
   }
 
-  private settleRejected(
-    ws: PeerAckSocket,
-    commandId: string,
-    result: 'superseded' | 'expired',
-    now: number,
-  ): PeerAckMessage {
-    const ack = makeAck(commandId, result, result, this.getTransportSnapshot());
-    this.setCacheEntry(commandId, { status: 'settled', settledAt: now, ack }, now);
-    sendAck(ws, ack);
-    return ack;
+  private advanceSeq(
+    cmd: { type: string; active?: unknown },
+    seq: number | null,
+  ): SeqAdvance | null {
+    const prevSeq = this.lastExecutedTransportSeq;
+    const higher = seq !== null && seq > prevSeq ? seq : null;
+    const appliedSeq = higher ?? (isSafetyStopCommand(cmd) ? prevSeq + 1 : null);
+    if (appliedSeq === null) return null;
+    this.lastExecutedTransportSeq = appliedSeq;
+    return { prevSeq, appliedSeq };
   }
 
   private async runAndSettle(
-    ws: PeerAckSocket,
-    msg: PeerCommandEnvelope,
+    run: RunOrigin,
+    inner: ClientMessage,
     executeInner: SlaveCommandExecutor,
-    myGen: number,
     deadlineAt: number | null,
+    seqChange: SeqAdvance | null,
   ): Promise<PeerAckMessage | null> {
+    const [myGen, epoch] = [this.generation, this.sessionEpoch];
     let outcome: SlaveCommandExecutionResult;
     const meta: SlaveCommandExecutionMeta = {
       deadlineAt,
       isExpired: () => deadlineAt !== null && this.now() >= deadlineAt,
     };
     try {
-      this.noteCommand(msg.command.type);
-      const inner = this.adoptEcho({ ...msg.command, commandId: msg.commandId });
+      this.noteCommand(run.cmd.type);
       outcome = await executeInner(inner, meta);
     } catch {
       outcome = { result: 'failed', reason: 'execution_failed' };
     }
     if (myGen !== this.generation) return null;
-    const settledAt = this.now();
-    const defaultReason =
-      outcome.result === 'failed'
-        ? 'execution_failed'
+    const def =
+      outcome.result === 'confirmed'
+        ? ''
         : outcome.result === 'expired'
           ? 'expired'
-          : '';
-    const reason = outcome.reason ?? defaultReason;
-    const ack = makeAck(msg.commandId, outcome.result, reason, this.getTransportSnapshot());
-    const inFlight = this.cache.get(msg.commandId);
-    const targetSocket = inFlight?.status === 'in_flight' ? inFlight.latestSocket : ws;
-    if (outcome.result !== 'confirmed' && isSafetyStopEnvelope(msg)) {
-      // A transient failure of a safety stop must stay retryable: do not pin it for 10 minutes.
-      this.cache.delete(msg.commandId);
-    } else {
-      this.setCacheEntry(msg.commandId, { status: 'settled', settledAt, ack }, settledAt);
-    }
-    sendAck(targetSocket, ack);
+          : 'execution_failed';
+    const ack = makePeerAck(
+      run.id,
+      outcome.result,
+      outcome.reason ?? def,
+      this.getTransportSnapshot(),
+    );
+    this.commitAndFanOut(run, outcome.result, ack, epoch, seqChange);
     return ack;
+  }
+
+  private resolveTargets(run: RunOrigin): {
+    peerWs: PeerAckSocket | null;
+    waiters: DirectWaiter<PeerAckSocket>[];
+  } {
+    const cur = this.cache.get(run.id);
+    if (cur?.status === 'in_flight')
+      return { peerWs: cur.latestPeerSocket, waiters: cur.directWaiters };
+    return {
+      peerWs: run.origin === 'peer' ? run.ws : null,
+      waiters: run.origin === 'direct' ? [{ ws: run.ws, rawCommandId: run.rawId }] : [],
+    };
+  }
+
+  private rollbackSeq(epoch: number, seqChange: SeqAdvance | null): void {
+    if (
+      seqChange &&
+      this.sessionEpoch === epoch &&
+      this.lastExecutedTransportSeq === seqChange.appliedSeq
+    ) {
+      this.lastExecutedTransportSeq = seqChange.prevSeq;
+    }
+  }
+
+  private commitAndFanOut(
+    run: RunOrigin,
+    result: SlaveCommandExecutionResult['result'],
+    ack: PeerAckMessage,
+    epoch: number,
+    seqChange: SeqAdvance | null,
+  ): void {
+    const settledAt = this.now();
+    const { peerWs, waiters } = this.resolveTargets(run);
+    if (result !== 'confirmed' && isSafetyStopCommand(run.cmd)) {
+      this.cache.delete(run.id);
+      this.rollbackSeq(epoch, seqChange);
+    } else this.setCacheEntry(run.id, { status: 'settled', settledAt, ack }, settledAt);
+    if (peerWs) sendPeerFrame(peerWs, ack);
+    const seq = this.lastExecutedTransportSeq;
+    for (const w of waiters) sendPeerFrame(w.ws, makeDirectAck(w.rawCommandId, run.id, ack, seq));
+    if (result === 'confirmed' && (run.origin === 'direct' || waiters.length > 0))
+      this.recordConfirmedDirect(run.id, settledAt);
+  }
+
+  private recordConfirmedDirect(id: string, now: number): void {
+    recordTimedId(this.confirmedDirectIds, id, now, this.ttlMs, this.capacity);
+    try {
+      this.directSyncListener?.(id);
+    } catch {
+      // Listener errors must never block command settlement.
+    }
   }
 
   private pruneExpired(now: number): void {
@@ -324,22 +451,42 @@ export class SlaveCommandTracker {
 
 const defaultSlaveTracker = new SlaveCommandTracker();
 
-/**
- * Updates the default slave tracker with the master session id announced on handshake.
- */
+/** Updates the default slave tracker with the master session id announced on handshake. */
 export function onPeerHandshakeSession(nextSessionId?: string): void {
   defaultSlaveTracker.onHandshakeSession(nextSessionId);
 }
 
-/**
- * Processes an incoming `peer_command` envelope through the default slave command tracker.
- */
+/** Processes an incoming `peer_command` envelope through the default slave command tracker. */
 export function receivePeerCommand(
   ws: PeerAckSocket,
   msg: PeerCommandEnvelope,
   executeInner: SlaveCommandExecutor,
 ): Promise<PeerAckMessage | null> {
   return defaultSlaveTracker.receiveCommand(ws, msg, executeInner);
+}
+
+/** Processes an incoming `direct`-role command through the default slave command tracker. */
+export function receiveDirectCommand(
+  ws: PeerAckSocket,
+  msg: DirectCommandMessage,
+  executeInner: SlaveCommandExecutor,
+): Promise<DirectAckMessage | null> {
+  return defaultSlaveTracker.receiveDirectCommand(ws, msg, executeInner);
+}
+
+/** Registers or clears the listener notified when confirmed direct commands need master sync. */
+export function setDirectSyncListener(listener: DirectSyncListener | null): void {
+  defaultSlaveTracker.setDirectSyncListener(listener);
+}
+
+/** Returns confirmed direct command IDs and highest executed transportSeq on this slave. */
+export function getConfirmedDirectSummary(): ConfirmedDirectSummary {
+  return defaultSlaveTracker.getConfirmedDirectSummary();
+}
+
+/** Returns the highest executed transportSeq on this slave. */
+export function getLastExecutedTransportSeq(): number {
+  return defaultSlaveTracker.getLastExecutedTransportSeq();
 }
 
 /**

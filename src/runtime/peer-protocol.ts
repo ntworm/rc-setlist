@@ -8,7 +8,7 @@ import { randomUUID } from 'node:crypto';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { getQuantizationBeats, nextQuantizationBoundary } from '../core/next-downbeat-jump.js';
-import type { SetlistState, ShowCommand } from '../types.js';
+import type { ClientMessage, SetlistState, ShowCommand } from '../types.js';
 import { isRecord } from './peer-message.js';
 
 /** Computed delivery deadline and safety-stop classification for a relayed command. */
@@ -28,6 +28,116 @@ export interface PeerAckMessage {
   reason: string;
   isPlaying: boolean;
   beat: number;
+}
+
+/** Direct transport command accepted on a `direct`-role WebSocket with mandatory `commandId`. */
+export type DirectCommandMessage = Extract<
+  ClientMessage,
+  { type: 'jump_time' | 'play' | 'stop' | 'set_panic' }
+> & { commandId: string };
+
+/** Wire payload for slave-to-phone direct command acknowledgements. */
+export interface DirectAckMessage {
+  type: 'direct_ack';
+  commandId: string;
+  peerCommandId: string;
+  result: PeerAckResult;
+  reason: string;
+  isPlaying: boolean;
+  beat: number;
+  transportSeq: number;
+}
+
+/** Snapshot of confirmed direct command IDs and highest executed transport sequence. */
+export interface ConfirmedDirectSummary {
+  confirmedIds: string[];
+  lastExecutedTransportSeq: number;
+}
+
+/** Callback invoked when direct command confirmation needs master reconciliation. */
+export type DirectSyncListener = (confirmedId?: string) => void;
+
+/** Builds a `peer_ack` frame from a command outcome and transport snapshot. */
+export function makePeerAck(
+  commandId: string,
+  result: PeerAckResult,
+  reason: string,
+  snapshot: { isPlaying: boolean; beat: number },
+): PeerAckMessage {
+  return {
+    type: 'peer_ack',
+    commandId,
+    result,
+    reason,
+    isPlaying: snapshot.isPlaying,
+    beat: snapshot.beat,
+  };
+}
+
+/** Sends a JSON-serialized ACK frame if the socket is open, swallowing write errors. */
+export function sendPeerFrame(
+  ws: { readyState: number; send(data: string): void },
+  frame: PeerAckMessage | DirectAckMessage,
+): boolean {
+  if (ws.readyState !== 1) return false;
+  try {
+    ws.send(JSON.stringify(frame));
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/** Builds a `direct_ack` frame from a settled `PeerAckMessage` and current transportSeq. */
+export function makeDirectAck(
+  commandId: string,
+  peerCommandId: string,
+  ack: PeerAckMessage,
+  transportSeq: number,
+): DirectAckMessage {
+  return { ...ack, type: 'direct_ack', commandId, peerCommandId, transportSeq };
+}
+
+/** Pending direct socket waiting for an in-flight command to settle. */
+export interface DirectWaiter<TSocket = { readyState: number; send(data: string): void }> {
+  ws: TSocket;
+  rawCommandId: string;
+}
+
+/** Appends a unique open direct waiter socket for an in-flight command. */
+export function addDirectWaiter<TSocket extends { readyState: number; send(data: string): void }>(
+  waiters: DirectWaiter<TSocket>[],
+  ws: TSocket,
+  rawCommandId: string,
+): void {
+  if (ws.readyState !== 1) return;
+  if (!waiters.some((w) => w.ws === ws && w.rawCommandId === rawCommandId)) {
+    waiters.push({ ws, rawCommandId });
+  }
+}
+
+/** Removes expired entries from a timestamped ID map using `ttlMs`. */
+export function pruneTimedIds(map: Map<string, number>, now: number, ttlMs: number): void {
+  for (const [k, ts] of map) {
+    if (now - ts >= ttlMs) map.delete(k);
+  }
+}
+
+/** Records an ID in a bounded LRU map with TTL eviction. */
+export function recordTimedId(
+  map: Map<string, number>,
+  id: string,
+  now: number,
+  ttlMs: number,
+  capacity: number,
+): void {
+  pruneTimedIds(map, now, ttlMs);
+  map.delete(id);
+  if (map.size >= capacity) {
+    const oldest = map.keys().next().value;
+    if (oldest !== undefined) map.delete(oldest);
+  }
+  map.set(id, now);
 }
 
 /** Wire envelope for master-to-slave confirmed commands. */

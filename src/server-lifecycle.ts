@@ -70,9 +70,12 @@ import {
   EXTENSION_VERSION,
   isSafetyStopCommand,
   LINK_PROTOCOL_VERSION,
+  type DirectCommandMessage,
 } from './runtime/peer-protocol.js';
 import {
+  getLastExecutedTransportSeq,
   onPeerHandshakeSession,
+  receiveDirectCommand,
   receivePeerCommand,
   resetSlaveCommandState,
   type PeerCommandEnvelope,
@@ -450,7 +453,7 @@ function handleClientHandshake(
     linkProtocol: LINK_PROTOCOL_VERSION,
   };
   if (role === 'direct') {
-    ws.send(JSON.stringify(ackBase));
+    ws.send(JSON.stringify({ ...ackBase, transportSeq: getLastExecutedTransportSeq() }));
     return;
   }
   ws.send(
@@ -487,17 +490,19 @@ function reportPeerJumpError(
   outerCommandId: string,
   inner: ClientMessage,
   peerJump: { code: string; message: string },
+  errorCommandId?: string,
 ): SlaveCommandExecutionResult {
-  if (inner.commandId && inner.commandId !== outerCommandId) {
+  if (errorCommandId === undefined && inner.commandId && inner.commandId !== outerCommandId) {
     failAdoptedEcho(inner.commandId, `The jump did not land on this computer: ${peerJump.message}`);
   }
+  const replyId = errorCommandId ?? outerCommandId;
   if (ws.readyState === WebSocket.OPEN) {
     ws.send(
       JSON.stringify({
         type: 'error',
         code: peerJump.code,
         message: peerJump.message,
-        ...(outerCommandId ? { commandId: outerCommandId } : {}),
+        ...(replyId ? { commandId: replyId } : {}),
       }),
     );
   }
@@ -575,6 +580,7 @@ function executeInboundPeerInner(
   outerCommandId: string,
   inner: ClientMessage,
   meta?: SlaveCommandExecutionMeta,
+  errorCommandId?: string,
 ): Promise<SlaveCommandExecutionResult> {
   const manager = bridgeState.manager;
   const bus = bridgeState.commandBus;
@@ -582,7 +588,9 @@ function executeInboundPeerInner(
   const stripped = stripDirectMeta(inner);
   const peerJump = resolvePeerJump(stripped, manager.getState());
   if (peerJump.kind === 'error') {
-    return Promise.resolve(reportPeerJumpError(ws, outerCommandId, stripped, peerJump));
+    return Promise.resolve(
+      reportPeerJumpError(ws, outerCommandId, stripped, peerJump, errorCommandId),
+    );
   }
   const effectiveMsg = peerJump.kind === 'jump' ? peerJump.message : stripped;
   const commandId = effectiveMsg.commandId || outerCommandId;
@@ -604,6 +612,26 @@ function executeInboundPeerInner(
 function handleInboundPeerCommand(ws: AugmentedWebSocket, msg: PeerCommandEnvelope): Promise<void> {
   return receivePeerCommand(ws, msg, (inner, meta) =>
     executeInboundPeerInner(ws, msg.commandId, inner, meta),
+  ).then(() => undefined);
+}
+
+function isDirectActionMessage(msg: ClientMessage): msg is DirectCommandMessage {
+  return (
+    (msg.type === 'jump_time' ||
+      msg.type === 'play' ||
+      msg.type === 'stop' ||
+      msg.type === 'set_panic') &&
+    typeof msg.commandId === 'string' &&
+    msg.commandId.trim() !== ''
+  );
+}
+
+function handleInboundDirectCommand(
+  ws: AugmentedWebSocket,
+  msg: DirectCommandMessage,
+): Promise<void> {
+  return receiveDirectCommand(ws, msg, (inner, meta) =>
+    executeInboundPeerInner(ws, inner.commandId || msg.commandId, inner, meta, msg.commandId),
   ).then(() => undefined);
 }
 
@@ -942,7 +970,7 @@ export async function startServer(options: StartServerOptions = {}): Promise<voi
       // unless this computer has fallen off the main computer's beat or needs
       // stopped-state convergence.
       if (msg.type === 'peer_target') {
-        handlePeerTarget(msg);
+        handlePeerTarget(msg, getLastExecutedTransportSeq());
         return;
       }
       // The setlist of the main computer travels in pieces: it is a setlist
@@ -966,7 +994,11 @@ export async function startServer(options: StartServerOptions = {}): Promise<voi
         void handleInboundPeerCommand(ws, msg);
         return;
       }
-      if ((isPeerConnection || isDirectConnection) && msg.type !== 'peer_health_ack') {
+      if (isDirectConnection && isDirectActionMessage(msg)) {
+        void handleInboundDirectCommand(ws, msg);
+        return;
+      }
+      if (isPeerConnection && msg.type !== 'peer_health_ack') {
         notePeerCommand(msg.type);
       }
 
@@ -1046,7 +1078,7 @@ export async function startServer(options: StartServerOptions = {}): Promise<voi
         console.warn(`[CommandBus] Discarding duplicate command ID: ${commandId}`);
         // The sender of a retry learns the saved status; nobody else does.
         const saved = bridgeState.commandBus.getStatus(commandId);
-        if (!isDirectConnection && saved && saved.sourceClientId === senderId) {
+        if (saved && saved.sourceClientId === senderId) {
           ws.send(
             JSON.stringify({
               type: 'command_status',

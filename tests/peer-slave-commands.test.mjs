@@ -105,7 +105,7 @@ test('SlaveCommandTracker deduplicates in-flight retries and honours 10m settled
   assert.equal(ws1.sent.length, 1);
 
   clock.advance(1);
-  await tracker.receiveCommand(ws1, makeEnvelope('cmd-a'), () => {
+  await tracker.receiveCommand(ws1, makeEnvelope('cmd-a', { transportSeq: 2 }), () => {
     runs += 1;
     return { result: 'confirmed' };
   });

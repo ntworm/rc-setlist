@@ -193,7 +193,8 @@ export function notePeerCommand(type: string): void {
 }
 
 /** A target arrived from the main computer. */
-export function handlePeerTarget(target: PeerTarget): FollowAction {
+export function handlePeerTarget(target: PeerTarget, minTransportSeq = 0): FollowAction {
+  if (target.transportSeq < minTransportSeq) return { kind: 'none' };
   const local = localTransport();
   if (!local || !bridgeState.oscClient) return { kind: 'none' };
   return getFollower().onTarget(target, local);
