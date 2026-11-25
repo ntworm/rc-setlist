@@ -216,6 +216,20 @@ test('slave mode forwards browser play without direct meta while direct runs loc
     send(peer, { ...pCmd, command: { type: 'stop' } });
     const pAck = await msgBy(peer, (m) => m.type === 'peer_ack');
     is(pAck.result === 'confirmed' && calls.length === 1, true);
+    resetPeerFollowRuntime();
+    const tLow = {
+      type: 'peer_target',
+      transportSeq: 7,
+      beat: 50,
+      section: false,
+      isPlaying: false,
+      tempo: 120,
+      jumpPending: false,
+      loopActive: false,
+    };
+    for (let i = 0; i < 3; i += 1) send(peer, tLow);
+    await sleep(40);
+    is(bs.manager.getState().currentSongTime, 0);
     send(dir, { type: 'play', commandId: 'sd-1', ttlMs: 500, transportSeq: 9 });
     await waitFor(() => calls.includes('startPlaying'));
     await sleep(30);

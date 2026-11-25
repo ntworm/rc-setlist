@@ -15,19 +15,19 @@ const defer = () => {
 };
 const mk = () => {
   let now = 1_000;
-  const noted = [];
+  const [noted, adopted] = [[], []];
   const t = new psc.SlaveCommandTracker({
     now: () => now,
     getTransportSnapshot: () => ({ isPlaying: true, beat: 12 }),
     noteCommand: (x) => noted.push(x),
-    adoptEcho: (m) => ({ ...m, adopted: true }),
+    adoptEcho: (m) => (adopted.push(m.commandId), { ...m, adopted: true }),
   });
   const d = (w, m, fn = ok) => t.receiveDirectCommand(w, m, fn);
   const p = (w, id, cmd, seq = 1, fn = ok) => {
     const e = { type: 'peer_command', commandId: pid(id), ttlMs: 1_000, transportSeq: seq };
     return t.receiveCommand(w, { ...e, command: cmd }, fn);
   };
-  return { t, d, p, noted, adv: (ms) => (now += ms) };
+  return { t, d, p, noted, adopted, adv: (ms) => (now += ms) };
 };
 
 test('dual-path dedupe runs once in both orders and fans out peer_ack + direct_ack', async () => {
@@ -56,21 +56,60 @@ test('dual-path dedupe runs once in both orders and fans out peer_ack + direct_a
 });
 
 test('unified transportSeq: safety stop supersedes play and rolls back on failure', async () => {
-  const { t, d, p } = mk();
+  const { t, d, p, adopted } = mk();
   const [dWs, pWs, syncs] = [sock(), sock(), []];
   t.setDirectSyncListener((id) => syncs.push(id));
   await p(pWs, 'p5', { type: 'play' }, 5);
+  is(adopted.length, 1);
+  const hitP5 = await d(dWs, { type: 'play', commandId: 'p5', transportSeq: 5 }, fail);
+  eq(dWs.sent.at(-1), {
+    type: 'direct_ack',
+    commandId: 'p5',
+    peerCommandId: pid('p5'),
+    result: 'confirmed',
+    reason: '',
+    isPlaying: true,
+    beat: 12,
+    transportSeq: 5,
+  });
+  is(
+    hitP5.result === 'confirmed' && t.getConfirmedDirectSummary().confirmedIds.includes(pid('p5')),
+    true,
+  );
+  eq(syncs, [pid('p5')]);
   const s5 = { type: 'stop', commandId: 's5', transportSeq: 5 };
   const [rf, ro] = [await d(dWs, s5, fail), await d(dWs, s5)];
   is(rf.result === 'failed' && rf.transportSeq === 5 && ro.transportSeq === 6, true);
-  eq(syncs, [pid('s5')]);
-  const p6 = await d(dWs, { type: 'play', commandId: 'p6', transportSeq: 6, ttlMs: 500 });
-  is(p6.type === 'direct_ack' && p6.result === 'superseded' && p6.transportSeq === 6, true);
-  is((await d(dWs, { type: 'stop', commandId: 's4', transportSeq: 4 })).result, 'superseded');
+  eq(syncs, [pid('p5'), pid('s5')]);
+  await d(dWs, { type: 'play', commandId: 'p6', transportSeq: 6, ttlMs: 500 });
+  eq(dWs.sent.at(-1), {
+    type: 'direct_ack',
+    commandId: 'p6',
+    peerCommandId: pid('p6'),
+    result: 'superseded',
+    reason: 'superseded',
+    isPlaying: true,
+    beat: 12,
+    transportSeq: 6,
+  });
   is(
-    (await d(dWs, { type: 'play', commandId: 'p9', transportSeq: 9, ttlMs: 0 })).result,
-    'expired',
+    (await d(dWs, { type: 'jump_time', time: 4, commandId: 'j6', transportSeq: 6 })).result,
+    'superseded',
   );
+  is((await p(pWs, 'ci6', { type: 'trigger_count_in' }, 6)).result, 'superseded');
+  is(adopted.length, 1);
+  is((await d(dWs, { type: 'stop', commandId: 's4', transportSeq: 4 })).result, 'superseded');
+  await d(dWs, { type: 'play', commandId: 'p9', transportSeq: 9, ttlMs: 0 });
+  eq(dWs.sent.at(-1), {
+    type: 'direct_ack',
+    commandId: 'p9',
+    peerCommandId: pid('p9'),
+    result: 'expired',
+    reason: 'expired',
+    isPlaying: true,
+    beat: 12,
+    transportSeq: 6,
+  });
   const pan8 = { type: 'set_panic', active: true, commandId: 'pan8', transportSeq: 8 };
   is(
     (await d(dWs, pan8, fail)).transportSeq === 6 && (await d(dWs, pan8)).transportSeq === 8,

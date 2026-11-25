@@ -74,12 +74,14 @@ export function makePeerAck(
   };
 }
 
+const WS_READY_OPEN = 1;
+
 /** Sends a JSON-serialized ACK frame if the socket is open, swallowing write errors. */
 export function sendPeerFrame(
   ws: { readyState: number; send(data: string): void },
   frame: PeerAckMessage | DirectAckMessage,
 ): boolean {
-  if (ws.readyState !== 1) return false;
+  if (ws.readyState !== WS_READY_OPEN) return false;
   try {
     ws.send(JSON.stringify(frame));
     return true;
@@ -110,7 +112,7 @@ export function addDirectWaiter<TSocket extends { readyState: number; send(data:
   ws: TSocket,
   rawCommandId: string,
 ): void {
-  if (ws.readyState !== 1) return;
+  if (ws.readyState !== WS_READY_OPEN) return;
   if (!waiters.some((w) => w.ws === ws && w.rawCommandId === rawCommandId)) {
     waiters.push({ ws, rawCommandId });
   }

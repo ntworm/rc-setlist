@@ -169,8 +169,9 @@ export class SlaveCommandTracker {
       rawId: msg.commandId,
       cmd: msg.command,
     };
-    const inner = this.adoptEcho({ ...msg.command, commandId: msg.commandId });
-    return this.dispatch(run, inner, msg.transportSeq, msg.ttlMs, executeInner);
+    return this.dispatch(run, msg.command, msg.transportSeq, msg.ttlMs, executeInner).then(
+      (r) => r?.ack ?? null,
+    );
   }
 
   /** Handles a `direct`-role transport command with canonical dedupe, TTL, and `direct_ack`. */
@@ -189,9 +190,7 @@ export class SlaveCommandTracker {
       msg.ttlMs ?? null,
       executeInner,
     );
-    return p.then((a) =>
-      a ? makeDirectAck(msg.commandId, id, a, this.lastExecutedTransportSeq) : null,
-    );
+    return p.then((r) => (r ? makeDirectAck(msg.commandId, id, r.ack, r.seq) : null));
   }
 
   /** Registers or clears the listener notified when confirmed direct commands need sync. */
@@ -242,16 +241,15 @@ export class SlaveCommandTracker {
     seq: number | null,
     ttlMs: number | null,
     executeInner: SlaveCommandExecutor,
-  ): Promise<PeerAckMessage | null> {
+  ): Promise<{ ack: PeerAckMessage; seq: number } | null> {
     const now = this.now();
     const cached = this.lookupCached(run, now);
-    if (cached.hit) return Promise.resolve(cached.ack);
+    if (cached.hit) return Promise.resolve(cached.res);
     const rej = this.preExecutionRejection(run.cmd, seq, ttlMs);
     if (rej !== null) {
       const ack = makePeerAck(run.id, rej, rej, this.getTransportSnapshot());
       this.setCacheEntry(run.id, { status: 'settled', settledAt: now, ack }, now);
-      this.replySingle(run, ack);
-      return Promise.resolve(ack);
+      return Promise.resolve({ ack, seq: this.replySingle(run, ack) });
     }
     const directWaiters: DirectWaiter<PeerAckSocket>[] = [];
     if (run.origin === 'direct') addDirectWaiter(directWaiters, run.ws, run.rawId);
@@ -271,15 +269,16 @@ export class SlaveCommandTracker {
     );
   }
 
-  private replySingle(run: RunOrigin, ack: PeerAckMessage): void {
+  private replySingle(run: RunOrigin, ack: PeerAckMessage): number {
     const seq = this.lastExecutedTransportSeq;
     sendPeerFrame(run.ws, run.origin === 'peer' ? ack : makeDirectAck(run.rawId, run.id, ack, seq));
+    return seq;
   }
 
   private lookupCached(
     run: RunOrigin,
     now: number,
-  ): { hit: true; ack: PeerAckMessage | null } | { hit: false } {
+  ): { hit: true; res: { ack: PeerAckMessage; seq: number } | null } | { hit: false } {
     const existing = this.cache.get(run.id);
     if (!existing) return { hit: false };
     if (existing.status === 'in_flight') {
@@ -288,7 +287,7 @@ export class SlaveCommandTracker {
       } else addDirectWaiter(existing.directWaiters, run.ws, run.rawId);
       this.cache.delete(run.id);
       this.cache.set(run.id, existing);
-      return { hit: true, ack: null };
+      return { hit: true, res: null };
     }
     if (now - existing.settledAt >= this.ttlMs) {
       this.cache.delete(run.id);
@@ -296,10 +295,10 @@ export class SlaveCommandTracker {
     }
     this.cache.delete(run.id);
     this.cache.set(run.id, existing);
-    this.replySingle(run, existing.ack);
+    const seq = this.replySingle(run, existing.ack);
     if (run.origin === 'direct' && existing.ack.result === 'confirmed')
       this.recordConfirmedDirect(run.id, now);
-    return { hit: true, ack: existing.ack };
+    return { hit: true, res: { ack: existing.ack, seq } };
   }
 
   private preExecutionRejection(
@@ -333,7 +332,7 @@ export class SlaveCommandTracker {
     executeInner: SlaveCommandExecutor,
     deadlineAt: number | null,
     seqChange: SeqAdvance | null,
-  ): Promise<PeerAckMessage | null> {
+  ): Promise<{ ack: PeerAckMessage; seq: number } | null> {
     const [myGen, epoch] = [this.generation, this.sessionEpoch];
     let outcome: SlaveCommandExecutionResult;
     const meta: SlaveCommandExecutionMeta = {
@@ -342,7 +341,9 @@ export class SlaveCommandTracker {
     };
     try {
       this.noteCommand(run.cmd.type);
-      outcome = await executeInner(inner, meta);
+      const execMsg =
+        run.origin === 'peer' ? this.adoptEcho({ ...inner, commandId: run.id }) : inner;
+      outcome = await executeInner(execMsg, meta);
     } catch {
       outcome = { result: 'failed', reason: 'execution_failed' };
     }
@@ -359,8 +360,8 @@ export class SlaveCommandTracker {
       outcome.reason ?? def,
       this.getTransportSnapshot(),
     );
-    this.commitAndFanOut(run, outcome.result, ack, epoch, seqChange);
-    return ack;
+    const seq = this.commitAndFanOut(run, outcome.result, ack, epoch, seqChange);
+    return { ack, seq };
   }
 
   private resolveTargets(run: RunOrigin): {
@@ -392,7 +393,7 @@ export class SlaveCommandTracker {
     ack: PeerAckMessage,
     epoch: number,
     seqChange: SeqAdvance | null,
-  ): void {
+  ): number {
     const settledAt = this.now();
     const { peerWs, waiters } = this.resolveTargets(run);
     if (result !== 'confirmed' && isSafetyStopCommand(run.cmd)) {
@@ -404,6 +405,7 @@ export class SlaveCommandTracker {
     for (const w of waiters) sendPeerFrame(w.ws, makeDirectAck(w.rawCommandId, run.id, ack, seq));
     if (result === 'confirmed' && (run.origin === 'direct' || waiters.length > 0))
       this.recordConfirmedDirect(run.id, settledAt);
+    return seq;
   }
 
   private recordConfirmedDirect(id: string, now: number): void {
