@@ -3,6 +3,7 @@
 - [Português (Brasil)](pt-BR/README.md)
 - [Getting started](GETTING-STARTED.md)
 - [Install](INSTALL.md)
+- [What is new in 1.3.0](RELEASE-NOTES-1.3.0.md)
 - [What is new in 1.2.1](RELEASE-NOTES-1.2.1.md)
 - [What is new in 1.2.0](RELEASE-NOTES-1.2.0.md)
 - [What is new in 1.1.0](RELEASE-NOTES-1.1.0.md)

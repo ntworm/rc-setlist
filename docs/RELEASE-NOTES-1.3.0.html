@@ -1,0 +1,325 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>RC Setlist 1.3.0 release notes — Ableton Live</title>
+    <meta
+      name="description"
+      content="Windows is the validated platform; macOS is experimental. This release is about the link between the main computer (the master) and the second computers…"
+    />
+    <link rel="canonical" href="https://ntworm.github.io/rc-setlist/RELEASE-NOTES-1.3.0.html" />
+    <link rel="alternate" type="text/markdown" href="./RELEASE-NOTES-1.3.0.md" />
+    <link rel="describedby" href="./llms.txt" />
+    <meta property="og:type" content="article" />
+    <meta property="og:site_name" content="RC Setlist" />
+    <meta property="og:locale" content="en" />
+    <meta property="og:title" content="RC Setlist 1.3.0 release notes — Ableton Live" />
+    <meta
+      property="og:description"
+      content="Windows is the validated platform; macOS is experimental. This release is about the link between the main computer (the master) and the second computers…"
+    />
+    <meta
+      property="og:url"
+      content="https://ntworm.github.io/rc-setlist/RELEASE-NOTES-1.3.0.html"
+    />
+    <meta property="og:image" content="https://ntworm.github.io/rc-setlist/og-image.png" />
+    <style>
+      body {
+        font:
+          16px/1.55 system-ui,
+          sans-serif;
+        max-width: 920px;
+        margin: 2rem auto;
+        padding: 0 1rem;
+        color: #f2f2f2;
+        background: #0e0e0e;
+      }
+      h1,
+      h2,
+      h3,
+      h4 {
+        line-height: 1.25;
+      }
+      h1 {
+        font-size: 2.2rem;
+        margin-top: 0;
+      }
+      h2 {
+        margin-top: 2rem;
+        padding-top: 1rem;
+        border-top: 1px solid #333;
+      }
+      h3 {
+        margin-top: 1.5rem;
+      }
+      code {
+        font:
+          0.92em ui-monospace,
+          Consolas,
+          monospace;
+        background: #1a1a1a;
+        padding: 0.1em 0.35em;
+        border-radius: 0;
+      }
+      pre {
+        background: #1a1a1a;
+        padding: 0.8rem 1rem;
+        overflow-x: auto;
+        border: 1px solid #333;
+      }
+      pre code {
+        background: transparent;
+        padding: 0;
+      }
+      a {
+        color: #ffa133;
+      }
+      ul,
+      ol {
+        padding-left: 1.2em;
+      }
+      blockquote {
+        border-left: 4px solid #ffa133;
+        margin: 1em 0;
+        padding: 0.5em 1em;
+        color: #a0a0a0;
+      }
+      .crumbs {
+        font-size: 0.85em;
+        color: #a0a0a0;
+        margin-bottom: 1rem;
+      }
+      .crumbs a {
+        color: #a0a0a0;
+        text-decoration: none;
+      }
+      .crumbs a:hover {
+        color: #f2f2f2;
+      }
+      .source {
+        font-size: 0.78em;
+        color: #a0a0a0;
+        margin-top: 2rem;
+        border-top: 1px solid #333;
+        padding-top: 0.5rem;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="crumbs"><a href="./">RC Setlist</a> · <a href="./README.html">Docs</a></div>
+    <h1 id="rc-setlist-1-3-0-release-notes">RC Setlist 1.3.0 release notes</h1>
+    <p>
+      <strong>Release date:</strong> 2026-11-25 <strong>Supported version line:</strong>
+      <code>1.3.x</code> <strong>Also available in Portuguese:</strong>
+      <a href="pt-BR/NOTAS-DA-VERSAO-1.3.0.html"><code>pt-BR/NOTAS-DA-VERSAO-1.3.0.md</code></a>
+    </p>
+    <p>
+      Windows is the validated platform; macOS is experimental. This release is about the link
+      between the main computer (the <strong>master</strong>) and the second computers (the
+      <strong>slaves</strong>). The <a href="USER-GUIDE.html">user guide</a> describes each state
+      and alert, and <a href="TROUBLESHOOTING.html">troubleshooting</a> says what to do about each
+      one.
+    </p>
+    <h2 id="new-features">New features</h2>
+    <ul>
+      <li>
+        <strong>Link health.</strong> Stage Control, in Edit and in Show mode,
+        <code>/performance</code> and
+      </li>
+    </ul>
+    <p>
+      the Live panel show one row per paired computer with its state, <strong>OK</strong>,
+      <strong>UNSTABLE</strong> or <strong>DOWN</strong>, the reason, the round-trip time
+      (<code>RTT</code>), the drops in the last 5 minutes, the last drop and the last frame seen.
+      The two computers exchange heartbeats in both directions and measure the link.
+    </p>
+    <ul>
+      <li>
+        <strong>Warm-up, recovery and oscillation hold.</strong> A new link stays
+        <strong>UNSTABLE</strong> for
+      </li>
+    </ul>
+    <p>
+      a <code>20 s</code> warm-up. After a drop, a lost heartbeat (<code>&gt; 1.5 s</code>) or high
+      latency (<code>RTT p95 &gt; 150 ms</code>), it needs <code>60 s</code> without trouble to
+      return to <strong>OK</strong>. A link that drops <code>3</code> or more times in
+      <code>5 min</code> stays <strong>UNSTABLE</strong> for <code>5 min</code>.
+    </p>
+    <ul>
+      <li>
+        <strong>Acknowledge.</strong> When an <strong>UNSTABLE</strong> link has calmed down,
+        <strong>Acknowledge</strong> on
+      </li>
+    </ul>
+    <p>
+      Stage Control or in the Live panel shortens the clean window to <code>10 s</code> on both
+      computers. It never skips the warm-up or the <code>5 min</code> hold.
+    </p>
+    <ul>
+      <li>
+        <strong>Link-down alarm.</strong> When a link goes <strong>DOWN</strong> (no frame for
+        <code>3 s</code>, the socket
+      </li>
+    </ul>
+    <p>
+      closed, or Live or OSC unavailable on either computer), a full-screen red alarm opens on Stage
+      Control and <code>/performance</code>. <strong>Dismiss alarm</strong> closes it and keeps a
+      red <strong>LINK DOWN</strong> badge above the transport dock. <strong>Stop</strong> stays
+      reachable above the alarm.
+    </p>
+    <ul>
+      <li>
+        <strong>Status dot.</strong> The second-computer dot on Stage Control follows the measured
+      </li>
+    </ul>
+    <p>
+      state: green for <strong>OK</strong>, amber for <strong>UNSTABLE</strong>, red for
+      <strong>DOWN</strong>, <strong>DIFFERENT VERSIONS</strong> or
+      <strong>CERTIFICATE CHANGED</strong>.
+    </p>
+    <ul>
+      <li>
+        <strong>Confirmed commands.</strong> The slave confirms every command the master sends,
+      </li>
+    </ul>
+    <p>
+      and the master resends it every <code>150 ms</code> until its deadline. Stage Control shows a
+      <code>3 s</code> tick per computer: Pending, Executed or Failed.
+    </p>
+    <ul>
+      <li>
+        <strong>Command alerts.</strong> A command that misses its deadline or fails on the slave
+      </li>
+    </ul>
+    <p>
+      shows <code>SLAVE DID NOT EXECUTE: &lt;command&gt;</code> on Stage Control and in the Live
+      panel. A confirmation that arrives after the deadline changes it to
+      <code>Executed late: &lt;command&gt;</code>.
+    </p>
+    <ul>
+      <li>
+        <strong>Safety resend for Stop and Panic.</strong> While the master stays stopped or in
+      </li>
+    </ul>
+    <p>
+      panic, Stop and Panic do not expire: they are resent across reconnects. If the slave has not
+      confirmed within <code>1 s</code>, <code>SLAVE STILL NOT STOPPED</code> shows until it does. A
+      delayed Play behind a newer Stop or Panic is discarded and never runs out of order.
+    </p>
+    <ul>
+      <li>
+        <strong>Stopped playhead follows the master.</strong> When both computers are stopped and
+      </li>
+    </ul>
+    <p>
+      the slave is more than half a beat away for three targets in a row, the slave moves to the
+      master&#39;s marker, or to the exact beat between markers. This also happens within
+      <code>2 s</code> of a reconnect.
+    </p>
+    <ul>
+      <li>
+        <strong>Out of step.</strong> A playhead mismatch that lasts <code>3 s</code> outside a
+        pending
+      </li>
+    </ul>
+    <p>
+      quantized jump or an active loop shows <strong>UNSTABLE</strong> with the reason
+      <strong>Out of step</strong> on both computers.
+    </p>
+    <ul>
+      <li>
+        <strong>Slave modes.</strong> On a slave, the <strong>Second computer</strong> card of the
+        <strong>Network</strong>
+      </li>
+    </ul>
+    <p>
+      tab has <strong>Slave mode</strong> with three buttons: -
+      <strong>Follow all</strong> (default): the slave runs the master&#39;s commands and corrects
+      its playhead while playing and while stopped. - <strong>Follow transport</strong>: the slave
+      runs the master&#39;s commands and corrects its playhead while playing; stopped at another
+      beat, it only alerts. - <strong>Independent</strong>: the master sends no commands to that
+      slave and raises no alert for it, and the slave refuses any that arrive. The master shows an
+      <strong>Independent</strong> tag beside that computer.
+    </p>
+    <p>
+      The choice is kept after a restart. A slave that ran a 1.3.0 test build with the
+      <strong>Auto-correct playhead on slave</strong> checkbox keeps its choice: checked becomes
+      <strong>Follow all</strong>, unchecked becomes <strong>Follow transport</strong>.
+    </p>
+    <ul>
+      <li>
+        <strong>Slave navigation lock.</strong> In <strong>Follow all</strong> and
+        <strong>Follow transport</strong>, while
+      </li>
+    </ul>
+    <p>
+      the link to the master is up, Stage Control on the slave cannot play, jump, count in, or
+      change the metronome, the quantization or the pre-roll. A banner says the slave is following
+      the main computer. <strong>Stop</strong>, <strong>Panic</strong> and
+      <strong>Refresh</strong> stay available and go up to the master, so a Stop on the slave stops
+      the whole show. In <strong>Independent</strong>, Stage Control on the slave runs on that
+      computer only.
+    </p>
+    <ul>
+      <li>
+        <strong>Link protocol check.</strong> Master and slave exchange a link protocol version.
+      </li>
+    </ul>
+    <p>
+      A computer on another version shows <strong>DIFFERENT VERSIONS</strong>, and no command is
+      relayed to it.
+    </p>
+    <h2 id="changes">Changes</h2>
+    <ul>
+      <li>
+        <strong>A phone on a slave no longer drives the whole show.</strong> In 1.2.1, play, jump,
+      </li>
+    </ul>
+    <p>
+      metronome, quantization and count-in commands from a phone or the Live panel on a slave went
+      up to the master and moved every computer. In 1.3.0, a slave in <strong>Follow all</strong> or
+      <strong>Follow transport</strong> only sends <strong>Stop</strong>, <strong>Panic</strong> and
+      <strong>Refresh</strong> up. To navigate on a slave on its own, choose
+      <strong>Independent</strong>.
+    </p>
+    <ul>
+      <li>
+        <strong>Network tab.</strong> The <strong>Second computer</strong> card sits above the
+        <strong>Certificate</strong>
+      </li>
+    </ul>
+    <p>card.</p>
+    <h2 id="included-from-1-2-1">Included from 1.2.1</h2>
+    <p>Version 1.2.1 was tagged without a release page. Its fixes are part of 1.3.0:</p>
+    <ul>
+      <li>
+        <strong>Ready to pair shows an address that answers.</strong> When a slave has two network
+      </li>
+    </ul>
+    <p>
+      interfaces on the same subnet, the announcement carries its LAN addresses and the master lists
+      the first one that answers on the announced port.
+    </p>
+    <ul>
+      <li>
+        <strong>Commands from a slave reach the master.</strong> With the master connected, the
+      </li>
+    </ul>
+    <p>
+      commands a slave hands up are run by the master and sent to every slave; in 1.3.0 this applies
+      to <strong>Stop</strong>, <strong>Panic</strong> and <strong>Refresh</strong> while the slave
+      follows the master.
+    </p>
+    <h2 id="upgrading">Upgrading</h2>
+    <p>
+      Nothing to migrate; the data folder and the pairings stay. Live refuses to install over an
+      existing extension folder: remove RC Setlist in Live&#39;s extension settings first, then open
+      the <code>.ablx</code>. Install 1.3.0 on the master and on every slave. Both computers must
+      run the same version: when a 1.2.x computer is paired with a 1.3.0 computer, the 1.3.0 side
+      shows <strong>DIFFERENT VERSIONS</strong> and no command passes between them. The RC Bridge
+      Remote Script did not change, so you do not need to reinstall it.
+    </p>
+    <div class="source">Rendered from <code>docs\RELEASE-NOTES-1.3.0.md</code> on 2026-11-25.</div>
+  </body>
+</html>

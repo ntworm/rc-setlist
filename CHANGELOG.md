@@ -4,6 +4,61 @@ All notable public changes to Ableton RC Setlist are recorded here.
 
 ## [Unreleased]
 
+## [1.3.0] - 2026-11-25
+
+### Added
+
+- **Measured link health between two computers**: Stage Control (Edit and
+  Show), `/performance` and the Live panel show one row per paired computer
+  with **OK**, **UNSTABLE** or **DOWN**, the reason, `RTT`, drops in the last
+  5 minutes, the last drop and the last frame seen. A new link stays
+  **UNSTABLE** for a `20 s` warm-up; after a drop, a lost heartbeat or
+  `RTT p95 > 150 ms` it needs `60 s` clean to return to **OK**; `3` drops in
+  `5 min` hold it **UNSTABLE** for `5 min`. **Acknowledge** shortens the clean
+  window to `10 s` and never skips the warm-up or the hold.
+- **Link-down alarm**: when a link goes **DOWN**, a full-screen red alarm
+  opens on Stage Control and `/performance`. **Dismiss alarm** closes it and
+  keeps a red badge above the transport dock. **Stop** stays reachable above
+  the alarm.
+- **Confirmed commands**: every command the master sends is confirmed by the
+  slave and retried every `150 ms` until its deadline. Stage Control shows a
+  `3 s` tick per computer (Pending, Executed, Failed); a missed deadline shows
+  `SLAVE DID NOT EXECUTE: <command>`, and a late confirmation changes it to
+  `Executed late: <command>`. Stop and Panic are resent across reconnects while
+  the master stays stopped, and `SLAVE STILL NOT STOPPED` shows when the slave
+  has not confirmed within `1 s`. A delayed Play behind a newer Stop or Panic
+  is never executed.
+- **Stopped-state reconciliation**: when both computers are stopped and the
+  slave is more than half a beat away for three targets in a row, it moves to
+  the master's marker or beat. A playhead mismatch that lasts `3 s` outside a
+  pending jump or an active loop shows **UNSTABLE** with **Out of step**.
+- **Slave modes**: the **Second computer** card on a slave has **Slave mode**
+  with **Follow all** (default), **Follow transport** and **Independent**. A
+  slave that ran a 1.3.0 test build with the **Auto-correct playhead on
+  slave** checkbox keeps its choice: checked becomes Follow all, unchecked
+  becomes Follow transport.
+- **Slave navigation lock**: in Follow all and Follow transport, while the link
+  to the master is up, Stage Control on the slave cannot play, jump, count in
+  or change metronome, quantization or pre-roll, and a banner says so. Stop,
+  Panic and Refresh still go up to the master. In Independent the master sends
+  nothing to that slave and raises no alert for it, the master shows an
+  **Independent** tag beside it, and Stage Control on the slave runs only on
+  that computer.
+- **Link protocol check**: master and slave exchange a link protocol version.
+  A computer on another version shows **DIFFERENT VERSIONS** and receives no
+  commands.
+
+### Changed
+
+- **A phone on a slave no longer drives the whole show** in Follow all and
+  Follow transport: it can only send Stop, Panic and Refresh up to the master.
+  This replaces the 1.2.1 behaviour. To navigate on a slave on its own, choose
+  Independent.
+- **Network tab**: the Second computer card sits above the Certificate card.
+- The status dot of the second computer follows the measured state: green for
+  OK, amber for UNSTABLE, red for DOWN, different versions or a changed
+  certificate.
+
 ## [1.2.1] - 2026-11-20
 
 ### Fixed

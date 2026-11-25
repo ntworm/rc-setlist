@@ -1,7 +1,7 @@
 # RC Setlist
 
 [![PolyForm Noncommercial](https://img.shields.io/badge/licença-PolyForm%20Noncommercial-orange)](LICENSE)
-[![Versão](https://img.shields.io/badge/versão-1.2.1-f97316)](CHANGELOG.md)
+[![Versão](https://img.shields.io/badge/versão-1.3.0-f97316)](CHANGELOG.md)
 [![CI](https://github.com/ntworm/rc-setlist/actions/workflows/ci.yml/badge.svg)](https://github.com/ntworm/rc-setlist/actions/workflows/ci.yml)
 
 [English](README.md) · **Português (Brasil)**
@@ -12,7 +12,8 @@ O RC Setlist é uma extensão para o Ableton Live 12 que roda um show a partir d
 Arrangement. Marque cada música e cada seção com um locator no Live, e o RC
 Setlist os transforma em um setlist no navegador. Quem opera inicia músicas e
 salta entre seções de um notebook ou tablet; a banda vê a seção atual, a
-próxima música e a letra nos próprios celulares.
+próxima música e a letra nos próprios celulares. Um segundo computador com o
+Live pode seguir o primeiro pela rede local.
 
 > **Segurança de rede:** O RC Setlist serve as páginas de controle na sua rede local.
 > Utilize apenas em redes locais (LAN/Wi-Fi) confiáveis, mantenha a URL e o token do controlador privados, e nunca exponha a porta `4444` diretamente na internet pública. Consulte [SECURITY.md](SECURITY.md).
@@ -29,7 +30,7 @@ experimental até ser validado em hardware Apple físico dedicado.
 
 ## Instalação
 
-1. Baixe o `RC-Setlist-1.2.1.ablx` e o kit de instalação na
+1. Baixe o `RC-Setlist-1.3.0.ablx` e o kit de instalação na
    [versão mais recente](https://github.com/ntworm/rc-setlist/releases/latest).
 2. Instale o RC Bridge a partir do kit: execute o `Install-RC-Bridge.cmd`
    (Windows) ou `Install RC Bridge.command` (macOS) e selecione RCBridge como
@@ -37,7 +38,8 @@ experimental até ser validado em hardware Apple físico dedicado.
 3. Se o RC Setlist já estiver instalado, remova-o nas configurações de
    extensões do Live (o Live não instala por cima de uma pasta de extensão que
    já existe; a pasta de dados fica). Depois dê dois cliques no `.ablx` e
-   aprove a instalação no Ableton Live.
+   aprove a instalação no Ableton Live. Com dois computadores, instale a mesma
+   versão em cada um.
 4. No Live, acesse **Extensions > RC Setlist** e inicie o servidor. Use a URL
    do painel ou o código QR para abrir `/setlist` ou `/performance`.
 5. Para remover o aviso de certificado, escaneie uma vez o QR **Certificado**
@@ -90,63 +92,73 @@ Todos os exemplos neste repositório são fictícios. Consulte
 - As duas páginas rodam no navegador de um desktop, notebook, tablet ou celular
   da rede.
 - Letras `.lrc` sincronizadas, com a sincronização e a edição no navegador.
-- Transporte protegido (retenção de 500 ms nos botões), feedback de quantização
-  e repetições contadas.
+- Transporte protegido: retenção de 500 ms nos botões, retorno de quantização e
+  loops contados.
 - Ordem personalizada, letras e exportação CSV por perfil, salvas localmente.
-- Vários setlists salvos no escopo do Live Set atual.
-- Duração das músicas e duração total do setlist calculadas a partir da linha
-  do tempo do Arrangement.
-- Modo de palco em tela cheia com Screen Wake Lock para manter a tela sempre
-  ligada nos navegadores compatíveis.
-- Interfaces completas em inglês e português do Brasil empacotadas no mesmo
-  `.ablx`.
-- Mapeamento de teclado (Keyboard Mapping) para disparar transporte e
-  navegação pelo teclado numérico ou alfanumérico.
-- Sem necessidade de contas, sincronização em nuvem, analytics ou telemetria.
+- Vários setlists salvos para cada Live Set.
+- Duração de cada música e duração total do setlist, calculadas a partir do
+  Arrangement.
+- Modo Show no Controle de palco esconde os controles de preparação e mantém a
+  música ativa fixa.
+- Modo de palco em tela cheia com Screen Wake Lock nos navegadores compatíveis.
+- Interfaces em inglês e português do Brasil no mesmo `.ablx`.
+- Keyboard Mapping atribui ações de transporte e de visualização ao teclado
+  numérico ou alfanumérico.
+- Sem contas, sincronização em nuvem, analytics ou telemetria.
 
-## O que há de novo na 1.2.1
+## Dois computadores
 
-Detalhes em [notas da versão 1.2.1](docs/pt-BR/NOTAS-DA-VERSAO-1.2.1.md).
+Um computador principal, o **master**, pode parear um ou mais segundos
+computadores, os **slaves**, pelo cartão **Segundo computador** na aba **Rede**
+do painel do Live. O slave mostra um código de seis dígitos; o master digita o
+endereço e o código. O link usa certificados fixados.
 
-- **Prontos para parear mostra um endereço que responde.** Quando um slave tem
-  duas interfaces de rede na mesma sub-rede, o anúncio leva os endereços de LAN
-  e o master lista o primeiro que responde na porta anunciada.
-- **Um celular num slave comanda o show inteiro.** Com o master conectado,
-  comandos de transporte, salto, metrônomo, quantização, contagem, atualizar e
-  pânico vindos de um celular ou do painel no slave sobem para o master, que
-  executa e envia a todos os slaves; sem o master, o slave executa sozinho e
-  registra no log.
+- **Comandos.** Play, Stop, saltos, metrônomo, quantização, contagem, atualizar
+  e pânico dados no master vão para todos os slaves. Cada slave confirma cada
+  comando; o master reenvia até o prazo e mostra um alerta quando um slave não
+  executou, executou atrasado ou ainda não parou.
+- **Saúde do link.** O Controle de palco, a tela `/performance` e o painel do
+  Live mostram cada link como **OK**, **INSTÁVEL** ou **CAÍDO**, com o motivo e
+  o tempo de ida e volta. Um link **CAÍDO** abre um alarme em tela cheia nas
+  páginas de palco; o **Stop** continua ao alcance acima dele.
+- **Agulha.** O master envia o alvo de transporte duas vezes por segundo, e o
+  slave corrige diferenças de beats inteiros, um Play perdido, um Stop perdido
+  e, com os dois parados, uma posição diferente. Uma divergência que dura `3 s`
+  mostra **Fora de passo**.
+- **Modos do slave.** **Segue tudo** executa os comandos do master e todas as
+  correções. **Segue transporte** corrige só tocando. Nos dois, o Controle de
+  palco do slave não dá play nem salta; Stop, Pânico e Atualizar sobem ao
+  master. **Independente** não recebe comandos do master e deixa o slave
+  navegar por conta própria.
 
-## O que há de novo na 1.2.0
+Ligue o Ableton Link e desligue o Start Stop Sync em todos os computadores, e
+use a mesma versão do RC Setlist em todos. Detalhes no
+[guia do usuário](docs/pt-BR/USER-GUIDE.md).
 
-Detalhes em [notas da versão 1.2.0](docs/pt-BR/NOTAS-DA-VERSAO-1.2.0.md).
+## O que há de novo na 1.3.0
 
-- **Vários segundos computadores.** Um master pareia vários slaves; a aba Rede
-  lista cada um com o estado dele e o próprio Desfazer, e todo comando de
-  transporte vai para todos.
-- **Master e slave no painel.** A barra na parte de baixo do painel do Live
-  mostra se este computador é Master (com quantos slaves estão conectados) ou
-  Slave (com o estado do master).
-- **O slave acompanha o tempo do master.** O master envia a posição da agulha
-  duas vezes por segundo para o slave corrigir diferenças de beats inteiros,
-  começar num Play perdido e parar num Stop perdido.
-- **Prontos para parear.** Um slave com código de pareamento ativo anuncia nome
-  e porta na UDP `4447`; o master o lista em Prontos para parear para
-  preencher o endereço com um clique.
-- **Trazer do master.** Num slave com o Live parado, Trazer do master no cartão
-  Importar traz o repertório ativo do master com ordem, cores das músicas,
-  notas e letras.
-- **Modo Show.** Uma chave na barra superior do Controle de palco escolhe entre
-  Edição e Show, escondendo os controles de configuração e fixando só a música
-  ativa aberta no topo.
-- **Próxima música agora e Música anterior agora.** Duas ações de MIDI e
-  teclado saltam na hora durante a reprodução, sem esperar a grade de
-  quantização.
-- **Mudanças de fórmula de compasso.** O mostrador de compasso conta cada
-  trecho do set na própria fórmula de compasso e conta os tempos na unidade do
-  denominador.
-- **Renomear um pacote.** Um clique duplo no nome de um pacote no cartão
-  Importar renomeia o arquivo na pasta `packages`.
+Detalhes em [notas da versão 1.3.0](docs/pt-BR/NOTAS-DA-VERSAO-1.3.0.md), que
+também cobrem as correções da 1.2.1.
+
+- **Saúde do link.** Cada computador pareado mostra **OK**, **INSTÁVEL** ou
+  **CAÍDO** com o motivo, `RTT` e quedas, depois de `20 s` de aquecimento, com
+  janela de recuperação, trava de `5 min` para link oscilando e o botão
+  **Confirmar**.
+- **Alarme de link caído.** Um alarme em tela cheia no Controle de palco e em
+  `/performance`, com o selo vermelho acima do transporte depois de **Dispensar
+  alarme**; o **Stop** continua ao alcance acima dele.
+- **Comandos confirmados.** Os slaves confirmam cada comando. Alertas avisam
+  quando um slave não executou um comando, executou atrasado ou ainda não
+  parou; Stop e Pânico são reenviados até a confirmação.
+- **Agulha parada e Fora de passo.** Um slave parado vai para a posição do
+  master, e uma divergência que persiste mostra **Fora de passo**.
+- **Modos do slave e trava de navegação.** **Segue tudo**, **Segue transporte**
+  e **Independente**. O Controle de palco de um slave que segue o master só
+  envia Stop, Pânico e Atualizar, o que substitui o comportamento da 1.2.1 em
+  que um celular num slave comandava o show inteiro.
+- **Mesma versão obrigatória.** Master e slave verificam o protocolo do link e
+  mostram **VERSÕES DIFERENTES** quando diferem.
+- **Aba Rede.** O cartão Segundo computador fica acima do cartão Certificado.
 
 ## Documentação
 
@@ -155,6 +167,7 @@ Detalhes em [notas da versão 1.2.0](docs/pt-BR/NOTAS-DA-VERSAO-1.2.0.md).
 - [Guia do usuário](docs/pt-BR/USER-GUIDE.md)
 - [Solução de problemas](docs/pt-BR/TROUBLESHOOTING.md)
 - [Perguntas frequentes (FAQ)](docs/pt-BR/FAQ.md)
+- [O que há de novo na versão 1.3.0](docs/pt-BR/NOTAS-DA-VERSAO-1.3.0.md)
 - [O que há de novo na versão 1.2.1](docs/pt-BR/NOTAS-DA-VERSAO-1.2.1.md)
 - [O que há de novo na versão 1.2.0](docs/pt-BR/NOTAS-DA-VERSAO-1.2.0.md)
 - [Privacidade](PRIVACY.md)
@@ -179,7 +192,7 @@ Compilar a partir do código-fonte exige Node.js 24.16.0 ou superior, na linha
 Node 24 LTS; quem instala o `.ablx` não precisa do Node.js.
 
 O kit de instalação é gerado por `npm run package:kit`. O comando produz o
-arquivo `release-candidates/RC-Setlist-1.2.1-Installation-Kit.zip` com o
+arquivo `release-candidates/RC-Setlist-1.3.0-Installation-Kit.zip` com o
 `.ablx`, a página `START-HERE.html`, o `README.txt` de instruções, os
 instaladores em `RC-Bridge/`, os scripts de migração da 0.x e as pastas de
 documentação `en/` e `pt-BR/`.

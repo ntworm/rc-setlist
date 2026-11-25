@@ -1,4 +1,4 @@
-# Checklist de lançamento — RC Setlist 1.2.1
+# Checklist de lançamento — RC Setlist 1.3.0
 
 Use uma cópia de um Live Set e uma **rede local confiável / LAN**. Não faça o
 primeiro teste durante um show real.
@@ -14,9 +14,9 @@ primeiro teste durante um show real.
       `via RC Bridge 1.0.0 na porta 11020`.
 - [ ] Com um AbletonOSC comum selecionado no lugar, a linha OSC diz
       `via AbletonOSC na porta 11000` e o transporte continua funcionando.
-- [ ] `RC-Setlist-1.2.1.ablx` instala sem erro.
+- [ ] `RC-Setlist-1.3.0.ablx` instala sem erro.
 - [ ] Em dados limpos, o primeiro **Iniciar** cria o perfil padrão e sobe o servidor sem erro de persistência.
-- [ ] **Extensões > RC Setlist** abre o painel correto e mostra a versão 1.2.1.
+- [ ] **Extensões > RC Setlist** abre o painel correto e mostra a versão 1.3.0.
 
 ## Idioma
 
@@ -82,8 +82,21 @@ TESTE 02 > REFRÃO
 
 - [ ] Com o slave em duas interfaces de rede na mesma sub-rede, **Prontos para
       parear** mostra um endereço que responde.
-- [ ] Com master e slave conectados, um comando vindo de um celular ou do painel
-      no slave move o master e cada slave uma única vez.
+- [ ] Master e slave rodam a 1.3.0; cada linha de link chega a **OK** depois
+      dos 20 s de aquecimento.
+- [ ] Tirar o cabo de rede deixa o link **CAÍDO** em até 3 s e abre o alarme
+      em tela cheia; o **Stop** funciona acima dele e **Dispensar alarme**
+      deixa o selo vermelho acima do transporte.
+- [ ] Um Play ou salto no master executa uma única vez em cada slave e mostra o
+      selo Executou no Controle de palco.
+- [ ] Parado com o slave em outro marcador, o slave vai para a posição do master
+      em **Segue tudo** e só alerta em **Segue transporte**.
+- [ ] Em **Segue tudo** e **Segue transporte**, o Controle de palco do slave não
+      dá play nem salta, e um Stop no slave para o master e todos os slaves.
+- [ ] Em **Independente**, o master mostra a etiqueta **Independente** e não
+      envia nada a esse slave, e o Controle de palco do slave navega sozinho.
+- [ ] Com um computador na 1.2.x pareado, o computador na 1.3.0 mostra
+      **VERSÕES DIFERENTES** e nenhum comando passa entre eles.
 
 ## Aprovação
 

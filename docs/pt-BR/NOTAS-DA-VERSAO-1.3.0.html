@@ -1,0 +1,324 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Notas da versão RC Setlist 1.3.0 — Ableton Live</title>
+    <meta
+      name="description"
+      content="O Windows é a plataforma validada; o macOS é experimental. Esta versão trata do link entre o computador principal (o master) e os segundos computadores (os…"
+    />
+    <link
+      rel="canonical"
+      href="https://ntworm.github.io/rc-setlist/pt-BR/NOTAS-DA-VERSAO-1.3.0.html"
+    />
+    <link rel="alternate" type="text/markdown" href="./NOTAS-DA-VERSAO-1.3.0.md" />
+    <link rel="describedby" href="../llms.txt" />
+    <meta property="og:type" content="article" />
+    <meta property="og:site_name" content="RC Setlist" />
+    <meta property="og:locale" content="pt_BR" />
+    <meta property="og:title" content="Notas da versão RC Setlist 1.3.0 — Ableton Live" />
+    <meta
+      property="og:description"
+      content="O Windows é a plataforma validada; o macOS é experimental. Esta versão trata do link entre o computador principal (o master) e os segundos computadores (os…"
+    />
+    <meta
+      property="og:url"
+      content="https://ntworm.github.io/rc-setlist/pt-BR/NOTAS-DA-VERSAO-1.3.0.html"
+    />
+    <meta property="og:image" content="https://ntworm.github.io/rc-setlist/og-image.png" />
+    <style>
+      body {
+        font:
+          16px/1.55 system-ui,
+          sans-serif;
+        max-width: 920px;
+        margin: 2rem auto;
+        padding: 0 1rem;
+        color: #f2f2f2;
+        background: #0e0e0e;
+      }
+      h1,
+      h2,
+      h3,
+      h4 {
+        line-height: 1.25;
+      }
+      h1 {
+        font-size: 2.2rem;
+        margin-top: 0;
+      }
+      h2 {
+        margin-top: 2rem;
+        padding-top: 1rem;
+        border-top: 1px solid #333;
+      }
+      h3 {
+        margin-top: 1.5rem;
+      }
+      code {
+        font:
+          0.92em ui-monospace,
+          Consolas,
+          monospace;
+        background: #1a1a1a;
+        padding: 0.1em 0.35em;
+        border-radius: 0;
+      }
+      pre {
+        background: #1a1a1a;
+        padding: 0.8rem 1rem;
+        overflow-x: auto;
+        border: 1px solid #333;
+      }
+      pre code {
+        background: transparent;
+        padding: 0;
+      }
+      a {
+        color: #ffa133;
+      }
+      ul,
+      ol {
+        padding-left: 1.2em;
+      }
+      blockquote {
+        border-left: 4px solid #ffa133;
+        margin: 1em 0;
+        padding: 0.5em 1em;
+        color: #a0a0a0;
+      }
+      .crumbs {
+        font-size: 0.85em;
+        color: #a0a0a0;
+        margin-bottom: 1rem;
+      }
+      .crumbs a {
+        color: #a0a0a0;
+        text-decoration: none;
+      }
+      .crumbs a:hover {
+        color: #f2f2f2;
+      }
+      .source {
+        font-size: 0.78em;
+        color: #a0a0a0;
+        margin-top: 2rem;
+        border-top: 1px solid #333;
+        padding-top: 0.5rem;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="crumbs"><a href="./">RC Setlist</a> · <a href="./README.html">Documentação</a></div>
+    <h1 id="notas-da-vers-o-rc-setlist-1-3-0">Notas da versão RC Setlist 1.3.0</h1>
+    <p>
+      <strong>Data de lançamento:</strong> 2026-11-25 <strong>Linha de versões suportada:</strong>
+      <code>1.3.x</code> <strong>Também disponível em inglês:</strong>
+      <a href="../RELEASE-NOTES-1.3.0.md"><code>../RELEASE-NOTES-1.3.0.md</code></a>
+    </p>
+    <p>
+      O Windows é a plataforma validada; o macOS é experimental. Esta versão trata do link entre o
+      computador principal (o <strong>master</strong>) e os segundos computadores (os
+      <strong>slaves</strong>). O <a href="USER-GUIDE.html">guia do usuário</a> descreve cada estado
+      e alerta, e a <a href="TROUBLESHOOTING.html">solução de problemas</a> diz o que fazer em cada
+      caso.
+    </p>
+    <h2 id="novidades">Novidades</h2>
+    <ul>
+      <li><strong>Saúde do link.</strong> O Controle de palco, nos modos Editar e Show, a tela</li>
+    </ul>
+    <p>
+      <code>/performance</code> e o painel do Live mostram uma linha por computador pareado com o
+      estado, <strong>OK</strong>, <strong>INSTÁVEL</strong> ou <strong>CAÍDO</strong>, o motivo, o
+      tempo de ida e volta (<code>RTT</code>), as quedas nos últimos 5 minutos, a última queda e o
+      último frame recebido. Os dois computadores trocam heartbeats nos dois sentidos e medem o
+      link.
+    </p>
+    <ul>
+      <li><strong>Aquecimento, recuperação e trava por oscilação.</strong> Um link novo fica</li>
+    </ul>
+    <p>
+      <strong>INSTÁVEL</strong> por <code>20 s</code> de aquecimento. Depois de uma queda, de um
+      heartbeat perdido (<code>&gt; 1,5 s</code>) ou de latência alta (<code
+        >RTT p95 &gt; 150 ms</code
+      >), precisa de <code>60 s</code> sem problema para voltar a <strong>OK</strong>. Um link que
+      cai <code>3</code> ou mais vezes em <code>5 min</code> fica <strong>INSTÁVEL</strong> por
+      <code>5 min</code>.
+    </p>
+    <ul>
+      <li>
+        <strong>Confirmar.</strong> Quando um link <strong>INSTÁVEL</strong> já estabilizou,
+        <strong>Confirmar</strong> no
+      </li>
+    </ul>
+    <p>
+      Controle de palco ou no painel do Live reduz a janela limpa para <code>10 s</code> nos dois
+      computadores. Nunca pula o aquecimento nem a trava de <code>5 min</code>.
+    </p>
+    <ul>
+      <li>
+        <strong>Alarme de link caído.</strong> Quando um link fica <strong>CAÍDO</strong> (nenhum
+        frame por
+      </li>
+    </ul>
+    <p>
+      <code>3 s</code>, o socket fechou, ou Live ou OSC indisponível em um dos computadores), um
+      alarme vermelho em tela cheia abre no Controle de palco e em <code>/performance</code>.
+      <strong>Dispensar alarme</strong> fecha o alarme e mantém o selo vermelho
+      <strong>LINK CAÍDO</strong> acima da barra de transporte. O <strong>Stop</strong> continua ao
+      alcance acima do alarme.
+    </p>
+    <ul>
+      <li>
+        <strong>Ponto de estado.</strong> O ponto do segundo computador no Controle de palco segue
+      </li>
+    </ul>
+    <p>
+      o estado medido: verde para <strong>OK</strong>, amarelo para <strong>INSTÁVEL</strong>,
+      vermelho para <strong>CAÍDO</strong>, <strong>VERSÕES DIFERENTES</strong> ou
+      <strong>CERTIFICADO MUDOU</strong>.
+    </p>
+    <ul>
+      <li>
+        <strong>Comandos confirmados.</strong> O slave confirma cada comando que o master envia, e
+      </li>
+    </ul>
+    <p>
+      o master reenvia a cada <code>150 ms</code> até o prazo. O Controle de palco mostra por
+      <code>3 s</code> um selo por computador: Pendente, Executou ou Falhou.
+    </p>
+    <ul>
+      <li>
+        <strong>Alertas de comando.</strong> Um comando que perde o prazo ou falha no slave mostra
+      </li>
+    </ul>
+    <p>
+      <code>SLAVE NÃO EXECUTOU: &lt;comando&gt;</code> no Controle de palco e no painel do Live. Uma
+      confirmação que chega depois do prazo muda o alerta para
+      <code>Executou atrasado: &lt;comando&gt;</code>.
+    </p>
+    <ul>
+      <li><strong>Reenvio de segurança do Stop e do Pânico.</strong> Enquanto o master continua</li>
+    </ul>
+    <p>
+      parado ou em pânico, Stop e Pânico não expiram: são reenviados a cada reconexão. Se o slave
+      não confirmar em <code>1 s</code>, aparece <code>SLAVE AINDA NÃO PAROU</code> até a
+      confirmação chegar. Um Play atrasado atrás de um Stop ou Pânico mais novo é descartado e nunca
+      toca fora de ordem.
+    </p>
+    <ul>
+      <li>
+        <strong>Agulha parada segue o master.</strong> Quando os dois computadores estão parados e
+      </li>
+    </ul>
+    <p>
+      o slave está a mais de meio beat de distância por três alvos seguidos, o slave vai para o
+      marcador do master, ou para o beat exato entre marcadores. Isso também acontece em até
+      <code>2 s</code> após reconectar.
+    </p>
+    <ul>
+      <li>
+        <strong>Fora de passo.</strong> Uma divergência de agulha que dura <code>3 s</code> fora de
+        salto
+      </li>
+    </ul>
+    <p>
+      quantizado pendente ou loop ativo mostra <strong>INSTÁVEL</strong> com o motivo
+      <strong>Fora de passo</strong> nos dois computadores.
+    </p>
+    <ul>
+      <li>
+        <strong>Modos do slave.</strong> No slave, o cartão <strong>Segundo computador</strong> da
+        aba <strong>Rede</strong>
+      </li>
+    </ul>
+    <p>
+      tem <strong>Modo do slave</strong> com três botões: - <strong>Segue tudo</strong> (padrão): o
+      slave executa os comandos do master e corrige a agulha tocando e parado. -
+      <strong>Segue transporte</strong>: o slave executa os comandos do master e corrige a agulha
+      tocando; parado em outro tempo, só alerta. - <strong>Independente</strong>: o master não envia
+      comandos a esse slave nem gera alerta por ele, e o slave recusa os que chegarem. O master
+      mostra a etiqueta <strong>Independente</strong> ao lado desse computador.
+    </p>
+    <p>
+      A escolha fica salva depois de reiniciar. Um slave que rodou uma versão de teste da 1.3.0 com
+      a opção <strong>Corrigir agulha automaticamente no slave</strong> mantém a escolha: marcada
+      vira <strong>Segue tudo</strong>, desmarcada vira <strong>Segue transporte</strong>.
+    </p>
+    <ul>
+      <li>
+        <strong>Trava de navegação no slave.</strong> Em <strong>Segue tudo</strong> e
+        <strong>Segue transporte</strong>, com
+      </li>
+    </ul>
+    <p>
+      o link do master ativo, o Controle de palco do slave não dá play, não salta, não faz contagem
+      e não muda metrônomo, quantização nem pre-roll. Uma faixa avisa que o slave está seguindo o
+      master. <strong>Stop</strong>, <strong>Pânico</strong> e <strong>Atualizar</strong> continuam
+      disponíveis e sobem ao master, então um Stop no slave para o show inteiro. Em
+      <strong>Independente</strong>, o Controle de palco do slave roda só naquele computador.
+    </p>
+    <ul>
+      <li>
+        <strong>Verificação do protocolo do link.</strong> Master e slave trocam uma versão do
+      </li>
+    </ul>
+    <p>
+      protocolo do link. Um computador em outra versão mostra <strong>VERSÕES DIFERENTES</strong>, e
+      nenhum comando é repassado a ele.
+    </p>
+    <h2 id="mudan-as">Mudanças</h2>
+    <ul>
+      <li>
+        <strong>Um celular num slave não comanda mais o show inteiro.</strong> Na 1.2.1, comandos
+      </li>
+    </ul>
+    <p>
+      de play, salto, metrônomo, quantização e contagem vindos de um celular ou do painel do Live
+      num slave subiam para o master e moviam todos os computadores. Na 1.3.0, um slave em
+      <strong>Segue tudo</strong> ou <strong>Segue transporte</strong> só envia para cima
+      <strong>Stop</strong>, <strong>Pânico</strong> e <strong>Atualizar</strong>. Para navegar num
+      slave por conta própria, escolha <strong>Independente</strong>.
+    </p>
+    <ul>
+      <li>
+        <strong>Aba Rede.</strong> O cartão <strong>Segundo computador</strong> fica acima do cartão
+      </li>
+    </ul>
+    <p><strong>Certificado</strong>.</p>
+    <h2 id="inclu-do-da-1-2-1">Incluído da 1.2.1</h2>
+    <p>
+      A versão 1.2.1 recebeu tag sem página de lançamento. As correções dela fazem parte da 1.3.0:
+    </p>
+    <ul>
+      <li>
+        <strong>Prontos para parear mostra um endereço que responde.</strong> Quando um slave tem
+      </li>
+    </ul>
+    <p>
+      duas interfaces de rede na mesma sub-rede, o anúncio leva os endereços de LAN dele e o master
+      lista o primeiro que responde na porta anunciada.
+    </p>
+    <ul>
+      <li><strong>Comandos de um slave chegam ao master.</strong> Com o master conectado, os</li>
+    </ul>
+    <p>
+      comandos que um slave envia para cima são executados pelo master e enviados a todos os slaves;
+      na 1.3.0 isso vale para <strong>Stop</strong>, <strong>Pânico</strong> e
+      <strong>Atualizar</strong> enquanto o slave segue o master.
+    </p>
+    <h2 id="atualizando">Atualizando</h2>
+    <p>
+      Nada a migrar; a pasta de dados e os pareamentos ficam. O Live recusa instalar por cima de uma
+      pasta de extensão existente: remova o RC Setlist nas configurações de extensões do Live antes
+      e depois abra o <code>.ablx</code>. Instale a 1.3.0 no master e em cada slave. Os dois
+      computadores precisam estar na mesma versão: quando um computador na 1.2.x é pareado com um na
+      1.3.0, o lado na 1.3.0 mostra <strong>VERSÕES DIFERENTES</strong> e nenhum comando passa entre
+      eles. O Remote Script RC Bridge não mudou, então não é preciso reinstalá-lo.
+    </p>
+    <div class="source">
+      Rendered from <code>docs\pt-BR\NOTAS-DA-VERSAO-1.3.0.md</code> on 2026-11-25.
+    </div>
+  </body>
+</html>

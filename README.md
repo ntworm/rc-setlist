@@ -1,7 +1,7 @@
 # RC Setlist
 
 [![PolyForm Noncommercial](https://img.shields.io/badge/license-PolyForm%20Noncommercial-orange)](LICENSE)
-[![Version](https://img.shields.io/badge/version-1.2.1-f97316)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-1.3.0-f97316)](CHANGELOG.md)
 [![CI](https://github.com/ntworm/rc-setlist/actions/workflows/ci.yml/badge.svg)](https://github.com/ntworm/rc-setlist/actions/workflows/ci.yml)
 
 **English** · [Português (Brasil)](README.pt-BR.md)
@@ -12,7 +12,8 @@ RC Setlist is an extension for Ableton Live 12 that runs a show from the
 Arrangement. Mark each song and section with a locator in Live, and RC Setlist
 turns them into a setlist in the browser. The operator starts songs and jumps
 between sections from a laptop or tablet; the band sees the current section, the
-next song and the lyrics on their phones.
+next song and the lyrics on their phones. A second computer running Live can
+follow the first one over the local network.
 
 > **Network safety:** RC Setlist serves browser controls on your local network.
 > Use it only on a trusted LAN, keep the controller URL and token private, and
@@ -31,14 +32,15 @@ until it is exercised on real macOS hardware.
 
 ## Install
 
-1. Download `RC-Setlist-1.2.1.ablx` and the installation kit from the
+1. Download `RC-Setlist-1.3.0.ablx` and the installation kit from the
    [latest release](https://github.com/ntworm/rc-setlist/releases/latest).
 2. Install RC Bridge from the kit: run `Install-RC-Bridge.cmd` (Windows) or
    `Install RC Bridge.command` (macOS), then choose RCBridge as a Control
    Surface in Live.
 3. If RC Setlist is already installed, remove it in Live's extension settings
    (Live refuses to install over an existing extension folder; your data folder
-   stays). Then open the `.ablx` and approve the installation in Live.
+   stays). Then open the `.ablx` and approve the installation in Live. With two
+   computers, install the same version on each.
 4. In Live, open **Extensions > RC Setlist** and start the server. Open the
    panel URL or the QR code to reach `/setlist` or `/performance`.
 5. To remove the certificate warning, scan the **Certificate** QR in the panel
@@ -87,61 +89,74 @@ All examples in this repository are fictional. See
 
 ## Features
 
-- Both pages run in a desktop, notebook, tablet or phone browser on the
+- Both pages run in a browser on a desktop, notebook, tablet or phone on the
   network.
-- Synchronized `.lrc` lyrics, with the timing and the editing in the browser.
-- Guarded transport with a 500 ms hold on the buttons, quantization feedback
-  and counted-loop handling.
+- Synchronized `.lrc` lyrics, timed and edited in the browser.
+- Guarded transport: a 500 ms hold on the buttons, quantization feedback and
+  counted loops.
 - Per-profile ordering, lyrics and CSV export, stored locally.
-- Multiple saved setlists scoped to the current Ableton Live Set.
-- Song durations and total setlist duration calculated from the Arrangement.
+- Several saved setlists for each Ableton Live Set.
+- Song durations and the total setlist duration, calculated from the
+  Arrangement.
+- Show mode in Stage Control hides the setup controls and keeps the active song
+  pinned.
 - Fullscreen stage mode with Screen Wake Lock when the browser supports it.
 - English and Brazilian Portuguese interfaces in the same `.ablx`.
-- Keyboard Mapping for assigning transport and view actions to Numpad or alpha
-  keys.
+- Keyboard Mapping assigns transport and view actions to Numpad or alpha keys.
 - No account, cloud sync, analytics or telemetry.
 
-## What is new in 1.2.1
+## Two computers
 
-Full details in the [1.2.1 release notes](docs/RELEASE-NOTES-1.2.1.md).
+A main computer, the **master**, can pair one or more second computers, the
+**slaves**, from the **Second computer** card in the **Network** tab of the Live
+panel. The slave shows a six-digit code; the master enters its address and the
+code. The link uses pinned certificates.
 
-- **Ready to pair shows an address that answers.** When a slave has two network
-  interfaces on the same subnet, the announcement carries its LAN addresses and
-  the master lists the first one that answers on the announced port.
-- **A phone on a slave drives the whole show.** With the master connected,
-  transport, jump, metronome, quantization, count-in, refresh and panic
-  commands from a phone or the Live panel on a slave go up to the master, which
-  runs them and sends them to every slave; without the master, the slave runs
-  them alone and says so in the log.
+- **Commands.** Play, Stop, jumps, metronome, quantization, count-in, refresh
+  and panic given on the master go to every slave. Each slave confirms each
+  command; the master resends it until its deadline and shows an alert when a
+  slave did not execute it, executed it late, or has not stopped.
+- **Link health.** Stage Control, `/performance` and the Live panel show each
+  link as **OK**, **UNSTABLE** or **DOWN**, with the reason and the round-trip
+  time. A link that goes **DOWN** opens a full-screen alarm on the stage pages;
+  **Stop** stays reachable above it.
+- **Playhead.** The master sends its transport target twice a second, and a
+  slave corrects whole-beat gaps, a missed Play, a missed Stop and, while both
+  are stopped, a different position. A mismatch that lasts `3 s` shows **Out of
+  step**.
+- **Slave modes.** **Follow all** runs the master's commands and every
+  correction. **Follow transport** corrects only while playing. In both, Stage
+  Control on the slave cannot play or jump; Stop, Panic and Refresh go up to the
+  master. **Independent** receives no commands from the master and lets the
+  slave navigate on its own.
 
-## What is new in 1.2.0
+Turn Ableton Link on and Start Stop Sync off on every computer, and run the same
+RC Setlist version on all of them. Details are in the
+[user guide](docs/USER-GUIDE.md).
 
-Full details in the [1.2.0 release notes](docs/RELEASE-NOTES-1.2.0.md).
+## What is new in 1.3.0
 
-- **Several second computers.** One master pairs several slaves; the Network
-  tab lists each with its state and Unpair, and every transport command goes to
-  all of them.
-- **Master and slave in the panel.** The bar at the bottom of the Live panel
-  shows whether this computer is Master (with connected slave count) or Slave
-  (with master link state).
-- **The slave keeps the beat of the master.** The master sends its playhead
-  twice a second so a slave corrects whole-beat drift, starts on the next bar
-  after a missed Play, and stops after a missed Stop.
-- **Ready to pair.** A slave showing a pairing code announces its name and port
-  on UDP `4447`; the master lists it under Ready to pair so one click fills the
-  address.
-- **Bring from master.** On a slave with Live stopped, Bring from master in
-  the Import card brings the master's active setlist, with its order, song
-  colours, notes and lyrics.
-- **Show mode.** A switch in the Stage Control top bar picks Edit or Show,
-  hiding setup controls and keeping only the active song open and pinned at
-  the top.
-- **Next Song Now and Previous Song Now.** Two MIDI and keyboard actions jump
-  at once while playing without waiting for the quantization grid.
-- **Time signature changes.** The bar display counts each stretch of the set in
-  its own time signature and counts beats in the unit of the denominator.
-- **Rename a package.** A double click on a package name in the Import card
-  renames the file in the `packages` folder.
+Full details in the [1.3.0 release notes](docs/RELEASE-NOTES-1.3.0.md), which
+also cover the 1.2.1 fixes.
+
+- **Link health.** Each paired computer shows **OK**, **UNSTABLE** or **DOWN**
+  with its reason, `RTT` and drops, after a `20 s` warm-up, with a recovery
+  window, a `5 min` hold for an oscillating link and an **Acknowledge** button.
+- **Link-down alarm.** A full-screen alarm on Stage Control and `/performance`,
+  with a red badge above the transport after **Dismiss alarm**; **Stop** stays
+  reachable above it.
+- **Confirmed commands.** Slaves confirm every command. Alerts say when a slave
+  did not execute a command, executed it late, or is still not stopped; Stop
+  and Panic are resent until confirmed.
+- **Stopped playhead and Out of step.** A stopped slave moves to the master's
+  position, and a lasting mismatch shows **Out of step**.
+- **Slave modes and navigation lock.** **Follow all**, **Follow transport** and
+  **Independent**. A following slave's Stage Control can only send Stop, Panic
+  and Refresh, which replaces the 1.2.1 behaviour where a phone on a slave drove
+  the whole show.
+- **Same version required.** Master and slave check the link protocol and show
+  **DIFFERENT VERSIONS** when they differ.
+- **Network tab.** The Second computer card sits above the Certificate card.
 
 ## Documentation
 
@@ -150,6 +165,7 @@ Full details in the [1.2.0 release notes](docs/RELEASE-NOTES-1.2.0.md).
 - [User guide](docs/USER-GUIDE.md)
 - [Troubleshooting](docs/TROUBLESHOOTING.md)
 - [Frequently asked questions](docs/FAQ.md)
+- [What is new in 1.3.0](docs/RELEASE-NOTES-1.3.0.md)
 - [What is new in 1.2.1](docs/RELEASE-NOTES-1.2.1.md)
 - [What is new in 1.2.0](docs/RELEASE-NOTES-1.2.0.md)
 - [Privacy](PRIVACY.md)
@@ -174,7 +190,7 @@ Building from source needs Node.js 24.16.0 or newer, in the Node 24 LTS line;
 end users install the `.ablx` and do not need Node.js.
 
 The installation kit is built with `npm run package:kit`. It writes
-`release-candidates/RC-Setlist-1.2.1-Installation-Kit.zip` with the `.ablx`,
+`release-candidates/RC-Setlist-1.3.0-Installation-Kit.zip` with the `.ablx`,
 the `START-HERE.html` page, the `README.txt` instructions, the `RC-Bridge/`
 installers, the 0.x migration scripts and the documentation folders `en/` and
 `pt-BR/`.

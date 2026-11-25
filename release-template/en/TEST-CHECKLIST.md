@@ -1,4 +1,4 @@
-# Release checklist — RC Setlist 1.2.1
+# Release checklist — RC Setlist 1.3.0
 
 Use a copy of a Live Set and a **trusted local network / LAN**. Do not perform
 the first test during a real show.
@@ -14,9 +14,9 @@ the first test during a real show.
       `via RC Bridge 1.0.0 on port 11020`.
 - [ ] With a stock AbletonOSC selected instead, the OSC line reads
       `via AbletonOSC on port 11000` and the transport still works.
-- [ ] `RC-Setlist-1.2.1.ablx` installs without errors.
+- [ ] `RC-Setlist-1.3.0.ablx` installs without errors.
 - [ ] With clean data, the first **Start** creates the default profile and starts the server without a persistence error.
-- [ ] **Extensions > RC Setlist** opens the correct panel and shows version 1.2.1.
+- [ ] **Extensions > RC Setlist** opens the correct panel and shows version 1.3.0.
 
 ## Language
 
@@ -81,8 +81,22 @@ TEST 02 > CHORUS
 
 - [ ] When a slave has two network interfaces on the same subnet, **Ready to
       pair** shows an address that answers.
-- [ ] With master and slave connected, a command from a phone or the panel on
-      the slave moves the master and every slave once each.
+- [ ] Master and slave run 1.3.0; each link row reaches **OK** after the
+      20 s warm-up.
+- [ ] Unplugging the network cable turns the link **DOWN** within 3 s and opens
+      the full-screen alarm; **Stop** works above it and **Dismiss alarm**
+      leaves the red badge above the transport.
+- [ ] A Play or jump on the master runs once on every slave and shows the
+      Executed tick on Stage Control.
+- [ ] Stopped with the slave at another marker, the slave moves to the master's
+      position in **Follow all** and only alerts in **Follow transport**.
+- [ ] In **Follow all** and **Follow transport**, Stage Control on the slave
+      cannot play or jump, and a Stop on the slave stops the master and every
+      slave.
+- [ ] In **Independent**, the master shows the **Independent** tag and sends
+      nothing to that slave, and Stage Control on the slave navigates on its own.
+- [ ] With a 1.2.x computer paired, the 1.3.0 computer shows **DIFFERENT
+      VERSIONS** and no command passes between them.
 
 ## Approval
 
